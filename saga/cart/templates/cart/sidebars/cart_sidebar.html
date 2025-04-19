@@ -1,0 +1,40 @@
+<div id="cart-sidebar" class="fixed inset-0 overflow-hidden z-50 pointer-events-none">
+    <!-- Overlay avec effet de flou -->
+    <div id="cart-overlay" 
+         class="cart-sidebar-overlay"
+         onclick="closeCart()">
+    </div>
+
+    <div class="pointer-events-none fixed inset-y-0 right-0 flex max-w-full pl-10">
+        <div id="cart-container" 
+             class="cart-sidebar-container">
+            <div class="flex h-full flex-col overflow-y-scroll bg-white shadow-xl rounded-l-2xl">
+                <!-- En-tête du panier -->
+                <div class="cart-sidebar-header">
+                    <div class="flex items-center justify-between">
+                        <h2 class="text-lg font-bold  flex items-center space-x-3">
+                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
+                                      d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"/>
+                            </svg>
+                            <span>Votre Panier</span>
+                        </h2>
+                        <button id="closeCartButton" 
+                                type="button" 
+                                class="-m-2 p-2 hover:text-yellow-200 transition-colors duration-200 rounded-full hover:bg-white/10">
+                            <span class="sr-only">Fermer</span>
+                            <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Contenu du panier -->
+                <div id="cart-content">
+                    {% include 'cart/components/_cart_content.html' %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

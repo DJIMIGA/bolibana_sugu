@@ -1,0 +1,58 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="{% static 'src/output.css' %}">
+    <link rel="stylesheet" href="{% static 'src/styles.css' %}">
+    <script src="{% static 'script.js' %}"></script>
+    <script src="https://unpkg.com/htmx.org@2.0.2"
+            integrity="sha384-Y7hw+L/jvKeWIRRkqWYfPcvVxHzVzn5REgzbawhxAuQGwX1XWe70vji+VSeHOThJ"
+            crossorigin="anonymous"></script>
+</head>
+<body>
+{% if query %}
+<div class="bg-gradient-to-br from-green-500 via-yellow-500 to-red-500 p-4 rounded-lg shadow-md">
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        {% if products %}
+            <div>
+                <h3 class="text-lg font-bold text-white mb-2 border-b border-white pb-2">🛍️ Produits trouvés ({{ products_count }})</h3>
+                <ul class="list-none">
+                    {% for product in products %}
+                    <li class="mb-3">
+                        <a href="{% url 'product_detail' product.pk %}"
+                           class="block bg-white text-gray-800 font-medium p-2 rounded-lg hover:bg-yellow-200 transition duration-300 shadow">
+                            {{ product.title }}
+                        </a>
+                    </li>
+                    {% endfor %}
+                </ul>
+            </div>
+        {% endif %}
+
+        {% if search_categories %}
+            <div>
+                <h3 class="text-lg font-bold text-white mb-2 border-b border-white pb-2">📂 Catégories trouvées ({{ categories_count }})</h3>
+                <ul class="list-none">
+                    {% for category in search_categories %}
+                    <li class="mb-3">
+                        <a href="#"
+                           class="block bg-white text-gray-800 font-medium p-2 rounded-lg hover:bg-yellow-200 transition duration-300 shadow"
+                           style="background-color: {{ category.background_color }};">
+                            {{ category.name }}
+                        </a>
+                    </li>
+                    {% endfor %}
+                </ul>
+            </div>
+        {% endif %}
+    </div>
+
+    {% if not products and not search_categories %}
+        <p class="text-white text-center font-semibold mt-4">🚫 Aucun produit ou catégorie trouvé.</p>
+    {% endif %}
+</div>
+
+{% endif %}
+</body>

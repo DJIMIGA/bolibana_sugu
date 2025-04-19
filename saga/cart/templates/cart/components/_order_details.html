@@ -1,0 +1,73 @@
+<!-- Résumé de la commande -->
+<div class="mt-10 lg:mt-0">
+    <div class="mt-4 bg-white border border-gray-200 rounded-lg shadow-sm">
+        <h3 class="sr-only">Articles dans votre panier</h3>
+        
+        <!-- Liste des articles -->
+        <ul class="divide-y divide-gray-200">
+            {% for item in cart_items %}
+            <li class="p-4 flex">
+                <!-- Image -->
+                <div class="flex-shrink-0 w-20 h-20 rounded-lg overflow-hidden">
+                    <img src="{{ item.product.image.url }}" 
+                         alt="{{ item.product.title }}" 
+                         class="w-full h-full object-cover">
+                </div>
+
+                <!-- Détails du produit -->
+                <div class="ml-4 flex-1 flex flex-col">
+                    <div>
+                        <div class="flex justify-between">
+                            <h4 class="text-sm font-medium text-gray-900">{{ item.product.title }}</h4>
+                            <p class="ml-4 text-sm font-medium text-gray-900">{{ item.get_total_price|floatformat:0 }} FCFA</p>
+                        </div>
+                        <p class="mt-1 text-sm text-gray-500">Quantité: {{ item.quantity }}</p>
+                        <p class="mt-1 text-sm text-gray-500">Prix unitaire: {{ item.product.price|floatformat:0 }} FCFA</p>
+                    </div>
+
+                    <!-- Options (couleur, taille) -->
+                    <div class="mt-2 flex flex-wrap gap-2">
+                        {% if item.colors.exists %}
+                            {% for color in item.colors.all %}
+                            <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs bg-gray-100 text-gray-800">
+                                <div class="w-2 h-2 rounded-full mr-1" style="background-color: {{ color.color_code }}"></div>
+                              Couleur: {{ color.name }}
+                            </span>
+                            {% endfor %}
+                        {% endif %}
+                        
+                        {% if item.sizes.exists %}
+                            {% for size in item.sizes.all %}
+                            <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs bg-gray-100 text-gray-800">
+                                Taille: {{ size.name }}
+                            </span>
+                            {% endfor %}
+                        {% endif %}
+                    </div>
+                </div>
+            </li>
+            {% endfor %}
+        </ul>
+
+        <!-- Résumé des totaux -->
+        <div class="border-t border-gray-200 p-4">
+            <div class="flex justify-between text-sm text-gray-600 mb-2">
+                <p>Sous-total</p>
+                <p>{{ order_total|floatformat:0 }} FCFA</p>
+            </div>
+            <div class="flex justify-between text-sm text-gray-600 mb-2" id="shipping-cost-display">
+                <p>Frais de livraison</p>
+                <p>{% if selected_shipping_method %}
+                    {{ selected_shipping_method.price|floatformat:0 }}
+                {% else %}
+                    {{ shipping_cost|floatformat:0 }}
+                {% endif %} FCFA</p>
+            </div>
+        
+            <div class="flex justify-between text-base font-medium text-gray-900" id="total-with-shipping">
+                <p>Total</p>
+                <p>{{ total_with_shipping|floatformat:0 }} FCFA</p>
+            </div>
+        </div>
+    </div>
+</div> 

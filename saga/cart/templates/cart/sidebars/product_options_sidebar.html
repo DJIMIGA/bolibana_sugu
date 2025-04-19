@@ -1,0 +1,45 @@
+{% load static %}
+<!-- Product Options Sidebar -->
+<div id="product-options-sidebar" class="fixed inset-0 overflow-hidden z-[9999] pointer-events-none">
+    <!-- Overlay avec effet de flou -->
+    <div id="product-options-overlay" 
+         class="absolute inset-0 bg-black/40 backdrop-blur-sm transition-all duration-500 ease-in-out opacity-0"
+         onclick="closeProductOptions()">
+    </div>
+
+    <div class="pointer-events-none fixed inset-y-0 right-0 flex max-w-full pl-10">
+        <div id="product-options-container" 
+             class="pointer-events-auto w-screen max-w-md transform transition-transform duration-500 ease-in-out translate-x-full">
+            <div class="flex h-full flex-col overflow-y-scroll bg-white shadow-xl rounded-l-2xl">
+                <!-- En-tête -->
+                <div class="flex-shrink-0 px-4 py-6 sm:px-6 bg-gradient-to-r from-green-600 via-yellow-500 to-red-600">
+                    <div class="flex items-center justify-between">
+                        <h2 class="text-lg font-bold text-white flex items-center space-x-3">
+                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
+                                      d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4"/>
+                            </svg>
+                            <span>Options du produit</span>
+                        </h2>
+                        <button type="button" 
+                                onclick="closeProductOptions()"
+                                class="-m-2 p-2 text-white hover:text-yellow-200 transition-colors duration-200 rounded-full hover:bg-white/10">
+                            <span class="sr-only">Fermer</span>
+                            <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Contenu -->
+                <div class="flex-1 overflow-y-auto py-6 px-4 sm:px-6">
+                    <div id="product-options-content">
+                        <!-- Le contenu sera chargé dynamiquement -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+

@@ -1,0 +1,185 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load form_tags %}
+
+{% block extra_head %}
+<script src="https://js.stripe.com/v3/"></script>
+{% endblock %}
+
+{% block content %}
+<div class="bg-gray-50 min-h-screen">
+    <div class="max-w-7xl mx-auto pt-6 sm:pt-16 pb-24 px-4 sm:px-6 lg:px-8">
+        <!-- En-tête -->
+        <div class="text-center mb-8">
+            <h1 class="text-3xl font-bold text-gray-900">Paiement en ligne</h1>
+            <p class="mt-2 text-lg text-gray-600">Finalisez votre commande de manière sécurisée</p>
+        </div>
+
+        <!-- Message d'information -->
+        <div class="bg-white p-4 rounded-xl shadow-sm border border-green-100 mb-6">
+            <div class="flex items-center space-x-3">
+                <svg class="w-6 h-6 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/>
+                </svg>
+                <p class="text-sm text-gray-600">Vous allez être redirigé vers le site de paiement sécurisé Stripe</p>
+            </div>
+        </div>
+
+        <form action="{% url 'cart:create_checkout_session' %}" method="post">
+            {% csrf_token %}
+
+            <!-- Adresse de livraison -->
+            <div class="bg-white p-6 rounded-xl shadow-sm border border-green-100 mb-6">
+                <div class="flex items-center space-x-3 mb-6">
+                    <div class="flex-shrink-0">
+                        <span class="flex items-center justify-center h-10 w-10 rounded-full bg-red-100">
+                            <svg class="h-6 w-6 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/>
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/>
+                            </svg>
+                        </span>
+                    </div>
+                    <div>
+                        <h3 class="text-lg font-medium text-gray-900">Adresse de livraison</h3>
+                        <p class="text-sm text-gray-500">Choisissez où vous souhaitez recevoir votre commande</p>
+                    </div>
+                </div>
+
+                <!-- Choix de l'adresse -->
+                <div class="space-y-4 mb-6">
+                    <label class="relative flex p-4 border-2 rounded-xl cursor-pointer hover:border-red-500 transition-all duration-200 bg-gradient-to-r from-red-50 to-red-100">
+                        <input type="radio" 
+                               name="address_choice" 
+                               value="default" 
+                               class="mt-1 h-4 w-4 text-red-600 border-gray-300 focus:ring-red-500"
+                               {% if default_address %}checked{% endif %}>
+                        <div class="ml-4 flex-1">
+                            <span class="block font-medium text-gray-900">Utiliser mon adresse par défaut</span>
+                            {% if default_address %}
+                            <span class="block text-sm text-gray-600 mt-1">
+                                {{ default_address.full_name }}<br>
+                                {{ default_address.address_line1 }}<br>
+                                {% if default_address.address_line2 %}{{ default_address.address_line2 }}<br>{% endif %}
+                                {{ default_address.city }}{% if default_address.state %}, {{ default_address.state }}{% endif %}<br>
+                                {{ default_address.postal_code }}<br>
+                                {{ default_address.country }}
+                            </span>
+                            {% else %}
+                            <span class="block text-sm text-red-600 mt-1">Aucune adresse par défaut définie</span>
+                            {% endif %}
+                        </div>
+                    </label>
+
+                    <label class="relative flex p-4 border-2 rounded-xl cursor-pointer hover:border-red-500 transition-all duration-200 bg-gradient-to-r from-red-50 to-red-100">
+                        <input type="radio" 
+                               name="address_choice" 
+                               value="new" 
+                               class="mt-1 h-4 w-4 text-red-600 border-gray-300 focus:ring-red-500"
+                               {% if not default_address %}checked{% endif %}>
+                        <div class="ml-4 flex-1">
+                            <span class="block font-medium text-gray-900">Utiliser une nouvelle adresse</span>
+                            <span class="block text-sm text-gray-600">Remplir un nouveau formulaire d'adresse</span>
+                        </div>
+                    </label>
+                </div>
+
+                <!-- Formulaire de nouvelle adresse -->
+                <div id="new-address-form" class="{% if default_address %}hidden{% endif %}">
+                    {{ form.as_div }}
+                    <div class="mt-4">
+                        <label class="inline-flex items-center">
+                            <input type="checkbox" 
+                                   name="is_default" 
+                                   class="rounded border-gray-300 text-red-600 shadow-sm focus:border-red-300 focus:ring focus:ring-red-200 focus:ring-opacity-50">
+                            <span class="ml-2 text-sm text-gray-600">Définir comme adresse par défaut</span>
+                        </label>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Méthode de livraison -->
+            <div class="bg-white p-6 rounded-xl shadow-sm border border-green-100 mb-6">
+                <div class="flex items-center space-x-3 mb-6">
+                    <div class="flex-shrink-0">
+                        <span class="flex items-center justify-center h-10 w-10 rounded-full bg-red-100">
+                            <svg class="h-6 w-6 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/>
+                            </svg>
+                        </span>
+                    </div>
+                    <div>
+                        <h3 class="text-lg font-medium text-gray-900">Méthode de livraison</h3>
+                        <p class="text-sm text-gray-500">Choisissez votre mode de livraison préféré</p>
+                    </div>
+                </div>
+
+                <div class="space-y-4">
+                    {% for method in shipping_methods %}
+                    <label class="relative flex p-4 border-2 rounded-xl cursor-pointer hover:border-red-500 transition-all duration-200 bg-gradient-to-r from-red-50 to-red-100">
+                        <input type="radio" 
+                               name="shipping_method" 
+                               value="{{ method.id }}" 
+                               class="mt-1 h-4 w-4 text-red-600 border-gray-300 focus:ring-red-500"
+                               {% if forloop.first %}checked{% endif %}
+                               hx-post="{% url 'cart:update_shipping' %}"
+                               hx-trigger="change"
+                               hx-swap="innerHTML"
+                               hx-target="#order-details"
+                               hx-include="[name='shipping_method']">
+                        <div class="ml-4 flex-1">
+                            <span class="block font-medium text-gray-900">{{ method.name }}</span>
+                            <span class="block text-sm text-gray-600">{{ method.description }}</span>
+                            <span class="block text-red-600 font-medium mt-1">{{ method.price|floatformat:0 }} FCFA</span>
+                        </div>
+                    </label>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <!-- Bouton de paiement -->
+            <div class="mb-6">
+                <button type="submit"
+                        class="w-full bg-gradient-to-r from-green-600 to-yellow-500 text-white py-4 px-6 rounded-xl 
+                               hover:from-green-700 hover:to-yellow-600 transition-all duration-300 
+                               flex items-center justify-center gap-2 text-lg font-medium shadow-lg">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/>
+                    </svg>
+                    Payer de manière sécurisée
+                </button>
+            </div>
+
+            <!-- Résumé de la commande -->
+            <div class="lg:col-span-5 mt-8 lg:mt-0">
+                <div class="sticky top-[88px] lg:top-[130px]">
+                    <div class="bg-white rounded-xl shadow-lg border border-green-100 overflow-hidden flex flex-col">
+                        <div class="p-4 sm:p-6 border-b border-gray-200 flex-shrink-0">
+                            <h2 class="text-lg font-medium text-gray-900">Résumé de la commande</h2>
+                        </div>
+                        <div class="overflow-y-auto" style="max-height: calc(100vh - 15rem);" id="order-details">
+                            {% include 'cart/components/_order_details.html' %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const addressChoiceInputs = document.querySelectorAll('input[name="address_choice"]');
+    const newAddressForm = document.getElementById('new-address-form');
+
+    addressChoiceInputs.forEach(input => {
+        input.addEventListener('change', function() {
+            if (this.value === 'new') {
+                newAddressForm.classList.remove('hidden');
+            } else {
+                newAddressForm.classList.add('hidden');
+            }
+        });
+    });
+});
+</script>
+{% endblock %}

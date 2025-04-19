@@ -1,0 +1,51 @@
+{% load static %}
+{% load cart_tags %}
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}SuGu{% endblock %}</title>
+
+    <!-- Favicon -->
+    <link rel="icon" type="image/x-icon" href="{% static 'src/images/favicon.ico' %}">
+    
+    <!-- CSS -->
+    <link rel="stylesheet" href="{% static 'src/output.css' %}">
+
+    <!-- HTMX -->
+    <script src="https://unpkg.com/htmx.org@1.9.10"></script>
+
+    <!-- Hyperscript animation  apres ajout au panier-->
+    <script src="https://unpkg.com/hyperscript.org@0.9.12"></script>
+
+    {% block extra_head %}{% endblock %}
+</head>
+<body>
+    {% include 'header.html' %}
+    
+    <main class="min-h-screen">
+        {% block content %}{% endblock %}
+    </main>
+    
+    {% include 'footer.html' %}
+
+    <!-- Sidebars -->
+    {% include 'cart/sidebars/cart_sidebar.html' %}
+
+    {% include 'cart/sidebars/product_options_sidebar.html' %}  
+
+    <!-- Scripts des applications -->
+    {% include 'cart/scripts/_cart_scripts.html' %}
+
+    <!-- Configuration HTMX -->
+    {% csrf_token %}
+    <script>
+        document.body.addEventListener('htmx:configRequest', (event) => {
+            event.detail.headers['X-CSRFToken'] = '{{ csrf_token }}';
+        });
+    </script>
+
+    {% block extra_scripts %}{% endblock %}
+</body>
+</html>

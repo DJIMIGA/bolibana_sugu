@@ -1,0 +1,161 @@
+<div class="space-y-6">
+    <!-- Image et informations du produit -->
+    <div class="flex items-center space-x-4">
+        <img src="{{ product.image.url }}" 
+             alt="{{ product.title }}" 
+             class="w-20 h-20 object-cover rounded-lg border border-gray-200">
+        <div>
+            <h3 class="text-lg font-medium text-gray-900">{{ product.title }}</h3>
+            <p class="text-lg font-bold bg-gradient-to-r from-green-600 to-yellow-500 bg-clip-text text-transparent">
+                {{ product.price|floatformat:0 }} FCFA
+            </p>
+        </div>
+    </div>
+    {% if product and product.id %}
+    <!-- Formulaire d'options -->
+    <form id="add-to-cart-form-{{ product.id }}"
+          hx-post="{% url 'cart:add_to_cart' product_id=product.id %}"
+          hx-target="#cart-content"
+          hx-swap="innerHTML"
+          class="space-y-6">
+        
+        {% csrf_token %}
+        
+        {% if colors %}
+        <div class="mt-4">
+            <label class="block text-sm font-medium text-gray-700 mb-2">Couleur</label>
+            <div class="grid grid-cols-4 gap-2">
+                {% for color in colors %}
+                <label class="relative">
+                    <input type="radio" 
+                           name="color_id" 
+                           value="{{ color.id }}"
+                           class="peer absolute opacity-0"
+                           {% if colors.count == 1 %}checked{% endif %}
+                           {% if colors.exists %}required{% endif %}>
+                    <div class="p-2 text-sm border rounded-lg cursor-pointer 
+                               flex items-center justify-center space-x-2
+                               bg-white text-center transition-all duration-200
+                               peer-checked:bg-green-50 peer-checked:border-green-500 
+                               peer-checked:text-green-600 hover:bg-gray-50">
+                        <span class="w-4 h-4 rounded-full border"
+                              style="background-color: {{ color.color_code }};"></span>
+                        <span>{{ color.name }}</span>
+                    </div>
+                </label>
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+
+        {% if product_sizes %}
+        <div class="mt-4">
+            <label class="block text-sm font-medium text-gray-700 mb-2">Taille</label>
+            <div class="grid grid-cols-4 gap-2">
+                {% for size in product_sizes %}
+                <label class="relative">
+                    <input type="radio" 
+                           name="size_id" 
+                           value="{{ size.id }}"
+                           class="peer absolute opacity-0"
+                           {% if product_sizes.count == 1 %}checked{% endif %}
+                           {% if product_sizes.exists %}required{% endif %}>
+                    <div class="p-2 text-sm border rounded-lg cursor-pointer 
+                               bg-white text-center transition-all duration-200
+                               peer-checked:bg-green-50 peer-checked:border-green-500 
+                               peer-checked:text-green-600 hover:bg-gray-50">
+                        {{ size.name }}
+                    </div>
+                </label>
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Message d'erreur -->
+        <div id="error-message-{{ product.id }}" class="hidden text-red-600 text-sm mt-2"></div>
+
+        <!-- Indicateur de chargement -->
+        <div id="loading-{{ product.id }}" class="htmx-indicator">
+            <div class="flex justify-center">
+                <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-green-500"></div>
+            </div>
+        </div>
+
+        <!-- Bouton d'ajout au panier -->
+        
+        <button type="submit"
+                class="group w-full bg-gradient-to-r from-green-600 to-yellow-500 
+                       text-white py-3 px-4 rounded-lg 
+                       hover:from-green-700 hover:to-yellow-600 
+                       transition-all duration-300 flex items-center justify-center
+                       transform hover:scale-105"
+                hx-post="{% url 'cart:add_to_cart' product_id=product.id %}"
+                hx-target="#cart-content"
+                hx-swap="innerHTML"
+                hx-indicator="#loading-{{ product.id }}"
+                hx-trigger="click"
+                _="on click add .scale-95 to me 
+                   wait 150ms then remove .scale-95 from me
+                   on htmx:afterRequest[detail.successful]
+                   wait 300ms then call closeProductOptions()">
+            <svg class="w-5 h-5 mr-2 transition-transform duration-300 group-hover:scale-110" 
+                 fill="none" 
+                 stroke="currentColor" 
+                 viewBox="0 0 24 24">
+                <path stroke-linecap="round" 
+                      stroke-linejoin="round" 
+                      stroke-width="2" 
+                      d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"/>
+            </svg>
+            <span class="relative">
+                Ajouter au panier
+                <span class="absolute -bottom-1 left-0 w-full h-0.5 bg-white transform scale-x-0 transition-transform duration-300 group-hover:scale-x-100"></span>
+            </span>
+        </button>
+    </form>
+    {% else %}
+    <p class="text-gray-500">Aucune option disponible pour ce produit.</p>
+    {% endif %}
+</div>
+
+<!-- Script pour gérer les erreurs et le reset du formulaire -->
+<script>
+document.addEventListener('htmx:afterRequest', function(evt) {
+    const form = evt.detail.elt.closest('form');
+    const productId = form.id.split('-').pop();
+    const errorDiv = document.querySelector(`#error-message-${productId}`);
+    
+    if (evt.detail.successful) {
+        // Réinitialiser le formulaire et les messages d'erreur
+        form.reset();
+        if (errorDiv) {
+            errorDiv.classList.add('hidden');
+            errorDiv.textContent = '';
+        }
+    } else if (evt.detail.xhr.status === 400) {
+        // Afficher les erreurs
+        if (errorDiv) {
+            try {
+                const errors = JSON.parse(evt.detail.xhr.responseText);
+                errorDiv.textContent = Object.values(errors.errors).join(', ');
+                errorDiv.classList.remove('hidden');
+            } catch (e) {
+                errorDiv.textContent = evt.detail.xhr.responseText;
+                errorDiv.classList.remove('hidden');
+            }
+        }
+    }
+});
+
+// Ajouter un écouteur pour l'animation du bouton
+document.querySelectorAll('button[type="submit"]').forEach(button => {
+    button.addEventListener('click', function() {
+        const icon = this.querySelector('svg');
+        icon.classList.add('animate-bounce');
+        setTimeout(() => {
+            icon.classList.remove('animate-bounce');
+        }, 1000);
+    });
+});
+</script>

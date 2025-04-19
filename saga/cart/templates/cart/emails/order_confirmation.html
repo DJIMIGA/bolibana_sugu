@@ -1,0 +1,89 @@
+{% load static %}
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <style>
+        body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+        .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+        .header { text-align: center; padding: 20px 0; }
+        .order-info { background: #f9f9f9; padding: 15px; margin: 20px 0; border-radius: 5px; }
+        .items { margin: 20px 0; }
+        .item { padding: 15px 0; border-bottom: 1px solid #eee; display: flex; align-items: flex-start; }
+        .item-image { width: 100px; margin-right: 15px; }
+        .item-image img { max-width: 100%; height: auto; }
+        .item-details { flex: 1; }
+        .total { margin-top: 20px; text-align: right; }
+        .footer { text-align: center; margin-top: 30px; font-size: 0.9em; color: #666; }
+        .logo { max-width: 150px; height: auto; margin: 20px auto; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <img src="{{ domain_url }}/static/icons/bolibana.png" 
+                 alt="Logo de Boli Bana Sugu" 
+                 class="logo">
+            <h1>Confirmation de commande</h1>
+            <p>Merci pour votre commande !</p>
+        </div>
+
+        <div class="order-info">
+            <h2>Commande #{{ order.order_number }}</h2>
+            <p>Date : {{ order.created_at|date:"d/m/Y H:i" }}</p>
+            <p>Statut : {{ order.get_status_display }}</p>
+        </div>
+
+        <div class="delivery-info">
+            <h3>Informations de livraison</h3>
+            <p>{{ order.shipping_address.full_name }}</p>
+            <p>{{ order.shipping_address.street_address }}</p>
+            <p>{{ order.shipping_address.quarter }}</p>
+            <p>{{ order.shipping_address.city }}</p>
+            <p>Méthode de livraison : {{ order.shipping_method.name }}</p>
+        </div>
+
+        <div class="items">
+            <h3>Articles commandés</h3>
+            {% for item in order.items.all %}
+            <div class="item">
+                <div class="item-image">
+                    {% if item.product.image %}
+                    <img src="{{ domain_url }}/media/{{ item.product.image }}" alt="{{ item.product.title }}">
+                    {% else %}
+                    <img src="{{ domain_url }}/static/icons/no-image.png" alt="Image non disponible">
+                    {% endif %}
+                </div>
+                <div class="item-details">
+                    <p>
+                        <strong>{{ item.product.title }}</strong><br>
+                        Quantité : {{ item.quantity }}<br>
+                        Prix unitaire : {{ item.price|floatformat:0 }} FCFA
+                        {% if item.colors.exists or item.sizes.exists %}
+                        <br>
+                        {% if item.colors.exists %}
+                        Couleur : {% for color in item.colors.all %}{{ color.name }}{% endfor %}
+                        {% endif %}
+                        {% if item.sizes.exists %}
+                        Taille : {% for size in item.sizes.all %}{{ size.name }}{% endfor %}
+                        {% endif %}
+                        {% endif %}
+                    </p>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+
+        <div class="total">
+            <p>Sous-total : {{ order.subtotal|floatformat:0 }} FCFA</p>
+            <p>Frais de livraison : {{ order.shipping_cost|floatformat:0 }} FCFA</p>
+            <h3>Total : {{ order.total|floatformat:0 }} FCFA</h3>
+        </div>
+
+        <div class="footer">
+            <p>Pour toute question concernant votre commande, n'hésitez pas à nous contacter.</p>
+            <p>L'équipe Boli Bana Sugu</p>
+        </div>
+    </div>
+</body>
+</html> 
