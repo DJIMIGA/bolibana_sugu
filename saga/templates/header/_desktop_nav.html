@@ -1,0 +1,58 @@
+{% load static %}
+{% load category_tags %}
+
+<style>
+@keyframes rotateArrow {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(180deg); }
+}
+
+.arrow-rotate {
+    animation: rotateArrow 0.3s ease-in-out forwards;
+}
+
+.arrow-rotate-reverse {
+    animation: rotateArrow 0.3s ease-in-out reverse;
+}
+</style>
+
+<div class="bg-white hidden lg:block">
+    <div class="max-w-8xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="flex h-16 items-center justify-between py-2">
+            <!-- Logo et menu déroulant -->
+            <div class="flex items-center space-x-8">
+                <a href="{% url 'supplier_index' %}">
+                    <span class="sr-only">Workflow</span>
+                    <img class="h-12 mx-auto transition-transform duration-300 hover:scale-110"
+                         src="{% static 'icons/bolibana.png' %}" alt="logo de bolibana sugu">
+                </a>
+                
+                {% include 'components/_category_dropdown.html' %}
+            </div>
+
+            {% include 'components/_search_desktop.html' %}
+
+            <div class="flex items-center space-x-6 mx-auto">
+                <a href="tel:+22372464294"
+                   class="inline-flex items-center gap-2 px-3 py-1.5 rounded-full shadow-md bg-gradient-to-r from-yellow-400 to-yellow-500 text-green-900 font-semibold hover:from-yellow-300 hover:to-yellow-400 hover:shadow-lg transition-all duration-300 group">
+                    <svg class="w-6 h-6 text-green-900 group-hover:text-green-700 transition-colors duration-300"
+                         xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8">
+                        <path stroke-linecap="round" stroke-linejoin="round"
+                              d="M2 6.5C2 5.12 3.12 4 4.5 4H6a1 1 0 011 1v3.28a1 1 0 01-.684.948l-1.14.38a11.042 11.042 0 005.536 5.536l.38-1.14A1 1 0 0113.72 14H17a1 1 0 011 1v1.5c0 1.38-1.12 2.5-2.5 2.5C7.596 19 2 13.404 2 6.5z"/>
+                    </svg>
+                    <span class="text-xs font-medium group-hover:text-green-800 transition-colors duration-300">
+                        +223 72 46 42 94
+                    </span>
+                </a>
+            </div>
+
+            <!-- Actions utilisateur -->
+            <div class="flex items-center space-x-6">
+                {% include 'accounts/components/_profile_button.html' %}
+                {% include 'components/_cart_button.html' %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="{% static 'js/menu-category.js' %}"></script> 

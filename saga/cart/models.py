@@ -26,9 +26,19 @@ class Cart(models.Model):
         if request.user.is_authenticated:
             cart, created = cls.objects.get_or_create(user=request.user)
         else:
+            # S'assurer que la session existe et est sauvegardée
             if not request.session.session_key:
                 request.session.create()
-            cart, created = cls.objects.get_or_create(session_key=request.session.session_key)
+                request.session.save()  # Force la sauvegarde de la session
+            
+            session_key = request.session.session_key
+            
+            # Rechercher un panier existant
+            cart = cls.objects.filter(session_key=session_key).first()
+            
+            if not cart:
+                cart = cls.objects.create(session_key=session_key)
+        
         return cart
 
 

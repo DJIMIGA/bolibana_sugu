@@ -3,8 +3,8 @@
 
 {% block content %}
 {% if not user.is_authenticated %}
-<div class="min-h-screen bg-gradient-to-br from-green-100 to-yellow-100 flex items-center justify-center px-4 py-12 sm:px-6 lg:px-8">
-    <div class="max-w-md w-full space-y-8 bg-white p-10 rounded-xl shadow-2xl transform transition-all hover:scale-105 duration-300">
+<div class="min-h-screen bg-gradient-to-br from-green-100 to-yellow-100 flex items-center justify-center px-4 sm:px-6 lg:px-8">
+    <div class="max-w-md w-full space-y-8 bg-white px-10 rounded-xl shadow-2xl transform transition-all hover:scale-105 duration-300">
         <div>
             <a href="{% url 'supplier_index' %}" class="block text-center">
                 <img src="{% static 'icons/bolibana.png' %}" alt="Logo de Sugu" class="h-16 mx-auto">

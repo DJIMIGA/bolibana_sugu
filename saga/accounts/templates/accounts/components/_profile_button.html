@@ -1,0 +1,78 @@
+{% load static %}
+<div class="flex items-center justify-center relative">
+    <button type="button" 
+            id="profileButton"
+            class="group relative focus:outline-none">
+        <div class="absolute inset-0 bg-green-500 rounded-full opacity-75 blur-xs group-hover:opacity-100 transition-opacity duration-300"></div>
+        <div class="relative p-2 bg-white rounded-full shadow-md transform transition-transform duration-300 group-hover:scale-110">
+            <span class="sr-only">Menu du compte</span>
+            <svg class="w-6 h-6 text-green-600 group-hover:text-yellow-600 transition-colors duration-300"
+                 xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
+                 stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                      d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
+            </svg>
+        </div>
+    </button>
+
+    <!-- Menu déroulant desktop -->
+    <div id="profileMenu"
+         class="absolute top-full mt-3 bg-white rounded-lg shadow-2xl py-2 z-50 hidden opacity-0 scale-95 transform transition-all duration-300 ease-out w-72 left-1/2 -translate-x-1/2">
+        <div class="px-4 py-3 border-b border-gray-100">
+            <h3 class="text-lg font-bold text-[#008000]">Menu</h3>
+        </div>
+
+        {% if user.is_authenticated %}
+        <a href="{% url 'accounts:profile' %}"
+           class="flex items-center px-4 py-3 text-sm text-gray-700 hover:bg-[#f0f8f0] transition-colors duration-200">
+            <svg class="w-6 h-6 mr-3 text-[#008000]" xmlns="http://www.w3.org/2000/svg" fill="none"
+                 viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                      d="M5.121 17.804A13.937 13.937 0 0112 16c2.5 0 4.847.655 6.879 1.804M15 10a3 3 0 11-6 0 3 3 0 016 0zm6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+            </svg>
+            Mon profil
+        </a>
+        <a href="{% url 'cart:my_orders' %}"
+           class="flex items-center px-4 py-3 text-sm text-gray-700 hover:bg-[#fffaf0] transition-colors duration-200">
+            <svg class="w-6 h-6 mr-3 text-[#FFD700]" xmlns="http://www.w3.org/2000/svg" fill="none"
+                 viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                      d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"/>
+            </svg>
+            Mes commandes
+        </a>
+       
+        <div class="border-t border-gray-100 my-2"></div>
+        <a href="{% url 'accounts:logout' %}"
+           class="flex items-center px-4 py-3 text-sm text-red-600 hover:bg-red-50 transition-colors duration-200">
+            <svg class="w-6 h-6 mr-3 text-red-500" xmlns="http://www.w3.org/2000/svg" fill="none"
+                 viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                      d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1"/>
+            </svg>
+            Se déconnecter
+        </a>
+        {% else %}
+        <a href="{% url 'accounts:login' %}"
+           class="flex items-center px-4 py-3 text-sm text-gray-700 hover:bg-[#f0f8f0] transition-colors duration-200">
+            <svg class="w-6 h-6 mr-3 text-[#008000]" xmlns="http://www.w3.org/2000/svg" fill="none"
+                 viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                      d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1"/>
+            </svg>
+            Se connecter
+        </a>
+        <a href="{% url 'accounts:signup' %}"
+           class="flex items-center px-4 py-3 text-sm text-gray-700 hover:bg-[#fffaf0] transition-colors duration-200">
+            <svg class="w-6 h-6 mr-3 text-[#FFD700]" xmlns="http://www.w3.org/2000/svg" fill="none"
+                 viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                      d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z"/>
+            </svg>
+            Créer un compte
+        </a>
+        {% endif %}
+    </div>
+</div>
+
+<script src="{% static 'accounts/js/profile-button.js' %}" defer></script> 

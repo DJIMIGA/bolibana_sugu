@@ -13,16 +13,16 @@
 </head>
 <body>
 {% if query %}
-<div class="bg-gradient-to-br from-green-500 via-yellow-500 to-red-500 p-4 rounded-lg shadow-md">
+<div class="bg-white p-4 rounded-lg shadow-md">
     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
         {% if products %}
             <div>
-                <h3 class="text-lg font-bold text-white mb-2 border-b border-white pb-2">🛍️ Produits trouvés ({{ products_count }})</h3>
+                <h3 class="text-lg font-bold text-gray-800 mb-2 border-b border-gray-800 pb-2">🛍️ Produits trouvés ({{ products_count }})</h3>
                 <ul class="list-none">
                     {% for product in products %}
                     <li class="mb-3">
                         <a href="{% url 'product_detail' product.pk %}"
-                           class="block bg-white text-gray-800 font-medium p-2 rounded-lg hover:bg-yellow-200 transition duration-300 shadow">
+                           class="block bg-white text-sm text-gray-800 font-medium p-2 rounded-lg hover:bg-yellow-200 transition duration-300 shadow">
                             {{ product.title }}
                         </a>
                     </li>
@@ -33,12 +33,12 @@
 
         {% if search_categories %}
             <div>
-                <h3 class="text-lg font-bold text-white mb-2 border-b border-white pb-2">📂 Catégories trouvées ({{ categories_count }})</h3>
+                <h3 class="text-lg font-bold text-gray-800 mb-2 border-b border-gray-800 pb-2">📂 Catégories trouvées ({{ categories_count }})</h3>
                 <ul class="list-none">
                     {% for category in search_categories %}
                     <li class="mb-3">
                         <a href="#"
-                           class="block bg-white text-gray-800 font-medium p-2 rounded-lg hover:bg-yellow-200 transition duration-300 shadow"
+                           class="block bg-white text-sm text-gray-800 font-medium p-2 rounded-lg hover:bg-yellow-200 transition duration-300 shadow"
                            style="background-color: {{ category.background_color }};">
                             {{ category.name }}
                         </a>
@@ -50,7 +50,7 @@
     </div>
 
     {% if not products and not search_categories %}
-        <p class="text-white text-center font-semibold mt-4">🚫 Aucun produit ou catégorie trouvé.</p>
+        <p class="text-gray-800 text-center font-semibold mt-4">🚫 Aucun produit ou catégorie trouvé.</p>
     {% endif %}
 </div>
 

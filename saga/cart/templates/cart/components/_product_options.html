@@ -1,9 +1,12 @@
 <div class="space-y-6">
     <!-- Image et informations du produit -->
-    <div class="flex items-center space-x-4">
-        <img src="{{ product.image.url }}" 
-             alt="{{ product.title }}" 
-             class="w-20 h-20 object-cover rounded-lg border border-gray-200">
+    {% if product.image %}
+    <div class="flex items-center space-x-6">
+        <div class="w-32 h-32 bg-gray-50 rounded-lg overflow-hidden flex items-center justify-center">
+            <img src="{{ product.image.url }}" 
+                 alt="{{ product.title }}" 
+                 class="max-h-full max-w-full object-contain">
+        </div>
         <div>
             <h3 class="text-lg font-medium text-gray-900">{{ product.title }}</h3>
             <p class="text-lg font-bold bg-gradient-to-r from-green-600 to-yellow-500 bg-clip-text text-transparent">
@@ -11,6 +14,7 @@
             </p>
         </div>
     </div>
+    {% endif %}
     {% if product and product.id %}
     <!-- Formulaire d'options -->
     <form id="add-to-cart-form-{{ product.id }}"
@@ -39,7 +43,7 @@
                                peer-checked:bg-green-50 peer-checked:border-green-500 
                                peer-checked:text-green-600 hover:bg-gray-50">
                         <span class="w-4 h-4 rounded-full border"
-                              style="background-color: {{ color.color_code }};"></span>
+                              style="background-color: {{ color.code }};"></span>
                         <span>{{ color.name }}</span>
                     </div>
                 </label>

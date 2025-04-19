@@ -107,55 +107,60 @@ def render_cart_total(request, cart, cart_items):
 
 
 @receiver(user_logged_in)
-def migrate_anonymous_cart(sender, user, **kwargs):
+def migrate_anonymous_cart(sender, request, user, **kwargs):
     """
     Migre le panier d'un utilisateur anonyme vers son compte lors de la connexion.
     """
     try:
-        # Récupérer la session_key du signal
-        session_key = kwargs.get('request').session.session_key
+        # Récupérer l'ancienne session key depuis la requête
+        old_session_key = request.session.get('_old_session_key')
         
-        if session_key:
-            # Récupérer le panier anonyme
-            anonymous_cart = Cart.objects.filter(session_key=session_key).first()
+        if old_session_key:
+            # Récupérer le panier anonyme avec l'ancienne session key
+            anonymous_cart = Cart.objects.filter(session_key=old_session_key).first()
             
             if anonymous_cart:
                 # Récupérer ou créer le panier de l'utilisateur
                 user_cart, created = Cart.objects.get_or_create(user=user)
                 
-                if created:
-                    # Si c'est un nouveau panier, copier tous les items
-                    for item in anonymous_cart.items.all():
-                        CartItem.objects.create(
-                            cart=user_cart,
-                            product=item.product,
-                            quantity=item.quantity,
-                            color=item.color,
-                            size=item.size
+                # Copier tous les items du panier anonyme vers le panier utilisateur
+                for anonymous_item in anonymous_cart.cart_items.all():
+                    # Vérifier si l'item existe déjà dans le panier utilisateur
+                    existing_item = None
+                    user_cart_items = user_cart.cart_items.filter(product=anonymous_item.product)
+                    
+                    for item in user_cart_items:
+                        # Vérifier les couleurs
+                        colors_match = (
+                            set(item.colors.all().values_list('id', flat=True)) == 
+                            set(anonymous_item.colors.all().values_list('id', flat=True))
                         )
-                else:
-                    # Si le panier existe déjà, fusionner les items
-                    for anonymous_item in anonymous_cart.items.all():
-                        # Vérifier si l'item existe déjà dans le panier utilisateur
-                        existing_item = user_cart.items.filter(
-                            product=anonymous_item.product,
-                            color=anonymous_item.color,
-                            size=anonymous_item.size
-                        ).first()
+                        # Vérifier les tailles
+                        sizes_match = (
+                            set(item.sizes.all().values_list('id', flat=True)) == 
+                            set(anonymous_item.sizes.all().values_list('id', flat=True))
+                        )
                         
-                        if existing_item:
-                            # Mettre à jour la quantité
-                            existing_item.quantity += anonymous_item.quantity
-                            existing_item.save()
-                        else:
-                            # Créer un nouvel item
-                            CartItem.objects.create(
-                                cart=user_cart,
-                                product=anonymous_item.product,
-                                quantity=anonymous_item.quantity,
-                                color=anonymous_item.color,
-                                size=anonymous_item.size
-                            )
+                        if colors_match and sizes_match:
+                            existing_item = item
+                            break
+                    
+                    if existing_item:
+                        # Mettre à jour la quantité
+                        existing_item.quantity += anonymous_item.quantity
+                        existing_item.save()
+                    else:
+                        # Créer un nouvel item
+                        new_item = CartItem.objects.create(
+                            cart=user_cart,
+                            product=anonymous_item.product,
+                            quantity=anonymous_item.quantity
+                        )
+                        # Copier les couleurs et tailles
+                        if anonymous_item.colors.exists():
+                            new_item.colors.set(anonymous_item.colors.all())
+                        if anonymous_item.sizes.exists():
+                            new_item.sizes.set(anonymous_item.sizes.all())
                 
                 # Supprimer le panier anonyme
                 anonymous_cart.delete()
@@ -163,3 +168,5 @@ def migrate_anonymous_cart(sender, user, **kwargs):
     except Exception as e:
         # Log l'erreur mais ne pas bloquer la connexion
         print(f"Erreur lors de la migration du panier: {str(e)}")
+        import traceback
+        print(traceback.format_exc())

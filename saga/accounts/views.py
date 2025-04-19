@@ -12,6 +12,8 @@ from django.utils.http import urlsafe_base64_encode
 from django.utils.encoding import force_bytes
 from django.contrib.auth.tokens import default_token_generator
 from django.utils import timezone
+from django.contrib.auth.views import LoginView as AuthLoginView
+from django.utils.translation import gettext_lazy as _
 User = get_user_model()
 
 from .models import Shopper, ShippingAddress, TwoFactorCode
@@ -146,22 +148,21 @@ def signup(request):
     return render(request, 'accounts/signup.html', {'form': form})
 
 
-class LoginView(FormView):
+class LoginView(AuthLoginView):
     template_name = 'accounts/login.html'
-    form_class = AuthenticationForm
+    redirect_authenticated_user = True
     success_url = reverse_lazy('supplier_index')
 
     def form_valid(self, form):
-        # Utilisé auth_login qui déclenche correctement le signal user_logged_in
-        auth_login(self.request, form.get_user())
+        """Surcharge pour préserver l'ancienne session key."""
+        # Sauvegarder l'ancienne session key
+        self.request.session['_old_session_key'] = self.request.session.session_key
+        
+        # Appeler la méthode parente qui déclenche le signal
         return super().form_valid(form)
 
-    def form_invalid(self, form):
-        messages.error(self.request, "Email ou mot de passe incorrect.")
-        return super().form_invalid(form)
-
     def get_success_url(self):
-        #Ajouté la gestion du paramètre next pour la redirection après connexion
+        """Gère la redirection après connexion."""
         next_url = self.request.GET.get('next')
         if next_url:
             return next_url

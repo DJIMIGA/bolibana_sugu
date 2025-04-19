@@ -1,0 +1,48 @@
+{% load static %}
+
+<div class="relative flex-1 max-w-lg lg:max-w-xl mx-auto">
+    <div class="relative flex items-center">
+        <form id="form-desktop" method="get" action="{% url 'search' %}" class="z-20 relative w-full">
+            <div class="flex items-center bg-white border border-green-300 rounded-lg shadow-md overflow-hidden focus-within:ring-2 focus-within:ring-green-500 transition-all duration-200">
+                
+                <!-- Icône loupe -->
+                <span class="pl-3 text-gray-500">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-4.35-4.35m0 0A7 7 0 1010 17.65a7 7 0 006.65-1.85z" />
+                    </svg>
+                </span>
+
+                <!-- Champ de recherche -->
+                <input
+                    type="text"
+                    id="search-input-desktop"
+                    name="q"
+                    autocomplete="off"
+                    placeholder="Rechercher un produit..."
+                    aria-label="Search"
+                    class="flex-grow bg-transparent text-sm text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-0 focus:border-0 py-1.5 px-3 border-0"
+                    hx-get="{% url 'search' %}"
+                    hx-target="#results-desktop"
+                    hx-trigger="keyup changed delay:500ms"
+                    hx-push-url="false"
+                    hx-swap="innerHTML"
+                />
+
+                <!-- Loader -->
+                <div class="htmx-indicator pr-3">
+                    <svg class="animate-spin h-4 w-4 text-green-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" />
+                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.37 0 0 5.37 0 12h4zm2 5.29A7.96 7.96 0 014 12H0c0 3.04 1.14 5.82 3 7.94l3-2.65z" />
+                    </svg>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Résultats AJAX -->
+<div id="results-desktop" class="hidden absolute z-50 w-full max-w-4xl bg-white rounded-lg shadow-xl border border-green-100 overflow-hidden" style="top: 100%; left: 50%; transform: translateX(-50%);">
+    {% include 'search_results.html' %}
+</div>
+
+<script src="{% static 'search/js/search-desktop.js' %}"></script>

@@ -1,35 +1,7 @@
 {% extends 'base.html' %}
 {% load static %}
 {% block content %}
-<div class="min-h-screen bg-gradient-to-br from-green-50 via-yellow-50 to-red-50 py-12 px-4 sm:px-6 lg:px-8">
-    <div class="max-w-7xl mx-auto">
-        <!-- Carte principale -->
-        <div class="bg-white rounded-2xl shadow-xl overflow-hidden transition-transform duration-300 hover:shadow-2xl hover:scale-[1.02]">
-            <!-- En-tête avec dégradé -->
-            <div class="relative h-36 bg-gradient-to-r from-green-600 via-yellow-500 to-red-600 flex items-center px-8 rounded-t-2xl">
-                <div class="flex items-center space-x-6">
-                    <!-- Icône ou image du fournisseur -->
-                    <div class="h-16 w-16 bg-white/30 rounded-full flex items-center justify-center shadow-md">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 13V7a4 4 0 00-8 0v6m4 0v6m4 0H8m4 0H4" />
-                        </svg>
-                    </div>
 
-                    <!-- Informations sur le fournisseur -->
-                    <div class="text-white">
-                        <h1 class="text-3xl font-bold">{{ supplier.name }}</h1>
-                        <span class="inline-flex items-center px-4 py-2 mt-2 rounded-full text-sm font-medium bg-white/20 text-white backdrop-blur-sm shadow-sm">
-                            {{ supplier.specialty }}
-                        </span>
-                    </div>
-                </div>
-            </div>
 
-            <!-- Contenu principal -->
-            <div class="p-6 space-y-6">
-                {% include 'product_list.html' %}
-            </div>
-        </div>
-    </div>
-</div>
+{% include 'product_list.html' %}
 {% endblock %}

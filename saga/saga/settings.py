@@ -46,12 +46,12 @@ ALLOWED_HOSTS = [
     '0.0.0.0',
     '.ngrok.io',
     '*',  # Temporairement pour le développement
-    'https://a7d6-2a02-842a-3cca-9501-5d98-6d31-91ad-1bbd.ngrok-free.app',  # Temporairement pour le développement
+    'https://1f0e-2a02-842a-3cca-9501-d479-d253-2c1a-4d33.ngrok-free.app',  # Temporairement pour le développement
 ] 
 
 CSRF_TRUSTED_ORIGINS = [
     'https://*.ngrok.io',
-    'https://a7d6-2a02-842a-3cca-9501-5d98-6d31-91ad-1bbd.ngrok-free.app',
+    'https://1f0e-2a02-842a-3cca-9501-d479-d253-2c1a-4d33.ngrok-free.app',
     'http://localhost:8000',
     'http://127.0.0.1:8000',
 ] 
@@ -78,6 +78,8 @@ INSTALLED_APPS = [
     'django_filters', 
     'rest_framework_simplejwt',
     'stripe',
+    'crispy_forms',
+    'crispy_tailwind',
 ]
 
 MIDDLEWARE = [
@@ -180,6 +182,10 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 AUTH_USER_MODEL = 'accounts.Shopper'
 PHONENUMBER_DEFAULT_REGION = "ML"
 
+# Configuration de la redirection après connexion
+LOGIN_REDIRECT_URL = 'supplier_index'
+
+
 REVIEW_PRODUCT_MODEL = 'product.Product'
 
 EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
@@ -229,3 +235,7 @@ SIMPLE_JWT = {
     'USER_ID_FIELD': 'id',
     'USER_ID_CLAIM': 'user_id',
 }
+
+# Configuration de crispy forms
+CRISPY_ALLOWED_TEMPLATE_PACKS = "tailwind"
+CRISPY_TEMPLATE_PACK = "tailwind" 

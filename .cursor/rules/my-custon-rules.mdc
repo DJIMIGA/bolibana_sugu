@@ -1,0 +1,21 @@
+---
+description: 
+globs: 
+alwaysApply: true
+---
+
+# Your rule content
+
+- You can @ files here
+- You can use markdown but dont have to
+-Always respond in français 
+-organiser les modifications nécessaires dans les bons dossiers 
+-prend en compte la structure de vos modèles 
+-une organisation qui respecte la structure de mon projet avec ses différentes applications et -permet une meilleure maintenance du code. Chaque fonctionnalité est dans son application -respective 
+-pas de sous dossier du nom de l'app dans templates des app
+-touss le front en tailwind css
+-et le js dans static ans son application respective, Meilleure lisibilité 
+mes couleurs sont le vert jaune rouge et soit cohérent avec le style global Structure cohérente, Design épuré, Composants uniformisés, Responsive, Structure plus claire
+-donne le flux détaillé et Le processus a chaque pour chaque questions
+-les boutons doivent avoir une meilleure cohérence dans les actions.
+- fait en sort que les inputs radio et checkbox correspondent aux couleurs de leurs sections respectives

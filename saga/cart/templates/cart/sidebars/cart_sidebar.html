@@ -1,18 +1,19 @@
 <div id="cart-sidebar" class="fixed inset-0 overflow-hidden z-50 pointer-events-none">
-    <!-- Overlay avec effet de flou -->
+    <!-- Overlay avec effet de flou (uniquement sur desktop) -->
     <div id="cart-overlay" 
-         class="cart-sidebar-overlay"
+         class="cart-sidebar-overlay hidden lg:block"
          onclick="closeCart()">
     </div>
 
-    <div class="pointer-events-none fixed inset-y-0 right-0 flex max-w-full pl-10">
+    <!-- Container principal -->
+    <div class="pointer-events-none fixed inset-y-0 right-0 flex w-full lg:w-auto lg:pl-10">
         <div id="cart-container" 
-             class="cart-sidebar-container">
-            <div class="flex h-full flex-col overflow-y-scroll bg-white shadow-xl rounded-l-2xl">
-                <!-- En-tête du panier -->
-                <div class="cart-sidebar-header">
+             class="cart-sidebar-container w-full lg:w-[32rem]">
+            <div class="flex h-full flex-col bg-white shadow-xl lg:rounded-l-2xl">
+                <!-- En-tête du panier (fixe) -->
+                <div class="cart-sidebar-header p-4 border-b border-gray-200 bg-white sticky top-0 z-10">
                     <div class="flex items-center justify-between">
-                        <h2 class="text-lg font-bold  flex items-center space-x-3">
+                        <h2 class="text-lg font-bold flex items-center space-x-3">
                             <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
                                       d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"/>
@@ -30,8 +31,8 @@
                     </div>
                 </div>
 
-                <!-- Contenu du panier -->
-                <div id="cart-content">
+                <!-- Contenu du panier (défilant) -->
+                <div id="cart-content" class="flex-1 overflow-y-auto">
                     {% include 'cart/components/_cart_content.html' %}
                 </div>
             </div>

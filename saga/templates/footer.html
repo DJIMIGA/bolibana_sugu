@@ -175,7 +175,7 @@
       </div>
 
       <!-- Liens rapides -->
-      <div class="grid grid-cols-2 gap-8 md:grid-cols-4 lg:col-span-2">
+      <div class="grid grid-cols-2 gap-2 md:grid-cols-4 lg:col-span-2">
         <div>
           <h3 class="text-xl font-semibold text-gray-900 mb-4">À propos</h3>
           <ul class="space-y-3 text-base">
@@ -206,7 +206,7 @@
               <svg class="h-6 w-6 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/>
               </svg>
-              <span class="text-gray-600">contact@bolibana.com</span>
+              <a href="mailto:bolibanasugu@gmail.com" class="text-gray-600 ">bolibanasugu@gmail.com</a>
             </li>
             <li class="flex items-center gap-3">
               <svg class="h-6 w-6 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -230,8 +230,8 @@
     <div class="mt-12 border-t border-gray-200 pt-8 flex flex-col sm:flex-row justify-between items-center text-sm text-gray-500">
       <p>&copy; 2025 BoliBana - Tous droits réservés</p>
       <div class="flex space-x-6 mt-4 sm:mt-0">
-        <a href="#" class="hover:text-green-600 transition-colors duration-300">Conditions d'utilisation</a>
-        <a href="#" class="hover:text-green-600 transition-colors duration-300">Politique de confidentialité</a>
+        <a href="{% url 'terms_conditions' %}" class="hover:text-green-600 transition-colors duration-300">Mentions Légales</a>
+        <a href="{% url 'cgv' %}" class="hover:text-green-600 transition-colors duration-300">CGV</a>
       </div>
     </div>
   </div>

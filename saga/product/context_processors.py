@@ -3,7 +3,59 @@ from .models import Category
 
 
 def categories_processor(request):
-    return {}
+    # Récupérer les catégories principales avec leurs sous-catégories en une seule requête
+    categories = Category.objects.filter(parent__isnull=True).prefetch_related(
+        'children__children'  # Optimisation des requêtes avec prefetch_related
+    )
+    
+    # Créer un dictionnaire pour stocker la hiérarchie par ID
+    categories_hierarchy = {}
+    
+    # Pour chaque catégorie principale
+    for category in categories:
+        categories_hierarchy[category.id] = {
+            'category': category,
+            'subcategories': {},
+            'subsubcategories': {}
+        }
+        
+        # Récupérer les sous-catégories
+        for subcategory in category.children.all():
+            categories_hierarchy[category.id]['subcategories'][subcategory.id] = {
+                'subcategory': subcategory,
+                'subsubcategories': list(subcategory.children.all())
+            }
+    
+    return {
+        "categories": categories,
+        "categories_hierarchy": categories_hierarchy,
+    }
+
+
+def subcategories_processor(request):
+    # Récupérer les catégories principales
+    main_categories = Category.objects.filter(parent__isnull=True)
+    
+    # Créer un dictionnaire pour stocker les sous-catégories par parent
+    subcategories_by_parent = {}
+    
+    # Pour chaque catégorie principale, récupérer ses sous-catégories
+    for category in main_categories:
+        subcategories = Category.objects.filter(parent=category)
+        subcategories_by_parent[category.slug] = {
+            'category': category,
+            'subcategories': subcategories,
+            'subsubcategories': {}
+        }
+        
+        # Pour chaque sous-catégorie, récupérer ses sous-sous-catégories
+        for subcategory in subcategories:
+            subsubcategories = Category.objects.filter(parent=subcategory)
+            subcategories_by_parent[category.slug]['subsubcategories'][subcategory.slug] = subsubcategories
+    
+    return {
+        "subcategories_by_parent": subcategories_by_parent,
+    }
 
 
 # def categories_processor(request):

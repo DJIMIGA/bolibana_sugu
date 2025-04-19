@@ -22,7 +22,9 @@ class CartSidebar {
             return;
         }
 
+        this.isMobile = window.innerWidth < 1024; // lg breakpoint
         this.bindEvents();
+        this.bindResize();
         console.log('CartSidebar: Initialisation terminée');
     }
 
@@ -49,35 +51,45 @@ class CartSidebar {
         console.log('CartSidebar: Événements liés');
     }
 
+    bindResize() {
+        window.addEventListener('resize', () => {
+            this.isMobile = window.innerWidth < 1024;
+            if (this.isOpen) {
+                this.open(); // Réappliquer les classes appropriées
+            }
+        });
+    }
+
     open() {
         console.log('CartSidebar: Ouverture...');
-        console.log('Classes avant ouverture:', {
-            sidebar: this.sidebar.className,
-            overlay: this.overlay.className,
-            container: this.container.className
-        });
-
+        this.isOpen = true;
+        
         // Activer les interactions
         this.sidebar.classList.remove('pointer-events-none');
-        this.overlay.classList.remove('opacity-0');
-        this.overlay.classList.add('opacity-100');
+        
+        if (!this.isMobile) {
+            // Overlay uniquement sur desktop
+            this.overlay.classList.remove('opacity-0');
+            this.overlay.classList.add('opacity-100');
+        }
+        
+        // Animation du container
         this.container.classList.remove('translate-x-full');
         this.container.classList.add('translate-x-0');
+        
         document.body.style.overflow = 'hidden';
-
-        console.log('Classes après ouverture:', {
-            sidebar: this.sidebar.className,
-            overlay: this.overlay.className,
-            container: this.container.className
-        });
     }
 
     close() {
         console.log('CartSidebar: Fermeture...');
+        this.isOpen = false;
         
         // Désactiver les interactions
-        this.overlay.classList.remove('opacity-100');
-        this.overlay.classList.add('opacity-0');
+        if (!this.isMobile) {
+            this.overlay.classList.remove('opacity-100');
+            this.overlay.classList.add('opacity-0');
+        }
+        
         this.container.classList.remove('translate-x-0');
         this.container.classList.add('translate-x-full');
         

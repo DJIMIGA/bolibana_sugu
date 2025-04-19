@@ -31,83 +31,77 @@ from django.utils.translation import gettext_lazy as _
 def add_to_cart(request, product_id):
     if request.method == 'POST':
         try:
-            print(f"\n=== Début de add_to_cart ===")
-            print(f"Product ID: {product_id}")
-            
             product = get_object_or_404(Product, id=product_id)
-            print(f"Produit trouvé: {product.title}")
             
-            color_id = request.POST.get('color')
-            size_id = request.POST.get('size')
+            # Vérifier si le produit est un vêtement
+            is_clothing = hasattr(product, 'clothing_product')
+            
+            color_id = request.POST.get('color_id')
+            size_id = request.POST.get('size_id')
             quantity = int(request.POST.get('quantity', 1))
-            
-            print(f"Paramètres reçus - Couleur ID: {color_id}, Taille ID: {size_id}, Quantité: {quantity}")
 
-            # Validation des attributs
-            validator = ProductAttributeValidator(product)
-            validator.validate_attributes(attributes={'color_id': color_id, 'size_id': size_id})
-            print("Validation des attributs réussie")
+            # Validation des attributs uniquement si c'est un vêtement
+            if is_clothing:
+                validator = ProductAttributeValidator(product)
+                validator.validate_attributes(attributes={'color_id': color_id, 'size_id': size_id})
 
             # Récupérer ou créer le panier
             cart = Cart.get_or_create_cart(request)
-            print(f"Panier récupéré/créé: {cart.id}")
 
-            # Vérifier si l'article existe déjà dans le panier
+            # Vérifier si l'article existe déjà dans le panier avec les mêmes attributs
             existing_item = None
             cart_items = cart.cart_items.filter(product=product)
             
             for item in cart_items:
-                # Vérifier si les couleurs correspondent
-                colors_match = (
-                    (not color_id and not item.colors.exists()) or
-                    (color_id and item.colors.filter(id=color_id).exists())
-                )
-                # Vérifier si les tailles correspondent
-                sizes_match = (
-                    (not size_id and not item.sizes.exists()) or
-                    (size_id and item.sizes.filter(id=size_id).exists())
-                )
-                
-                if colors_match and sizes_match:
+                # Pour les vêtements, vérifier les attributs
+                if is_clothing:
+                    # Vérifier si les couleurs correspondent exactement
+                    item_colors = set(item.colors.values_list('id', flat=True))
+                    request_colors = {int(color_id)} if color_id else set()
+                    colors_match = item_colors == request_colors
+                    
+                    # Vérifier si les tailles correspondent exactement
+                    item_sizes = set(item.sizes.values_list('id', flat=True))
+                    request_sizes = {int(size_id)} if size_id else set()
+                    sizes_match = item_sizes == request_sizes
+                    
+                    if colors_match and sizes_match:
+                        existing_item = item
+                        break
+                else:
+                    # Pour les produits non-vêtements, vérifier uniquement le produit
                     existing_item = item
                     break
 
             if existing_item:
-                print(f"Article existant trouvé: {existing_item.id}")
                 # Mettre à jour la quantité
                 existing_item.quantity += quantity
                 existing_item.save()
                 cart_item = existing_item
             else:
-                print("Création d'un nouvel article")
                 # Créer un nouvel article
                 cart_item = CartItem.objects.create(
                     cart=cart,
                     product=product,
                     quantity=quantity
                 )
-                # Ajouter les couleurs et tailles
-                if color_id:
-                    cart_item.colors.add(color_id)
-                if size_id:
-                    cart_item.sizes.add(size_id)
-                print(f"Nouvel article créé: {cart_item.id}")
+                # Ajouter les couleurs et tailles uniquement si c'est un vêtement
+                if is_clothing:
+                    if color_id:
+                        cart_item.colors.add(color_id)
+                    if size_id:
+                        cart_item.sizes.add(size_id)
 
             # Générer la réponse
             response = HttpResponse()
             response['HX-Trigger'] = 'cartUpdated'
             response.write(render_cart_updates(request, cart, cart_item))
-            print("=== Fin de add_to_cart avec succès ===\n")
             return response
 
         except ValidationError as e:
-            print(f"Erreur de validation: {str(e)}")
             messages.error(request, str(e))
             return JsonResponse({'error': str(e)}, status=400)
         except Exception as e:
-            print(f"Erreur inattendue: {str(e)}")
-            import traceback
-            print(traceback.format_exc())
             messages.error(request, _("Une erreur est survenue lors de l'ajout au panier."))
             return JsonResponse({'error': str(e)}, status=500)
 
