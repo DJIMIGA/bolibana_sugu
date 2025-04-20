@@ -1,0 +1,14 @@
+# Ignorer les fichiers JavaScript minifiés
+*.min.js
+
+# Ignorer les fichiers de documentation
+drf-yasg/redoc/*
+drf-yasg/swagger/*
+drf-yasg/static/drf-yasg/*
+
+# Ignorer les fichiers de cache
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python 

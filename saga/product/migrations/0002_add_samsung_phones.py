@@ -5,8 +5,16 @@ from django.conf import settings
 from product.models import Category, Product, Phone, Color, PhoneVariant, PhoneVariantImage
 
 def add_samsung_phones(apps, schema_editor):
-    # Récupérer la catégorie Samsung
-    samsung_category = Category.objects.get(name='Samsung')
+    # Récupérer la catégorie Samsung la plus récente
+    samsung_category = Category.objects.filter(name='Samsung').order_by('-id').first()
+    if not samsung_category:
+        # Si aucune catégorie Samsung n'existe, en créer une
+        phone_category = Category.objects.filter(name='Téléphones').order_by('-id').first()
+        if phone_category:
+            samsung_category = Category.objects.create(
+                name='Samsung',
+                parent=phone_category
+            )
     
     # Couleurs disponibles
     colors = {
@@ -120,22 +128,15 @@ def add_samsung_phones(apps, schema_editor):
                 phone=phone,
                 color=colors[variant_data['color']],
                 storage=variant_data['storage'],
-                price=variant_data['price']
+                price=variant_data['price'],
+                stock=10  # Stock initial
             )
-            
-            # Créer les images de la variante
-            for view in ['front', 'back', 'side']:
-                PhoneVariantImage.objects.create(
-                    variant=variant,
-                    image=f"phones/s24_ultra/{variant_data['color']}/{view}.jpg" if phone_data['model'] == 'Galaxy S24 Ultra' else f"phones/s24_plus/{variant_data['color']}/{view}.jpg",
-                    is_primary=(view == 'front')
-                )
 
 def remove_samsung_phones(apps, schema_editor):
     # Supprimer les téléphones Samsung
-    samsung_category = Category.objects.get(name='Samsung')
-    Product.objects.filter(category=samsung_category).delete()
-    
+    Phone.objects.filter(product__category__name='Samsung').delete()
+    # Supprimer les produits Samsung
+    Product.objects.filter(category__name='Samsung').delete()
     # Supprimer les couleurs
     Color.objects.filter(name__in=['Noir', 'Violet', 'Bleu']).delete()
 

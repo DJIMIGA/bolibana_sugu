@@ -14,9 +14,12 @@ class SupplierListView(ListView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        # Récupérer les catégories de téléphones (sous-catégories de la catégorie "Téléphones")
-        phone_category = Category.objects.get(name='Téléphones')
-        context['phone_categories'] = phone_category.children.all()
+        # Récupérer la catégorie "Téléphones" la plus récente
+        phone_category = Category.objects.filter(name='Téléphones').order_by('-id').first()
+        if phone_category:
+            context['phone_categories'] = phone_category.children.all()
+        else:
+            context['phone_categories'] = []
         return context
 
 
