@@ -75,7 +75,7 @@ INSTALLED_APPS = [
     'cart.apps.CartConfig',
     'rest_framework',
     'corsheaders', # pour le CORS 
-    'drf_yasg', # pour la documentation de l'api
+    # 'drf_yasg', # temporairement désactivé pour la collecte des fichiers statiques
     'django_filters', 
     'rest_framework_simplejwt',
     'stripe',
@@ -86,6 +86,7 @@ INSTALLED_APPS = [
 MIDDLEWARE = [
     'corsheaders.middleware.CorsMiddleware',
     'django.middleware.security.SecurityMiddleware',
+    'whitenoise.middleware.WhiteNoiseMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
@@ -247,4 +248,13 @@ SIMPLE_JWT = {
 
 # Configuration de crispy forms
 CRISPY_ALLOWED_TEMPLATE_PACKS = "tailwind"
-CRISPY_TEMPLATE_PACK = "tailwind" 
+CRISPY_TEMPLATE_PACK = "tailwind"
+
+# Configuration de WhiteNoise
+STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
+
+# Configuration supplémentaire pour WhiteNoise
+WHITENOISE_MANIFEST_STRICT = False
+WHITENOISE_ALLOW_ALL_ORIGINS = True
+WHITENOISE_USE_FINDERS = True
+WHITENOISE_AUTOREFRESH = True 
