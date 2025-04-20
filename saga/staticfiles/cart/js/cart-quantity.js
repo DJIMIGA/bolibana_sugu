@@ -1,26 +1,38 @@
-// Gestion des quantités dans le panier
-document.addEventListener('DOMContentLoaded', function() {
-    // Mise à jour du total après changement de quantité
-    document.body.addEventListener('htmx:afterSwap', function(evt) {
-        if (evt.detail.target.closest('li')) {
-            updateCartTotal();
-        }
-    });
+import { updateCartCount, formatPrice } from './cart-utils.js';
 
-    // Mise à jour du compteur d'articles
-    function updateCartCount() {
-        const cartCount = document.getElementById('cart-count');
-        const cartItems = document.querySelectorAll('#cart-content .cart-item');
-        
-        if (cartCount) {
-            const itemCount = cartItems.length;
-            cartCount.textContent = itemCount;
-            cartCount.classList.toggle('hidden', itemCount === 0);
-        }
+class CartQuantity {
+    constructor() {
+        this.init();
     }
 
-    // Gestionnaire d'erreurs HTMX
-    document.body.addEventListener('htmx:responseError', function(evt) {
-        console.error('Erreur lors de la mise à jour de la quantité:', evt.detail.error);
-    });
+    init() {
+        this.bindEvents();
+    }
+
+    bindEvents() {
+        document.body.addEventListener('htmx:afterSwap', (evt) => {
+            if (evt.detail.target.closest('li')) {
+                this.handleQuantityUpdate();
+            }
+        });
+
+        document.body.addEventListener('htmx:responseError', (evt) => {
+            console.error('Erreur lors de la mise à jour de la quantité:', evt.detail.error);
+        });
+    }
+
+    handleQuantityUpdate() {
+        updateCartCount();
+        this.updateCartTotal();
+    }
+
+    updateCartTotal() {
+        const event = new CustomEvent('cart:quantityChanged');
+        document.dispatchEvent(event);
+    }
+}
+
+// Initialisation
+document.addEventListener('DOMContentLoaded', () => {
+    new CartQuantity();
 }); 

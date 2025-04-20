@@ -1,80 +1,126 @@
-document.addEventListener('DOMContentLoaded', function() {
-    // Récupération des éléments du DOM
-    const cartSidebar = document.getElementById('cart-sidebar');
-    const cartOverlay = document.getElementById('cart-overlay');
-    const cartContainer = document.getElementById('cart-container');
+import { updateCartCount } from './cart-utils.js';
 
-    if (!cartSidebar || !cartOverlay || !cartContainer) {
-        console.error('Éléments du panier non trouvés');
-        return;
+class CartSidebar {
+    constructor() {
+        console.log('CartSidebar: Initialisation...');
+        
+        this.sidebar = document.getElementById('cart-sidebar');
+        this.overlay = document.getElementById('cart-overlay');
+        this.container = document.getElementById('cart-container');
+        this.closeButton = document.getElementById('closeCartButton');
+        
+        // Log des éléments trouvés
+        console.log('CartSidebar: Éléments trouvés:', {
+            sidebar: !!this.sidebar,
+            overlay: !!this.overlay,
+            container: !!this.container,
+            closeButton: !!this.closeButton
+        });
+
+        if (!this.sidebar || !this.overlay || !this.container || !this.closeButton) {
+            console.error('CartSidebar: Éléments manquants!');
+            return;
+        }
+
+        this.isMobile = window.innerWidth < 1024; // lg breakpoint
+        this.bindEvents();
+        this.bindResize();
+        console.log('CartSidebar: Initialisation terminée');
     }
 
-    // Fonction pour ouvrir le panier
-    window.openCart = function() {
-        // Activer les interactions
-        cartSidebar.classList.remove('pointer-events-none');
-        cartOverlay.style.pointerEvents = 'auto'; // Activer les interactions sur l'overlay
-        cartOverlay.classList.remove('opacity-0');
-        cartContainer.classList.remove('translate-x-full');
+    bindEvents() {
+        console.log('CartSidebar: Liaison des événements...');
         
-        // Empêcher le défilement du body
-        document.body.style.overflow = 'hidden';
+        this.closeButton.addEventListener('click', () => {
+            console.log('CartSidebar: Clic sur le bouton fermer');
+            this.close();
+        });
         
-        // Si le sidebar des options produit est ouvert, le fermer
-        const productOptionsSidebar = document.getElementById('product-options-sidebar');
-        if (productOptionsSidebar && !productOptionsSidebar.classList.contains('pointer-events-none')) {
-            window.closeProductOptions();
-        }
-    };
+        this.overlay.addEventListener('click', () => {
+            console.log('CartSidebar: Clic sur overlay');
+            this.close();
+        });
+        
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') {
+                console.log('CartSidebar: Touche Escape pressée');
+                this.close();
+            }
+        });
 
-    // Fonction pour fermer le panier
-    window.closeCart = function() {
-        // Désactiver les interactions
-        cartOverlay.classList.add('opacity-0');
-        cartContainer.classList.add('translate-x-full');
+        console.log('CartSidebar: Événements liés');
+    }
+
+    bindResize() {
+        window.addEventListener('resize', () => {
+            this.isMobile = window.innerWidth < 1024;
+            if (this.isOpen) {
+                this.open(); // Réappliquer les classes appropriées
+            }
+        });
+    }
+
+    open() {
+        console.log('CartSidebar: Ouverture...');
+        this.isOpen = true;
         
-        // Attendre la fin de l'animation avant de cacher complètement
+        // Activer les interactions
+        this.sidebar.classList.remove('pointer-events-none');
+        
+        if (!this.isMobile) {
+            // Overlay uniquement sur desktop
+            this.overlay.classList.remove('opacity-0');
+            this.overlay.classList.add('opacity-100');
+        }
+        
+        // Animation du container
+        this.container.classList.remove('translate-x-full');
+        this.container.classList.add('translate-x-0');
+        
+        document.body.style.overflow = 'hidden';
+    }
+
+    close() {
+        console.log('CartSidebar: Fermeture...');
+        this.isOpen = false;
+        
+        // Désactiver les interactions
+        if (!this.isMobile) {
+            this.overlay.classList.remove('opacity-100');
+            this.overlay.classList.add('opacity-0');
+        }
+        
+        this.container.classList.remove('translate-x-0');
+        this.container.classList.add('translate-x-full');
+        
         setTimeout(() => {
-            cartSidebar.classList.add('pointer-events-none');
-            cartOverlay.style.pointerEvents = 'none'; // Désactiver les interactions sur l'overlay
-            // Rétablir le défilement du body
+            this.sidebar.classList.add('pointer-events-none');
             document.body.style.overflow = '';
         }, 500);
-    };
-
-    // Gestionnaire d'événements pour la touche Escape
-    function handleEscapeKey(event) {
-        if (event.key === 'Escape' && !cartSidebar.classList.contains('pointer-events-none')) {
-            window.closeCart();
-        }
     }
+}
 
-    // Ajouter les écouteurs d'événements
-    document.addEventListener('keydown', handleEscapeKey);
+console.log('CartSidebar: Script chargé');
 
-    // Utiliser addEventListener au lieu de onclick dans le HTML
-    cartOverlay.addEventListener('click', function(event) {
-        // S'assurer que le clic est bien sur l'overlay et pas sur ses enfants
-        if (event.target === cartOverlay) {
-            window.closeCart();
-        }
-    });
+let cartSidebarInstance = null;
 
-    // Gestionnaire pour les mises à jour HTMX du panier
-    document.addEventListener('htmx:afterSwap', function(evt) {
-        if (evt.detail.target.id === 'cart-content') {
-            // Mettre à jour le compteur du panier si nécessaire
-            const cartCount = document.getElementById('cart-count');
-            if (cartCount) {
-                const itemCount = document.querySelectorAll('#cart-content .cart-item').length;
-                cartCount.textContent = itemCount;
-                
-                if (itemCount > 0) {
-                    cartCount.classList.remove('hidden');
-                } else {
-                    cartCount.classList.add('hidden');
-                }
-            }
-        }
-    });
-}); 
+document.addEventListener('DOMContentLoaded', () => {
+    console.log('CartSidebar: DOM chargé, création de l\'instance');
+    cartSidebarInstance = new CartSidebar();
+});
+
+window.openCart = () => {
+    console.log('CartSidebar: Appel à openCart avec instance:', !!cartSidebarInstance);
+    if (!cartSidebarInstance) {
+        console.error('CartSidebar: Instance non initialisée');
+        return;
+    }
+    cartSidebarInstance.open();
+};
+
+window.closeCart = () => {
+    console.log('CartSidebar: Appel à closeCart');
+    cartSidebarInstance?.close();
+};
+
+export default CartSidebar; 

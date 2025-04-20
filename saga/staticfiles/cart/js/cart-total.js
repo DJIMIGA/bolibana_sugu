@@ -1,6 +1,25 @@
-// Gestion du total du panier
-document.addEventListener('DOMContentLoaded', function() {
-    window.updateCartTotal = function() {
+import { formatPrice } from './cart-utils.js';
+
+class CartTotal {
+    constructor() {
+        this.init();
+    }
+
+    init() {
+        this.bindEvents();
+    }
+
+    bindEvents() {
+        document.addEventListener('cart:quantityChanged', () => this.update());
+        document.body.addEventListener('htmx:afterSwap', (evt) => {
+            if (evt.detail.target.id === 'cart-content' || 
+                evt.detail.target.closest('#cart-content')) {
+                this.update();
+            }
+        });
+    }
+
+    update() {
         const cartItems = document.querySelectorAll('#cart-content .cart-item');
         let total = 0;
 
@@ -14,15 +33,12 @@ document.addEventListener('DOMContentLoaded', function() {
 
         const totalElement = document.getElementById('cart-total');
         if (totalElement) {
-            totalElement.textContent = `${total.toLocaleString()} FCFA`;
+            totalElement.textContent = formatPrice(total);
         }
-    };
+    }
+}
 
-    // Mise à jour du total après chaque action HTMX
-    document.body.addEventListener('htmx:afterSwap', function(evt) {
-        if (evt.detail.target.id === 'cart-content' || 
-            evt.detail.target.closest('#cart-content')) {
-            updateCartTotal();
-        }
-    });
+// Initialisation
+document.addEventListener('DOMContentLoaded', () => {
+    new CartTotal();
 }); 

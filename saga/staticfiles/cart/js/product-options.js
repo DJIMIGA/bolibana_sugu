@@ -1,49 +1,75 @@
-document.addEventListener("DOMContentLoaded", () => {
-    const productOptionsSidebar = document.getElementById("product-options-sidebar");
-    const closeOptionsButton = document.getElementById("closeOptionsButton");
-    const optionsContent = productOptionsSidebar?.querySelector('.transform');
-    const body = document.body;
-
-    if (!productOptionsSidebar || !closeOptionsButton || !optionsContent) {
-        console.error("Un ou plusieurs éléments des options n'ont pas été trouvés");
-        return;
+export default class ProductOptions {
+    constructor() {
+        this.sidebar = document.getElementById('product-options-sidebar');
+        this.overlay = document.getElementById('product-options-overlay');
+        this.container = document.getElementById('product-options-container');
+        
+        this.init();
     }
 
-    window.openProductOptions = () => {
-        productOptionsSidebar.classList.remove("hidden");
-        optionsContent.classList.remove("translate-x-full");
-        body.style.overflow = "hidden";
+    init() {
+        // Gestionnaire d'événements pour les requêtes HTMX
+        document.addEventListener('htmx:afterRequest', this.handleHtmxResponse.bind(this));
         
-        // Fermer le panier s'il est ouvert
-        const cartSidebar = document.getElementById("cart-sidebar");
-        if (cartSidebar && !cartSidebar.classList.contains("hidden")) {
-            const cartContent = cartSidebar.querySelector('.transform');
-            cartSidebar.classList.add("hidden");
-            cartContent?.classList.add("translate-x-full");
-        }
-    };
+        // Fermeture avec Escape
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') this.close();
+        });
 
-    const closeProductOptions = () => {
-        optionsContent.classList.add("translate-x-full");
+        // Fermeture en cliquant sur l'overlay
+        this.overlay?.addEventListener('click', () => this.close());
+
+        // Gestion des formulaires dynamiques
+        document.body.addEventListener('htmx:afterSwap', this.handleFormSwap.bind(this));
+    }
+
+    open(productId) {
+        this.sidebar?.classList.remove('pointer-events-none');
+        this.overlay?.classList.remove('opacity-0', 'pointer-events-none');
+        this.container?.classList.remove('translate-x-full');
+        document.body.style.overflow = 'hidden';
+
+        // Utiliser le chemin complet avec le préfixe /cart/
+        htmx.ajax('GET', `/cart/product-options/${productId}/`, {
+            target: '#product-options-content',
+            swap: 'innerHTML',
+            headers: {
+                'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+            }
+        });
+    }
+
+    close() {
+        this.overlay?.classList.add('opacity-0', 'pointer-events-none');
+        this.container?.classList.add('translate-x-full');
+        
         setTimeout(() => {
-            productOptionsSidebar.classList.add("hidden");
-            body.style.overflow = "";
-        }, 300);
-    };
+            this.sidebar?.classList.add('pointer-events-none');
+            document.body.style.overflow = '';
+        }, 500);
+    }
 
-    closeOptionsButton.addEventListener("click", closeProductOptions);
-
-    // Fermer les options si l'utilisateur clique à l'extérieur
-    productOptionsSidebar.addEventListener("click", (event) => {
-        if (event.target === productOptionsSidebar) {
-            closeProductOptions();
+    handleHtmxResponse(evt) {
+        if (evt.detail.target.id === 'product-options-content') {
+            console.log('Options produit chargées');
         }
-    });
+    }
 
-    // Fermer les options avec la touche Échap
-    document.addEventListener('keydown', (event) => {
-        if (event.key === 'Escape' && !productOptionsSidebar.classList.contains('hidden')) {
-            closeProductOptions();
+    handleFormSwap(e) {
+        if (e.detail.target.id === 'product-options-content') {
+            const form = e.detail.target.querySelector('form');
+            if (form) {
+                form.addEventListener('htmx:afterRequest', (e) => {
+                    if (e.detail.successful) {
+                        setTimeout(() => this.close(), 500);
+                    }
+                });
+            }
         }
-    });
-}); 
+    }
+}
+
+// Initialiser et exposer globalement
+window.productOptions = new ProductOptions();
+window.openProductOptions = (productId) => window.productOptions.open(productId);
+window.closeProductOptions = () => window.productOptions.close(); 
