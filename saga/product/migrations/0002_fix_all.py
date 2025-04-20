@@ -1,20 +1,20 @@
-from django.db import migrations, models
+from django.db import migrations
 
 def fix_migrations(apps, schema_editor):
+    # Supprimer toutes les données existantes
     PhoneVariant = apps.get_model('product', 'PhoneVariant')
     Phone = apps.get_model('product', 'Phone')
     Product = apps.get_model('product', 'Product')
     Category = apps.get_model('product', 'Category')
 
-    # Supprimer toutes les données existantes
+    # Supprimer les données dans l'ordre inverse des dépendances
     PhoneVariant.objects.all().delete()
     Phone.objects.all().delete()
     Product.objects.all().delete()
 
     # Supprimer les catégories en double
-    categories = Category.objects.all()
     seen_names = set()
-    for category in categories:
+    for category in Category.objects.all():
         if category.name in seen_names:
             category.delete()
         else:
@@ -23,7 +23,7 @@ def fix_migrations(apps, schema_editor):
     # S'assurer que la catégorie Téléphones existe
     phone_category, _ = Category.objects.get_or_create(
         name='Téléphones',
-        defaults={'description': 'Catégorie pour les téléphones'}
+        defaults={'name': 'Téléphones'}
     )
 
     # Créer les sous-catégories si elles n'existent pas
@@ -32,15 +32,14 @@ def fix_migrations(apps, schema_editor):
         Category.objects.get_or_create(
             name=subcategory_name,
             parent=phone_category,
-            defaults={'description': f'Catégorie pour les téléphones {subcategory_name}'}
+            defaults={'name': subcategory_name, 'parent': phone_category}
         )
 
 def reverse_fix_migrations(apps, schema_editor):
-    # Cette fonction est vide car nous ne voulons pas recréer les données supprimées
+    # Ne rien faire en reverse car on ne veut pas recréer les données supprimées
     pass
 
 class Migration(migrations.Migration):
-
     dependencies = [
         ('product', '0001_initial'),
     ]
