@@ -5,6 +5,7 @@ def clean_duplicate_categories(apps, schema_editor):
     # Récupérer toutes les catégories "Téléphones"
     phone_categories = Category.objects.filter(name='Téléphones')
     
+
     if phone_categories.exists():
         # Prendre la première catégorie "Téléphones"
         phone_category = phone_categories.first()
