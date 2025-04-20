@@ -60,6 +60,12 @@ class Category(models.Model):
             categories.extend(child.get_all_children())
         return categories
 
+    @property
+    def product_count(self):
+        """Retourne le nombre total de produits dans cette catégorie et ses sous-catégories"""
+        category_ids = self.get_all_children_ids()
+        return Product.objects.filter(category_id__in=category_ids).count()
+
     class Meta:
         verbose_name_plural = "Categories"
 
@@ -223,6 +229,7 @@ class Phone(models.Model):
     is_new = models.BooleanField(default=True, verbose_name='Neuf')
     box_included = models.BooleanField(default=True, verbose_name='Boîte incluse')
     accessories = models.TextField(blank=True, null=True, verbose_name='Accessoires inclus')
+    storage = models.PositiveIntegerField(verbose_name='Stockage (Go)', null=True, blank=True)
 
     def __str__(self):
         return f"{self.product.category.name} {self.model}"
