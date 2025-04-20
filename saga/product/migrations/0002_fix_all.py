@@ -41,8 +41,8 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
-        # D'abord, rendre le champ nullable
-        migrations.AlterField(
+        # D'abord, ajouter le champ storage
+        migrations.AddField(
             model_name='phone',
             name='storage',
             field=models.PositiveIntegerField(verbose_name='Stockage (Go)', null=True, blank=True),
