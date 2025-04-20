@@ -1,2 +1,2 @@
 web: gunicorn saga.wsgi:application
-release: python manage.py migrate 
+release: cd saga && python manage.py migrate 
