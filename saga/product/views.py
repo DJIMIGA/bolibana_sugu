@@ -352,7 +352,7 @@ class PhoneListView(ListView):
     context_object_name = 'phones'
 
     def get_queryset(self):
-        queryset = super().get_queryset()
+        queryset = super().get_queryset().select_related('product__category').prefetch_related('variants')
         brand_id = self.request.GET.get('brand')
         if brand_id:
             return queryset.filter(product__category_id=brand_id)
@@ -372,8 +372,9 @@ class PhoneListView(ListView):
         else:
             context['page_title'] = "Nos téléphones"
             
-        # Récupérer toutes les marques pour le filtre
+        # Récupérer les marques disponibles
         context['brands'] = Category.objects.filter(parent__name='Téléphones')
+        
         return context
 
 
