@@ -3,10 +3,13 @@
 import os
 import sys
 
+# Ajouter le chemin absolu au PYTHONPATH
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+sys.path.insert(0, BASE_DIR)
 
 def main():
     """Run administrative tasks."""
-    os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'saga.settings')
+    os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'saga.saga.settings')
     try:
         from django.core.management import execute_from_command_line
     except ImportError as exc:
