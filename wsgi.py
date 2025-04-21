@@ -10,12 +10,14 @@ import logging
 logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
 
-# Ajouter le chemin de l'application au PYTHONPATH
+# Nettoyer le PYTHONPATH
 current_dir = os.path.dirname(os.path.abspath(__file__))
 logger.debug(f"Current directory: {current_dir}")
-sys.path.append(current_dir)
 
-logger.debug(f"PYTHONPATH: {sys.path}")
+# Réinitialiser sys.path
+sys.path = [p for p in sys.path if not p.endswith('.env') and not p.endswith('module_teste.py')]
+sys.path.append(current_dir)
+logger.debug(f"PYTHONPATH nettoyé: {sys.path}")
 
 try:
     from django.core.wsgi import get_wsgi_application
@@ -24,7 +26,7 @@ except ImportError as e:
     logger.error(f"Django import failed: {e}")
     raise
 
-os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'saga.saga.settings')
+os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'saga.settings')
 logger.debug(f"DJANGO_SETTINGS_MODULE: {os.environ.get('DJANGO_SETTINGS_MODULE')}")
 
 try:

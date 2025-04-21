@@ -11,13 +11,16 @@ logger = logging.getLogger(__name__)
 def main():
     """Run administrative tasks."""
     try:
-        # Ajouter le chemin parent au PYTHONPATH
+        # Nettoyer le PYTHONPATH
         BASE_DIR = os.path.dirname(os.path.abspath(__file__))
         logger.debug(f"BASE_DIR: {BASE_DIR}")
+        
+        # Réinitialiser sys.path
+        sys.path = [p for p in sys.path if not p.endswith('.env') and not p.endswith('module_teste.py')]
         sys.path.insert(0, BASE_DIR)
-        logger.debug(f"PYTHONPATH: {sys.path}")
+        logger.debug(f"PYTHONPATH nettoyé: {sys.path}")
 
-        os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'saga.saga.settings')
+        os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'saga.settings')
         logger.debug(f"DJANGO_SETTINGS_MODULE: {os.environ.get('DJANGO_SETTINGS_MODULE')}")
 
         try:
