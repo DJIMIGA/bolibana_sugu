@@ -17,7 +17,8 @@ def main():
         
         # Réinitialiser sys.path
         sys.path = [p for p in sys.path if not p.endswith('.env') and not p.endswith('module_teste.py')]
-        sys.path.insert(0, BASE_DIR)
+        # Garder uniquement le chemin de base
+        sys.path = [BASE_DIR]
         logger.debug(f"PYTHONPATH nettoyé: {sys.path}")
 
         os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'saga.settings')
