@@ -124,7 +124,7 @@ TEMPLATE_CONTEXT_PROCESSORS = [
 
 ]
 
-WSGI_APPLICATION = 'saga.wsgi.application'
+WSGI_APPLICATION = 'saga.saga.wsgi.application'
 
 
 # Database
