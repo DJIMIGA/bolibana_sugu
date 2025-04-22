@@ -1,2 +1,2 @@
-web: waitress-serve --port=$PORT saga.wsgi:application
+web: python saga/waitress.py
 worker: python manage.py process_tasks
