@@ -1,3 +1,3 @@
 """
-Ce fichier marque le répertoire saga comme un package Python.
+Ce fichier marque le sous-package saga.saga comme un package Python.
 """

@@ -22,11 +22,16 @@ import dj_database_url
 # charger les variables d'environnement
 load_dotenv()
 
-# Charger d'abord les secrets (incluant la clé Django)
-load_dotenv(os.path.join(BASE_DIR, '.env.secrets'))
+# Charger les variables d'environnement
+env_path = os.path.join(BASE_DIR, '.env.secrets')
+load_dotenv(env_path)
 
-# Récupérer la clé secrète Django
+# SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = os.getenv('DJANGO_SECRET_KEY')
+
+# Charger les autres variables d'environnement
+env_path = os.path.join(BASE_DIR, 'saga/.env.secrets')
+load_dotenv(env_path)
 
 # Les autres configurations Stripe sont déjà chargées
 STRIPE_PUBLIC_KEY = os.getenv('STRIPE_PUBLIC_KEY')
@@ -101,7 +106,7 @@ ROOT_URLCONF = 'saga.urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [BASE_DIR / 'templates'],
+        'DIRS': [BASE_DIR / 'saga/templates'],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
