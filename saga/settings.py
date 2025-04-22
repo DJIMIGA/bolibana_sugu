@@ -131,6 +131,7 @@ TEMPLATE_CONTEXT_PROCESSORS = [
 
 WSGI_APPLICATION = 'saga.wsgi.application'
 
+
 # Database
 # https://docs.djangoproject.com/en/5.1/ref/settings/#databases
 
