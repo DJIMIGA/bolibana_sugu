@@ -12,7 +12,7 @@ def main():
     """Run administrative tasks."""
     try:
         # Définir le chemin de base
-        BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+        BASE_DIR = os.path.dirname(os.path.abspath(__file__))
         logger.debug(f"BASE_DIR: {BASE_DIR}")
         
         # Ajouter le chemin de base au PYTHONPATH
@@ -20,7 +20,7 @@ def main():
             sys.path.insert(0, BASE_DIR)
         logger.debug(f"PYTHONPATH: {sys.path}")
 
-        os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'saga.saga.settings')
+        os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'saga.settings')
         logger.debug(f"DJANGO_SETTINGS_MODULE: {os.environ.get('DJANGO_SETTINGS_MODULE')}")
 
         try:
