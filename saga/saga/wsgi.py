@@ -30,7 +30,7 @@ except ImportError as e:
     logger.error(f"Django import failed: {e}")
     raise
 
-os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'saga.saga.settings')
+os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'saga.settings')
 logger.debug(f"DJANGO_SETTINGS_MODULE: {os.environ.get('DJANGO_SETTINGS_MODULE')}")
 
 try:
