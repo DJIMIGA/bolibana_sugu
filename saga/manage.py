@@ -20,7 +20,7 @@ def main():
             sys.path.insert(0, BASE_DIR)
         logger.debug(f"PYTHONPATH: {sys.path}")
 
-        os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'saga.settings')
+        os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'saga.saga.settings')
         logger.debug(f"DJANGO_SETTINGS_MODULE: {os.environ.get('DJANGO_SETTINGS_MODULE')}")
 
         try:
