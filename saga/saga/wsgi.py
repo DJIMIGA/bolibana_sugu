@@ -16,9 +16,10 @@ logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
 
 # Ajouter le chemin de l'application au PYTHONPATH
-current_dir = os.path.dirname(os.path.abspath(__file__))
+current_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 logger.debug(f"Current directory: {current_dir}")
-sys.path.append(current_dir)
+if current_dir not in sys.path:
+    sys.path.insert(0, current_dir)
 
 logger.debug(f"PYTHONPATH: {sys.path}")
 
@@ -29,7 +30,7 @@ except ImportError as e:
     logger.error(f"Django import failed: {e}")
     raise
 
-os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'saga.saga.settings')
+os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'saga.settings')
 logger.debug(f"DJANGO_SETTINGS_MODULE: {os.environ.get('DJANGO_SETTINGS_MODULE')}")
 
 try:
