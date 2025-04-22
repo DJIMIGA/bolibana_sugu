@@ -5,7 +5,10 @@
   "scripts": {
     "dev": "webpack --watch",
     "build": "webpack --mode production",
-    "test": "jest"
+    "test": "jest",
+    "start": "waitress-serve --port=$PORT saga.wsgi:application",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix"
   },
   "dependencies": {
     "@babel/core": "^7.22.0",
@@ -19,5 +22,9 @@
     "eslint": "^8.42.0",
     "eslint-config-airbnb-base": "^15.0.0",
     "eslint-plugin-import": "^2.27.5"
+  },
+  "engines": {
+    "node": ">=18.0.0",
+    "npm": ">=9.0.0"
   }
 } 
