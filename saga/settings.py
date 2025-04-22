@@ -10,34 +10,49 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/5.1/ref/settings/
 """
 import os
+import logging
 from pathlib import Path
 from dotenv import load_dotenv
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
-BASE_DIR = Path(__file__).resolve().parent.parent
+BASE_DIR = Path(__file__).resolve().parent.parent  # Retour à la configuration d'origine
+print(f"BASE_DIR: {BASE_DIR}")  # Pour vérifier le chemin
 import stripe
 import dj_database_url
 
-# Quick-start development settings - unsuitable for production
-# See https://docs.djangoproject.com/en/5.1/howto/deployment/checklist/
-# charger les variables d'environnement
-load_dotenv()
+# Configuration des logs
+logging.basicConfig(
+    level=logging.DEBUG,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+    handlers=[
+        logging.StreamHandler(),
+        logging.FileHandler('django.log')
+    ]
+)
+logger = logging.getLogger(__name__)
+
+print("\n" + "="*50)
+print("Démarrage du chargement des paramètres Django")
+print("="*50 + "\n")
 
 # Charger les variables d'environnement
-env_path = os.path.join(BASE_DIR, '.env.secrets')
+env_path = os.path.join(BASE_DIR, 'saga/.env.secrets')  # Chemin corrigé
+print(f"Chemin du fichier .env.secrets: {env_path}")  # Pour vérifier le chemin
 load_dotenv(env_path)
 
 # SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = os.getenv('DJANGO_SECRET_KEY')
-
-# Charger les autres variables d'environnement
-env_path = os.path.join(BASE_DIR, 'saga/.env.secrets')
-load_dotenv(env_path)
+print(f"SECRET_KEY chargée: {'Oui' if SECRET_KEY else 'Non'}")
 
 # Les autres configurations Stripe sont déjà chargées
 STRIPE_PUBLIC_KEY = os.getenv('STRIPE_PUBLIC_KEY')
+print("STRIPE_PUBLIC_KEY:", STRIPE_PUBLIC_KEY)
 STRIPE_SECRET_KEY = os.getenv('STRIPE_SECRET_KEY')
+print("STRIPE_SECRET_KEY:", STRIPE_SECRET_KEY)
 STRIPE_WEBHOOK_SECRET = os.getenv('STRIPE_WEBHOOK_SECRET')
+print("STRIPE_WEBHOOK_SECRET:", STRIPE_WEBHOOK_SECRET)
 STRIPE_API_VERSION = os.getenv('STRIPE_API_VERSION')
+print("STRIPE_API_VERSION:", STRIPE_API_VERSION)
+print(f"Configuration Stripe chargée: {'Oui' if STRIPE_SECRET_KEY else 'Non'}")
 
 # Configuration Stripe
 stripe.api_version = '2023-10-16'  # Utiliser la dernière version stable
@@ -182,10 +197,10 @@ USE_TZ = True
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/5.1/howto/static-files/
 
-STATIC_URL = 'static/'
-STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
+STATIC_URL = 'saga/static/'
+STATIC_ROOT = os.path.join(BASE_DIR, 'saga/staticfiles')
 STATICFILES_DIRS = [
-    os.path.join(BASE_DIR, 'static'),
+    os.path.join(BASE_DIR, 'saga/static'),
     # other static file directories...
 ]
 
