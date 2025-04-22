@@ -152,14 +152,14 @@ WSGI_APPLICATION = 'saga.wsgi.application'
 
 DATABASES = {
     'default': dj_database_url.config(
-        default=os.getenv('DATABASE_URL', 'sqlite:///db.sqlite3'),
+        default=os.getenv('HEROKU_POSTGRESQL_AQUA_URL', 'sqlite:///db.sqlite3'),
         conn_max_age=600,
         ssl_require=True
     )
 }
 
 # Configuration de la base de données pour le développement local
-if DEBUG:
+if DEBUG and not os.getenv('HEROKU'):
     DATABASES['default'] = {
         'ENGINE': 'django.db.backends.sqlite3',
         'NAME': BASE_DIR / 'db.sqlite3',
