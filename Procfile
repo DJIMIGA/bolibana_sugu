@@ -1,2 +1,2 @@
 web: gunicorn saga.wsgi:application --log-file - --log-level debug
-release: python manage.py migrate --verbosity 2 
+release: python saga/manage.py migrate --verbosity 2 
