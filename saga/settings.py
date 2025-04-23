@@ -59,23 +59,33 @@ stripe.api_version = '2023-10-16'  # Utiliser la dernière version stable
 stripe.api_key = STRIPE_SECRET_KEY
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = os.getenv('DEBUG', 'False') == 'True'
+
+# Configuration de sécurité SSL
+SECURE_SSL_REDIRECT = True
+SESSION_COOKIE_SECURE = True
+CSRF_COOKIE_SECURE = True
+SECURE_HSTS_SECONDS = 31536000  # 1 an
+SECURE_HSTS_INCLUDE_SUBDOMAINS = True
+SECURE_HSTS_PRELOAD = True
+SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
 
 ALLOWED_HOSTS = [
     'localhost',
     '127.0.0.1',
-    '0.0.0.0',
-    '.ngrok.io',
-    '*',  # Temporairement pour le développement
-    'https://1f0e-2a02-842a-3cca-9501-d479-d253-2c1a-4d33.ngrok-free.app',  # Temporairement pour le développement
+    '.herokuapp.com',
+    'bolibana-sugu-d56937020d1c.herokuapp.com',
+    'bolibana.com',  # Domaine principal
+    'www.bolibana.com',  # Version www
 ] 
 
 CSRF_TRUSTED_ORIGINS = [
-    'https://*.ngrok.io',
-    'https://1f0e-2a02-842a-3cca-9501-d479-d253-2c1a-4d33.ngrok-free.app',
+    'https://bolibana-sugu-d56937020d1c.herokuapp.com',
+    'https://bolibana.com',
+    'https://www.bolibana.com',
     'http://localhost:8000',
     'http://127.0.0.1:8000',
-] 
+]
 
 # Application definition
 
