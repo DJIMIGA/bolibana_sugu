@@ -62,20 +62,27 @@ stripe.api_key = STRIPE_SECRET_KEY
 DEBUG = os.getenv('DEBUG', 'False') == 'True'
 
 # Configuration de sécurité SSL
-SECURE_SSL_REDIRECT = True
-SESSION_COOKIE_SECURE = True
-CSRF_COOKIE_SECURE = True
-SECURE_HSTS_SECONDS = 3600  # 1 heure pour commencer
-SECURE_HSTS_INCLUDE_SUBDOMAINS = True
-SECURE_HSTS_PRELOAD = False  # Désactivé temporairement
-SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
-SECURE_BROWSER_XSS_FILTER = True
-SECURE_CONTENT_TYPE_NOSNIFF = True
-X_FRAME_OPTIONS = 'DENY'
+if os.getenv('HEROKU'):
+    SECURE_SSL_REDIRECT = True
+    SESSION_COOKIE_SECURE = True
+    CSRF_COOKIE_SECURE = True
+    SECURE_HSTS_SECONDS = 31536000  # 1 an
+    SECURE_HSTS_INCLUDE_SUBDOMAINS = True
+    SECURE_HSTS_PRELOAD = True
+    SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+    SECURE_BROWSER_XSS_FILTER = True
+    SECURE_CONTENT_TYPE_NOSNIFF = True
+    X_FRAME_OPTIONS = 'DENY'
+else:
+    # Configuration de sécurité pour le développement local
+    SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+    SECURE_SSL_REDIRECT = True
+    SESSION_COOKIE_SECURE = True
+    CSRF_COOKIE_SECURE = True
 
 # Configuration des cookies
-SESSION_COOKIE_DOMAIN = 'bolibana.com'
-CSRF_COOKIE_DOMAIN = 'bolibana.com'
+SESSION_COOKIE_DOMAIN = None  # Retiré pour éviter les problèmes de domaine
+CSRF_COOKIE_DOMAIN = None  # Retiré pour éviter les problèmes de domaine
 
 # Domaines autorisés
 ALLOWED_HOSTS = [
@@ -100,6 +107,10 @@ CORS_ALLOWED_ORIGINS = [
     'https://www.bolibana.com',
     'https://bolibana-sugu-d56937020d1c.herokuapp.com',
 ]
+
+# Configuration des en-têtes de sécurité
+SECURE_REFERRER_POLICY = 'same-origin'
+SECURE_CROSS_ORIGIN_OPENER_POLICY = 'same-origin'
 
 # Application definition
 
@@ -174,19 +185,21 @@ WSGI_APPLICATION = 'saga.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/5.1/ref/settings/#databases
 
-DATABASES = {
-    'default': dj_database_url.config(
-        default=os.getenv('HEROKU_POSTGRESQL_AQUA_URL', 'sqlite:///db.sqlite3'),
-        conn_max_age=600,
-        ssl_require=True
-    )
-}
-
 # Configuration de la base de données pour le développement local
 if DEBUG and not os.getenv('HEROKU'):
-    DATABASES['default'] = {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.sqlite3',
+            'NAME': BASE_DIR / 'db.sqlite3',
+        }
+    }
+else:
+    DATABASES = {
+        'default': dj_database_url.config(
+            default=os.getenv('HEROKU_POSTGRESQL_AQUA_URL'),
+            conn_max_age=600,
+            ssl_require=True
+        )
     }
 
 # Password validation
