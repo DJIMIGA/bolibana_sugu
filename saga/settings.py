@@ -14,7 +14,7 @@ import logging
 from pathlib import Path
 from dotenv import load_dotenv
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
-BASE_DIR = Path(__file__).resolve().parent.parent  # Retour à la configuration d'origine
+BASE_DIR = Path(__file__).resolve().parent.parent
 print(f"BASE_DIR: {BASE_DIR}")  # Pour vérifier le chemin
 import stripe
 import dj_database_url
@@ -40,7 +40,7 @@ print(f"Chemin du fichier .env.secrets: {env_path}")  # Pour vérifier le chemin
 load_dotenv(env_path)
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = os.getenv('DJANGO_SECRET_KEY')
+SECRET_KEY = os.environ.get('SECRET_KEY', 'django-insecure-default-key-for-dev')
 print(f"SECRET_KEY chargée: {'Oui' if SECRET_KEY else 'Non'}")
 
 # Les autres configurations Stripe sont déjà chargées
@@ -59,11 +59,14 @@ stripe.api_version = '2023-10-16'  # Utiliser la dernière version stable
 stripe.api_key = STRIPE_SECRET_KEY
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = os.getenv('DEBUG', 'False') == 'True'
+DEBUG = os.environ.get('DEBUG', 'False') == 'True'
 
-# Configuration de sécurité SSL
+# ======================================================================
+# PARAMÈTRES DE SÉCURITÉ SSL
+# ======================================================================
+
 # Forcer HTTPS
-SECURE_SSL_REDIRECT = not DEBUG
+SECURE_SSL_REDIRECT = False  # Désactivé temporairement pour tester
 
 # Paramètres de cookies sécurisés
 SESSION_COOKIE_SECURE = not DEBUG
@@ -94,14 +97,7 @@ SESSION_COOKIE_DOMAIN = None
 CSRF_COOKIE_DOMAIN = None
 
 # Domaines autorisés
-ALLOWED_HOSTS = [
-    'localhost',
-    '127.0.0.1',
-    '.herokuapp.com',
-    'bolibana-sugu-d56937020d1c.herokuapp.com',
-    'bolibana.com',
-    'www.bolibana.com',
-]
+ALLOWED_HOSTS = ['bolibana-sugu-d56937020d1c.herokuapp.com', 'localhost', '127.0.0.1']
 
 # Origines CSRF autorisées
 CSRF_TRUSTED_ORIGINS = [
@@ -147,7 +143,6 @@ INSTALLED_APPS = [
 ]
 
 MIDDLEWARE = [
-    'corsheaders.middleware.CorsMiddleware',
     'django.middleware.security.SecurityMiddleware',
     'whitenoise.middleware.WhiteNoiseMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
@@ -157,6 +152,7 @@ MIDDLEWARE = [
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'django_htmx.middleware.HtmxMiddleware',
+    'corsheaders.middleware.CorsMiddleware',
 ]
 
 ROOT_URLCONF = 'saga.urls'
@@ -210,6 +206,11 @@ else:
         )
     }
 
+# Configuration pour Heroku PostgreSQL
+import dj_database_url
+db_from_env = dj_database_url.config(conn_max_age=600)
+DATABASES['default'].update(db_from_env)
+
 # Password validation
 # https://docs.djangoproject.com/en/5.1/ref/settings/#auth-password-validators
 
@@ -231,9 +232,9 @@ AUTH_PASSWORD_VALIDATORS = [
 # Internationalization
 # https://docs.djangoproject.com/en/5.1/topics/i18n/
 
-LANGUAGE_CODE = 'fr'
+LANGUAGE_CODE = 'fr-fr'
 
-TIME_ZONE = 'UTC'
+TIME_ZONE = 'Europe/Paris'
 
 USE_I18N = True
 
@@ -242,8 +243,8 @@ USE_TZ = True
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/5.1/howto/static-files/
 
-STATIC_URL = 'saga/static/'
-STATIC_ROOT = os.path.join(BASE_DIR, 'saga/staticfiles')
+STATIC_URL = 'static/'
+STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
 STATICFILES_DIRS = [
     os.path.join(BASE_DIR, 'saga/static'),
     # other static file directories...
