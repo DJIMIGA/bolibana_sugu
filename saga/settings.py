@@ -62,25 +62,20 @@ stripe.api_key = STRIPE_SECRET_KEY
 DEBUG = os.getenv('DEBUG', 'False') == 'True'
 
 # Configuration de sécurité SSL
-if os.getenv('HEROKU'):
-    SECURE_SSL_REDIRECT = True
-    SESSION_COOKIE_SECURE = True
-    CSRF_COOKIE_SECURE = True
-    SECURE_HSTS_SECONDS = 31536000  # 1 an
-    SECURE_HSTS_INCLUDE_SUBDOMAINS = True
-    SECURE_HSTS_PRELOAD = True
-    SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
-    SECURE_BROWSER_XSS_FILTER = True
-    SECURE_CONTENT_TYPE_NOSNIFF = True
-    X_FRAME_OPTIONS = 'DENY'
-else:
-    SECURE_SSL_REDIRECT = False
-    SESSION_COOKIE_SECURE = False
-    CSRF_COOKIE_SECURE = False
+SECURE_SSL_REDIRECT = False
+SESSION_COOKIE_SECURE = False
+CSRF_COOKIE_SECURE = False
+SECURE_HSTS_SECONDS = 0  # Désactivé
+SECURE_HSTS_INCLUDE_SUBDOMAINS = False
+SECURE_HSTS_PRELOAD = False
+SECURE_PROXY_SSL_HEADER = None
+SECURE_BROWSER_XSS_FILTER = True
+SECURE_CONTENT_TYPE_NOSNIFF = True
+X_FRAME_OPTIONS = 'DENY'
 
 # Configuration des cookies
-SESSION_COOKIE_DOMAIN = None  # Retiré pour éviter les problèmes de domaine
-CSRF_COOKIE_DOMAIN = None  # Retiré pour éviter les problèmes de domaine
+SESSION_COOKIE_DOMAIN = None
+CSRF_COOKIE_DOMAIN = None
 
 # Domaines autorisés
 ALLOWED_HOSTS = [
