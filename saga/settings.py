@@ -69,8 +69,8 @@ DEBUG = os.environ.get('DEBUG', 'False') == 'True'
 SECURE_SSL_REDIRECT = False  # Désactivé temporairement pour tester
 
 # Paramètres de cookies sécurisés
-SESSION_COOKIE_SECURE = not DEBUG
-CSRF_COOKIE_SECURE = not DEBUG
+SESSION_COOKIE_SECURE = False  # Désactivé temporairement
+CSRF_COOKIE_SECURE = False    # Désactivé temporairement
 
 # HSTS (HTTP Strict Transport Security)
 SECURE_HSTS_SECONDS = 31536000  # 1 an
@@ -97,7 +97,14 @@ SESSION_COOKIE_DOMAIN = None
 CSRF_COOKIE_DOMAIN = None
 
 # Domaines autorisés
-ALLOWED_HOSTS = ['bolibana-sugu-d56937020d1c.herokuapp.com', 'localhost', '127.0.0.1']
+ALLOWED_HOSTS = [
+    'bolibana-sugu-d56937020d1c.herokuapp.com',
+    'localhost',
+    '127.0.0.1',
+    '.herokuapp.com',
+    'bolibana.com',
+    'www.bolibana.com'
+]
 
 # Origines CSRF autorisées
 CSRF_TRUSTED_ORIGINS = [
@@ -234,7 +241,7 @@ AUTH_PASSWORD_VALIDATORS = [
 
 LANGUAGE_CODE = 'fr-fr'
 
-TIME_ZONE = 'Europe/Paris'
+TIME_ZONE = 'Africa/Bamako'
 
 USE_I18N = True
 
