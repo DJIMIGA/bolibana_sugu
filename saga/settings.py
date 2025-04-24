@@ -66,11 +66,11 @@ DEBUG = os.environ.get('DEBUG', 'False') == 'True'
 # ======================================================================
 
 # Forcer HTTPS
-SECURE_SSL_REDIRECT = True  # Réactivé maintenant que le site fonctionne
+SECURE_SSL_REDIRECT = False  # Désactivé pour éviter la boucle de redirection
 
 # Paramètres de cookies sécurisés
-SESSION_COOKIE_SECURE = True  # Réactivé
-CSRF_COOKIE_SECURE = True    # Réactivé
+SESSION_COOKIE_SECURE = True
+CSRF_COOKIE_SECURE = True
 
 # HSTS (HTTP Strict Transport Security)
 SECURE_HSTS_SECONDS = 31536000  # 1 an
@@ -90,6 +90,7 @@ SECURE_BROWSER_XSS_FILTER = True
 SECURE_REFERRER_POLICY = 'same-origin'
 
 # Proxy Heroku
+SECURE_PROXY_SSL_SSL_REDIRECT = False  # Désactivé pour éviter la boucle
 SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
 
 # Configuration des cookies
