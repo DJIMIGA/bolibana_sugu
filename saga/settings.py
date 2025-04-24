@@ -66,11 +66,11 @@ DEBUG = os.environ.get('DEBUG', 'False') == 'True'
 # ======================================================================
 
 # Forcer HTTPS
-SECURE_SSL_REDIRECT = False  # Désactivé temporairement pour tester
+SECURE_SSL_REDIRECT = True  # Réactivé maintenant que le site fonctionne
 
 # Paramètres de cookies sécurisés
-SESSION_COOKIE_SECURE = False  # Désactivé temporairement
-CSRF_COOKIE_SECURE = False    # Désactivé temporairement
+SESSION_COOKIE_SECURE = True  # Réactivé
+CSRF_COOKIE_SECURE = True    # Réactivé
 
 # HSTS (HTTP Strict Transport Security)
 SECURE_HSTS_SECONDS = 31536000  # 1 an
