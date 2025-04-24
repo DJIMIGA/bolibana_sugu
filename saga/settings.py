@@ -62,22 +62,36 @@ stripe.api_key = STRIPE_SECRET_KEY
 DEBUG = os.getenv('DEBUG', 'False') == 'True'
 
 # Configuration de sécurité SSL
-SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
-SECURE_SSL_REDIRECT = True
-SESSION_COOKIE_SECURE = True
-CSRF_COOKIE_SECURE = True
+# Forcer HTTPS
+SECURE_SSL_REDIRECT = not DEBUG
 
-if os.getenv('HEROKU'):
-    SECURE_HSTS_SECONDS = 31536000  # 1 an
-    SECURE_HSTS_INCLUDE_SUBDOMAINS = True
-    SECURE_HSTS_PRELOAD = True
-    SECURE_BROWSER_XSS_FILTER = True
-    SECURE_CONTENT_TYPE_NOSNIFF = True
-    X_FRAME_OPTIONS = 'DENY'
+# Paramètres de cookies sécurisés
+SESSION_COOKIE_SECURE = not DEBUG
+CSRF_COOKIE_SECURE = not DEBUG
+
+# HSTS (HTTP Strict Transport Security)
+SECURE_HSTS_SECONDS = 31536000  # 1 an
+SECURE_HSTS_INCLUDE_SUBDOMAINS = True
+SECURE_HSTS_PRELOAD = True
+
+# Protection contre le clickjacking
+X_FRAME_OPTIONS = 'DENY'
+
+# Protection contre le sniffing de contenu
+SECURE_CONTENT_TYPE_NOSNIFF = True
+
+# Protection XSS
+SECURE_BROWSER_XSS_FILTER = True
+
+# Utiliser des en-têtes de sécurité
+SECURE_REFERRER_POLICY = 'same-origin'
+
+# Proxy Heroku
+SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
 
 # Configuration des cookies
-SESSION_COOKIE_DOMAIN = None  # Retiré pour éviter les problèmes de domaine
-CSRF_COOKIE_DOMAIN = None  # Retiré pour éviter les problèmes de domaine
+SESSION_COOKIE_DOMAIN = None
+CSRF_COOKIE_DOMAIN = None
 
 # Domaines autorisés
 ALLOWED_HOSTS = [
@@ -104,7 +118,6 @@ CORS_ALLOWED_ORIGINS = [
 ]
 
 # Configuration des en-têtes de sécurité
-SECURE_REFERRER_POLICY = 'same-origin'
 SECURE_CROSS_ORIGIN_OPENER_POLICY = 'same-origin'
 
 # Application definition
@@ -191,7 +204,7 @@ if DEBUG and not os.getenv('HEROKU'):
 else:
     DATABASES = {
         'default': dj_database_url.config(
-            default=os.getenv('HEROKU_POSTGRESQL_AQUA_URL'),
+            default=os.getenv('DATABASE_URL'),
             conn_max_age=600,
             ssl_require=True
         )
