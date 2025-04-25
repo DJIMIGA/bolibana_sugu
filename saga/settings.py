@@ -71,6 +71,10 @@ SECURE_SSL_REDIRECT = False  # Désactivé pour éviter la boucle de redirection
 # Paramètres de cookies sécurisés
 SESSION_COOKIE_SECURE = True
 CSRF_COOKIE_SECURE = True
+SESSION_COOKIE_HTTPONLY = True  # Empêche l'accès aux cookies via JavaScript
+CSRF_COOKIE_HTTPONLY = True    # Empêche l'accès aux cookies CSRF via JavaScript
+SESSION_COOKIE_SAMESITE = 'Lax'  # Protection contre les attaques CSRF
+CSRF_COOKIE_SAMESITE = 'Lax'    # Protection contre les attaques CSRF
 
 # HSTS (HTTP Strict Transport Security)
 SECURE_HSTS_SECONDS = 31536000  # 1 an
@@ -97,6 +101,14 @@ SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
 SESSION_COOKIE_DOMAIN = None
 CSRF_COOKIE_DOMAIN = None
 
+# Protection supplémentaire contre les attaques CSRF
+CSRF_USE_SESSIONS = True  # Utilise les sessions pour stocker le token CSRF
+CSRF_COOKIE_AGE = 31449600  # Durée de vie du cookie CSRF (1 an)
+
+# Protection contre les attaques de type "Clickjacking"
+SECURE_CROSS_ORIGIN_OPENER_POLICY = 'same-origin'
+SECURE_CROSS_ORIGIN_EMBEDDER_POLICY = 'require-corp'
+
 # Domaines autorisés
 ALLOWED_HOSTS = [
     'bolibana-sugu-d56937020d1c.herokuapp.com',
@@ -120,9 +132,6 @@ CORS_ALLOWED_ORIGINS = [
     'https://www.bolibana.com',
     'https://bolibana-sugu-d56937020d1c.herokuapp.com',
 ]
-
-# Configuration des en-têtes de sécurité
-SECURE_CROSS_ORIGIN_OPENER_POLICY = 'same-origin'
 
 # Application definition
 
