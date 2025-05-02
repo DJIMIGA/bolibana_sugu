@@ -45,14 +45,19 @@ class Cart(models.Model):
 class CartItem(models.Model):
     cart = models.ForeignKey(Cart, related_name='cart_items', on_delete=models.CASCADE)
     product = models.ForeignKey(Product, on_delete=models.CASCADE)
+    variant = models.ForeignKey('product.PhoneVariant', on_delete=models.CASCADE, null=True, blank=True)
     quantity = models.PositiveIntegerField(default=1)
     colors = models.ManyToManyField(Color, blank=True)
     sizes = models.ManyToManyField(Size, blank=True)
 
     def __str__(self):
-        return f"{self.quantity} of {self.product.title} in Cart {self.cart.id}"
+        if self.variant:
+            return f"{self.quantity} de {self.product.title} - {self.variant.color.name} {self.variant.storage}Go/{self.variant.ram}Go RAM dans le panier {self.cart.id}"
+        return f"{self.quantity} de {self.product.title} dans le panier {self.cart.id}"
     
     def get_total_price(self):
+        if self.variant:
+            return self.variant.price * self.quantity
         return self.product.price * self.quantity
     
 

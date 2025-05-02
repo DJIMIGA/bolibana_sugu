@@ -10,7 +10,6 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/5.1/ref/settings/
 """
 import os
-import logging
 from pathlib import Path
 from dotenv import load_dotenv
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
@@ -18,17 +17,6 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 print(f"BASE_DIR: {BASE_DIR}")  # Pour vérifier le chemin
 import stripe
 import dj_database_url
-
-# Configuration des logs
-logging.basicConfig(
-    level=logging.DEBUG,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-    handlers=[
-        logging.StreamHandler(),
-        logging.FileHandler('django.log')
-    ]
-)
-logger = logging.getLogger(__name__)
 
 print("\n" + "="*50)
 print("Démarrage du chargement des paramètres Django")
@@ -157,6 +145,9 @@ INSTALLED_APPS = [
     'stripe',
     'crispy_forms',
     'crispy_tailwind',
+    'cloudinary',
+    'cloudinary_storage',
+    'price_checker',
 ]
 
 MIDDLEWARE = [
@@ -203,11 +194,16 @@ TEMPLATE_CONTEXT_PROCESSORS = [
 WSGI_APPLICATION = 'saga.wsgi.application'
 
 
-# Database
-# https://docs.djangoproject.com/en/5.1/ref/settings/#databases
+# ======================================================================
+# CONFIGURATION DE LA BASE DE DONNÉES
+# ======================================================================
 
-# Configuration de la base de données pour le développement local
-if DEBUG and not os.getenv('HEROKU'):
+# Vérifiez si vous êtes sur Heroku
+IS_HEROKU = os.environ.get('HEROKU', '') == 'True'
+
+# Configuration de la base de données
+if DEBUG and not IS_HEROKU:
+    # Configuration pour le développement local avec SQLite
     DATABASES = {
         'default': {
             'ENGINE': 'django.db.backends.sqlite3',
@@ -215,18 +211,33 @@ if DEBUG and not os.getenv('HEROKU'):
         }
     }
 else:
-    DATABASES = {
-        'default': dj_database_url.config(
-            default=os.getenv('DATABASE_URL'),
-            conn_max_age=600,
-            ssl_require=True
-        )
-    }
+    # Configuration pour Heroku PostgreSQL
+    DATABASE_URL = os.environ.get('DATABASE_URL')
+    
+    if DATABASE_URL:
+        DATABASES = {
+            'default': dj_database_url.config(
+                default=DATABASE_URL,
+                conn_max_age=600,
+                ssl_require=True
+            )
+        }
+    else:
+        # Fallback pour le développement avec PostgreSQL
+        DATABASES = {
+            'default': {
+                'ENGINE': 'django.db.backends.postgresql',
+                'NAME': os.environ.get('DB_NAME', 'ICOMMERCE'),
+                'USER': os.environ.get('DB_USER', 'postgres'),
+                'PASSWORD': os.environ.get('DB_PASSWORD', ''),
+                'HOST': os.environ.get('DB_HOST', 'localhost'),
+                'PORT': os.environ.get('DB_PORT', '5432'),
+            }
+        }
 
-# Configuration pour Heroku PostgreSQL
-import dj_database_url
-db_from_env = dj_database_url.config(conn_max_age=600)
-DATABASES['default'].update(db_from_env)
+# Configuration supplémentaire pour la base de données
+DATABASES['default']['ATOMIC_REQUESTS'] = True
+DATABASES['default']['CONN_MAX_AGE'] = 500
 
 # Password validation
 # https://docs.djangoproject.com/en/5.1/ref/settings/#auth-password-validators
@@ -335,4 +346,21 @@ STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 WHITENOISE_MANIFEST_STRICT = False
 WHITENOISE_ALLOW_ALL_ORIGINS = True
 WHITENOISE_USE_FINDERS = True
-WHITENOISE_AUTOREFRESH = True 
+WHITENOISE_AUTOREFRESH = True
+
+# Configuration Cloudinary
+CLOUDINARY_STORAGE = {
+    'CLOUD_NAME': os.environ.get('CLOUDINARY_CLOUD_NAME'),
+    'API_KEY': os.environ.get('CLOUDINARY_API_KEY'),
+    'API_SECRET': os.environ.get('CLOUDINARY_API_SECRET')
+}
+
+
+
+# Configuration Tinify
+TINIFY_API_KEY = os.environ.get('TINIFY_API_KEY', '')
+if not TINIFY_API_KEY:
+    print("Clé API Tinify non configurée. L'optimisation des images sera désactivée.")
+
+# Utiliser Cloudinary comme backend de stockage
+DEFAULT_FILE_STORAGE = 'cloudinary_storage.storage.MediaCloudinaryStorage' 

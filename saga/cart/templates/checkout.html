@@ -2,38 +2,94 @@
 {% load static %}
 {% block content %}
 
-<div class="bg-gradient-to-br from-green-600 to-yellow-500 min-h-screen">
-  <div class="pt-12 sm:pt-16 lg:pt-24">
+<div class="relative min-h-screen">
+  <!-- Fond avec motif subtil -->
+  <div class="absolute inset-0 bg-gradient-to-br from-green-50 via-yellow-50 to-white opacity-90"></div>
+  <div class="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHZpZXdCb3g9IjAgMCA2MCA2MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZyBmaWxsPSJub25lIiBmaWxsLXJ1bGU9ImV2ZW5vZGQiPjxwYXRoIGQ9Ik0zNiA0MmMwIDIuMjEgMS43OSA0IDQgNHM0LTEuNzkgNC00LTEuNzktNC00LTQtNCAxLjc5LTQgNHoiIGZpbGw9IiNlOGY1ZTAiLz48cGF0aCBkPSJNMTYgNDJjMCAyLjIxIDEuNzkgNCA0IDRzNC0xLjc5IDQtNC0xLjc5LTQtNC00LTQgMS43OS00IDR6IiBmaWxsPSIjZjBmZGYwIi8+PC9nPjwvc3ZnPg==')] opacity-10"></div>
+  
+  <div class="relative z-10">
+    <div class="pt-8 sm:pt-12 lg:pt-16">
     <div class="max-w-7xl mx-auto text-center px-4 sm:px-6 lg:px-8">
-      <div class="max-w-3xl mx-auto space-y-4 lg:max-w-none">
-        <h2 class="text-lg leading-6 font-semibold text-white uppercase tracking-wider">Options de paiement</h2>
-        <p class="text-3xl font-extrabold text-white sm:text-4xl lg:text-5xl">Choisissez votre mode de paiement</p>
-        <p class="text-xl text-white">Sélectionnez l'option qui vous convient le mieux pour finaliser votre commande.</p>
+        <div class="max-w-2xl mx-auto space-y-3">
+          <h2 class="text-lg leading-6 font-semibold text-green-600 uppercase tracking-wider">Options de paiement</h2>
+          <p class="text-2xl font-extrabold text-gray-900 sm:text-3xl lg:text-4xl">Choisissez votre mode de paiement</p>
+          <p class="text-lg text-gray-600">Sélectionnez l'option qui vous convient le mieux</p>
+        </div>
       </div>
     </div>
-  </div>
-  <div class="mt-8 pb-12 sm:mt-12 sm:pb-16 lg:mt-16 lg:pb-24">
+    <div class="mt-6 pb-12 sm:mt-8 sm:pb-16 lg:mt-12 lg:pb-20">
     <div class="relative">
-      <div class="absolute inset-0 h-3/4 bg-gradient-to-br from-green-600 to-yellow-500"></div>
       <div class="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <!-- Utilisation de grid pour garantir des hauteurs égales -->
-        <div class="mx-auto grid grid-cols-1 lg:grid-cols-3 gap-8 lg:gap-12">
-          <!-- Première carte - Paiement en ligne (Carte bancaire) -->
-          <div class="h-full flex flex-col rounded-lg shadow-lg overflow-hidden">
-            <div class="px-6 py-8 bg-white sm:p-10 sm:pb-6">
+          <div class="mx-auto grid grid-cols-1 lg:grid-cols-3 gap-6 lg:gap-8">
+            <!-- Première carte - Mobile Money -->
+            <div class="h-full flex flex-col rounded-lg shadow-lg overflow-hidden bg-white/80 backdrop-blur-sm">
+              <div class="px-4 py-6 bg-white sm:px-6 sm:py-8">
               <div>
-                <h3 class="inline-flex px-4 py-1 rounded-full text-sm font-semibold tracking-wide uppercase bg-green-100 text-green-600" id="tier-online">Paiement en ligne</h3>
+                  <h3 class="inline-flex px-3 py-1 rounded-full text-sm font-semibold tracking-wide uppercase bg-gradient-to-r from-orange-100 to-orange-200 text-orange-600" id="tier-mobile">Mobile Money</h3>
+                </div>
+                <div class="mt-3 flex items-center text-2xl md:text-3xl font-extrabold text-orange-600">
+                  <svg class="w-8 h-8 md:w-10 md:h-10 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                    <path d="M4 4a2 2 0 00-2 2v1h16V6a2 2 0 00-2-2H4z"/>
+                    <path fill-rule="evenodd" d="M18 9H2v5a2 2 0 002 2h12a2 2 0 002-2V9zM4 13a1 1 0 011-1h1a1 1 0 110 2H5a1 1 0 01-1-1zm5-1a1 1 0 100 2h1a1 1 0 100-2H9z" clip-rule="evenodd"/>
+                  </svg>
+                  Orange Money
+                </div>
+                <p class="mt-3 text-base text-gray-500">Paiement via Orange Money, MTN Mobile Money, etc.</p>
               </div>
-              <div class="mt-4 flex items-center text-3xl md:text-4xl font-extrabold text-green-600">
-                <svg class="w-10 h-10 md:w-12 md:h-12 mr-3" fill="currentColor" viewBox="0 0 20 20">
+              <div class="flex-grow flex flex-col justify-between px-6 pt-6 pb-8 bg-gradient-to-b from-orange-50 to-white space-y-6 sm:p-10 sm:pt-6">
+                <ul role="list" class="space-y-4">
+                  <li class="flex items-start">
+                    <div class="flex-shrink-0">
+                      <svg class="h-6 w-6 text-orange-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                      </svg>
+                    </div>
+                    <p class="ml-3 text-base text-gray-700">Paiement mobile rapide</p>
+                  </li>
+                  <li class="flex items-start">
+                    <div class="flex-shrink-0">
+                      <svg class="h-6 w-6 text-orange-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                      </svg>
+                    </div>
+                    <p class="ml-3 text-base text-gray-700">Sans carte bancaire</p>
+                  </li>
+                  <li class="flex items-start">
+                    <div class="flex-shrink-0">
+                      <svg class="h-6 w-6 text-orange-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                      </svg>
+                    </div>
+                    <p class="ml-3 text-base text-gray-700">Sécurisé et fiable</p>
+                  </li>
+                </ul>
+                <div class="rounded-md shadow mt-auto">
+                  <a href="{% url 'cart:payment_online' %}?payment_method=mobile_money" class="flex items-center justify-center px-5 py-3 border border-transparent text-base font-medium rounded-md text-white bg-gradient-to-r from-orange-600 to-orange-500 hover:from-orange-700 hover:to-orange-600 transform hover:scale-[1.02] transition-all duration-300" aria-describedby="tier-mobile">
+                    <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+                    </svg>
+                    Choisir Orange Money
+                  </a>
+                </div>
+              </div>
+            </div>
+
+            <!-- Deuxième carte - Paiement en ligne (Carte bancaire) -->
+            <div class="h-full flex flex-col rounded-lg shadow-lg overflow-hidden bg-white/80 backdrop-blur-sm">
+              <div class="px-4 py-6 bg-white sm:px-6 sm:py-8">
+                <div>
+                  <h3 class="inline-flex px-3 py-1 rounded-full text-sm font-semibold tracking-wide uppercase bg-gradient-to-r from-green-100 to-green-200 text-green-600" id="tier-online">Paiement en ligne</h3>
+                </div>
+                <div class="mt-3 flex items-center text-2xl md:text-3xl font-extrabold text-green-600">
+                  <svg class="w-8 h-8 md:w-10 md:h-10 mr-2" fill="currentColor" viewBox="0 0 20 20">
                   <path d="M4 4a2 2 0 00-2 2v1h16V6a2 2 0 00-2-2H4z"/>
                   <path fill-rule="evenodd" d="M18 9H2v5a2 2 0 002 2h12a2 2 0 002-2V9zM4 13a1 1 0 011-1h1a1 1 0 110 2H5a1 1 0 01-1-1zm5-1a1 1 0 100 2h1a1 1 0 100-2H9z" clip-rule="evenodd"/>
                 </svg>
                 Carte bancaire
               </div>
-              <p class="mt-5 text-lg text-gray-500">Paiement rapide et sécurisé par carte bancaire via Stripe.</p>
+                <p class="mt-3 text-base text-gray-500">Paiement rapide et sécurisé par carte bancaire via Stripe.</p>
             </div>
-            <div class="flex-grow flex flex-col justify-between px-6 pt-6 pb-8 bg-gray-50 space-y-6 sm:p-10 sm:pt-6">
+              <div class="flex-grow flex flex-col justify-between px-6 pt-6 pb-8 bg-gradient-to-b from-green-50 to-white space-y-6 sm:p-10 sm:pt-6">
               <ul role="list" class="space-y-4">
                 <li class="flex items-start">
                   <div class="flex-shrink-0">
@@ -61,75 +117,32 @@
                 </li>
               </ul>
               <div class="rounded-md shadow mt-auto">
-                <a href="{% url 'cart:payment_online' %}?payment_method=online_payment" class="flex items-center justify-center px-5 py-3 border border-transparent text-base font-medium rounded-md text-white bg-green-600 hover:bg-green-700" aria-describedby="tier-online">Choisir</a>
-              </div>
-            </div>
-          </div>
-
-          <!-- Deuxième carte - Mobile Money -->
-          <div class="h-full flex flex-col rounded-lg shadow-lg overflow-hidden">
-            <div class="px-6 py-8 bg-white sm:p-10 sm:pb-6">
-              <div>
-                <h3 class="inline-flex px-4 py-1 rounded-full text-sm font-semibold tracking-wide uppercase bg-blue-100 text-blue-600" id="tier-mobile">Mobile Money</h3>
-              </div>
-              <div class="mt-4 flex items-center text-3xl md:text-4xl font-extrabold text-blue-600">
-                <svg class="w-10 h-10 md:w-12 md:h-12 mr-3" fill="currentColor" viewBox="0 0 20 20">
-                  <path d="M4 4a2 2 0 00-2 2v1h16V6a2 2 0 00-2-2H4z"/>
-                  <path fill-rule="evenodd" d="M18 9H2v5a2 2 0 002 2h12a2 2 0 002-2V9zM4 13a1 1 0 011-1h1a1 1 0 110 2H5a1 1 0 01-1-1zm5-1a1 1 0 100 2h1a1 1 0 100-2H9z" clip-rule="evenodd"/>
-                </svg>
-                Orange Money
-              </div>
-              <p class="mt-5 text-lg text-gray-500">Paiement via Orange Money, MTN Mobile Money, etc.</p>
-            </div>
-            <div class="flex-grow flex flex-col justify-between px-6 pt-6 pb-8 bg-gray-50 space-y-6 sm:p-10 sm:pt-6">
-              <ul role="list" class="space-y-4">
-                <li class="flex items-start">
-                  <div class="flex-shrink-0">
-                    <svg class="h-6 w-6 text-blue-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                  <a href="{% url 'cart:payment_online' %}?payment_method=online_payment" class="flex items-center justify-center px-5 py-3 border border-transparent text-base font-medium rounded-md text-white bg-gradient-to-r from-green-600 to-yellow-500 hover:from-green-700 hover:to-yellow-600 transform hover:scale-[1.02] transition-all duration-300" aria-describedby="tier-online">
+                    <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
                     </svg>
-                  </div>
-                  <p class="ml-3 text-base text-gray-700">Paiement mobile rapide</p>
-                </li>
-                <li class="flex items-start">
-                  <div class="flex-shrink-0">
-                    <svg class="h-6 w-6 text-blue-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
-                    </svg>
-                  </div>
-                  <p class="ml-3 text-base text-gray-700">Sans carte bancaire</p>
-                </li>
-                <li class="flex items-start">
-                  <div class="flex-shrink-0">
-                    <svg class="h-6 w-6 text-blue-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
-                    </svg>
-                  </div>
-                  <p class="ml-3 text-base text-gray-700">Sécurisé et fiable</p>
-                </li>
-              </ul>
-              <div class="rounded-md shadow mt-auto">
-                <a href="{% url 'cart:payment_online' %}?payment_method=mobile_money" class="flex items-center justify-center px-5 py-3 border border-transparent text-base font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700" aria-describedby="tier-mobile">Choisir</a>
+                    Choisir carte bancaire
+                  </a>
               </div>
             </div>
           </div>
 
           <!-- Troisième carte - Paiement à la livraison -->
-          <div class="h-full flex flex-col rounded-lg shadow-lg overflow-hidden">
-            <div class="px-6 py-8 bg-white sm:p-10 sm:pb-6">
+            <div class="h-full flex flex-col rounded-lg shadow-lg overflow-hidden bg-white/80 backdrop-blur-sm">
+              <div class="px-4 py-6 bg-white sm:px-6 sm:py-8">
               <div>
-                <h3 class="inline-flex px-4 py-1 rounded-full text-sm font-semibold tracking-wide uppercase bg-yellow-100 text-yellow-600" id="tier-delivery">Paiement à la livraison</h3>
+                  <h3 class="inline-flex px-3 py-1 rounded-full text-sm font-semibold tracking-wide uppercase bg-gradient-to-r from-yellow-100 to-yellow-200 text-yellow-600" id="tier-delivery">Paiement à la livraison</h3>
               </div>
-              <div class="mt-4 flex items-center text-3xl md:text-4xl font-extrabold text-yellow-600">
-                <svg class="w-10 h-10 md:w-12 md:h-12 mr-3" fill="currentColor" viewBox="0 0 20 20">
+                <div class="mt-3 flex items-center text-2xl md:text-3xl font-extrabold text-yellow-600">
+                  <svg class="w-8 h-8 md:w-10 md:h-10 mr-2" fill="currentColor" viewBox="0 0 20 20">
                   <path d="M8 16.5a1.5 1.5 0 11-3 0 1.5 1.5 0 013 0zM15 16.5a1.5 1.5 0 11-3 0 1.5 1.5 0 013 0z"/>
                   <path d="M3 4a1 1 0 00-1 1v10a1 1 0 001 1h1.05a2.5 2.5 0 014.9 0H10a1 1 0 001-1V5a1 1 0 00-1-1H3zM14 7a1 1 0 00-1 1v6.05A2.5 2.5 0 0115.95 16H17a1 1 0 001-1v-5a1 1 0 00-.293-.707l-2-2A1 1 0 0015 7h-1z"/>
                 </svg>
                 Espèces
               </div>
-              <p class="mt-5 text-lg text-gray-500">Payez en espèces ou par carte à la réception de votre commande.</p>
+                <p class="mt-3 text-base text-gray-500">Payez en espèces ou par carte à la réception de votre commande.</p>
             </div>
-            <div class="flex-grow flex flex-col justify-between px-6 pt-6 pb-8 bg-gray-50 space-y-6 sm:p-10 sm:pt-6">
+              <div class="flex-grow flex flex-col justify-between px-6 pt-6 pb-8 bg-gradient-to-b from-yellow-50 to-white space-y-6 sm:p-10 sm:pt-6">
               <ul role="list" class="space-y-4">
                 <li class="flex items-start">
                   <div class="flex-shrink-0">
@@ -157,7 +170,13 @@
                 </li>
               </ul>
               <div class="rounded-md shadow mt-auto">
-                <a href="{% url 'cart:payment_delivery' %}" class="flex items-center justify-center px-5 py-3 border border-transparent text-base font-medium rounded-md text-white bg-yellow-600 hover:bg-yellow-700" aria-describedby="tier-delivery">Choisir</a>
+                  <a href="{% url 'cart:payment_delivery' %}" class="flex items-center justify-center px-5 py-3 border border-transparent text-base font-medium rounded-md text-white bg-gradient-to-r from-yellow-600 to-yellow-500 hover:from-yellow-700 hover:to-yellow-600 transform hover:scale-[1.02] transition-all duration-300" aria-describedby="tier-delivery">
+                    <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+                    </svg>
+                    Choisir paiement à la livraison
+                  </a>
+                </div>
               </div>
             </div>
           </div>

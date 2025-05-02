@@ -1,5 +1,6 @@
 from django.db import models
 from phonenumber_field.modelfields import PhoneNumberField
+from cloudinary.models import CloudinaryField
 # Create your models here.
 from django.db import models
 
@@ -19,7 +20,7 @@ class Supplier(models.Model):
     slug = models.SlugField(max_length=100, unique=True, null=True, blank=True)
     name = models.CharField(max_length=100)
     description = models.TextField()
-    image = models.ImageField(upload_to='suppliers_images', null=True, blank=True)
+    image = CloudinaryField('image', null=True, blank=True)
     specialty = models.CharField(max_length=100, choices=SUPPLIER_SPECIALTY_CHOICES)
 
     def __str__(self):

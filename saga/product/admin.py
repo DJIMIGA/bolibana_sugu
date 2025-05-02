@@ -3,6 +3,8 @@ from django.utils.html import format_html
 from django.utils.safestring import mark_safe
 from django.urls import reverse
 from django.db.models import Count, Q
+from price_checker.models import PriceEntry
+from price_checker.admin import PriceEntryInline
 
 # Register your models here.
 from .models import Product, Category, ImageProduct, Review, Size, Color, Clothing, CulturalItem, ShippingMethod, Phone, PhoneVariant, PhoneVariantImage
@@ -114,16 +116,53 @@ class PhoneVariantInline(admin.TabularInline):
 
 @admin.register(Product)
 class ProductAdmin(admin.ModelAdmin):
-    list_display = ('title', 'category', 'price', 'get_phone_info', 'supplier')
-    list_filter = ('category', 'supplier')
-    search_fields = ('title', 'description')
-    fields = ('title', 'category', 'price', 'description', 'highlight', 'image', 'supplier')
+    list_display = ('title', 'category', 'price', 'supplier', 'is_active', 'created_at', 'current_price', 'price_trend')
+    list_filter = ('is_active', 'category', 'supplier', 'created_at')
+    search_fields = ('title', 'description', 'supplier__name')
+    readonly_fields = ('created_at', 'updated_at', 'current_price', 'price_trend')
+    list_editable = ('is_active',)
+    date_hierarchy = 'created_at'
+    inlines = [PriceEntryInline]
 
-    def get_phone_info(self, obj):
-        if hasattr(obj, 'phone'):
-            return f"{obj.category.name} {obj.phone.model}"
-        return "-"
-    get_phone_info.short_description = 'Téléphone'
+    fieldsets = (
+        ('Informations de base', {
+            'fields': ('title', 'category', 'supplier', 'price', 'description', 'highlight', 'image', 'is_active')
+        }),
+        ('Dates', {
+            'fields': ('created_at', 'updated_at'),
+            'classes': ('collapse',)
+        }),
+        ('Prix', {
+            'fields': ('current_price', 'price_trend'),
+            'classes': ('collapse',)
+        }),
+    )
+
+    def current_price(self, obj):
+        latest_price = obj.price_entries.filter(is_active=True).first()
+        if latest_price:
+            return f"{latest_price.price} FCFA ({latest_price.city.name})"
+        return '-'
+    current_price.short_description = 'Prix actuel'
+
+    def price_trend(self, obj):
+        prices = obj.price_entries.filter(is_active=True).order_by('-created_at')[:2]
+        if len(prices) >= 2:
+            change = prices[0].price - prices[1].price
+            if change == 0:
+                return format_html('<span style="color: gray">Stable</span>')
+            color = 'green' if change > 0 else 'red'
+            sign = '+' if change > 0 else ''
+            return format_html(
+                '<span style="color: {}">{}{} FCFA</span>',
+                color,
+                sign,
+                change
+            )
+        elif len(prices) == 1:
+            return format_html('<span style="color: blue">Nouveau prix</span>')
+        return '-'
+    price_trend.short_description = 'Tendance'
 
 @admin.register(Phone)
 class PhoneAdmin(admin.ModelAdmin):
@@ -180,11 +219,12 @@ class PhoneVariantImageInline(admin.TabularInline):
 
 @admin.register(PhoneVariant)
 class PhoneVariantAdmin(admin.ModelAdmin):
-    list_display = ('phone', 'color', 'storage', 'price', 'stock', 'sku', 'image_preview')
-    list_filter = ('phone', 'color', 'storage')
-    search_fields = ('sku', 'phone__model')
+    list_display = ('phone', 'color', 'storage', 'ram', 'price', 'stock', 'sku', 'disponible_salam', 'image_preview')
+    list_filter = ('phone', 'color', 'storage', 'ram', 'disponible_salam')
+    search_fields = ('sku', 'phone__model', 'color__name')
+    list_editable = ('price', 'stock', 'disponible_salam')
     readonly_fields = ('sku', 'image_preview')
-    fields = ('phone', 'color', 'storage', 'price', 'stock', 'sku', 'image_preview')
+    fields = ('phone', 'color', 'storage', 'ram', 'price', 'stock', 'sku', 'disponible_salam', 'image_preview')
     inlines = [PhoneVariantImageInline]
 
     def image_preview(self, obj):

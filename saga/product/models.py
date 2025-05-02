@@ -5,6 +5,11 @@ from django.contrib.contenttypes.models import ContentType
 from django.utils.text import slugify
 from django.db.models.signals import pre_save
 from django.dispatch import receiver
+from cloudinary.models import CloudinaryField
+from suppliers.models import Supplier
+from saga.utils.image_optimizer import ImageOptimizer
+from django.utils import timezone
+from django.core.exceptions import ValidationError
 
 
 class ShippingMethod(models.Model):
@@ -30,20 +35,19 @@ class Category(models.Model):
     name = models.CharField(max_length=255)
     slug = models.SlugField(max_length=255, unique=True, null=True, blank=True)
     parent = models.ForeignKey('self', null=True, blank=True, related_name='children', on_delete=models.CASCADE)
-    image = models.ImageField(upload_to='categories/', blank=True, null=True)
+    image = CloudinaryField('image', blank=True, null=True)
 
     def __str__(self):
         return self.name
 
     def save(self, *args, **kwargs):
+        # Nettoyage et normalisation du nom
+        self.name = self.name.strip().title()
+
+        # Génération automatique du slug si vide
         if not self.slug:
-            base_slug = slugify(self.name)
-            slug = base_slug
-            counter = 1
-            while Category.objects.filter(slug=slug).exclude(pk=self.pk).exists():
-                slug = f"{base_slug}-{counter}"
-                counter += 1
-            self.slug = slug
+            self.slug = slugify(self.name)
+
         super().save(*args, **kwargs)
 
     def get_all_children_ids(self):
@@ -67,7 +71,8 @@ class Category(models.Model):
         return Product.objects.filter(category_id__in=category_ids).count()
 
     class Meta:
-        verbose_name_plural = "Categories"
+        verbose_name = 'Catégorie'
+        verbose_name_plural = 'Catégories'
 
     def get_full_path(self):
         path = [self.name]
@@ -80,17 +85,50 @@ class Category(models.Model):
 
 class Product(models.Model):
     title = models.CharField(max_length=200, verbose_name='Titre')
-    category = models.ForeignKey(Category, on_delete=models.CASCADE, related_name='products', verbose_name='Catégorie')
-    price = models.DecimalField(max_digits=10,
-                                decimal_places=0, verbose_name='Prix')  # Prix du produit
-    description = models.TextField(blank=True, null=True, verbose_name='Description')  # Description du produit
-    highlight = models.TextField(blank=True, null=True, verbose_name='Points forts')  # Points forts du produit
-    image = models.ImageField(upload_to='product/', blank=True, null=True, verbose_name='Image')  # Image du produit
-    supplier = models.ForeignKey('suppliers.Supplier', on_delete=models.CASCADE, related_name='products', verbose_name='Fournisseur')
+    category = models.ForeignKey(Category, on_delete=models.CASCADE, related_name='products')
+    price = models.DecimalField(max_digits=10, decimal_places=0, verbose_name='Prix')
+    description = models.TextField(verbose_name='Description', blank=True, null=True)
+    highlight = models.TextField(verbose_name='Points forts', blank=True, null=True)
+    image = CloudinaryField('image', blank=True, null=True)
+    supplier = models.ForeignKey('suppliers.Supplier', on_delete=models.CASCADE, related_name='products')
     stripe_product_id = models.CharField(max_length=255, blank=True, null=True)
+    is_active = models.BooleanField(default=True, verbose_name='Actif')
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        verbose_name = 'Produit'
+        verbose_name_plural = 'Produits'
+        ordering = ['-created_at']
+        unique_together = [['title', 'category']]  # Un produit ne peut pas avoir le même titre dans la même catégorie
 
     def __str__(self):
         return self.title
+
+    def clean(self):
+        # Vérification de l'unicité du titre dans la catégorie
+        if Product.objects.filter(title=self.title, category=self.category).exclude(pk=self.pk).exists():
+            raise ValidationError(
+                {'title': 'Un produit avec ce titre existe déjà dans cette catégorie.'}
+            )
+
+    def save(self, *args, **kwargs):
+        # Nettoyage et normalisation du titre
+        self.title = self.title.strip().title()
+
+        # Nettoyage et normalisation de la description et des points forts
+        if self.description:
+            self.description = self.description.strip()
+        if self.highlight:
+            self.highlight = self.highlight.strip()
+
+        # Optimisation de l'image si elle est fournie
+        if self.image and hasattr(self.image, 'file'):
+            optimizer = ImageOptimizer()
+            if optimizer.validate_image(self.image.file):
+                self.image.file = optimizer.optimize_image(self.image.file)
+
+        super().save(*args, **kwargs)
 
     def get_highlights(self):
         if self.highlight:
@@ -105,11 +143,23 @@ class Color(models.Model):
     def __str__(self):
         return self.name
 
+    def save(self, *args, **kwargs):
+        # Nettoyage et normalisation du nom
+        self.name = self.name.strip().title()
+        super().save(*args, **kwargs)
+
     def get_hex_code(self):
         return self.code
 
     def get_rgb_code(self):
         return tuple(int(self.code.lstrip('#')[i:i + 2], 16) for i in (0, 2, 4))
+
+    @property
+    def first_word(self):
+        """Retourne le premier mot du nom de la couleur"""
+        if not self.name:
+            return ''
+        return self.name.split()[0].strip()
 
 
 class Size(models.Model):
@@ -117,6 +167,11 @@ class Size(models.Model):
 
     def __str__(self):
         return self.name
+
+    def save(self, *args, **kwargs):
+        # Nettoyage et normalisation du nom
+        self.name = self.name.strip().title()
+        super().save(*args, **kwargs)
 
 
 class Clothing(models.Model):
@@ -134,7 +189,6 @@ class Clothing(models.Model):
         return self.product.title
 
 
-
 class CulturalItem(models.Model):  # Espace Culturel
     product = models.OneToOneField(Product, primary_key=True, on_delete=models.CASCADE, related_name='cultural_product',
                                    default=1)
@@ -145,15 +199,23 @@ class CulturalItem(models.Model):  # Espace Culturel
     def __str__(self):
         return self.product.title
 
+    def save(self, *args, **kwargs):
+        # Nettoyage et normalisation de l'auteur
+        if self.author:
+            self.author = self.author.strip().title()
+        super().save(*args, **kwargs)
+
 
 class ImageProduct(models.Model):
-    image = models.ImageField(upload_to='product/galerie/', blank=True)
+    image = CloudinaryField('image', blank=True)
     product = models.ForeignKey(Product, on_delete=models.CASCADE,
-                                related_name='image_products')  # Changement de related_name
+                                related_name='image_products')
     ordre = models.AutoField(primary_key=True)
 
     class Meta:
         ordering = ['ordre']
+        verbose_name = 'Image du produit'
+        verbose_name_plural = 'Images du produit'
 
     def __str__(self):
         return f"{self.product.title} - Image {self.ordre}"
@@ -181,45 +243,14 @@ class Review(models.Model):
         return self.note >= 4
 
 
-class PhoneVariant(models.Model):
-    phone = models.ForeignKey('Phone', on_delete=models.CASCADE, related_name='variants', verbose_name='Téléphone')
-    color = models.ForeignKey(Color, on_delete=models.CASCADE, verbose_name='Couleur')
-    storage = models.PositiveIntegerField(verbose_name='Stockage (Go)')
-    price = models.DecimalField(max_digits=10, decimal_places=2, verbose_name='Prix')
-    stock = models.PositiveIntegerField(default=0, verbose_name='Stock disponible')
-    sku = models.CharField(max_length=50, unique=True, verbose_name='SKU')
-
-    def __str__(self):
-        return f"{self.phone.model} - {self.color.name} - {self.storage}Go"
-
-    class Meta:
-        verbose_name = 'Variante de téléphone'
-        verbose_name_plural = 'Variantes de téléphone'
-        unique_together = ['phone', 'color', 'storage']
-
-    def save(self, *args, **kwargs):
-        # Générer le SKU automatiquement
-        if not self.sku:
-            self.sku = f"{self.phone.model}-{self.color.name}-{self.storage}GB"
-        super().save(*args, **kwargs)
-
-    @property
-    def primary_image(self):
-        return self.images.filter(is_primary=True).first() or self.images.first()
-
-    @property
-    def all_images(self):
-        return self.images.all()
-
-
 class Phone(models.Model):
     product = models.OneToOneField(Product, on_delete=models.CASCADE, related_name='phone', verbose_name='Produit associé')
     model = models.CharField(max_length=100, verbose_name='Modèle')
+    brand = models.CharField(max_length=50, verbose_name='Marque')
     operating_system = models.CharField(max_length=50, verbose_name='Système d\'exploitation')
     screen_size = models.DecimalField(max_digits=4, decimal_places=2, verbose_name='Taille d\'écran (pouces)')
     resolution = models.CharField(max_length=50, verbose_name='Résolution')
     processor = models.CharField(max_length=100, verbose_name='Processeur')
-    ram = models.PositiveIntegerField(verbose_name='RAM (Go)')
     battery_capacity = models.PositiveIntegerField(verbose_name='Capacité batterie (mAh)')
     camera_main = models.CharField(max_length=100, verbose_name='Appareil photo principal')
     camera_front = models.CharField(max_length=100, verbose_name='Appareil photo frontal')
@@ -229,15 +260,30 @@ class Phone(models.Model):
     is_new = models.BooleanField(default=True, verbose_name='Neuf')
     box_included = models.BooleanField(default=True, verbose_name='Boîte incluse')
     accessories = models.TextField(blank=True, null=True, verbose_name='Accessoires inclus')
-    storage = models.PositiveIntegerField(verbose_name='Stockage (Go)', null=True, blank=True)
 
     def __str__(self):
-        return f"{self.product.category.name} {self.model}"
+        return f"{self.brand} {self.model}"
+
+    def save(self, *args, **kwargs):
+        # Nettoyage et normalisation des champs textuels
+        self.model = self.model.strip().title()
+        self.brand = self.brand.strip().title()
+        self.operating_system = self.operating_system.strip().title()
+        self.resolution = self.resolution.strip().title()
+        self.processor = self.processor.strip().title()
+        self.camera_main = self.camera_main.strip().title()
+        self.camera_front = self.camera_front.strip().title()
+        self.network = self.network.strip().title()
+        self.warranty = self.warranty.strip().title()
+        if self.accessories:
+            self.accessories = self.accessories.strip()
+
+        super().save(*args, **kwargs)
 
     class Meta:
         verbose_name = 'Téléphone'
         verbose_name_plural = 'Téléphones'
-        ordering = ['model']
+        ordering = ['brand', 'model']
 
     def get_available_variants(self):
         return self.variants.filter(stock__gt=0)
@@ -249,9 +295,51 @@ class Phone(models.Model):
         return self.variants.aggregate(max_price=models.Max('price'))['max_price']
 
 
+class PhoneVariant(models.Model):
+    phone = models.ForeignKey(Phone, on_delete=models.CASCADE, related_name='variants')
+    color = models.ForeignKey(Color, on_delete=models.CASCADE, related_name='phone_variants')
+    storage = models.PositiveIntegerField(verbose_name='Stockage (Go)')
+    ram = models.PositiveIntegerField(verbose_name='RAM (Go)')
+    price = models.DecimalField(max_digits=10, decimal_places=2, verbose_name='Prix')
+    stock = models.PositiveIntegerField(default=0, verbose_name='Stock')
+    sku = models.CharField(max_length=100, unique=True, verbose_name='SKU')
+    disponible_salam = models.BooleanField(default=False, verbose_name='Disponible en Salam')
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        verbose_name = 'Variante de téléphone'
+        verbose_name_plural = 'Variantes de téléphones'
+        ordering = ['phone', 'storage', 'ram', 'color']
+        unique_together = [['phone', 'color', 'storage', 'ram']]  # Une variante ne peut pas avoir la même combinaison phone-couleur-stockage-ram
+
+    def __str__(self):
+        return f"{self.phone} - {self.color} - {self.storage}Go/{self.ram}Go"
+
+    def clean(self):
+        # Vérification de l'unicité de la combinaison phone-couleur-stockage-ram
+        if PhoneVariant.objects.filter(
+            phone=self.phone,
+            color=self.color,
+            storage=self.storage,
+            ram=self.ram
+        ).exclude(pk=self.pk).exists():
+            raise ValidationError(
+                'Une variante avec cette combinaison de téléphone, couleur, stockage et RAM existe déjà.'
+            )
+
+    @property
+    def primary_image(self):
+        return self.images.filter(is_primary=True).first() or self.images.first()
+
+    @property
+    def all_images(self):
+        return self.images.all()
+
+
 class PhoneVariantImage(models.Model):
     variant = models.ForeignKey(PhoneVariant, on_delete=models.CASCADE, related_name='images')
-    image = models.ImageField(upload_to='phone_variants/images/')
+    image = CloudinaryField('image')
     is_primary = models.BooleanField(default=False)
     order = models.PositiveIntegerField(default=0)
     created_at = models.DateTimeField(auto_now_add=True)

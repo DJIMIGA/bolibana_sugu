@@ -1,14 +1,15 @@
 <div id="cart-sidebar" class="fixed inset-0 overflow-hidden z-50 pointer-events-none">
     <!-- Overlay avec effet de flou (uniquement sur desktop) -->
     <div id="cart-overlay" 
-         class="cart-sidebar-overlay hidden lg:block"
+         class="cart-sidebar-overlay hidden lg:block fixed inset-0"
          onclick="closeCart()">
     </div>
 
     <!-- Container principal -->
     <div class="pointer-events-none fixed inset-y-0 right-0 flex w-full lg:w-auto lg:pl-10">
         <div id="cart-container" 
-             class="cart-sidebar-container w-full lg:w-[32rem]">
+             class="cart-sidebar-container w-full lg:w-[42rem] h-full"
+             hx-debug="true">
             <div class="flex h-full flex-col bg-white shadow-xl lg:rounded-l-2xl">
                 <!-- En-tête du panier (fixe) -->
                 <div class="cart-sidebar-header p-4 border-b border-gray-200 bg-white sticky top-0 z-10">
@@ -32,8 +33,23 @@
                 </div>
 
                 <!-- Contenu du panier (défilant) -->
-                <div id="cart-content" class="flex-1 overflow-y-auto">
-                    {% include 'cart/components/_cart_content.html' %}
+                <div class="flex-1 overflow-y-auto h-[calc(100vh-180px)] lg:h-[calc(100vh-300px)]">
+                    <div id="cart-content" 
+                         hx-indicator=".htmx-indicator"
+                         hx-target="#cart-content"
+                         hx-swap="innerHTML">
+                        {% include 'cart/components/_cart_content.html' with show_total=False %}
+                    </div>
+                </div>
+
+                <!-- Total du panier (fixe) -->
+                <div class="border-t border-gray-200 bg-white p-4 sticky bottom-0 z-10">
+                    {% include 'cart/components/_cart_total.html' with cart=cart %}
+                </div>
+
+                <!-- Indicateur de chargement -->
+                <div class="htmx-indicator fixed top-0 right-0 p-4">
+                    <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-yellow-500"></div>
                 </div>
             </div>
         </div>

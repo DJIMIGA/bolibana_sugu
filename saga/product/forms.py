@@ -53,11 +53,37 @@ class PhoneForm(forms.ModelForm):
     class Meta:
         model = Phone
         fields = [
-            'model', 'operating_system', 'screen_size', 'resolution',
-            'processor', 'ram', 'battery_capacity', 'camera_main',
-            'camera_front', 'network', 'warranty', 'imei', 'is_new',
-            'box_included', 'accessories'
+            'model',
+            'operating_system',
+            'screen_size',
+            'resolution',
+            'processor',
+            'battery_capacity',
+            'camera_main',
+            'camera_front',
+            'network',
+            'warranty',
+            'imei',
+            'is_new',
+            'box_included',
+            'accessories'
         ]
+        widgets = {
+            'model': forms.TextInput(attrs={'class': 'form-control'}),
+            'operating_system': forms.TextInput(attrs={'class': 'form-control'}),
+            'screen_size': forms.NumberInput(attrs={'class': 'form-control'}),
+            'resolution': forms.TextInput(attrs={'class': 'form-control'}),
+            'processor': forms.TextInput(attrs={'class': 'form-control'}),
+            'battery_capacity': forms.NumberInput(attrs={'class': 'form-control'}),
+            'camera_main': forms.TextInput(attrs={'class': 'form-control'}),
+            'camera_front': forms.TextInput(attrs={'class': 'form-control'}),
+            'network': forms.TextInput(attrs={'class': 'form-control'}),
+            'warranty': forms.TextInput(attrs={'class': 'form-control'}),
+            'imei': forms.TextInput(attrs={'class': 'form-control'}),
+            'is_new': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
+            'box_included': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
+            'accessories': forms.Textarea(attrs={'class': 'form-control', 'rows': 3})
+        }
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -79,28 +105,27 @@ class PhoneForm(forms.ModelForm):
                 css_class='mb-4'
             ),
             Row(
-                Column('ram', css_class='w-1/2'),
                 Column('battery_capacity', css_class='w-1/2'),
-                css_class='mb-4'
-            ),
-            Row(
                 Column('camera_main', css_class='w-1/2'),
+                css_class='mb-4'
+            ),
+            Row(
                 Column('camera_front', css_class='w-1/2'),
-                css_class='mb-4'
-            ),
-            Row(
                 Column('network', css_class='w-1/2'),
+                css_class='mb-4'
+            ),
+            Row(
                 Column('warranty', css_class='w-1/2'),
-                css_class='mb-4'
-            ),
-            Row(
                 Column('imei', css_class='w-1/2'),
-                Column('is_new', css_class='w-1/2'),
                 css_class='mb-4'
             ),
             Row(
+                Column('is_new', css_class='w-1/2'),
                 Column('box_included', css_class='w-1/2'),
-                Column('accessories', css_class='w-1/2'),
+                css_class='mb-4'
+            ),
+            Row(
+                Column('accessories', css_class='w-full'),
                 css_class='mb-4'
             ),
         )
@@ -118,13 +143,44 @@ class PhoneForm(forms.ModelForm):
 class PhoneVariantForm(forms.ModelForm):
     class Meta:
         model = PhoneVariant
-        fields = ['color', 'storage', 'price', 'stock']
+        fields = [
+            'color',
+            'storage',
+            'ram',
+            'price',
+            'stock',
+            'sku'
+        ]
         widgets = {
-            'color': forms.Select(attrs={'class': 'form-select'}),
+            'color': forms.Select(attrs={'class': 'form-control'}),
             'storage': forms.NumberInput(attrs={'class': 'form-control'}),
+            'ram': forms.NumberInput(attrs={'class': 'form-control'}),
             'price': forms.NumberInput(attrs={'class': 'form-control'}),
             'stock': forms.NumberInput(attrs={'class': 'form-control'}),
+            'sku': forms.TextInput(attrs={'class': 'form-control'})
         }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.helper = FormHelper()
+        self.helper.form_tag = False
+        self.helper.layout = Layout(
+            Row(
+                Column('color', css_class='w-1/2'),
+                Column('storage', css_class='w-1/2'),
+                css_class='mb-4'
+            ),
+            Row(
+                Column('ram', css_class='w-1/2'),
+                Column('price', css_class='w-1/2'),
+                css_class='mb-4'
+            ),
+            Row(
+                Column('stock', css_class='w-1/2'),
+                Column('sku', css_class='w-1/2'),
+                css_class='mb-4'
+            )
+        )
 
 
 class PhoneVariantImageForm(forms.ModelForm):

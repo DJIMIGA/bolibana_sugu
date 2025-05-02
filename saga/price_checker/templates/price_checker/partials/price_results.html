@@ -1,0 +1,176 @@
+{% if results %}
+    <div class="space-y-4">
+        {% for result in results %}
+            <div class="bg-white rounded-lg shadow-md p-4 mb-4">
+                <div class="flex flex-col space-y-2">
+                    <h3 class="text-lg font-semibold text-gray-900">
+                        {{ result.product.brand }} {{ result.product.model }}
+                    </h3>
+                    <div class="flex items-center space-x-2 text-sm text-gray-600">
+                        <span class="font-medium">Variante :</span>
+                        <span>{{ result.ram }}GB RAM / {{ result.storage }}GB</span>
+                        {% if result.color %}
+                            <span class="text-gray-500">•</span>
+                            <div class="flex items-center space-x-2">
+                                <div class="w-4 h-4 rounded-full border border-gray-200" 
+                                     style="background-color: {{ result.color.code }}"
+                                     title="{{ result.color.name }}">
+                                </div>
+                                <span>{{ result.color.first_word }}</span>
+                            </div>
+                        {% endif %}
+                    </div>
+                    
+                    {% if result.prices_by_city %}
+                        <div class="mt-2 space-y-2">
+                            {% for city, price_info in result.prices_by_city.items %}
+                                <div class="bg-gray-50 rounded-lg p-3">
+                                    <div class="flex justify-between items-center">
+                                        <span class="font-medium text-gray-900">{{ city.name }}</span>
+                                        <div class="flex items-center space-x-2">
+                                            <span class="text-lg font-bold text-green-600">{{ price_info.price }} FCFA</span>
+                                            {% if price_info.is_average %}
+                                                <span class="text-xs text-gray-500">(moyenne sur {{ price_info.count }} prix)</span>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                    {% if price_info.price_change %}
+                                        <div class="mt-1 text-sm {% if price_info.price_change > 0 %}text-red-600{% else %}text-green-600{% endif %}">
+                                            {% if price_info.price_change > 0 %}
+                                                +{{ price_info.price_change }} FCFA ({{ price_info.price_change_percentage|floatformat:2 }}%)
+                                            {% else %}
+                                                {{ price_info.price_change }} FCFA ({{ price_info.price_change_percentage|floatformat:2 }}%)
+                                            {% endif %}
+                                        </div>
+                                    {% endif %}
+                                    <div class="mt-1 text-xs text-gray-500">
+                                        Mis à jour le {{ price_info.updated_at|date:"d/m/Y" }} à {{ price_info.updated_at|time:"H:i" }}
+                                    </div>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <div class="text-gray-500 text-sm">
+                            Aucun prix disponible pour cette variante
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        {% endfor %}
+
+        <!-- Pagination -->
+        {% if is_paginated %}
+            <div class="mt-6 mb-12 px-6 sm:px-4 flex justify-center">
+                <nav class="relative z-0 inline-flex rounded-md shadow-sm -space-x-px" aria-label="Pagination">
+                    {% if page_obj.has_previous %}
+                        <a href="?page={{ page_obj.previous_page_number }}" 
+                           hx-get="{% url 'price_checker:check_price' %}?page={{ page_obj.previous_page_number }}&product_name={{ request.GET.product_name|default:'' }}"
+                           hx-target="#price-results"
+                           hx-push-url="true"
+                           class="relative inline-flex items-center px-6 py-4 sm:px-4 sm:py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
+                            <span class="sr-only">Précédent</span>
+                            <svg class="h-6 w-6 sm:h-5 sm:w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                                <path fill-rule="evenodd" d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z" clip-rule="evenodd" />
+                            </svg>
+                        </a>
+                    {% endif %}
+
+                    {% if page_obj.number > 2 %}
+                        <a href="?page=1" 
+                           hx-get="{% url 'price_checker:check_price' %}?page=1&product_name={{ request.GET.product_name|default:'' }}"
+                           hx-target="#price-results"
+                           hx-push-url="true"
+                           class="relative inline-flex items-center px-5 py-3 sm:px-4 sm:py-2 border border-gray-300 bg-white text-sm font-medium text-gray-700 hover:bg-gray-50">
+                            1
+                        </a>
+                        {% if page_obj.number > 3 %}
+                            <span class="relative inline-flex items-center px-5 py-3 sm:px-4 sm:py-2 border border-gray-300 bg-white text-sm font-medium text-gray-700">
+                                ...
+                            </span>
+                        {% endif %}
+                    {% endif %}
+
+                    {% for i in paginator.page_range %}
+                        {% if i >= page_obj.number|add:"-1" and i <= page_obj.number|add:"1" %}
+                            {% if page_obj.number == i %}
+                                <span class="relative inline-flex items-center px-5 py-3 sm:px-4 sm:py-2 border border-gray-300 bg-green-50 text-sm font-medium text-green-600">
+                                    {{ i }}
+                                </span>
+                            {% else %}
+                                <a href="?page={{ i }}" 
+                                   hx-get="{% url 'price_checker:check_price' %}?page={{ i }}&product_name={{ request.GET.product_name|default:'' }}"
+                                   hx-target="#price-results"
+                                   hx-push-url="true"
+                                   class="relative inline-flex items-center px-5 py-3 sm:px-4 sm:py-2 border border-gray-300 bg-white text-sm font-medium text-gray-700 hover:bg-gray-50">
+                                    {{ i }}
+                                </a>
+                            {% endif %}
+                        {% endif %}
+                    {% endfor %}
+
+                    {% if page_obj.number < paginator.num_pages|add:"-1" %}
+                        {% if page_obj.number < paginator.num_pages|add:"-2" %}
+                            <span class="relative inline-flex items-center px-5 py-3 sm:px-4 sm:py-2 border border-gray-300 bg-white text-sm font-medium text-gray-700">
+                                ...
+                            </span>
+                        {% endif %}
+                        <a href="?page={{ paginator.num_pages }}" 
+                           hx-get="{% url 'price_checker:check_price' %}?page={{ paginator.num_pages }}&product_name={{ request.GET.product_name|default:'' }}"
+                           hx-target="#price-results"
+                           hx-push-url="true"
+                           class="relative inline-flex items-center px-5 py-3 sm:px-4 sm:py-2 border border-gray-300 bg-white text-sm font-medium text-gray-700 hover:bg-gray-50">
+                            {{ paginator.num_pages }}
+                        </a>
+                    {% endif %}
+
+                    {% if page_obj.has_next %}
+                        <a href="?page={{ page_obj.next_page_number }}" 
+                           hx-get="{% url 'price_checker:check_price' %}?page={{ page_obj.next_page_number }}&product_name={{ request.GET.product_name|default:'' }}"
+                           hx-target="#price-results"
+                           hx-push-url="true"
+                           class="relative inline-flex items-center px-6 py-4 sm:px-4 sm:py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
+                            <span class="sr-only">Suivant</span>
+                            <svg class="h-6 w-6 sm:h-5 sm:w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                                <path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd" />
+                            </svg>
+                        </a>
+                    {% endif %}
+                </nav>
+            </div>
+        {% endif %}
+    </div>
+{% else %}
+    <div class="text-center py-12 sm:py-8 px-6 sm:px-4">
+        {% if results is not None %}
+            <div class="flex flex-col items-center space-y-4">
+                <svg class="w-16 h-16 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                </svg>
+                <h3 class="text-lg font-medium text-gray-900">Aucun résultat trouvé</h3>
+                <p class="text-gray-500 max-w-md">
+                    Essayez de modifier vos critères de recherche. Vous pouvez chercher par :
+                </p>
+                <ul class="text-sm text-gray-500 list-disc list-inside">
+                    <li>Marque (ex: Samsung, iPhone)</li>
+                    <li>Modèle (ex: S21, 13 Pro)</li>
+                    <li>RAM (ex: 8GB, 12GB)</li>
+                    <li>Stockage (ex: 128GB, 256GB)</li>
+                    <li>Couleur (ex: noir, blanc)</li>
+                </ul>
+            </div>
+        {% else %}
+            <div class="flex flex-col items-center space-y-4">
+                <svg class="w-16 h-16 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+                </svg>
+                <h3 class="text-lg font-medium text-gray-900">Bienvenue dans notre comparateur de prix</h3>
+                <p class="text-gray-500 max-w-md">
+                    Commencez à taper le nom d'un téléphone pour voir les prix disponibles dans différentes villes.
+                </p>
+                <div class="text-sm text-gray-500">
+                    Par exemple : "iPhone 13", "Samsung S21", "8GB noir"
+                </div>
+            </div>
+        {% endif %}
+    </div>
+{% endif %} 

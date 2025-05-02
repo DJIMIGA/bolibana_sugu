@@ -13,6 +13,8 @@ urlpatterns = [
     path('products/', include('product.urls')),
     path('accounts/', include('accounts.urls')),
     path('cart/', include('cart.urls', namespace='cart')),
+    path('prix/', include('price_checker.urls')),
+    path('price-checker/', include('price_checker.urls')),
     
     # API pour React Native (mobile et web moderne)
     path('api/v1/', include('product.api.urls')),

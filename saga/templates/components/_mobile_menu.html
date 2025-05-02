@@ -60,6 +60,15 @@ class="group relative focus:outline-none"
         <!-- Contenu du menu -->
         <div class="flex-1 overflow-y-auto bg-gradient-to-b from-white to-green-50">
             <div class="space-y-6 px-4 py-6">
+                <!-- Price Checker -->
+                <a href="{% url 'price_checker:check_price' %}" 
+                   class="flex items-center p-3 rounded-lg hover:bg-green-50 hover:text-green-700 transition-colors duration-200">
+                    <svg class="w-5 h-5 mr-3 text-gray-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" />
+                    </svg>
+                    <span class="text-gray-700">Vérifier les prix</span>
+                </a>
+
                 <!-- Catégories -->
                 <div>
                     {% include "components/_subcategories_menu.html" %}

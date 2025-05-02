@@ -1,0 +1,47 @@
+from django.urls import path
+from . import views
+
+app_name = 'price_checker'
+
+# URLs publiques
+public_urls = [
+    path('check_price/', views.check_price, name='check_price'),
+    path('submit/', views.PriceSubmissionCreateView.as_view(), name='price_submission_create'),
+    path('submissions/', views.PriceSubmissionListView.as_view(), name='price_submission_list'),
+    path('submissions/<int:pk>/update/', views.PriceSubmissionUpdateView.as_view(), name='price_submission_update'),
+    path('submissions/<int:pk>/delete/', views.PriceSubmissionDeleteView.as_view(), name='price_submission_delete'),
+    path('dashboard/', views.UserDashboardView.as_view(), name='user_dashboard'),
+]
+
+# URLs admin
+admin_urls = [
+    path('admin/', views.AdminDashboardView.as_view(), name='admin_dashboard'),
+    
+    # Gestion des soumissions
+    path('admin/submissions/', views.AdminPriceSubmissionListView.as_view(), name='admin_price_submission_list'),
+    path('admin/submissions/<int:pk>/approve/', views.approve_price_submission, name='admin_price_submission_approve'),
+    path('admin/submissions/<int:pk>/reject/', views.reject_price_submission, name='admin_price_submission_reject'),
+    
+    # Gestion des prix
+    path('admin/prices/', views.AdminPriceEntryListView.as_view(), name='admin_price_entry_list'),
+    
+    # Gestion des produits
+    path('admin/products/', views.AdminProductStatusListView.as_view(), name='admin_product_status_list'),
+    path('admin/products/<int:pk>/toggle/', views.toggle_product_status, name='admin_toggle_product_status'),
+    
+    # Gestion des villes
+    path('admin/cities/', views.AdminCityListView.as_view(), name='admin_city_list'),
+    path('admin/cities/add/', views.add_city, name='admin_add_city'),
+    path('admin/cities/<int:pk>/update/', views.update_city, name='admin_update_city'),
+    path('admin/cities/<int:pk>/delete/', views.delete_city, name='admin_delete_city'),
+    path('admin/product-status/toggle-salam/<int:variant_id>/', views.toggle_salam, name='admin_toggle_salam'),
+]
+
+# URLs API
+api_urls = [
+    path('api/products/', views.get_products_by_brand, name='api_products'),
+    path('api/variants/', views.get_phone_variants, name='api_variants'),
+]
+
+# Combinaison de toutes les URLs
+urlpatterns = public_urls + admin_urls + api_urls 

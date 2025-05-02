@@ -1,6 +1,6 @@
 {% load static %}
 
-<div class="relative flex-1 max-w-lg lg:max-w-xl mx-auto">
+<div class="relative flex-1 max-w-md lg:max-w-lg mx-auto">
     <div class="relative flex items-center">
         <form id="form-desktop" method="get" action="{% url 'search' %}" class="z-20 relative w-full">
             <div class="flex items-center bg-white border border-green-300 rounded-lg shadow-md overflow-hidden focus-within:ring-2 focus-within:ring-green-500 transition-all duration-200">
@@ -41,7 +41,7 @@
 </div>
 
 <!-- Résultats AJAX -->
-<div id="results-desktop" class="hidden absolute z-50 w-full max-w-4xl bg-white rounded-lg shadow-xl border border-green-100 overflow-hidden" style="top: 100%; left: 50%; transform: translateX(-50%);">
+<div id="results-desktop" class="hidden absolute z-50 w-full max-w-3xl bg-white rounded-lg shadow-xl border border-green-100 overflow-hidden" style="top: 100%; left: 50%; transform: translateX(-50%);">
     {% include 'search_results.html' %}
 </div>
 

@@ -4,7 +4,7 @@ from rest_framework.response import Response
 from django_filters.rest_framework import DjangoFilterBackend
 from .serializers import (
     ProductListSerializer, ProductDetailSerializer,
-    CategorySerializer, 
+    CategorySerializer, PhoneVariantSerializer
 )
 from product.models import Product, Category
 
@@ -34,4 +34,11 @@ class ProductViewSet(viewsets.ModelViewSet):
         if self.action == 'list':
             return ProductListSerializer
         return ProductDetailSerializer
+
+    @action(detail=True, methods=['get'])
+    def variants(self, request, pk=None):
+        product = self.get_object()
+        variants = product.variants.all()
+        serializer = PhoneVariantSerializer(variants, many=True)
+        return Response(serializer.data)
 

@@ -801,3 +801,60 @@ def payment_success(request):
 def payment_cancel(request):
     messages.warning(request, "Le paiement a été annulé.")
     return redirect('cart:payment_online')
+
+
+def add_phone_to_cart(request, variant_id):
+    print(f"\n=== Début de add_phone_to_cart ===")
+    print(f"Variant ID: {variant_id}")
+    
+    if request.method == 'POST':
+        try:
+            from product.models import PhoneVariant
+            print("Recherche de la variante...")
+            variant = get_object_or_404(PhoneVariant, id=variant_id)
+            print(f"Variante trouvée: {variant}")
+            print(f"Produit associé: {variant.phone.product}")
+            
+            # Récupérer ou créer le panier
+            print("Récupération/création du panier...")
+            cart = Cart.get_or_create_cart(request)
+            print(f"Panier: {cart}")
+
+            # Vérifier si l'article existe déjà dans le panier avec la même variante
+            print("Recherche d'un article existant...")
+            existing_item = cart.cart_items.filter(product=variant.phone.product, variant=variant).first()
+            print(f"Article existant: {existing_item}")
+
+            if existing_item:
+                # Mettre à jour la quantité
+                print("Mise à jour de la quantité...")
+                existing_item.quantity += 1
+                existing_item.save()
+                cart_item = existing_item
+            else:
+                # Créer un nouvel article
+                print("Création d'un nouvel article...")
+                cart_item = CartItem.objects.create(
+                    cart=cart,
+                    product=variant.phone.product,
+                    variant=variant,
+                    quantity=1
+                )
+                print(f"Nouvel article créé: {cart_item}")
+
+            # Générer la réponse
+            print("Génération de la réponse...")
+            response = HttpResponse()
+            response['HX-Trigger'] = 'cartUpdated'
+            response.write(render_cart_updates(request, cart, cart_item))
+            print("=== Fin de add_phone_to_cart ===\n")
+            return response
+
+        except Exception as e:
+            print(f"!!! ERREUR: {str(e)}")
+            print("=== Fin de add_phone_to_cart avec erreur ===\n")
+            messages.error(request, _("Une erreur est survenue lors de l'ajout au panier."))
+            return JsonResponse({'error': str(e)}, status=500)
+
+    print("=== Fin de add_phone_to_cart (méthode non autorisée) ===\n")
+    return JsonResponse({'error': 'Méthode non autorisée'}, status=405)

@@ -347,35 +347,87 @@ def create_product_with_phone(request):
 
 
 class PhoneListView(ListView):
-    model = Phone
+    model = PhoneVariant
     template_name = 'product/phone_list.html'
-    context_object_name = 'phones'
+    context_object_name = 'variants'
+    paginate_by = 12
 
     def get_queryset(self):
-        queryset = super().get_queryset().select_related('product__category').prefetch_related('variants')
-        brand_id = self.request.GET.get('brand')
-        if brand_id:
-            return queryset.filter(product__category_id=brand_id)
-        return queryset
+        queryset = super().get_queryset().select_related(
+            'phone',
+            'color'
+        ).prefetch_related(
+            'images'
+        )
+        
+        # Filtres
+        brand = self.request.GET.get('brand')
+        model = self.request.GET.get('model')
+        storage = self.request.GET.get('storage')
+        ram = self.request.GET.get('ram')
+        price_min = self.request.GET.get('price_min')
+        price_max = self.request.GET.get('price_max')
+        
+        if brand:
+            queryset = queryset.filter(phone__brand__iexact=brand)
+        if model:
+            queryset = queryset.filter(phone__model__icontains=model)
+        if storage:
+            queryset = queryset.filter(storage=storage)
+        if ram:
+            queryset = queryset.filter(ram=ram)
+        if price_min:
+            queryset = queryset.filter(price__gte=price_min)
+        if price_max:
+            queryset = queryset.filter(price__lte=price_max)
+        
+        return queryset.order_by('phone__brand', 'phone__model', 'storage', 'ram')
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        brand_id = self.request.GET.get('brand')
         
-        # Récupérer la catégorie sélectionnée
-        if brand_id:
-            try:
-                category = Category.objects.get(id=brand_id)
-                context['page_title'] = f"Nos {category.name}"
-            except Category.DoesNotExist:
-                context['page_title'] = "Nos téléphones"
+        # Récupérer les filtres actuels
+        context['selected_brand'] = self.request.GET.get('brand')
+        context['selected_model'] = self.request.GET.get('model')
+        context['selected_storage'] = self.request.GET.get('storage')
+        context['selected_ram'] = self.request.GET.get('ram')
+        context['selected_price_min'] = self.request.GET.get('price_min')
+        context['selected_price_max'] = self.request.GET.get('price_max')
+        
+        # Récupérer les marques disponibles
+        context['brands'] = Phone.objects.values('brand').distinct().order_by('brand')
+        
+        # Récupérer les modèles disponibles
+        if context['selected_brand']:
+            context['models'] = Phone.objects.filter(
+                brand=context['selected_brand']
+            ).values('model').distinct().order_by('model')
+        else:
+            context['models'] = Phone.objects.values('model').distinct().order_by('model')
+        
+        # Récupérer les stockages disponibles
+        context['storages'] = PhoneVariant.objects.values('storage').distinct().order_by('storage')
+        
+        # Récupérer les RAM disponibles
+        context['rams'] = PhoneVariant.objects.values('ram').distinct().order_by('ram')
+        
+        # Définir le titre de la page
+        if context['selected_brand']:
+            context['page_title'] = f"Nos {context['selected_brand']}"
         else:
             context['page_title'] = "Nos téléphones"
-            
-        # Récupérer les marques disponibles
-        context['brands'] = Category.objects.filter(parent__name='Téléphones')
         
         return context
+
+    def get_template_names(self):
+        if self.request.headers.get('HX-Request'):
+            return ['product/components/_phone_grid.html']
+        return ['product/phone_list.html']
+
+    def render_to_response(self, context, **response_kwargs):
+        if self.request.headers.get('HX-Request'):
+            return render(self.request, 'product/components/_phone_grid.html', context)
+        return super().render_to_response(context, **response_kwargs)
 
 
 def phone_detail(request, phone_id):

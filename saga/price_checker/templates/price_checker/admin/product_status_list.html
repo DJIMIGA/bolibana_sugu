@@ -1,0 +1,283 @@
+{% extends "price_checker/admin/base.html" %}
+{% load static %}
+
+{% block admin_content %}
+<div class="min-h-screen bg-gray-50 py-8">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <!-- En-tête -->
+        <div class="bg-white rounded-xl shadow-lg overflow-hidden mb-8">
+            <div class="bg-gradient-to-r from-green-600 to-green-700 px-4 sm:px-6 py-4">
+                <div class="flex flex-col sm:flex-row sm:justify-between sm:items-center space-y-4 sm:space-y-0">
+                    <div>
+                        <h1 class="text-xl sm:text-2xl font-bold text-white">Statut des variantes</h1>
+                        <p class="mt-1 text-sm sm:text-base text-green-100">Gérez la disponibilité des variantes</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Filtres -->
+        <div class="bg-white rounded-xl shadow-lg overflow-hidden mb-8">
+            <div class="p-4 sm:p-6">
+                <form method="get" class="space-y-4">
+                    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+                        <!-- Filtre par marque -->
+                        <div>
+                            <label for="brand" class="block text-sm font-medium text-gray-700">Marque</label>
+                            <select id="brand" name="brand" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-green-500 focus:ring-green-500">
+                                <option value="">Toutes les marques</option>
+                                {% for brand in brands %}
+                                <option value="{{ brand }}" {% if filters.brand == brand %}selected{% endif %}>{{ brand }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+
+                        <!-- Filtre par modèle -->
+                        <div class="form-group">
+                            <label for="model" class="block text-sm font-medium text-gray-700 mb-1">Modèle</label>
+                            <div class="relative">
+                                <select id="model" name="model" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-green-500 focus:ring-green-500">
+                                    <option value="">Tous les modèles</option>
+                                    {% for model in models %}
+                                    <option value="{{ model }}" {% if filters.model == model %}selected{% endif %}>{{ model }}</option>
+                                    {% endfor %}
+                                </select>
+                                <div id="model-loading" class="absolute inset-y-0 right-0 flex items-center pr-3 hidden">
+                                    <svg class="animate-spin h-5 w-5 text-gray-400" fill="none" viewBox="0 0 24 24">
+                                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                    </svg>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Filtre par stockage -->
+                        <div>
+                            <label for="storage" class="block text-sm font-medium text-gray-700">Stockage</label>
+                            <select id="storage" name="storage" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-green-500 focus:ring-green-500">
+                                <option value="">Tous les stockages</option>
+                                {% for storage in storages %}
+                                <option value="{{ storage }}" {% if filters.storage == storage|stringformat:"i" %}selected{% endif %}>{{ storage }} Go</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+
+                        <!-- Filtre par RAM -->
+                        <div>
+                            <label for="ram" class="block text-sm font-medium text-gray-700">RAM</label>
+                            <select id="ram" name="ram" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-green-500 focus:ring-green-500">
+                                <option value="">Toutes les RAM</option>
+                                {% for ram in rams %}
+                                <option value="{{ ram }}" {% if filters.ram == ram|stringformat:"i" %}selected{% endif %}>{{ ram }} Go</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+
+                        <!-- Filtre par statut -->
+                        <div>
+                            <label for="status" class="block text-sm font-medium text-gray-700">Statut</label>
+                            <select id="status" name="status" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-green-500 focus:ring-green-500">
+                                <option value="">Tous les statuts</option>
+                                <option value="salam" {% if filters.status == 'salam' %}selected{% endif %}>Disponible en salam</option>
+                                <option value="no_salam" {% if filters.status == 'no_salam' %}selected{% endif %}>Non disponible en salam</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="flex justify-end space-x-3">
+                        <a href="{% url 'price_checker:admin_product_status_list' %}" 
+                           class="inline-flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500">
+                            Réinitialiser
+                        </a>
+                        <button type="submit" 
+                                class="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500">
+                            Filtrer
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Liste des variantes -->
+        <div class="bg-white rounded-xl shadow-lg overflow-hidden">
+            <div class="overflow-x-auto">
+                <table class="min-w-full divide-y divide-gray-200">
+                    <thead class="bg-gray-50">
+                        <tr>
+                            <th class="px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Variante</th>
+                            <th class="px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Stock</th>
+                            <th class="px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Statut</th>
+                            <th class="px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody class="bg-white divide-y divide-gray-200">
+                        {% for variant in variants %}
+                        <tr class="hover:bg-gray-50">
+                            <td class="px-4 sm:px-6 py-4">
+                                <div class="text-sm text-gray-900">
+                                    {{ variant.phone.brand }} {{ variant.phone.model }}
+                                </div>
+                                <div class="text-xs text-gray-500">
+                                    {{ variant.ram }}GB RAM / {{ variant.storage }}GB / {{ variant.color.name }}
+                                </div>
+                            </td>
+                            <td class="px-4 sm:px-6 py-4">
+                                <div class="text-sm text-gray-900">
+                                    {{ variant.stock }} unités
+                                </div>
+                            </td>
+                            <td class="px-4 sm:px-6 py-4 whitespace-nowrap">
+                                <div class="flex items-center">
+                                    <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full 
+                                        {% if variant.disponible_salam %}
+                                            bg-green-100 text-green-800
+                                        {% else %}
+                                            bg-yellow-100 text-yellow-800
+                                        {% endif %}">
+                                        {% if variant.disponible_salam %}
+                                            Disponible en salam
+                                        {% else %}
+                                            Non disponible en salam
+                                        {% endif %}
+                                    </span>
+                                </div>
+                            </td>
+                            <td class="px-4 sm:px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                <div class="flex space-x-4">
+                                    <form method="post" action="{% url 'price_checker:admin_toggle_salam' variant.pk %}" class="inline">
+                                        {% csrf_token %}
+                                        <button type="submit" 
+                                                class="{% if variant.disponible_salam %}text-red-600 hover:text-red-900{% else %}text-green-600 hover:text-green-900{% endif %}" 
+                                                title="{% if variant.disponible_salam %}Désactiver le salam{% else %}Activer le salam{% endif %}">
+                                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                {% if variant.disponible_salam %}
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                                                {% else %}
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+                                                {% endif %}
+                                            </svg>
+                                        </button>
+                                    </form>
+                                </div>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="4" class="px-4 sm:px-6 py-4 text-center text-sm text-gray-500">
+                                Aucune variante trouvée
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% if is_paginated %}
+            <div class="px-4 sm:px-6 py-4 border-t border-gray-200">
+                <div class="flex items-center justify-between">
+                    <div class="flex-1 flex justify-between sm:hidden">
+                        {% if page_obj.has_previous %}
+                        <a href="?page={{ page_obj.previous_page_number }}" class="relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50">
+                            Précédent
+                        </a>
+                        {% endif %}
+                        {% if page_obj.has_next %}
+                        <a href="?page={{ page_obj.next_page_number }}" class="ml-3 relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50">
+                            Suivant
+                        </a>
+                        {% endif %}
+                    </div>
+                    <div class="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
+                        <div>
+                            <p class="text-sm text-gray-700">
+                                Affichage de <span class="font-medium">{{ page_obj.start_index }}</span> à <span class="font-medium">{{ page_obj.end_index }}</span> sur <span class="font-medium">{{ paginator.count }}</span> résultats
+                            </p>
+                        </div>
+                        <div>
+                            <nav class="relative z-0 inline-flex rounded-md shadow-sm -space-x-px" aria-label="Pagination">
+                                {% if page_obj.has_previous %}
+                                <a href="?page={{ page_obj.previous_page_number }}" class="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
+                                    <span class="sr-only">Précédent</span>
+                                    <svg class="h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                                        <path fill-rule="evenodd" d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z" clip-rule="evenodd" />
+                                    </svg>
+                                </a>
+                                {% endif %}
+                                {% for num in page_obj.paginator.page_range %}
+                                {% if page_obj.number == num %}
+                                <span class="relative inline-flex items-center px-4 py-2 border border-green-500 bg-green-50 text-sm font-medium text-green-600">
+                                    {{ num }}
+                                </span>
+                                {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+                                <a href="?page={{ num }}" class="relative inline-flex items-center px-4 py-2 border border-gray-300 bg-white text-sm font-medium text-gray-700 hover:bg-gray-50">
+                                    {{ num }}
+                                </a>
+                                {% endif %}
+                                {% endfor %}
+                                {% if page_obj.has_next %}
+                                <a href="?page={{ page_obj.next_page_number }}" class="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
+                                    <span class="sr-only">Suivant</span>
+                                    <svg class="h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                                        <path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd" />
+                                    </svg>
+                                </a>
+                                {% endif %}
+                            </nav>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const brandSelect = document.getElementById('brand');
+    const modelSelect = document.getElementById('model');
+    const modelLoading = document.getElementById('model-loading');
+
+    // Fonction pour charger les modèles
+    function loadModels() {
+        const brand = brandSelect.value;
+        
+        if (!brand) {
+            modelSelect.innerHTML = '<option value="">Tous les modèles</option>';
+            return;
+        }
+
+        modelLoading.classList.remove('hidden');
+        fetch(`{% url 'price_checker:api_products' %}?brand=${encodeURIComponent(brand)}`)
+            .then(response => response.json())
+            .then(data => {
+                const models = data.products.map(p => p[1]); // p[1] contient le modèle
+                const uniqueModels = [...new Set(models)].sort();
+                
+                modelSelect.innerHTML = '<option value="">Tous les modèles</option>';
+                uniqueModels.forEach(model => {
+                    const option = document.createElement('option');
+                    option.value = model;
+                    option.textContent = model;
+                    if (model === '{{ filters.model }}') {
+                        option.selected = true;
+                    }
+                    modelSelect.appendChild(option);
+                });
+            })
+            .finally(() => {
+                modelLoading.classList.add('hidden');
+            });
+    }
+
+    // Événements
+    brandSelect.addEventListener('change', loadModels);
+    
+    // Charger les modèles au chargement si une marque est sélectionnée
+    if (brandSelect.value) {
+        loadModels();
+    }
+});
+</script>
+{% endblock %}
+{% endblock %} 
