@@ -148,6 +148,7 @@ INSTALLED_APPS = [
     'cloudinary',
     'cloudinary_storage',
     'price_checker',
+    'tinify',
 ]
 
 MIDDLEWARE = [
