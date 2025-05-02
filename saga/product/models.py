@@ -182,8 +182,8 @@ class Clothing(models.Model):
         ('F', 'Femme'),
     ]
     gender = models.CharField(max_length=1, choices=GENDER_CHOICES, blank=True, null=True)
-    size = models.ManyToManyField(Size, related_name='clothing_size', blank=True, null=True)
-    color = models.ManyToManyField(Color, related_name='clothing_color', blank=True, null=True)
+    size = models.ManyToManyField(Size, related_name='clothing_size', blank=True)
+    color = models.ManyToManyField(Color, related_name='clothing_color', blank=True)
 
     def __str__(self):
         return self.product.title
