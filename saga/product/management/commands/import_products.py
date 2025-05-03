@@ -10,7 +10,7 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):
         # Chemin du fichier JSON
-        json_path = os.path.join(settings.BASE_DIR, 'products.json')
+        json_path = os.path.join(settings.BASE_DIR, 'saga', 'product', 'data', 'products.json')
         print(f"Chemin du fichier JSON: {json_path}")
         
         try:
