@@ -18,7 +18,7 @@ def import_products(apps, schema_editor):
             'email': 'default@example.com',
             'phone': '+22300000000',
             'address': 'Adresse par défaut',
-            'is_active': True
+            'is_verified': True
         }
     )
 
