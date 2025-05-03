@@ -11,6 +11,7 @@ import os
 import logging
 import sys
 from pathlib import Path
+from django.conf import settings
 
 # Configuration des logs
 logging.basicConfig(
@@ -41,7 +42,8 @@ logger.info("Chargement de l'application Django")
 application = get_wsgi_application()
 
 # Configuration de WhiteNoise pour servir les fichiers statiques
-application = WhiteNoise(application)
-application.add_files(str(BASE_DIR / 'staticfiles'), prefix='static/')
+if not settings.DEBUG:
+    application = WhiteNoise(application)
+    application.add_files(str(BASE_DIR / 'staticfiles'), prefix='static/')
 
 logger.info("Application WSGI chargée avec succès")

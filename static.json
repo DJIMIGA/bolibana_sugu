@@ -8,7 +8,7 @@
       "Referrer-Policy": "same-origin"
     }
   },
-  "https_only": true,
+  "https_only": false,
   "root": "staticfiles/",
   "routes": {
     "/**": "index.html"

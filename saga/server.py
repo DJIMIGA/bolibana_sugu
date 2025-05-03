@@ -3,6 +3,11 @@ from django.core.wsgi import get_wsgi_application
 import os
 import logging
 
+import sys
+import os
+
+# Ajouter le répertoire parent au PYTHONPATH
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 # Configuration des logs
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)

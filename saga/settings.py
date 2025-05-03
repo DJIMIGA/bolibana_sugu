@@ -33,11 +33,8 @@ print(f"SECRET_KEY chargée: {'Oui' if SECRET_KEY else 'Non'}")
 
 # Les autres configurations Stripe sont déjà chargées
 STRIPE_PUBLIC_KEY = os.getenv('STRIPE_PUBLIC_KEY')
-print("STRIPE_PUBLIC_KEY:", STRIPE_PUBLIC_KEY)
 STRIPE_SECRET_KEY = os.getenv('STRIPE_SECRET_KEY')
-print("STRIPE_SECRET_KEY:", STRIPE_SECRET_KEY)
 STRIPE_WEBHOOK_SECRET = os.getenv('STRIPE_WEBHOOK_SECRET')
-print("STRIPE_WEBHOOK_SECRET:", STRIPE_WEBHOOK_SECRET)
 STRIPE_API_VERSION = os.getenv('STRIPE_API_VERSION')
 print("STRIPE_API_VERSION:", STRIPE_API_VERSION)
 print(f"Configuration Stripe chargée: {'Oui' if STRIPE_SECRET_KEY else 'Non'}")
@@ -47,28 +44,51 @@ stripe.api_version = '2023-10-16'  # Utiliser la dernière version stable
 stripe.api_key = STRIPE_SECRET_KEY
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = os.environ.get('DEBUG', 'False') == 'True'
+DEBUG = True  # Forcé à True pour le développement local
 
 # ======================================================================
 # PARAMÈTRES DE SÉCURITÉ SSL
 # ======================================================================
 
-# Forcer HTTPS
-SECURE_SSL_REDIRECT = True  # Redirige toutes les requêtes HTTP vers HTTPS
-SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')  # Pour Heroku
+# Vérifier si nous sommes en production (Heroku)
+IS_HEROKU = os.environ.get('HEROKU', '') == 'True'
 
-# Paramètres de cookies sécurisés
-SESSION_COOKIE_SECURE = True
-CSRF_COOKIE_SECURE = True
+# Configuration de la redirection HTTPS
+if IS_HEROKU:
+    # Configuration pour la production (Heroku)
+    SECURE_SSL_REDIRECT = True
+    SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+    SESSION_COOKIE_SECURE = True
+    CSRF_COOKIE_SECURE = True
+    SECURE_HSTS_SECONDS = 31536000  # 1 an
+    SECURE_HSTS_INCLUDE_SUBDOMAINS = True
+    SECURE_HSTS_PRELOAD = True
+else:
+    # Configuration pour le développement local
+    SECURE_SSL_REDIRECT = False
+    SECURE_PROXY_SSL_HEADER = None
+    SESSION_COOKIE_SECURE = False
+    CSRF_COOKIE_SECURE = False
+    SECURE_HSTS_SECONDS = 0
+    SECURE_HSTS_INCLUDE_SUBDOMAINS = False
+    SECURE_HSTS_PRELOAD = False
+    # Désactiver complètement HSTS en développement
+    SECURE_HSTS_SECONDS = 0
+    SECURE_HSTS_INCLUDE_SUBDOMAINS = False
+    SECURE_HSTS_PRELOAD = False
+    # Désactiver la redirection HTTPS
+    SECURE_SSL_REDIRECT = False
+    # Désactiver les cookies sécurisés
+    SESSION_COOKIE_SECURE = False
+    CSRF_COOKIE_SECURE = False
+    # Désactiver le proxy SSL
+    SECURE_PROXY_SSL_HEADER = None
+
+# Paramètres de cookies sécurisés (communs aux deux environnements)
 SESSION_COOKIE_HTTPONLY = True
 CSRF_COOKIE_HTTPONLY = True
 SESSION_COOKIE_SAMESITE = 'Lax'
 CSRF_COOKIE_SAMESITE = 'Lax'
-
-# HSTS (HTTP Strict Transport Security)
-SECURE_HSTS_SECONDS = 31536000  # 1 an
-SECURE_HSTS_INCLUDE_SUBDOMAINS = True
-SECURE_HSTS_PRELOAD = True
 
 # Protection contre le clickjacking
 X_FRAME_OPTIONS = 'DENY'
@@ -97,20 +117,36 @@ ALLOWED_HOSTS = [
 ]
 
 # Origines CSRF autorisées
-CSRF_TRUSTED_ORIGINS = [
-    'https://bolibana-sugu-d56937020d1c.herokuapp.com',
-    'https://bolibana.com',
-    'https://www.bolibana.com',
-    'http://bolibana.com',
-    'http://www.bolibana.com'
-]
+if DEBUG:
+    CSRF_TRUSTED_ORIGINS = [
+        'http://localhost:8000',
+        'http://127.0.0.1:8000',
+        'http://bolibana.com',
+        'http://www.bolibana.com'
+    ]
+else:
+    CSRF_TRUSTED_ORIGINS = [
+        'https://bolibana-sugu-d56937020d1c.herokuapp.com',
+        'https://bolibana.com',
+        'https://www.bolibana.com',
+        'http://bolibana.com',
+        'http://www.bolibana.com'
+    ]
 
 # Configuration CORS
-CORS_ALLOWED_ORIGINS = [
-    'https://bolibana.com',
-    'https://www.bolibana.com',
-    'https://bolibana-sugu-d56937020d1c.herokuapp.com',
-]
+if DEBUG:
+    CORS_ALLOWED_ORIGINS = [
+        'http://localhost:8000',
+        'http://127.0.0.1:8000',
+        'http://bolibana.com',
+        'http://www.bolibana.com'
+    ]
+else:
+    CORS_ALLOWED_ORIGINS = [
+        'https://bolibana.com',
+        'https://www.bolibana.com',
+        'https://bolibana-sugu-d56937020d1c.herokuapp.com',
+    ]
 
 # Application definition
 
