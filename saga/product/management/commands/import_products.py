@@ -9,9 +9,9 @@ class Command(BaseCommand):
     help = 'Importe les produits depuis le fichier products.json'
 
     def handle(self, *args, **options):
-        # Obtenir le chemin absolu du fichier products.json
+        # Chemin du fichier JSON
         json_path = os.path.join(settings.BASE_DIR, 'products.json')
-        self.stdout.write(f"Chemin du fichier JSON: {json_path}")
+        print(f"Chemin du fichier JSON: {json_path}")
         
         try:
             # Charger les données depuis le fichier JSON
