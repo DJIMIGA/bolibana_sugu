@@ -10,6 +10,13 @@ def main():
     BASE_DIR = Path(__file__).resolve().parent
     sys.path.append(str(BASE_DIR))
     
+    # Importer et exécuter le script de correction du PYTHONPATH
+    try:
+        from saga.fix_path import fix_pythonpath
+        fix_pythonpath()
+    except ImportError as e:
+        print(f"Attention : Impossible d'importer fix_path.py : {e}")
+    
     os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'saga.settings')
     try:
         from django.core.management import execute_from_command_line
