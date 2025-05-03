@@ -54,15 +54,16 @@ DEBUG = os.environ.get('DEBUG', 'False') == 'True'
 # ======================================================================
 
 # Forcer HTTPS
-SECURE_SSL_REDIRECT = False  # Désactivé pour éviter la boucle de redirection
+SECURE_SSL_REDIRECT = True  # Redirige toutes les requêtes HTTP vers HTTPS
+SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')  # Pour Heroku
 
 # Paramètres de cookies sécurisés
 SESSION_COOKIE_SECURE = True
 CSRF_COOKIE_SECURE = True
-SESSION_COOKIE_HTTPONLY = True  # Empêche l'accès aux cookies via JavaScript
-CSRF_COOKIE_HTTPONLY = True    # Empêche l'accès aux cookies CSRF via JavaScript
-SESSION_COOKIE_SAMESITE = 'Lax'  # Protection contre les attaques CSRF
-CSRF_COOKIE_SAMESITE = 'Lax'    # Protection contre les attaques CSRF
+SESSION_COOKIE_HTTPONLY = True
+CSRF_COOKIE_HTTPONLY = True
+SESSION_COOKIE_SAMESITE = 'Lax'
+CSRF_COOKIE_SAMESITE = 'Lax'
 
 # HSTS (HTTP Strict Transport Security)
 SECURE_HSTS_SECONDS = 31536000  # 1 an
@@ -80,18 +81,6 @@ SECURE_BROWSER_XSS_FILTER = True
 
 # Utiliser des en-têtes de sécurité
 SECURE_REFERRER_POLICY = 'same-origin'
-
-# Proxy Heroku
-SECURE_PROXY_SSL_SSL_REDIRECT = False  # Désactivé pour éviter la boucle
-SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
-
-# Configuration des cookies
-SESSION_COOKIE_DOMAIN = None
-CSRF_COOKIE_DOMAIN = None
-
-# Protection supplémentaire contre les attaques CSRF
-CSRF_USE_SESSIONS = True  # Utilise les sessions pour stocker le token CSRF
-CSRF_COOKIE_AGE = 31449600  # Durée de vie du cookie CSRF (1 an)
 
 # Protection contre les attaques de type "Clickjacking"
 SECURE_CROSS_ORIGIN_OPENER_POLICY = 'same-origin'
@@ -112,6 +101,8 @@ CSRF_TRUSTED_ORIGINS = [
     'https://bolibana-sugu-d56937020d1c.herokuapp.com',
     'https://bolibana.com',
     'https://www.bolibana.com',
+    'http://bolibana.com',
+    'http://www.bolibana.com'
 ]
 
 # Configuration CORS
