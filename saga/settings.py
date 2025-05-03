@@ -226,42 +226,14 @@ WSGI_APPLICATION = 'saga.wsgi.application'
 # CONFIGURATION DE LA BASE DE DONNÉES
 # ======================================================================
 
-# Vérifiez si vous êtes sur Heroku
-IS_HEROKU = os.environ.get('HEROKU', '') == 'True'
-
 # Configuration de la base de données
-if DEBUG and not IS_HEROKU:
-    # Configuration pour le développement local avec SQLite
-    DATABASES = {
-        'default': {
-            'ENGINE': 'django.db.backends.sqlite3',
-            'NAME': BASE_DIR / 'db.sqlite3',
-        }
-    }
-else:
-    # Configuration pour Heroku PostgreSQL
-    DATABASE_URL = os.environ.get('DATABASE_URL')
-    
-    if DATABASE_URL:
-        DATABASES = {
-            'default': dj_database_url.config(
-                default=DATABASE_URL,
-                conn_max_age=600,
-                ssl_require=True
-            )
-        }
-    else:
-        # Fallback pour le développement avec PostgreSQL
-        DATABASES = {
-            'default': {
-                'ENGINE': 'django.db.backends.postgresql',
-                'NAME': os.environ.get('DB_NAME', 'ICOMMERCE'),
-                'USER': os.environ.get('DB_USER', 'postgres'),
-                'PASSWORD': os.environ.get('DB_PASSWORD', ''),
-                'HOST': os.environ.get('DB_HOST', 'localhost'),
-                'PORT': os.environ.get('DB_PORT', '5432'),
-            }
-        }
+DATABASES = {
+    'default': dj_database_url.config(
+        default=os.environ.get('DATABASE_URL'),
+        conn_max_age=600,
+        ssl_require=True
+    )
+}
 
 # Configuration supplémentaire pour la base de données
 DATABASES['default']['ATOMIC_REQUESTS'] = True
