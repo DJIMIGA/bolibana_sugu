@@ -1,3 +1,3 @@
-web: python saga/manage.py collectstatic --noinput && gunicorn saga.wsgi:application
-worker: python saga/manage.py process_tasks
-release: python saga/manage.py migrate
+web: python manage.py collectstatic --noinput && gunicorn saga.wsgi:application
+worker: python manage.py process_tasks
+release: python manage.py migrate

@@ -2,12 +2,14 @@
 """Django's command-line utility for administrative tasks."""
 import os
 import sys
-
-# Ajouter le répertoire parent au PYTHONPATH
-sys.path.append(os.path.dirname(os.path.abspath(__file__)))
+from pathlib import Path
 
 def main():
     """Run administrative tasks."""
+    # Ajouter le répertoire parent au PYTHONPATH
+    BASE_DIR = Path(__file__).resolve().parent
+    sys.path.append(str(BASE_DIR))
+    
     os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'saga.settings')
     try:
         from django.core.management import execute_from_command_line
