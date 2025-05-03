@@ -20,6 +20,14 @@ class Command(BaseCommand):
         for path in possible_paths:
             if os.path.exists(path):
                 print(f"Fichier JSON trouvé à : {path}")
+                print(f"Taille du fichier : {os.path.getsize(path)} octets")
+                try:
+                    with open(path, 'r', encoding='utf-8') as f:
+                        content = f.read()
+                        print(f"Contenu du fichier :")
+                        print(content[:500] + "..." if len(content) > 500 else content)
+                except Exception as e:
+                    print(f"Erreur lors de la lecture du fichier : {e}")
                 return path
 
         print("Recherche du fichier JSON dans le répertoire courant et ses sous-répertoires...")
@@ -28,13 +36,22 @@ class Command(BaseCommand):
                 if file == 'products.json':
                     path = os.path.join(root, file)
                     print(f"Fichier JSON trouvé à : {path}")
+                    print(f"Taille du fichier : {os.path.getsize(path)} octets")
+                    try:
+                        with open(path, 'r', encoding='utf-8') as f:
+                            content = f.read()
+                            print(f"Contenu du fichier :")
+                            print(content[:500] + "..." if len(content) > 500 else content)
+                    except Exception as e:
+                        print(f"Erreur lors de la lecture du fichier : {e}")
                     return path
 
         print("Fichier products.json non trouvé. Voici les fichiers .json disponibles :")
         for root, dirs, files in os.walk(settings.BASE_DIR):
             for file in files:
                 if file.endswith('.json'):
-                    print(f"- {os.path.join(root, file)}")
+                    path = os.path.join(root, file)
+                    print(f"- {path} ({os.path.getsize(path)} octets)")
         return None
 
     def handle(self, *args, **options):
