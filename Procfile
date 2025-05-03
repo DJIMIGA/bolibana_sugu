@@ -1,2 +1,3 @@
-web: python saga/server.py
-worker: python manage.py process_tasks
+web: gunicorn saga.wsgi:application
+worker: python saga/manage.py process_tasks
+release: python saga/manage.py migrate

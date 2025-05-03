@@ -6,7 +6,7 @@ import sys
 def main():
     """Run administrative tasks."""
     # Ajouter le chemin du projet au PYTHONPATH
-    BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    BASE_DIR = os.path.dirname(os.path.abspath(__file__))
     sys.path.append(BASE_DIR)
     
     os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'saga.settings')
