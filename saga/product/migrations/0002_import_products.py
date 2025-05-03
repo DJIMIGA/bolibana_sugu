@@ -10,17 +10,20 @@ def import_products(apps, schema_editor):
     Color = apps.get_model('product', 'Color')
     Supplier = apps.get_model('suppliers', 'Supplier')
 
-    # Créer le fournisseur par défaut
-    supplier, created = Supplier.objects.get_or_create(
-        id=1,
-        defaults={
-            'name': 'Fournisseur par défaut',
-            'email': 'default@example.com',
-            'phone': '+22300000000',
-            'address': 'Adresse par défaut',
-            'is_verified': True
-        }
-    )
+    # Récupérer le fournisseur Tecno
+    try:
+        supplier = Supplier.objects.get(name='Tecno')
+    except Supplier.DoesNotExist:
+        # Si Tecno n'existe pas, le créer
+        supplier = Supplier.objects.create(
+            name='Tecno',
+            email='contact@tecno.com',
+            phone='+223 20 22 23 24',
+            address='Siège social : Shenzhen, Chine',
+            description='''TECNO est une marque de smartphones haut de gamme qui se concentre sur l'innovation technologique et le design.
+            La marque propose des appareils avec des fonctionnalités avancées, des performances exceptionnelles et des designs élégants.''',
+            specialty='Fournisseur de TELEPHONE'
+        )
 
     # Chemin vers le fichier products.json
     file_path = os.path.join(os.path.dirname(__file__), '..', '..', '..', 'products.json')
@@ -62,7 +65,7 @@ def import_products(apps, schema_editor):
                     'price': item['fields']['price'],
                     'description': item['fields']['description'],
                     'highlight': item['fields']['highlight'],
-                    'supplier_id': 1,  # Utiliser le fournisseur par défaut
+                    'supplier_id': supplier.id,
                     'is_active': item['fields']['is_active']
                 }
             )
@@ -112,7 +115,6 @@ def import_products(apps, schema_editor):
 class Migration(migrations.Migration):
     dependencies = [
         ('product', '0001_initial'),
-        ('suppliers', '0001_initial'),
     ]
 
     operations = [
