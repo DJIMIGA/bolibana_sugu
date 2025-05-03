@@ -1,33 +1,3 @@
-
-=== Correction du PYTHONPATH ===
-
-Répertoire de base du projet : C:\Users\djimi\sagakore
-
-Chemins valides dans PYTHONPATH :
-✓ C:\Users\djimi\sagakore\saga
-✓ C:\Users\djimi\sagakore\saga\product
-✓ C:\Users\djimi\sagakore\saga\accounts
-✓ C:\Users\djimi\sagakore\saga\suppliers
-✓ C:\Users\djimi\sagakore\saga\cart
-✓ C:\Users\djimi\sagakore\saga\price_checker
-✓ C:\Program Files\Python312\Lib
-✓ C:\Users\djimi\sagakore\.env
-✓ C:\Program Files\Python312\DLLs
-✓ C:\Program Files\Python312
-✓ C:\Users\djimi\sagakore\.env\Lib\site-packages
-
-=== Fin de la correction du PYTHONPATH ===
-
-BASE_DIR: C:\Users\djimi\sagakore
-
-==================================================
-Démarrage du chargement des paramètres Django
-==================================================
-
-Chemin du fichier .env.secrets: C:\Users\djimi\sagakore\saga/.env.secrets
-SECRET_KEY chargée: Oui
-STRIPE_API_VERSION: 2023-10-16
-Configuration Stripe chargée: Oui
 [
 {
   "model": "suppliers.supplier",
@@ -246,4 +216,4 @@ Configuration Stripe chargée: Oui
     "updated_at": "2025-04-27T15:40:30.506Z"
   }
 }
-]
+] 
