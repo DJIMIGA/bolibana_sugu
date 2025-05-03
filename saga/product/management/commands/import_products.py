@@ -1,13 +1,18 @@
 from django.core.management.base import BaseCommand
 from product.models import Category, Product, Phone, PhoneVariant, Color
 import json
+import os
 
 class Command(BaseCommand):
     help = 'Importe les produits depuis le fichier products.json'
 
     def handle(self, *args, **options):
+        # Obtenir le chemin absolu du fichier products.json
+        base_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(__file__)))))
+        json_path = os.path.join(base_dir, 'products.json')
+        
         # Charger les données depuis le fichier JSON
-        with open('products.json', 'r') as f:
+        with open(json_path, 'r') as f:
             data = json.load(f)
         
         # Importer les catégories
