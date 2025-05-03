@@ -1,1415 +1,219 @@
-
-=== Correction du PYTHONPATH ===
-
-Répertoire de base du projet : C:\Users\djimi\sagakore
-
-Chemins valides dans PYTHONPATH :
-✓ C:\Users\djimi\sagakore\saga
-✓ C:\Users\djimi\sagakore\saga\product
-✓ C:\Users\djimi\sagakore\saga\accounts
-✓ C:\Users\djimi\sagakore\saga\suppliers
-✓ C:\Users\djimi\sagakore\saga\cart
-✓ C:\Users\djimi\sagakore\saga\price_checker
-✓ C:\Program Files\Python312
-✓ C:\Program Files\Python312\DLLs
-✓ C:\Users\djimi\sagakore\.env
-✓ C:\Program Files\Python312\Lib
-✓ C:\Users\djimi\sagakore\.env\Lib\site-packages
-
-=== Fin de la correction du PYTHONPATH ===
-
-BASE_DIR: C:\Users\djimi\sagakore
-
-==================================================
-Démarrage du chargement des paramètres Django
-==================================================
-
-Chemin du fichier .env.secrets: C:\Users\djimi\sagakore\saga/.env.secrets
-SECRET_KEY chargée: Oui
-STRIPE_API_VERSION: 2023-10-16
-Configuration Stripe chargée: Oui
 [
-{
-  "model": "suppliers.supplier",
-  "pk": 1,
-  "fields": {
-    "phone": "+22395187176",
-    "email": "djimigakonis@gamil.com",
-    "address": "37 rue Daniel mayer",
-    "slug": null,
-    "name": "Tecno",
-    "description": "Tecno",
-    "image": null,
-    "specialty": "Fournisseur de TELEPHONE"
-  }
-},
-{
-  "model": "product.category",
-  "pk": 1,
-  "fields": {
-    "name": "Téléphones",
-    "slug": null,
-    "parent": null,
-    "image": null
-  }
-},
-{
-  "model": "product.category",
-  "pk": 2,
-  "fields": {
-    "name": "Samsung",
-    "slug": null,
-    "parent": 1,
-    "image": null
-  }
-},
-{
-  "model": "product.category",
-  "pk": 3,
-  "fields": {
-    "name": "Apple",
-    "slug": null,
-    "parent": 1,
-    "image": null
-  }
-},
-{
-  "model": "product.category",
-  "pk": 4,
-  "fields": {
-    "name": "Huawei",
-    "slug": null,
-    "parent": 1,
-    "image": null
-  }
-},
-{
-  "model": "product.category",
-  "pk": 5,
-  "fields": {
-    "name": "Tecno",
-    "slug": "tecno",
-    "parent": 1,
-    "image": null
-  }
-},
-{
-  "model": "product.product",
-  "pk": 10,
-  "fields": {
-    "title": "Pop 8",
-    "category": 1,
-    "price": "0",
-    "description": "Le POP 8 est un smartphone économique avec un design moderne et des fonctionnalités essentielles.\n                    \nCaractéristiques principales :\n- Écran 6.6\" HD+ Hole\n- Processeur T606\n- Double caméra arrière 13MP + AI-CAM\n- Charge 10W\n- Haut-parleurs stéréo\n\nSpécifications détaillées :\n- Système d'exploitation : Android T-Go\n- Processeur : T606\n- Réseaux : 4G\n- Dimensions : \n  * Matériau composite : 163.69 x 75.6 x 8.55 mm\n  * Magic Skin : 163.69 x 75.6 x 8.75 mm\n- Écran : 6.6\" HD+ Hole\n- Résolution : 720 x 1612\n- Caméra avant : 8MP avec Double Flash\n- Caméra arrière : 13MP + AI-CAM avec Double Flash\n- Connectivité : GPS, WiFi, FM, OTG\n- Capteurs : Gyroscope Logiciel, Capteur d'empreintes latéral\n- Batterie : 5000 mAh avec charge 10W Type-C",
-    "highlight": "Écran 6.6\" HD+ Hole\nProcesseur T606\nDouble caméra 13MP + AI-CAM\nCharge 10W\nHaut-parleurs stéréo",
-    "image": null,
-    "supplier": 1,
-    "stripe_product_id": null,
-    "is_active": true,
-    "created_at": "2025-04-27T15:19:03.265Z",
-    "updated_at": "2025-04-27T15:19:03.265Z"
-  }
-},
-{
-  "model": "product.product",
-  "pk": 11,
-  "fields": {
-    "title": "Pop 7",
-    "category": 1,
-    "price": "0",
-    "description": "Le POP 7 est un smartphone économique avec un design tendance et des fonctionnalités essentielles.\n                    \nCaractéristiques principales :\n- Écran 6.6\" HD+ Dot Notch\n- Processeur Octa-Core\n- Double caméra arrière 8MP AI\n- Batterie 5000mAh\n- Capteur d'empreintes arrière\n\nSpécifications détaillées :\n- Système d'exploitation : Android 12 (Go Edition)\n- Processeur : Octa-Core\n- Réseaux : 2G/3G/4G\n- Dimensions : 163.86 x 75.51 x 8.9 mm\n- Écran : 6.6\" HD+ Dot Notch\n- Résolution : 720 x 1612\n- Caméra avant : 5MP avec Double Flash\n- Caméra arrière : 8MP AI avec Double Flash\n- Connectivité : GPS, WiFi, FM, OTG\n- Capteurs : G-Sensor, Capteur d'empreintes, Capteur de lumière ambiante et de proximité\n- Batterie : 5000 mAh\n- Mémoire : 64GB ROM + 2GB RAM",
-    "highlight": "Écran 6.6\" HD+ Dot Notch\nProcesseur Octa-Core\nDouble caméra 8MP AI\nBatterie 5000mAh\nCapteur d'empreintes arrière",
-    "image": null,
-    "supplier": 1,
-    "stripe_product_id": null,
-    "is_active": true,
-    "created_at": "2025-04-27T15:21:35.107Z",
-    "updated_at": "2025-04-27T15:21:35.107Z"
-  }
-},
-{
-  "model": "product.product",
-  "pk": 12,
-  "fields": {
-    "title": "Pop 7 Pro",
-    "category": 1,
-    "price": "0",
-    "description": "Le POP 7 Pro est un smartphone économique avec un design tendance et des fonctionnalités améliorées.\n                    \nCaractéristiques principales :\n- Écran 6.6\" HD+ Dot Notch\n- Processeur Quad-Core\n- Double caméra arrière 13MP AI\n- Batterie 5000mAh Type-C\n- Capteur d'empreintes arrière\n\nSpécifications détaillées :\n- Système d'exploitation : Android S\n- Processeur : Quad-Core\n- Réseaux : 2G/3G/4G\n- Dimensions : 163.86 x 75.51 x 8.9 mm\n- Écran : 6.6\" HD+ Dot Notch\n- Résolution : 720 x 1612\n- Caméra avant : 5MP avec Double Flash\n- Caméra arrière : 13MP AI avec Double Flash\n- Connectivité : GPS, WiFi, FM, OTG\n- Capteurs : G-Sensor, Capteur d'empreintes, Capteur de lumière ambiante et de proximité\n- Batterie : 5000 mAh Type-C",
-    "highlight": "Écran 6.6\" HD+ Dot Notch\nProcesseur Quad-Core\nDouble caméra 13MP AI\nBatterie 5000mAh Type-C\nCapteur d'empreintes arrière",
-    "image": null,
-    "supplier": 1,
-    "stripe_product_id": null,
-    "is_active": true,
-    "created_at": "2025-04-27T15:25:47.325Z",
-    "updated_at": "2025-04-27T15:25:47.325Z"
-  }
-},
-{
-  "model": "product.product",
-  "pk": 13,
-  "fields": {
-    "title": "Pop 6 Pro",
-    "category": 1,
-    "price": "0",
-    "description": "Le POP 6 Pro est un smartphone économique avec un design moderne et des fonctionnalités essentielles.\n                    \nCaractéristiques principales :\n- Écran 6.6\" HD+ Dot Notch\n- Processeur Quad-Core\n- Double caméra arrière 8MP AI\n- Batterie 5000mAh\n- Capteur d'empreintes latéral\n\nSpécifications détaillées :\n- Système d'exploitation : Android S-GO\n- Processeur : Quad-Core\n- Réseaux : 2G/3G/4G\n- Dimensions : 164.85 x 76.25 x 8.75 mm\n- Écran : 6.6\" HD+ Dot Notch\n- Résolution : 720 x 1612\n- Caméra avant : 5MP avec Flash\n- Caméra arrière : 8MP AI avec Double Flash\n- Connectivité : GPS, WiFi, FM, OTG\n- Capteurs : G-Sensor, Capteur de lumière ambiante et de proximité, Capteur d'empreintes latéral\n- Batterie : 5000 mAh\n- Mémoire : 32GB ROM + 2GB RAM",
-    "highlight": "Écran 6.6\" HD+ Dot Notch\nProcesseur Quad-Core\nDouble caméra 8MP AI\nBatterie 5000mAh\nCapteur d'empreintes latéral",
-    "image": null,
-    "supplier": 1,
-    "stripe_product_id": null,
-    "is_active": true,
-    "created_at": "2025-04-27T15:29:46.228Z",
-    "updated_at": "2025-04-27T15:29:46.240Z"
-  }
-},
-{
-  "model": "product.product",
-  "pk": 14,
-  "fields": {
-    "title": "Pop 6",
-    "category": 1,
-    "price": "0",
-    "description": "Le POP 6 est un smartphone économique avec un design moderne et des fonctionnalités essentielles.\n                    \nCaractéristiques principales :\n- Écran 6.1\" HD+ Dot Notch\n- Processeur Quad-Core\n- Double caméra 5MP\n- Battery Lab 2.1\n- Smart Switch 1.0\n\nSpécifications détaillées :\n- Système d'exploitation : Android R-GO\n- Processeur : Quad-Core\n- Réseaux : GSM/GPRS/EDGE/WCDMA/FDD-LTE/TDD-LTE\n- Dimensions : 157.8 x 73.84 x 9.7 mm\n- Écran : 6.1\" HD+ Dot Notch\n- Résolution : 720 x 1560\n- Caméra avant : 5MP avec Flash\n- Caméra arrière : 5MP QVGA avec Flash\n- Connectivité : GPS, WiFi, FM, OTG\n- Capteurs : Face ID, Capteur d'empreintes\n- Mémoire : 32GB ROM + 2GB RAM",
-    "highlight": "Écran 6.1\" HD+ Dot Notch\nProcesseur Quad-Core\nDouble caméra 5MP\nBattery Lab 2.1\nSmart Switch 1.0",
-    "image": null,
-    "supplier": 1,
-    "stripe_product_id": null,
-    "is_active": true,
-    "created_at": "2025-04-27T15:31:37.742Z",
-    "updated_at": "2025-04-27T15:31:37.742Z"
-  }
-},
-{
-  "model": "product.product",
-  "pk": 15,
-  "fields": {
-    "title": "Pop 5 Pro",
-    "category": 1,
-    "price": "0",
-    "description": "Le POP 5 Pro est un smartphone économique avec un design moderne et des fonctionnalités essentielles.\n                    \nCaractéristiques principales :\n- Écran 16.56cm (6.52\") HD+ Dot Notch\n- Processeur Quad-Core\n- Double caméra 8MP\n- Batterie 6000mAh\n- Reconnaissance d'empreintes\n\nSpécifications détaillées :\n- Système d'exploitation : Android 11 (Go Edition)\n- Processeur : Quad-Core\n- Réseaux : GSM/4G\n- Dimensions : 164.87 x 76.09 x 9.52 mm\n- Écran : 16.56cm (6.52\") HD+ Dot Notch\n- Résolution : 720 x 1600\n- Caméra avant : 5MP avec Flash\n- Caméra arrière : 8MP QVGA avec Double Flash\n- Connectivité : GPS, WiFi, FM, OTG\n- Capteurs : G-Sensor, Capteur de lumière ambiante et de proximité, Reconnaissance d'empreintes\n- Batterie : 6000 mAh\n- Mémoire : 32GB ROM + 3GB RAM",
-    "highlight": "Écran 16.56cm HD+ Dot Notch\nProcesseur Quad-Core\nDouble caméra 8MP\nBatterie 6000mAh\nReconnaissance d'empreintes",
-    "image": null,
-    "supplier": 1,
-    "stripe_product_id": null,
-    "is_active": true,
-    "created_at": "2025-04-27T15:34:48.355Z",
-    "updated_at": "2025-04-27T15:34:48.355Z"
-  }
-},
-{
-  "model": "product.product",
-  "pk": 16,
-  "fields": {
-    "title": "Pop 5 Lte",
-    "category": 1,
-    "price": "0",
-    "description": "Le POP 5 LTE est un smartphone économique avec un design moderne et des fonctionnalités essentielles.\n                    \nCaractéristiques principales :\n- Écran 6.52\" HD+ Dot Notch\n- Processeur Quad-Core\n- Double caméra 8MP AI\n- Batterie 5000mAh\n- Déverrouillage par empreinte digitale\n\nSpécifications détaillées :\n- Système d'exploitation : Android 11 (Go Edition)\n- Processeur : Quad-Core\n- Réseaux : GSM/GPRS/EDGE/WCDMA/FDD-LTE/TDD-LTE\n- Dimensions : 164.87 x 76.09 x 8.75 mm\n- Écran : 6.52\" HD+ Dot Notch\n- Résolution : 720 x 1600\n- Caméra avant : 5MP avec Flash\n- Caméra arrière : 8MP AI avec Double Flash\n- Connectivité : GPS, WiFi, FM, OTG\n- Capteurs : G-Sensor, Capteur de lumière ambiante et de proximité, Capteur d'empreintes\n- Batterie : 5000 mAh\n- Mémoire : 32GB ROM + 2GB RAM",
-    "highlight": "Écran 6.52\" HD+ Dot Notch\nProcesseur Quad-Core\nDouble caméra 8MP AI\nBatterie 5000mAh\nDéverrouillage par empreinte",
-    "image": null,
-    "supplier": 1,
-    "stripe_product_id": null,
-    "is_active": true,
-    "created_at": "2025-04-27T15:37:00.029Z",
-    "updated_at": "2025-04-27T15:37:00.029Z"
-  }
-},
-{
-  "model": "product.product",
-  "pk": 17,
-  "fields": {
-    "title": "Pop 5",
-    "category": 1,
-    "price": "0",
-    "description": "Le POP 5 est un smartphone économique avec un design moderne et des fonctionnalités essentielles.\n                    \nCaractéristiques principales :\n- Écran 6.1\" HD+ Dot Notch\n- Processeur Quad-Core 1.3 GHz\n- Double caméra 5MP\n- Batterie 4000mAh\n- Déverrouillage facial et par empreinte\n\nSpécifications détaillées :\n- Système d'exploitation : HiOS basé sur Android 10 (Go Edition)\n- Processeur : Quad-Core 1.3 GHz\n- Réseaux : GSM/WCDMA\n- Dimensions : 157.7 x 75.7 x 9.55 mm\n- Écran : 6.1\" HD+ Dot Notch\n- Résolution : 720 x 1560\n- Caméra avant : 5MP avec Flash\n- Caméra arrière : 5MP Double avec Flash\n- Connectivité : GPS, WiFi, FM\n- Capteurs : G-Sensor, Capteur d'empreintes\n- Batterie : 4000 mAh\n- Mémoire : 16GB ROM + 1GB RAM",
-    "highlight": "Écran 6.1\" HD+ Dot Notch\nProcesseur Quad-Core 1.3 GHz\nDouble caméra 5MP\nBatterie 4000mAh\nDéverrouillage facial et par empreinte",
-    "image": null,
-    "supplier": 1,
-    "stripe_product_id": null,
-    "is_active": true,
-    "created_at": "2025-04-27T15:39:27.218Z",
-    "updated_at": "2025-04-27T15:39:27.218Z"
-  }
-},
-{
-  "model": "product.product",
-  "pk": 18,
-  "fields": {
-    "title": "Pop 2F",
-    "category": 1,
-    "price": "0",
-    "description": "Le POP 2F est un smartphone économique avec un design moderne et des fonctionnalités essentielles.\n                    \nCaractéristiques principales :\n- Écran 5.5\" Touchscreen\n- Processeur Quad-Core 1.3 GHz\n- Caméra beauté 8MP avant\n- Batterie 2400mAh\n- Déverrouillage facial et par empreinte\n\nSpécifications détaillées :\n- Système d'exploitation : HiOS basé sur Android 8.1 (Go Edition)\n- Processeur : Quad-Core 1.3 GHz\n- Réseaux : WiFi\n- Dimensions : 149.76 x 72.8 x 9.35 mm\n- Écran : 5.5\" Touchscreen\n- Résolution : 480 x 960\n- Caméra avant : 8MP avec Flash\n- Caméra arrière : 5MP avec Flash\n- Connectivité : WiFi\n- Capteurs : G-Sensor, Capteur d'empreintes\n- Batterie : 2400 mAh\n- Mémoire : 16GB ROM + 1GB RAM",
-    "highlight": "Écran 5.5\" Touchscreen\nProcesseur Quad-Core 1.3 GHz\nCaméra beauté 8MP avant\nBatterie 2400mAh\nDéverrouillage facial et par empreinte",
-    "image": null,
-    "supplier": 1,
-    "stripe_product_id": null,
-    "is_active": true,
-    "created_at": "2025-04-27T15:40:30.506Z",
-    "updated_at": "2025-04-27T15:40:30.506Z"
-  }
-},
-{
-  "model": "product.color",
-  "pk": 1,
-  "fields": {
-    "name": "Dark Green",
-    "code": "#1B4D3E"
-  }
-},
-{
-  "model": "product.color",
-  "pk": 2,
-  "fields": {
-    "name": "Galaxy Black",
-    "code": "#000000"
-  }
-},
-{
-  "model": "product.color",
-  "pk": 3,
-  "fields": {
-    "name": "Noir Galaxy",
-    "code": "#000000"
-  }
-},
-{
-  "model": "product.color",
-  "pk": 4,
-  "fields": {
-    "name": "Vert Émeraude",
-    "code": "#1B4D3E"
-  }
-},
-{
-  "model": "product.color",
-  "pk": 5,
-  "fields": {
-    "name": "Blanc Glacier",
-    "code": "#FFFFFF"
-  }
-},
-{
-  "model": "product.color",
-  "pk": 6,
-  "fields": {
-    "name": "Vert Bleu Foncé",
-    "code": "#1B4D3E"
-  }
-},
-{
-  "model": "product.color",
-  "pk": 7,
-  "fields": {
-    "name": "Vert Émeraude Brillant",
-    "code": "#1B4D3E"
-  }
-},
-{
-  "model": "product.color",
-  "pk": 8,
-  "fields": {
-    "name": "Noir Startrail",
-    "code": "#000000"
-  }
-},
-{
-  "model": "product.color",
-  "pk": 9,
-  "fields": {
-    "name": "Blanc Brillant",
-    "code": "#FFFFFF"
-  }
-},
-{
-  "model": "product.color",
-  "pk": 10,
-  "fields": {
-    "name": "Noir Céleste",
-    "code": "#000000"
-  }
-},
-{
-  "model": "product.color",
-  "pk": 11,
-  "fields": {
-    "name": "Or Aube",
-    "code": "#FFD700"
-  }
-},
-{
-  "model": "product.color",
-  "pk": 12,
-  "fields": {
-    "name": "Violet Nébuleuse",
-    "code": "#800080"
-  }
-},
-{
-  "model": "product.color",
-  "pk": 13,
-  "fields": {
-    "name": "Celestial Black",
-    "code": "#000000"
-  }
-},
-{
-  "model": "product.color",
-  "pk": 14,
-  "fields": {
-    "name": "Dawn Gold",
-    "code": "#FFD700"
-  }
-},
-{
-  "model": "product.color",
-  "pk": 15,
-  "fields": {
-    "name": "Nebula Violet",
-    "code": "#800080"
-  }
-},
-{
-  "model": "product.color",
-  "pk": 16,
-  "fields": {
-    "name": "Blanc Mystère",
-    "code": "#FFFFFF"
-  }
-},
-{
-  "model": "product.color",
-  "pk": 17,
-  "fields": {
-    "name": "Or Alpenglow",
-    "code": "#FFD700"
-  }
-},
-{
-  "model": "product.color",
-  "pk": 18,
-  "fields": {
-    "name": "Magic Skin",
-    "code": "#8B4513"
-  }
-},
-{
-  "model": "product.color",
-  "pk": 19,
-  "fields": {
-    "name": "Noir Gravité",
-    "code": "#000000"
-  }
-},
-{
-  "model": "product.color",
-  "pk": 20,
-  "fields": {
-    "name": "Noir Infini",
-    "code": "#000000"
-  }
-},
-{
-  "model": "product.color",
-  "pk": 21,
-  "fields": {
-    "name": "Bleu Capri",
-    "code": "#00BFFF"
-  }
-},
-{
-  "model": "product.color",
-  "pk": 22,
-  "fields": {
-    "name": "Bleu Uyuni",
-    "code": "#1E90FF"
-  }
-},
-{
-  "model": "product.color",
-  "pk": 23,
-  "fields": {
-    "name": "Noir Polaire",
-    "code": "#000000"
-  }
-},
-{
-  "model": "product.color",
-  "pk": 24,
-  "fields": {
-    "name": "Bleu Paix",
-    "code": "#4169E1"
-  }
-},
-{
-  "model": "product.color",
-  "pk": 25,
-  "fields": {
-    "name": "Violet 7°",
-    "code": "#8A2BE2"
-  }
-},
-{
-  "model": "product.color",
-  "pk": 26,
-  "fields": {
-    "name": "Bleu Mer",
-    "code": "#1E90FF"
-  }
-},
-{
-  "model": "product.color",
-  "pk": 27,
-  "fields": {
-    "name": "Bleu Ciel",
-    "code": "#87CEEB"
-  }
-},
-{
-  "model": "product.color",
-  "pk": 28,
-  "fields": {
-    "name": "Vert Lime",
-    "code": "#32CD32"
-  }
-},
-{
-  "model": "product.color",
-  "pk": 29,
-  "fields": {
-    "name": "Bleu Glace",
-    "code": "#ADD8E6"
-  }
-},
-{
-  "model": "product.color",
-  "pk": 30,
-  "fields": {
-    "name": "Lustre Profondeur",
-    "code": "#00008B"
-  }
-},
-{
-  "model": "product.color",
-  "pk": 31,
-  "fields": {
-    "name": "Cyan Ciel",
-    "code": "#00FFFF"
-  }
-},
-{
-  "model": "product.color",
-  "pk": 32,
-  "fields": {
-    "name": "Cyan Turquoise",
-    "code": "#40E0D0"
-  }
-},
-{
-  "model": "product.color",
-  "pk": 33,
-  "fields": {
-    "name": "Vert Lac Glace",
-    "code": "#90EE90"
-  }
-},
-{
-  "model": "product.color",
-  "pk": 34,
-  "fields": {
-    "name": "Noir Obsidienne",
-    "code": "#000000"
-  }
-},
-{
-  "model": "product.color",
-  "pk": 35,
-  "fields": {
-    "name": "Or Champagne",
-    "code": "#F7E7CE"
-  }
-},
-{
-  "model": "product.color",
-  "pk": 36,
-  "fields": {
-    "name": "Noir Minuit",
-    "code": "#000000"
-  }
-},
-{
-  "model": "product.color",
-  "pk": 37,
-  "fields": {
-    "name": "Bleu Ville",
-    "code": "#1E90FF"
-  }
-},
-{
-  "model": "product.phone",
-  "pk": 10,
-  "fields": {
-    "product": 10,
-    "model": "Pop 8",
-    "brand": "Tecno",
-    "operating_system": "Android T-Go",
-    "screen_size": "6.60",
-    "resolution": "720 X 1612",
-    "processor": "T606",
-    "battery_capacity": 5000,
-    "camera_main": "13Mp + Ai-Cam Avec Double Flash",
-    "camera_front": "8Mp Avec Double Flash",
-    "network": "4G",
-    "warranty": "12 Mois",
-    "imei": "232045297163739",
-    "is_new": true,
-    "box_included": true,
-    "accessories": "Chargeur 10W, Câble USB-C, Coque de protection, Écouteurs"
-  }
-},
-{
-  "model": "product.phone",
-  "pk": 11,
-  "fields": {
-    "product": 11,
-    "model": "Pop 7",
-    "brand": "Tecno",
-    "operating_system": "Android 12 (Go Edition)",
-    "screen_size": "6.60",
-    "resolution": "720 X 1612",
-    "processor": "Octa-Core",
-    "battery_capacity": 5000,
-    "camera_main": "8Mp Ai Avec Double Flash",
-    "camera_front": "5Mp Avec Double Flash",
-    "network": "2G/3G/4G",
-    "warranty": "12 Mois",
-    "imei": "205593094469879",
-    "is_new": true,
-    "box_included": true,
-    "accessories": "Chargeur, Câble USB, Manuel d'utilisation"
-  }
-},
-{
-  "model": "product.phone",
-  "pk": 12,
-  "fields": {
-    "product": 12,
-    "model": "Pop 7 Pro",
-    "brand": "Tecno",
-    "operating_system": "Android S",
-    "screen_size": "6.60",
-    "resolution": "720 X 1612",
-    "processor": "Quad-Core",
-    "battery_capacity": 5000,
-    "camera_main": "13Mp Ai Avec Double Flash",
-    "camera_front": "5Mp Avec Double Flash",
-    "network": "2G/3G/4G",
-    "warranty": "12 Mois",
-    "imei": "119755837626966",
-    "is_new": true,
-    "box_included": true,
-    "accessories": "Chargeur, Câble USB, Manuel d'utilisation"
-  }
-},
-{
-  "model": "product.phone",
-  "pk": 13,
-  "fields": {
-    "product": 13,
-    "model": "Pop 6 Pro",
-    "brand": "Tecno",
-    "operating_system": "Android S-Go",
-    "screen_size": "6.60",
-    "resolution": "720 X 1612",
-    "processor": "Quad-Core",
-    "battery_capacity": 5000,
-    "camera_main": "8Mp Ai Avec Double Flash",
-    "camera_front": "5Mp Avec Flash",
-    "network": "2G/3G/4G",
-    "warranty": "12 Mois",
-    "imei": "375100873849666",
-    "is_new": true,
-    "box_included": true,
-    "accessories": "Chargeur, Câble USB, Manuel d'utilisation"
-  }
-},
-{
-  "model": "product.phone",
-  "pk": 14,
-  "fields": {
-    "product": 14,
-    "model": "Pop 6",
-    "brand": "Tecno",
-    "operating_system": "Android R-Go",
-    "screen_size": "6.10",
-    "resolution": "720 X 1560",
-    "processor": "Quad-Core",
-    "battery_capacity": 4000,
-    "camera_main": "5Mp Qvga Avec Flash",
-    "camera_front": "5Mp Avec Flash",
-    "network": "Gsm/Gprs/Edge/Wcdma/Fdd-Lte/Tdd-Lte",
-    "warranty": "12 Mois",
-    "imei": "276866713150092",
-    "is_new": true,
-    "box_included": true,
-    "accessories": "Chargeur, Câble USB, Manuel d'utilisation"
-  }
-},
-{
-  "model": "product.phone",
-  "pk": 15,
-  "fields": {
-    "product": 15,
-    "model": "Pop 5 Pro",
-    "brand": "Tecno",
-    "operating_system": "Android 11 (Go Edition)",
-    "screen_size": "6.52",
-    "resolution": "720 X 1600",
-    "processor": "Quad-Core",
-    "battery_capacity": 6000,
-    "camera_main": "8Mp Qvga Avec Double Flash",
-    "camera_front": "5Mp Avec Flash",
-    "network": "Gsm/4G",
-    "warranty": "12 Mois",
-    "imei": "184490066673389",
-    "is_new": true,
-    "box_included": true,
-    "accessories": "Chargeur, Câble USB, Manuel d'utilisation"
-  }
-},
-{
-  "model": "product.phone",
-  "pk": 16,
-  "fields": {
-    "product": 16,
-    "model": "Pop 5 Lte",
-    "brand": "Tecno",
-    "operating_system": "Android 11 (Go Edition)",
-    "screen_size": "6.52",
-    "resolution": "720 X 1600",
-    "processor": "Quad-Core",
-    "battery_capacity": 5000,
-    "camera_main": "8Mp Ai Avec Double Flash",
-    "camera_front": "5Mp Avec Flash",
-    "network": "Gsm/Gprs/Edge/Wcdma/Fdd-Lte/Tdd-Lte",
-    "warranty": "12 Mois",
-    "imei": "260401236820952",
-    "is_new": true,
-    "box_included": true,
-    "accessories": "Chargeur, Câble USB, Manuel d'utilisation"
-  }
-},
-{
-  "model": "product.phone",
-  "pk": 17,
-  "fields": {
-    "product": 17,
-    "model": "Pop 5",
-    "brand": "Tecno",
-    "operating_system": "Hios Basé Sur Android 10 (Go Edition)",
-    "screen_size": "6.10",
-    "resolution": "720 X 1560",
-    "processor": "Quad-Core 1.3 Ghz",
-    "battery_capacity": 4000,
-    "camera_main": "5Mp Double Avec Flash",
-    "camera_front": "5Mp Avec Flash",
-    "network": "Gsm/Wcdma",
-    "warranty": "12 Mois",
-    "imei": "307402833249210",
-    "is_new": true,
-    "box_included": true,
-    "accessories": "Chargeur, Câble USB, Manuel d'utilisation"
-  }
-},
-{
-  "model": "product.phone",
-  "pk": 18,
-  "fields": {
-    "product": 18,
-    "model": "Pop 2F",
-    "brand": "Tecno",
-    "operating_system": "Hios Basé Sur Android 8.1 (Go Edition)",
-    "screen_size": "5.50",
-    "resolution": "480 X 960",
-    "processor": "Quad-Core 1.3 Ghz",
-    "battery_capacity": 2400,
-    "camera_main": "5Mp Avec Flash",
-    "camera_front": "8Mp Avec Flash",
-    "network": "Wifi",
-    "warranty": "12 Mois",
-    "imei": "105691194544893",
-    "is_new": true,
-    "box_included": true,
-    "accessories": "Chargeur, Câble USB, Manuel d'utilisation"
-  }
-},
-{
-  "model": "product.phonevariant",
-  "pk": 53,
-  "fields": {
-    "phone": 10,
-    "color": 16,
-    "storage": 64,
-    "ram": 6,
-    "price": "99900.00",
-    "stock": 10,
-    "sku": "TECNO-POP-8-Blanc Mystère-64GB-6GB",
-    "disponible_salam": false,
-    "created_at": "2025-04-27T15:19:03.273Z",
-    "updated_at": "2025-04-27T15:19:03.273Z"
-  }
-},
-{
-  "model": "product.phonevariant",
-  "pk": 54,
-  "fields": {
-    "phone": 10,
-    "color": 17,
-    "storage": 64,
-    "ram": 6,
-    "price": "99900.00",
-    "stock": 10,
-    "sku": "TECNO-POP-8-Or Alpenglow-64GB-6GB",
-    "disponible_salam": false,
-    "created_at": "2025-04-27T15:19:03.276Z",
-    "updated_at": "2025-04-27T15:19:03.276Z"
-  }
-},
-{
-  "model": "product.phonevariant",
-  "pk": 55,
-  "fields": {
-    "phone": 10,
-    "color": 18,
-    "storage": 64,
-    "ram": 6,
-    "price": "99900.00",
-    "stock": 10,
-    "sku": "TECNO-POP-8-Magic Skin-64GB-6GB",
-    "disponible_salam": false,
-    "created_at": "2025-04-27T15:19:03.285Z",
-    "updated_at": "2025-04-27T15:19:03.285Z"
-  }
-},
-{
-  "model": "product.phonevariant",
-  "pk": 56,
-  "fields": {
-    "phone": 10,
-    "color": 19,
-    "storage": 64,
-    "ram": 6,
-    "price": "99900.00",
-    "stock": 10,
-    "sku": "TECNO-POP-8-Noir Gravité-64GB-6GB",
-    "disponible_salam": false,
-    "created_at": "2025-04-27T15:19:03.287Z",
-    "updated_at": "2025-04-27T15:19:03.287Z"
-  }
-},
-{
-  "model": "product.phonevariant",
-  "pk": 57,
-  "fields": {
-    "phone": 10,
-    "color": 16,
-    "storage": 64,
-    "ram": 8,
-    "price": "109900.00",
-    "stock": 10,
-    "sku": "TECNO-POP-8-Blanc Mystère-64GB-8GB",
-    "disponible_salam": false,
-    "created_at": "2025-04-27T15:19:03.293Z",
-    "updated_at": "2025-04-27T15:19:03.293Z"
-  }
-},
-{
-  "model": "product.phonevariant",
-  "pk": 58,
-  "fields": {
-    "phone": 10,
-    "color": 17,
-    "storage": 64,
-    "ram": 8,
-    "price": "109900.00",
-    "stock": 10,
-    "sku": "TECNO-POP-8-Or Alpenglow-64GB-8GB",
-    "disponible_salam": false,
-    "created_at": "2025-04-27T15:19:03.297Z",
-    "updated_at": "2025-04-27T15:19:03.297Z"
-  }
-},
-{
-  "model": "product.phonevariant",
-  "pk": 59,
-  "fields": {
-    "phone": 10,
-    "color": 18,
-    "storage": 64,
-    "ram": 8,
-    "price": "109900.00",
-    "stock": 10,
-    "sku": "TECNO-POP-8-Magic Skin-64GB-8GB",
-    "disponible_salam": false,
-    "created_at": "2025-04-27T15:19:03.300Z",
-    "updated_at": "2025-04-27T15:19:03.300Z"
-  }
-},
-{
-  "model": "product.phonevariant",
-  "pk": 60,
-  "fields": {
-    "phone": 10,
-    "color": 19,
-    "storage": 64,
-    "ram": 8,
-    "price": "109900.00",
-    "stock": 10,
-    "sku": "TECNO-POP-8-Noir Gravité-64GB-8GB",
-    "disponible_salam": false,
-    "created_at": "2025-04-27T15:19:03.303Z",
-    "updated_at": "2025-04-27T15:19:03.304Z"
-  }
-},
-{
-  "model": "product.phonevariant",
-  "pk": 61,
-  "fields": {
-    "phone": 10,
-    "color": 16,
-    "storage": 128,
-    "ram": 8,
-    "price": "119900.00",
-    "stock": 10,
-    "sku": "TECNO-POP-8-Blanc Mystère-128GB-8GB",
-    "disponible_salam": false,
-    "created_at": "2025-04-27T15:19:03.307Z",
-    "updated_at": "2025-04-27T15:19:03.307Z"
-  }
-},
-{
-  "model": "product.phonevariant",
-  "pk": 62,
-  "fields": {
-    "phone": 10,
-    "color": 17,
-    "storage": 128,
-    "ram": 8,
-    "price": "119900.00",
-    "stock": 10,
-    "sku": "TECNO-POP-8-Or Alpenglow-128GB-8GB",
-    "disponible_salam": false,
-    "created_at": "2025-04-27T15:19:03.314Z",
-    "updated_at": "2025-04-27T15:19:03.314Z"
-  }
-},
-{
-  "model": "product.phonevariant",
-  "pk": 63,
-  "fields": {
-    "phone": 10,
-    "color": 18,
-    "storage": 128,
-    "ram": 8,
-    "price": "119900.00",
-    "stock": 10,
-    "sku": "TECNO-POP-8-Magic Skin-128GB-8GB",
-    "disponible_salam": false,
-    "created_at": "2025-04-27T15:19:03.318Z",
-    "updated_at": "2025-04-27T15:19:03.318Z"
-  }
-},
-{
-  "model": "product.phonevariant",
-  "pk": 64,
-  "fields": {
-    "phone": 10,
-    "color": 19,
-    "storage": 128,
-    "ram": 8,
-    "price": "119900.00",
-    "stock": 10,
-    "sku": "TECNO-POP-8-Noir Gravité-128GB-8GB",
-    "disponible_salam": false,
-    "created_at": "2025-04-27T15:19:03.322Z",
-    "updated_at": "2025-04-27T15:19:03.322Z"
-  }
-},
-{
-  "model": "product.phonevariant",
-  "pk": 65,
-  "fields": {
-    "phone": 11,
-    "color": 20,
-    "storage": 64,
-    "ram": 2,
-    "price": "79900.00",
-    "stock": 10,
-    "sku": "TECNO-POP-7-Noir Infini-64GB-2GB",
-    "disponible_salam": false,
-    "created_at": "2025-04-27T15:21:35.112Z",
-    "updated_at": "2025-04-27T15:21:35.112Z"
-  }
-},
-{
-  "model": "product.phonevariant",
-  "pk": 66,
-  "fields": {
-    "phone": 11,
-    "color": 21,
-    "storage": 64,
-    "ram": 2,
-    "price": "79900.00",
-    "stock": 10,
-    "sku": "TECNO-POP-7-Bleu Capri-64GB-2GB",
-    "disponible_salam": false,
-    "created_at": "2025-04-27T15:21:35.114Z",
-    "updated_at": "2025-04-27T15:21:35.115Z"
-  }
-},
-{
-  "model": "product.phonevariant",
-  "pk": 67,
-  "fields": {
-    "phone": 11,
-    "color": 12,
-    "storage": 64,
-    "ram": 2,
-    "price": "79900.00",
-    "stock": 10,
-    "sku": "TECNO-POP-7-Violet Nébuleuse-64GB-2GB",
-    "disponible_salam": false,
-    "created_at": "2025-04-27T15:21:35.116Z",
-    "updated_at": "2025-04-27T15:21:35.116Z"
-  }
-},
-{
-  "model": "product.phonevariant",
-  "pk": 68,
-  "fields": {
-    "phone": 12,
-    "color": 20,
-    "storage": 32,
-    "ram": 3,
-    "price": "69900.00",
-    "stock": 10,
-    "sku": "TECNO-POP-7-Pro-Noir Infini-32GB-3GB",
-    "disponible_salam": false,
-    "created_at": "2025-04-27T15:25:47.329Z",
-    "updated_at": "2025-04-27T15:25:47.329Z"
-  }
-},
-{
-  "model": "product.phonevariant",
-  "pk": 69,
-  "fields": {
-    "phone": 12,
-    "color": 22,
-    "storage": 32,
-    "ram": 3,
-    "price": "69900.00",
-    "stock": 10,
-    "sku": "TECNO-POP-7-Pro-Bleu Uyuni-32GB-3GB",
-    "disponible_salam": false,
-    "created_at": "2025-04-27T15:25:47.334Z",
-    "updated_at": "2025-04-27T15:25:47.334Z"
-  }
-},
-{
-  "model": "product.phonevariant",
-  "pk": 70,
-  "fields": {
-    "phone": 12,
-    "color": 12,
-    "storage": 32,
-    "ram": 3,
-    "price": "69900.00",
-    "stock": 10,
-    "sku": "TECNO-POP-7-Pro-Violet Nébuleuse-32GB-3GB",
-    "disponible_salam": false,
-    "created_at": "2025-04-27T15:25:47.337Z",
-    "updated_at": "2025-04-27T15:25:47.337Z"
-  }
-},
-{
-  "model": "product.phonevariant",
-  "pk": 71,
-  "fields": {
-    "phone": 12,
-    "color": 20,
-    "storage": 64,
-    "ram": 3,
-    "price": "79900.00",
-    "stock": 10,
-    "sku": "TECNO-POP-7-Pro-Noir Infini-64GB-3GB",
-    "disponible_salam": false,
-    "created_at": "2025-04-27T15:25:47.338Z",
-    "updated_at": "2025-04-27T15:25:47.338Z"
-  }
-},
-{
-  "model": "product.phonevariant",
-  "pk": 72,
-  "fields": {
-    "phone": 12,
-    "color": 22,
-    "storage": 64,
-    "ram": 3,
-    "price": "79900.00",
-    "stock": 10,
-    "sku": "TECNO-POP-7-Pro-Bleu Uyuni-64GB-3GB",
-    "disponible_salam": false,
-    "created_at": "2025-04-27T15:25:47.340Z",
-    "updated_at": "2025-04-27T15:25:47.340Z"
-  }
-},
-{
-  "model": "product.phonevariant",
-  "pk": 73,
-  "fields": {
-    "phone": 12,
-    "color": 12,
-    "storage": 64,
-    "ram": 3,
-    "price": "79900.00",
-    "stock": 10,
-    "sku": "TECNO-POP-7-Pro-Violet Nébuleuse-64GB-3GB",
-    "disponible_salam": false,
-    "created_at": "2025-04-27T15:25:47.343Z",
-    "updated_at": "2025-04-27T15:25:47.343Z"
-  }
-},
-{
-  "model": "product.phonevariant",
-  "pk": 74,
-  "fields": {
-    "phone": 12,
-    "color": 20,
-    "storage": 64,
-    "ram": 4,
-    "price": "89900.00",
-    "stock": 10,
-    "sku": "TECNO-POP-7-Pro-Noir Infini-64GB-4GB",
-    "disponible_salam": false,
-    "created_at": "2025-04-27T15:25:47.347Z",
-    "updated_at": "2025-04-27T15:25:47.347Z"
-  }
-},
-{
-  "model": "product.phonevariant",
-  "pk": 75,
-  "fields": {
-    "phone": 12,
-    "color": 22,
-    "storage": 64,
-    "ram": 4,
-    "price": "89900.00",
-    "stock": 10,
-    "sku": "TECNO-POP-7-Pro-Bleu Uyuni-64GB-4GB",
-    "disponible_salam": false,
-    "created_at": "2025-04-27T15:25:47.352Z",
-    "updated_at": "2025-04-27T15:25:47.352Z"
-  }
-},
-{
-  "model": "product.phonevariant",
-  "pk": 76,
-  "fields": {
-    "phone": 12,
-    "color": 12,
-    "storage": 64,
-    "ram": 4,
-    "price": "89900.00",
-    "stock": 10,
-    "sku": "TECNO-POP-7-Pro-Violet Nébuleuse-64GB-4GB",
-    "disponible_salam": false,
-    "created_at": "2025-04-27T15:25:47.354Z",
-    "updated_at": "2025-04-27T15:25:47.354Z"
-  }
-},
-{
-  "model": "product.phonevariant",
-  "pk": 77,
-  "fields": {
-    "phone": 13,
-    "color": 23,
-    "storage": 32,
-    "ram": 2,
-    "price": "59900.00",
-    "stock": 10,
-    "sku": "TECNO-POP-6-Pro-Noir Polaire-32GB-2GB",
-    "disponible_salam": false,
-    "created_at": "2025-04-27T15:29:46.342Z",
-    "updated_at": "2025-04-27T15:29:46.342Z"
-  }
-},
-{
-  "model": "product.phonevariant",
-  "pk": 78,
-  "fields": {
-    "phone": 13,
-    "color": 24,
-    "storage": 32,
-    "ram": 2,
-    "price": "59900.00",
-    "stock": 10,
-    "sku": "TECNO-POP-6-Pro-Bleu Paix-32GB-2GB",
-    "disponible_salam": false,
-    "created_at": "2025-04-27T15:29:46.513Z",
-    "updated_at": "2025-04-27T15:29:46.513Z"
-  }
-},
-{
-  "model": "product.phonevariant",
-  "pk": 79,
-  "fields": {
-    "phone": 13,
-    "color": 25,
-    "storage": 32,
-    "ram": 2,
-    "price": "59900.00",
-    "stock": 10,
-    "sku": "TECNO-POP-6-Pro-Violet 7°-32GB-2GB",
-    "disponible_salam": false,
-    "created_at": "2025-04-27T15:29:46.641Z",
-    "updated_at": "2025-04-27T15:29:46.642Z"
-  }
-},
-{
-  "model": "product.phonevariant",
-  "pk": 80,
-  "fields": {
-    "phone": 14,
-    "color": 26,
-    "storage": 32,
-    "ram": 2,
-    "price": "49900.00",
-    "stock": 10,
-    "sku": "TECNO-POP-6-Bleu Mer-32GB-2GB",
-    "disponible_salam": true,
-    "created_at": "2025-04-27T15:31:37.746Z",
-    "updated_at": "2025-05-01T09:34:39.427Z"
-  }
-},
-{
-  "model": "product.phonevariant",
-  "pk": 81,
-  "fields": {
-    "phone": 14,
-    "color": 27,
-    "storage": 32,
-    "ram": 2,
-    "price": "49900.00",
-    "stock": 10,
-    "sku": "TECNO-POP-6-Bleu Ciel-32GB-2GB",
-    "disponible_salam": false,
-    "created_at": "2025-04-27T15:31:37.749Z",
-    "updated_at": "2025-04-27T15:31:37.749Z"
-  }
-},
-{
-  "model": "product.phonevariant",
-  "pk": 82,
-  "fields": {
-    "phone": 14,
-    "color": 28,
-    "storage": 32,
-    "ram": 2,
-    "price": "49900.00",
-    "stock": 10,
-    "sku": "TECNO-POP-6-Vert Lime-32GB-2GB",
-    "disponible_salam": false,
-    "created_at": "2025-04-27T15:31:37.754Z",
-    "updated_at": "2025-04-27T15:31:37.754Z"
-  }
-},
-{
-  "model": "product.phonevariant",
-  "pk": 83,
-  "fields": {
-    "phone": 15,
-    "color": 29,
-    "storage": 32,
-    "ram": 3,
-    "price": "69900.00",
-    "stock": 10,
-    "sku": "TECNO-POP-5-Pro-Bleu Glace-32GB-3GB",
-    "disponible_salam": true,
-    "created_at": "2025-04-27T15:34:48.359Z",
-    "updated_at": "2025-05-01T09:34:12.713Z"
-  }
-},
-{
-  "model": "product.phonevariant",
-  "pk": 84,
-  "fields": {
-    "phone": 15,
-    "color": 30,
-    "storage": 32,
-    "ram": 3,
-    "price": "69900.00",
-    "stock": 10,
-    "sku": "TECNO-POP-5-Pro-Lustre Profondeur-32GB-3GB",
-    "disponible_salam": true,
-    "created_at": "2025-04-27T15:34:48.362Z",
-    "updated_at": "2025-05-01T09:34:21.999Z"
-  }
-},
-{
-  "model": "product.phonevariant",
-  "pk": 85,
-  "fields": {
-    "phone": 15,
-    "color": 31,
-    "storage": 32,
-    "ram": 3,
-    "price": "69900.00",
-    "stock": 10,
-    "sku": "TECNO-POP-5-Pro-Cyan Ciel-32GB-3GB",
-    "disponible_salam": true,
-    "created_at": "2025-04-27T15:34:48.368Z",
-    "updated_at": "2025-05-01T09:34:30.693Z"
-  }
-},
-{
-  "model": "product.phonevariant",
-  "pk": 86,
-  "fields": {
-    "phone": 16,
-    "color": 29,
-    "storage": 32,
-    "ram": 2,
-    "price": "59900.00",
-    "stock": 10,
-    "sku": "TECNO-POP-5-LTE-Bleu Glace-32GB-2GB",
-    "disponible_salam": true,
-    "created_at": "2025-04-27T15:37:00.036Z",
-    "updated_at": "2025-05-01T09:34:06.966Z"
-  }
-},
-{
-  "model": "product.phonevariant",
-  "pk": 87,
-  "fields": {
-    "phone": 16,
-    "color": 30,
-    "storage": 32,
-    "ram": 2,
-    "price": "59900.00",
-    "stock": 10,
-    "sku": "TECNO-POP-5-LTE-Lustre Profondeur-32GB-2GB",
-    "disponible_salam": true,
-    "created_at": "2025-04-27T15:37:00.039Z",
-    "updated_at": "2025-05-01T09:34:09.889Z"
-  }
-},
-{
-  "model": "product.phonevariant",
-  "pk": 88,
-  "fields": {
-    "phone": 16,
-    "color": 32,
-    "storage": 32,
-    "ram": 2,
-    "price": "59900.00",
-    "stock": 10,
-    "sku": "TECNO-POP-5-LTE-Cyan Turquoise-32GB-2GB",
-    "disponible_salam": true,
-    "created_at": "2025-04-27T15:37:00.042Z",
-    "updated_at": "2025-05-01T09:34:25.537Z"
-  }
-},
-{
-  "model": "product.phonevariant",
-  "pk": 89,
-  "fields": {
-    "phone": 17,
-    "color": 33,
-    "storage": 16,
-    "ram": 1,
-    "price": "49900.00",
-    "stock": 10,
-    "sku": "TECNO-POP-5-Vert Lac Glace-16GB-1GB",
-    "disponible_salam": true,
-    "created_at": "2025-04-27T15:39:27.225Z",
-    "updated_at": "2025-05-01T09:34:02.021Z"
-  }
-},
-{
-  "model": "product.phonevariant",
-  "pk": 90,
-  "fields": {
-    "phone": 17,
-    "color": 34,
-    "storage": 16,
-    "ram": 1,
-    "price": "49900.00",
-    "stock": 10,
-    "sku": "TECNO-POP-5-Noir Obsidienne-16GB-1GB",
-    "disponible_salam": true,
-    "created_at": "2025-04-27T15:39:27.228Z",
-    "updated_at": "2025-05-01T09:34:04.239Z"
-  }
-},
-{
-  "model": "product.phonevariant",
-  "pk": 91,
-  "fields": {
-    "phone": 17,
-    "color": 29,
-    "storage": 16,
-    "ram": 1,
-    "price": "49900.00",
-    "stock": 10,
-    "sku": "TECNO-POP-5-Bleu Glace-16GB-1GB",
-    "disponible_salam": true,
-    "created_at": "2025-04-27T15:39:27.231Z",
-    "updated_at": "2025-05-01T09:33:58.325Z"
-  }
-},
-{
-  "model": "product.phonevariant",
-  "pk": 92,
-  "fields": {
-    "phone": 18,
-    "color": 35,
-    "storage": 16,
-    "ram": 1,
-    "price": "39900.00",
-    "stock": 10,
-    "sku": "TECNO-POP-2F-Or Champagne-16GB-1GB",
-    "disponible_salam": true,
-    "created_at": "2025-04-27T15:40:30.511Z",
-    "updated_at": "2025-04-27T17:08:43.814Z"
-  }
-},
-{
-  "model": "product.phonevariant",
-  "pk": 93,
-  "fields": {
-    "phone": 18,
-    "color": 36,
-    "storage": 16,
-    "ram": 1,
-    "price": "39900.00",
-    "stock": 10,
-    "sku": "TECNO-POP-2F-Noir Minuit-16GB-1GB",
-    "disponible_salam": true,
-    "created_at": "2025-04-27T15:40:30.513Z",
-    "updated_at": "2025-05-01T07:04:22.792Z"
-  }
-},
-{
-  "model": "product.phonevariant",
-  "pk": 94,
-  "fields": {
-    "phone": 18,
-    "color": 37,
-    "storage": 16,
-    "ram": 1,
-    "price": "39900.00",
-    "stock": 10,
-    "sku": "TECNO-POP-2F-Bleu Ville-16GB-1GB",
-    "disponible_salam": true,
-    "created_at": "2025-04-27T15:40:30.516Z",
-    "updated_at": "2025-05-01T09:33:55.738Z"
-  }
-}
-]
+  {
+    "model": "suppliers.supplier",
+    "pk": 1,
+    "fields": {
+      "phone": "+22395187176",
+      "email": "djimigakonis@gamil.com",
+      "address": "37 rue Daniel mayer",
+      "slug": null,
+      "name": "Tecno",
+      "description": "Tecno",
+      "image": null,
+      "specialty": "Fournisseur de TELEPHONE"
+    }
+  },
+  {
+    "model": "product.category",
+    "pk": 1,
+    "fields": {
+      "name": "Téléphones",
+      "slug": null,
+      "parent": null,
+      "image": null
+    }
+  },
+  {
+    "model": "product.category",
+    "pk": 2,
+    "fields": {
+      "name": "Samsung",
+      "slug": null,
+      "parent": 1,
+      "image": null
+    }
+  },
+  {
+    "model": "product.category",
+    "pk": 3,
+    "fields": {
+      "name": "Apple",
+      "slug": null,
+      "parent": 1,
+      "image": null
+    }
+  },
+  {
+    "model": "product.category",
+    "pk": 4,
+    "fields": {
+      "name": "Huawei",
+      "slug": null,
+      "parent": 1,
+      "image": null
+    }
+  },
+  {
+    "model": "product.category",
+    "pk": 5,
+    "fields": {
+      "name": "Tecno",
+      "slug": "tecno",
+      "parent": 1,
+      "image": null
+    }
+  },
+  {
+    "model": "product.product",
+    "pk": 10,
+    "fields": {
+      "title": "Pop 8",
+      "category": 1,
+      "price": "0",
+      "description": "Le POP 8 est un smartphone économique avec un design moderne et des fonctionnalités essentielles.\n                    \nCaractéristiques principales :\n- Écran 6.6\" HD+ Hole\n- Processeur T606\n- Double caméra arrière 13MP + AI-CAM\n- Charge 10W\n- Haut-parleurs stéréo\n\nSpécifications détaillées :\n- Système d'exploitation : Android T-Go\n- Processeur : T606\n- Réseaux : 4G\n- Dimensions : \n  * Matériau composite : 163.69 x 75.6 x 8.55 mm\n  * Magic Skin : 163.69 x 75.6 x 8.75 mm\n- Écran : 6.6\" HD+ Hole\n- Résolution : 720 x 1612\n- Caméra avant : 8MP avec Double Flash\n- Caméra arrière : 13MP + AI-CAM avec Double Flash\n- Connectivité : GPS, WiFi, FM, OTG\n- Capteurs : Gyroscope Logiciel, Capteur d'empreintes latéral\n- Batterie : 5000 mAh avec charge 10W Type-C",
+      "highlight": "Écran 6.6\" HD+ Hole\nProcesseur T606\nDouble caméra 13MP + AI-CAM\nCharge 10W\nHaut-parleurs stéréo",
+      "image": null,
+      "supplier": 1,
+      "stripe_product_id": null,
+      "is_active": true,
+      "created_at": "2025-04-27T15:19:03.265Z",
+      "updated_at": "2025-04-27T15:19:03.265Z"
+    }
+  },
+  {
+    "model": "product.product",
+    "pk": 11,
+    "fields": {
+      "title": "Pop 7",
+      "category": 1,
+      "price": "0",
+      "description": "Le POP 7 est un smartphone économique avec un design tendance et des fonctionnalités essentielles.\n                    \nCaractéristiques principales :\n- Écran 6.6\" HD+ Dot Notch\n- Processeur Octa-Core\n- Double caméra arrière 8MP AI\n- Batterie 5000mAh\n- Capteur d'empreintes arrière\n\nSpécifications détaillées :\n- Système d'exploitation : Android 12 (Go Edition)\n- Processeur : Octa-Core\n- Réseaux : 2G/3G/4G\n- Dimensions : 163.86 x 75.51 x 8.9 mm\n- Écran : 6.6\" HD+ Dot Notch\n- Résolution : 720 x 1612\n- Caméra avant : 5MP avec Double Flash\n- Caméra arrière : 8MP AI avec Double Flash\n- Connectivité : GPS, WiFi, FM, OTG\n- Capteurs : G-Sensor, Capteur d'empreintes, Capteur de lumière ambiante et de proximité\n- Batterie : 5000 mAh\n- Mémoire : 64GB ROM + 2GB RAM",
+      "highlight": "Écran 6.6\" HD+ Dot Notch\nProcesseur Octa-Core\nDouble caméra 8MP AI\nBatterie 5000mAh\nCapteur d'empreintes arrière",
+      "image": null,
+      "supplier": 1,
+      "stripe_product_id": null,
+      "is_active": true,
+      "created_at": "2025-04-27T15:21:35.107Z",
+      "updated_at": "2025-04-27T15:21:35.107Z"
+    }
+  },
+  {
+    "model": "product.product",
+    "pk": 12,
+    "fields": {
+      "title": "Pop 7 Pro",
+      "category": 1,
+      "price": "0",
+      "description": "Le POP 7 Pro est un smartphone économique avec un design tendance et des fonctionnalités améliorées.\n                    \nCaractéristiques principales :\n- Écran 6.6\" HD+ Dot Notch\n- Processeur Quad-Core\n- Double caméra arrière 13MP AI\n- Batterie 5000mAh Type-C\n- Capteur d'empreintes arrière\n\nSpécifications détaillées :\n- Système d'exploitation : Android S\n- Processeur : Quad-Core\n- Réseaux : 2G/3G/4G\n- Dimensions : 163.86 x 75.51 x 8.9 mm\n- Écran : 6.6\" HD+ Dot Notch\n- Résolution : 720 x 1612\n- Caméra avant : 5MP avec Double Flash\n- Caméra arrière : 13MP AI avec Double Flash\n- Connectivité : GPS, WiFi, FM, OTG\n- Capteurs : G-Sensor, Capteur d'empreintes, Capteur de lumière ambiante et de proximité\n- Batterie : 5000 mAh Type-C",
+      "highlight": "Écran 6.6\" HD+ Dot Notch\nProcesseur Quad-Core\nDouble caméra 13MP AI\nBatterie 5000mAh Type-C\nCapteur d'empreintes arrière",
+      "image": null,
+      "supplier": 1,
+      "stripe_product_id": null,
+      "is_active": true,
+      "created_at": "2025-04-27T15:25:47.325Z",
+      "updated_at": "2025-04-27T15:25:47.325Z"
+    }
+  },
+  {
+    "model": "product.product",
+    "pk": 13,
+    "fields": {
+      "title": "Pop 6 Pro",
+      "category": 1,
+      "price": "0",
+      "description": "Le POP 6 Pro est un smartphone économique avec un design moderne et des fonctionnalités essentielles.\n                    \nCaractéristiques principales :\n- Écran 6.6\" HD+ Dot Notch\n- Processeur Quad-Core\n- Double caméra arrière 8MP AI\n- Batterie 5000mAh\n- Capteur d'empreintes latéral\n\nSpécifications détaillées :\n- Système d'exploitation : Android S-GO\n- Processeur : Quad-Core\n- Réseaux : 2G/3G/4G\n- Dimensions : 164.85 x 76.25 x 8.75 mm\n- Écran : 6.6\" HD+ Dot Notch\n- Résolution : 720 x 1612\n- Caméra avant : 5MP avec Flash\n- Caméra arrière : 8MP AI avec Double Flash\n- Connectivité : GPS, WiFi, FM, OTG\n- Capteurs : G-Sensor, Capteur de lumière ambiante et de proximité, Capteur d'empreintes latéral\n- Batterie : 5000 mAh\n- Mémoire : 32GB ROM + 2GB RAM",
+      "highlight": "Écran 6.6\" HD+ Dot Notch\nProcesseur Quad-Core\nDouble caméra 8MP AI\nBatterie 5000mAh\nCapteur d'empreintes latéral",
+      "image": null,
+      "supplier": 1,
+      "stripe_product_id": null,
+      "is_active": true,
+      "created_at": "2025-04-27T15:29:46.228Z",
+      "updated_at": "2025-04-27T15:29:46.240Z"
+    }
+  },
+  {
+    "model": "product.product",
+    "pk": 14,
+    "fields": {
+      "title": "Pop 6",
+      "category": 1,
+      "price": "0",
+      "description": "Le POP 6 est un smartphone économique avec un design moderne et des fonctionnalités essentielles.\n                    \nCaractéristiques principales :\n- Écran 6.1\" HD+ Dot Notch\n- Processeur Quad-Core\n- Double caméra 5MP\n- Battery Lab 2.1\n- Smart Switch 1.0\n\nSpécifications détaillées :\n- Système d'exploitation : Android R-GO\n- Processeur : Quad-Core\n- Réseaux : GSM/GPRS/EDGE/WCDMA/FDD-LTE/TDD-LTE\n- Dimensions : 157.8 x 73.84 x 9.7 mm\n- Écran : 6.1\" HD+ Dot Notch\n- Résolution : 720 x 1560\n- Caméra avant : 5MP avec Flash\n- Caméra arrière : 5MP QVGA avec Flash\n- Connectivité : GPS, WiFi, FM, OTG\n- Capteurs : Face ID, Capteur d'empreintes\n- Mémoire : 32GB ROM + 2GB RAM",
+      "highlight": "Écran 6.1\" HD+ Dot Notch\nProcesseur Quad-Core\nDouble caméra 5MP\nBattery Lab 2.1\nSmart Switch 1.0",
+      "image": null,
+      "supplier": 1,
+      "stripe_product_id": null,
+      "is_active": true,
+      "created_at": "2025-04-27T15:31:37.742Z",
+      "updated_at": "2025-04-27T15:31:37.742Z"
+    }
+  },
+  {
+    "model": "product.product",
+    "pk": 15,
+    "fields": {
+      "title": "Pop 5 Pro",
+      "category": 1,
+      "price": "0",
+      "description": "Le POP 5 Pro est un smartphone économique avec un design moderne et des fonctionnalités essentielles.\n                    \nCaractéristiques principales :\n- Écran 16.56cm (6.52\") HD+ Dot Notch\n- Processeur Quad-Core\n- Double caméra 8MP\n- Batterie 6000mAh\n- Reconnaissance d'empreintes\n\nSpécifications détaillées :\n- Système d'exploitation : Android 11 (Go Edition)\n- Processeur : Quad-Core\n- Réseaux : GSM/4G\n- Dimensions : 164.87 x 76.09 x 9.52 mm\n- Écran : 16.56cm (6.52\") HD+ Dot Notch\n- Résolution : 720 x 1600\n- Caméra avant : 5MP avec Flash\n- Caméra arrière : 8MP QVGA avec Double Flash\n- Connectivité : GPS, WiFi, FM, OTG\n- Capteurs : G-Sensor, Capteur de lumière ambiante et de proximité, Reconnaissance d'empreintes\n- Batterie : 6000 mAh\n- Mémoire : 32GB ROM + 3GB RAM",
+      "highlight": "Écran 16.56cm HD+ Dot Notch\nProcesseur Quad-Core\nDouble caméra 8MP\nBatterie 6000mAh\nReconnaissance d'empreintes",
+      "image": null,
+      "supplier": 1,
+      "stripe_product_id": null,
+      "is_active": true,
+      "created_at": "2025-04-27T15:34:48.355Z",
+      "updated_at": "2025-04-27T15:34:48.355Z"
+    }
+  },
+  {
+    "model": "product.product",
+    "pk": 16,
+    "fields": {
+      "title": "Pop 5 Lte",
+      "category": 1,
+      "price": "0",
+      "description": "Le POP 5 LTE est un smartphone économique avec un design moderne et des fonctionnalités essentielles.\n                    \nCaractéristiques principales :\n- Écran 6.52\" HD+ Dot Notch\n- Processeur Quad-Core\n- Double caméra 8MP AI\n- Batterie 5000mAh\n- Déverrouillage par empreinte digitale\n\nSpécifications détaillées :\n- Système d'exploitation : Android 11 (Go Edition)\n- Processeur : Quad-Core\n- Réseaux : GSM/GPRS/EDGE/WCDMA/FDD-LTE/TDD-LTE\n- Dimensions : 164.87 x 76.09 x 8.75 mm\n- Écran : 6.52\" HD+ Dot Notch\n- Résolution : 720 x 1600\n- Caméra avant : 5MP avec Flash\n- Caméra arrière : 8MP AI avec Double Flash\n- Connectivité : GPS, WiFi, FM, OTG\n- Capteurs : G-Sensor, Capteur de lumière ambiante et de proximité, Capteur d'empreintes\n- Batterie : 5000 mAh\n- Mémoire : 32GB ROM + 2GB RAM",
+      "highlight": "Écran 6.52\" HD+ Dot Notch\nProcesseur Quad-Core\nDouble caméra 8MP AI\nBatterie 5000mAh\nDéverrouillage par empreinte",
+      "image": null,
+      "supplier": 1,
+      "stripe_product_id": null,
+      "is_active": true,
+      "created_at": "2025-04-27T15:37:00.029Z",
+      "updated_at": "2025-04-27T15:37:00.029Z"
+    }
+  },
+  {
+    "model": "product.product",
+    "pk": 17,
+    "fields": {
+      "title": "Pop 5",
+      "category": 1,
+      "price": "0",
+      "description": "Le POP 5 est un smartphone économique avec un design moderne et des fonctionnalités essentielles.\n                    \nCaractéristiques principales :\n- Écran 6.1\" HD+ Dot Notch\n- Processeur Quad-Core 1.3 GHz\n- Double caméra 5MP\n- Batterie 4000mAh\n- Déverrouillage facial et par empreinte\n\nSpécifications détaillées :\n- Système d'exploitation : HiOS basé sur Android 10 (Go Edition)\n- Processeur : Quad-Core 1.3 GHz\n- Réseaux : GSM/WCDMA\n- Dimensions : 157.7 x 75.7 x 9.55 mm\n- Écran : 6.1\" HD+ Dot Notch\n- Résolution : 720 x 1560\n- Caméra avant : 5MP avec Flash\n- Caméra arrière : 5MP Double avec Flash\n- Connectivité : GPS, WiFi, FM\n- Capteurs : G-Sensor, Capteur d'empreintes\n- Batterie : 4000 mAh\n- Mémoire : 16GB ROM + 1GB RAM",
+      "highlight": "Écran 6.1\" HD+ Dot Notch\nProcesseur Quad-Core 1.3 GHz\nDouble caméra 5MP\nBatterie 4000mAh\nDéverrouillage facial et par empreinte",
+      "image": null,
+      "supplier": 1,
+      "stripe_product_id": null,
+      "is_active": true,
+      "created_at": "2025-04-27T15:39:27.218Z",
+      "updated_at": "2025-04-27T15:39:27.218Z"
+    }
+  },
+  {
+    "model": "product.product",
+    "pk": 18,
+    "fields": {
+      "title": "Pop 2F",
+      "category": 1,
+      "price": "0",
+      "description": "Le POP 2F est un smartphone économique avec un design moderne et des fonctionnalités essentielles.\n                    \nCaractéristiques principales :\n- Écran 5.5\" Touchscreen\n- Processeur Quad-Core 1.3 GHz\n- Caméra beauté 8MP avant\n- Batterie 2400mAh\n- Déverrouillage facial et par empreinte\n\nSpécifications détaillées :\n- Système d'exploitation : HiOS basé sur Android 8.1 (Go Edition)\n- Processeur : Quad-Core 1.3 GHz\n- Réseaux : WiFi\n- Dimensions : 149.76 x 72.8 x 9.35 mm\n- Écran : 5.5\" Touchscreen\n- Résolution : 480 x 960\n- Caméra avant : 8MP avec Flash\n- Caméra arrière : 5MP avec Flash\n- Connectivité : WiFi\n- Capteurs : G-Sensor, Capteur d'empreintes\n- Batterie : 2400 mAh\n- Mémoire : 16GB ROM + 1GB RAM",
+      "highlight": "Écran 5.5\" Touchscreen\nProcesseur Quad-Core 1.3 GHz\nCaméra beauté 8MP avant\nBatterie 2400mAh\nDéverrouillage facial et par empreinte",
+      "image": null,
+      "supplier": 1,
+      "stripe_product_id": null,
+      "is_active": true,
+      "created_at": "2025-04-27T15:40:30.506Z",
+      "updated_at": "2025-04-27T15:40:30.506Z"
+    }
+  }
+] 
