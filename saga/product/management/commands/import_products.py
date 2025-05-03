@@ -6,17 +6,47 @@ import os
 from django.conf import settings
 
 class Command(BaseCommand):
-    help = 'Importe les produits depuis le fichier products.json'
+    help = 'Importe les produits depuis un fichier JSON'
+
+    def find_json_file(self):
+        possible_paths = [
+            os.path.join(settings.BASE_DIR, 'products.json'),
+            os.path.join(settings.BASE_DIR, 'saga', 'product', 'data', 'products.json'),
+            os.path.join(settings.BASE_DIR, 'saga', 'products.json'),
+            '/app/products.json',
+            '/app/saga/product/data/products.json',
+        ]
+
+        for path in possible_paths:
+            if os.path.exists(path):
+                print(f"Fichier JSON trouvé à : {path}")
+                return path
+
+        print("Recherche du fichier JSON dans le répertoire courant et ses sous-répertoires...")
+        for root, dirs, files in os.walk(settings.BASE_DIR):
+            for file in files:
+                if file == 'products.json':
+                    path = os.path.join(root, file)
+                    print(f"Fichier JSON trouvé à : {path}")
+                    return path
+
+        print("Fichier products.json non trouvé. Voici les fichiers .json disponibles :")
+        for root, dirs, files in os.walk(settings.BASE_DIR):
+            for file in files:
+                if file.endswith('.json'):
+                    print(f"- {os.path.join(root, file)}")
+        return None
 
     def handle(self, *args, **options):
-        # Chemin du fichier JSON
-        json_path = os.path.join(settings.BASE_DIR, 'saga', 'product', 'data', 'products.json')
-        print(f"Chemin du fichier JSON: {json_path}")
-        
+        # Rechercher le fichier JSON
+        json_path = self.find_json_file()
+        if not json_path:
+            print("Impossible de trouver le fichier products.json")
+            return
+
         try:
-            # Charger les données depuis le fichier JSON
-            with open(json_path, 'r') as f:
-                data = json.load(f)
+            with open(json_path, 'r', encoding='utf-8') as file:
+                data = json.load(file)
             
             # Créer le fournisseur par défaut s'il n'existe pas
             supplier, created = Supplier.objects.get_or_create(
