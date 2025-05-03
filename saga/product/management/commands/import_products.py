@@ -2,98 +2,102 @@ from django.core.management.base import BaseCommand
 from product.models import Category, Product, Phone, PhoneVariant, Color
 import json
 import os
+from django.conf import settings
 
 class Command(BaseCommand):
     help = 'Importe les produits depuis le fichier products.json'
 
     def handle(self, *args, **options):
         # Obtenir le chemin absolu du fichier products.json
-        base_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(__file__)))))
-        json_path = os.path.join(base_dir, 'products.json')
+        json_path = os.path.join(settings.BASE_DIR, 'products.json')
+        self.stdout.write(f"Chemin du fichier JSON: {json_path}")
         
-        # Charger les données depuis le fichier JSON
-        with open(json_path, 'r') as f:
-            data = json.load(f)
-        
-        # Importer les catégories
-        for item in data:
-            if item['model'] == 'product.category':
-                Category.objects.get_or_create(
-                    id=item['pk'],
-                    defaults={
-                        'name': item['fields']['name'],
-                        'slug': item['fields']['slug'],
-                        'parent_id': item['fields']['parent']
-                    }
-                )
-        
-        # Importer les couleurs
-        for item in data:
-            if item['model'] == 'product.color':
-                Color.objects.get_or_create(
-                    id=item['pk'],
-                    defaults={
-                        'name': item['fields']['name'],
-                        'code': item['fields']['code']
-                    }
-                )
-        
-        # Importer les produits
-        for item in data:
-            if item['model'] == 'product.product':
-                Product.objects.get_or_create(
-                    id=item['pk'],
-                    defaults={
-                        'title': item['fields']['title'],
-                        'category_id': item['fields']['category'],
-                        'price': item['fields']['price'],
-                        'description': item['fields']['description'],
-                        'highlight': item['fields']['highlight'],
-                        'supplier_id': item['fields']['supplier'],
-                        'is_active': item['fields']['is_active']
-                    }
-                )
-        
-        # Importer les téléphones
-        for item in data:
-            if item['model'] == 'product.phone':
-                Phone.objects.get_or_create(
-                    id=item['pk'],
-                    defaults={
-                        'product_id': item['fields']['product'],
-                        'model': item['fields']['model'],
-                        'brand': item['fields']['brand'],
-                        'operating_system': item['fields']['operating_system'],
-                        'screen_size': item['fields']['screen_size'],
-                        'resolution': item['fields']['resolution'],
-                        'processor': item['fields']['processor'],
-                        'battery_capacity': item['fields']['battery_capacity'],
-                        'camera_main': item['fields']['camera_main'],
-                        'camera_front': item['fields']['camera_front'],
-                        'network': item['fields']['network'],
-                        'warranty': item['fields']['warranty'],
-                        'imei': item['fields']['imei'],
-                        'is_new': item['fields']['is_new'],
-                        'box_included': item['fields']['box_included'],
-                        'accessories': item['fields']['accessories']
-                    }
-                )
-        
-        # Importer les variantes de téléphones
-        for item in data:
-            if item['model'] == 'product.phonevariant':
-                PhoneVariant.objects.get_or_create(
-                    id=item['pk'],
-                    defaults={
-                        'phone_id': item['fields']['phone'],
-                        'color_id': item['fields']['color'],
-                        'storage': item['fields']['storage'],
-                        'ram': item['fields']['ram'],
-                        'price': item['fields']['price'],
-                        'stock': item['fields']['stock'],
-                        'sku': item['fields']['sku'],
-                        'disponible_salam': item['fields']['disponible_salam']
-                    }
-                )
-        
-        self.stdout.write(self.style.SUCCESS('Importation des produits terminée avec succès!')) 
+        try:
+            # Charger les données depuis le fichier JSON
+            with open(json_path, 'r') as f:
+                data = json.load(f)
+            
+            # Importer les catégories
+            for item in data:
+                if item['model'] == 'product.category':
+                    Category.objects.get_or_create(
+                        id=item['pk'],
+                        defaults={
+                            'name': item['fields']['name'],
+                            'slug': item['fields']['slug'],
+                            'parent_id': item['fields']['parent']
+                        }
+                    )
+            
+            # Importer les couleurs
+            for item in data:
+                if item['model'] == 'product.color':
+                    Color.objects.get_or_create(
+                        id=item['pk'],
+                        defaults={
+                            'name': item['fields']['name'],
+                            'code': item['fields']['code']
+                        }
+                    )
+            
+            # Importer les produits
+            for item in data:
+                if item['model'] == 'product.product':
+                    Product.objects.get_or_create(
+                        id=item['pk'],
+                        defaults={
+                            'title': item['fields']['title'],
+                            'category_id': item['fields']['category'],
+                            'price': item['fields']['price'],
+                            'description': item['fields']['description'],
+                            'highlight': item['fields']['highlight'],
+                            'supplier_id': item['fields']['supplier'],
+                            'is_active': item['fields']['is_active']
+                        }
+                    )
+            
+            # Importer les téléphones
+            for item in data:
+                if item['model'] == 'product.phone':
+                    Phone.objects.get_or_create(
+                        id=item['pk'],
+                        defaults={
+                            'product_id': item['fields']['product'],
+                            'model': item['fields']['model'],
+                            'brand': item['fields']['brand'],
+                            'operating_system': item['fields']['operating_system'],
+                            'screen_size': item['fields']['screen_size'],
+                            'resolution': item['fields']['resolution'],
+                            'processor': item['fields']['processor'],
+                            'battery_capacity': item['fields']['battery_capacity'],
+                            'camera_main': item['fields']['camera_main'],
+                            'camera_front': item['fields']['camera_front'],
+                            'network': item['fields']['network'],
+                            'warranty': item['fields']['warranty'],
+                            'imei': item['fields']['imei'],
+                            'is_new': item['fields']['is_new'],
+                            'box_included': item['fields']['box_included'],
+                            'accessories': item['fields']['accessories']
+                        }
+                    )
+            
+            # Importer les variantes de téléphones
+            for item in data:
+                if item['model'] == 'product.phonevariant':
+                    PhoneVariant.objects.get_or_create(
+                        id=item['pk'],
+                        defaults={
+                            'phone_id': item['fields']['phone'],
+                            'color_id': item['fields']['color'],
+                            'storage': item['fields']['storage'],
+                            'ram': item['fields']['ram'],
+                            'price': item['fields']['price'],
+                            'stock': item['fields']['stock'],
+                            'sku': item['fields']['sku'],
+                            'disponible_salam': item['fields']['disponible_salam']
+                        }
+                    )
+            
+            self.stdout.write(self.style.SUCCESS('Importation des produits terminée avec succès!'))
+        except Exception as e:
+            self.stdout.write(self.style.ERROR(f'Erreur lors de l\'importation: {str(e)}')) 
