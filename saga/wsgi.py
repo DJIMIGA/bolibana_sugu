@@ -26,6 +26,7 @@ logger = logging.getLogger(__name__)
 # Ajouter le répertoire parent au PYTHONPATH
 BASE_DIR = Path(__file__).resolve().parent.parent
 sys.path.append(str(BASE_DIR))
+sys.path.append(str(BASE_DIR / 'saga'))
 
 logger.info("Démarrage de l'application WSGI")
 logger.debug("PYTHONPATH: %s", os.environ.get('PYTHONPATH', 'Non défini'))
@@ -40,11 +41,7 @@ logger.info("Chargement de l'application Django")
 application = get_wsgi_application()
 
 # Configuration de WhiteNoise pour servir les fichiers statiques
-application = WhiteNoise(
-    application,
-    root=os.path.join(BASE_DIR, 'staticfiles'),
-    prefix='/static/',
-    max_age=31536000  # 1 an
-)
+application = WhiteNoise(application)
+application.add_files(str(BASE_DIR / 'staticfiles'), prefix='static/')
 
 logger.info("Application WSGI chargée avec succès")
