@@ -8,6 +8,19 @@ def import_products(apps, schema_editor):
     Phone = apps.get_model('product', 'Phone')
     PhoneVariant = apps.get_model('product', 'PhoneVariant')
     Color = apps.get_model('product', 'Color')
+    Supplier = apps.get_model('suppliers', 'Supplier')
+
+    # Créer le fournisseur par défaut
+    supplier, created = Supplier.objects.get_or_create(
+        id=1,
+        defaults={
+            'name': 'Fournisseur par défaut',
+            'email': 'default@example.com',
+            'phone': '+22300000000',
+            'address': 'Adresse par défaut',
+            'is_active': True
+        }
+    )
 
     # Chemin vers le fichier products.json
     file_path = os.path.join(os.path.dirname(__file__), '..', '..', '..', 'products.json')
@@ -49,7 +62,7 @@ def import_products(apps, schema_editor):
                     'price': item['fields']['price'],
                     'description': item['fields']['description'],
                     'highlight': item['fields']['highlight'],
-                    'supplier_id': item['fields']['supplier'],
+                    'supplier_id': 1,  # Utiliser le fournisseur par défaut
                     'is_active': item['fields']['is_active']
                 }
             )
@@ -99,6 +112,7 @@ def import_products(apps, schema_editor):
 class Migration(migrations.Migration):
     dependencies = [
         ('product', '0001_initial'),
+        ('suppliers', '0001_initial'),
     ]
 
     operations = [
