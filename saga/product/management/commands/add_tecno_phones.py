@@ -6,6 +6,7 @@ import json
 import os
 from django.conf import settings
 import uuid
+import re
 
 class Command(BaseCommand):
     help = 'Importe les téléphones Tecno depuis un fichier JSON'
@@ -62,6 +63,11 @@ class Command(BaseCommand):
                 )
                 self.stdout.write(self.style.SUCCESS(f'Produit créé: {product.title}'))
             
+            # Extraire la valeur numérique de la batterie
+            battery_str = phone_data['battery']
+            battery_match = re.search(r'(\d+)', battery_str)
+            battery_capacity = int(battery_match.group(1)) if battery_match else 2400  # Valeur par défaut
+            
             # Vérifier si le téléphone existe déjà
             try:
                 phone = Phone.objects.get(product=product)
@@ -75,8 +81,9 @@ class Command(BaseCommand):
                     operating_system=phone_data['operating_system'],
                     processor=phone_data['processor'],
                     screen_size=phone_data['screen_size'],
-                    camera=phone_data['main_camera'],
-                    battery=phone_data['battery'],
+                    camera_main=phone_data['main_camera'],
+                    camera_front=phone_data['front_camera'],
+                    battery_capacity=battery_capacity,
                     storage=phone_data['storage'],
                     ram=phone_data['ram'],
                     color=color,

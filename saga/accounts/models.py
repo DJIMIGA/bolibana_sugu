@@ -98,7 +98,7 @@ class ShippingAddress(models.Model):
 
 
 class TwoFactorCode(models.Model):
-    user = models.OneToOneField(Shopper, on_delete=models.CASCADE, related_name="two_factor_code")
+    user = models.ForeignKey(Shopper, on_delete=models.CASCADE, related_name='two_factor_codes', default=1)
     code = models.CharField(max_length=6)
     reset_token = models.CharField(max_length=64, null=True, blank=True)
     uidb64 = models.CharField(max_length=64, null=True, blank=True)

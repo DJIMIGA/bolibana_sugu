@@ -108,7 +108,7 @@ class Order(models.Model):
     
     # Livraison
     shipping_address = models.ForeignKey('accounts.ShippingAddress', on_delete=models.PROTECT)
-    shipping_method = models.ForeignKey('product.ShippingMethod', on_delete=models.PROTECT)
+    shipping_method = models.ForeignKey('product.ShippingMethod', on_delete=models.PROTECT, null=True, blank=True)
     tracking_number = models.CharField(max_length=100, blank=True)
     shipped_at = models.DateTimeField(null=True, blank=True)
     delivered_at = models.DateTimeField(null=True, blank=True)

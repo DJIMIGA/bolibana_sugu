@@ -1,0 +1,22 @@
+[
+    {
+        "model": "product.shippingmethod",
+        "pk": 1,
+        "fields": {
+            "name": "Livraison Standard",
+            "price": "2000",
+            "min_delivery_days": 2,
+            "max_delivery_days": 4
+        }
+    },
+    {
+        "model": "product.shippingmethod",
+        "pk": 2,
+        "fields": {
+            "name": "Livraison Express",
+            "price": "5000",
+            "min_delivery_days": 1,
+            "max_delivery_days": 2
+        }
+    }
+] 

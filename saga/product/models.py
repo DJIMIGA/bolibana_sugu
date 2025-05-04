@@ -90,14 +90,14 @@ class Product(models.Model):
     description = models.TextField(verbose_name='Description', blank=True, null=True)
     highlight = models.TextField(verbose_name='Points forts', blank=True, null=True)
     image = CloudinaryField('image', blank=True, null=True)
-    supplier = models.ForeignKey('suppliers.Supplier', on_delete=models.CASCADE, related_name='products')
+    supplier = models.ForeignKey('suppliers.Supplier', on_delete=models.SET_NULL, related_name='products', null=True, blank=True)
     stripe_product_id = models.CharField(max_length=255, blank=True, null=True)
     is_active = models.BooleanField(default=True, verbose_name='Actif')
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     disponible_salam = models.BooleanField(default=False, verbose_name='Disponible en Salam')
     stock = models.PositiveIntegerField(default=0, verbose_name='Stock')
-    sku = models.CharField(max_length=100, unique=True, verbose_name='SKU')
+    sku = models.CharField(max_length=100, unique=True, verbose_name='SKU', default='SKU-0000')
     color = models.ForeignKey('Color', on_delete=models.CASCADE, related_name='products', null=True, blank=True)
 
     class Meta:
@@ -207,7 +207,8 @@ class ImageProduct(models.Model):
     image = CloudinaryField('image', blank=True)
     product = models.ForeignKey(Product, on_delete=models.CASCADE,
                                 related_name='image_products')
-    ordre = models.AutoField(primary_key=True)
+    ordre = models.IntegerField(default=0)
+    is_main = models.BooleanField(default=False)
 
     class Meta:
         ordering = ['ordre']

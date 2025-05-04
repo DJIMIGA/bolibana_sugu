@@ -1,55 +1,128 @@
-from django.shortcuts import render
-
-# Create your views here.
-from django.views.generic import ListView, DetailView
+from django.shortcuts import render, get_object_or_404
+from django.views.generic import ListView, DetailView, TemplateView
 from django.core.paginator import Paginator
 from .models import Supplier
-from product.models import Category, Phone
+from product.models import Category, Phone, Product
 from django.db import models
 from django.db.models import Count, Q
 from django.contrib.auth.mixins import LoginRequiredMixin
 
 
 class SupplierListView(ListView):
-    
-    model = Supplier
+    model = Product
     template_name = 'suppliers/supplier_list.html'
-    context_object_name = 'suppliers'
-    paginate_by = 10
+    context_object_name = 'products'
+    paginate_by = 12
 
     def get_queryset(self):
-        queryset = super().get_queryset()
-        search_query = self.request.GET.get('q')
-        
-        if search_query:
-            queryset = queryset.filter(
-                Q(name__icontains=search_query) |
-                Q(description__icontains=search_query)
-            )
-        
-        return queryset.annotate(
-            total_phones=Count('products__phone', distinct=True)
+        queryset = Product.objects.filter(is_active=True).select_related(
+            'phone',
+            'color',
+            'supplier'
         )
-
-
-class SupplierDetailView(DetailView):
-    model = Supplier
-    template_name = 'suppliers/supplier_detail.html'
-    context_object_name = 'supplier'
+        
+        # Appliquer les filtres
+        brand = self.request.GET.get('brand')
+        model = self.request.GET.get('model')
+        storage = self.request.GET.get('storage')
+        ram = self.request.GET.get('ram')
+        price_min = self.request.GET.get('price_min')
+        price_max = self.request.GET.get('price_max')
+        
+        if brand:
+            queryset = queryset.filter(phone__brand=brand)
+        if model:
+            queryset = queryset.filter(phone__model=model)
+        if storage:
+            queryset = queryset.filter(phone__storage=storage)
+        if ram:
+            queryset = queryset.filter(phone__ram=ram)
+        if price_min:
+            queryset = queryset.filter(price__gte=price_min)
+        if price_max:
+            queryset = queryset.filter(price__lte=price_max)
+        
+        return queryset.order_by('-created_at')
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        supplier = self.get_object()
         
-        # Get all phones for this supplier
-        phones = Phone.objects.filter(product__supplier=supplier)
+        # Récupérer les marques de téléphones
+        phone_brands = Phone.objects.values('brand').distinct()
+        context['phone_categories'] = phone_brands
         
-        # Get all categories that have phones from this supplier
-        categories = Category.objects.filter(
-            products__supplier=supplier,
-            products__phone__isnull=False
-        ).distinct()
+        # Récupérer les filtres pour les téléphones
+        context['brands'] = Phone.objects.values('brand').distinct()
+        context['models'] = Phone.objects.values('model').distinct()
+        context['storages'] = Phone.objects.values('storage').distinct()
+        context['rams'] = Phone.objects.values('ram').distinct()
         
-        context['phones'] = phones
-        context['categories'] = categories
+        # Filtres sélectionnés
+        context['selected_brand'] = self.request.GET.get('brand', '')
+        context['selected_model'] = self.request.GET.get('model', '')
+        context['selected_storage'] = self.request.GET.get('storage', '')
+        context['selected_ram'] = self.request.GET.get('ram', '')
+        context['selected_price_min'] = self.request.GET.get('price_min', '')
+        context['selected_price_max'] = self.request.GET.get('price_max', '')
+        
+        return context
+
+
+class BrandDetailView(TemplateView):
+    template_name = 'suppliers/supplier_detail.html'
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        brand_slug = kwargs.get('slug')
+        
+        # Récupérer les produits de cette marque
+        products = Product.objects.filter(
+            phone__brand__iexact=brand_slug,
+            is_active=True
+        ).select_related(
+            'phone',
+            'color',
+            'supplier'
+        )
+        
+        # Appliquer les filtres
+        model = self.request.GET.get('model')
+        storage = self.request.GET.get('storage')
+        ram = self.request.GET.get('ram')
+        price_min = self.request.GET.get('price_min')
+        price_max = self.request.GET.get('price_max')
+        
+        if model:
+            products = products.filter(phone__model=model)
+        if storage:
+            products = products.filter(phone__storage=storage)
+        if ram:
+            products = products.filter(phone__ram=ram)
+        if price_min:
+            products = products.filter(price__gte=price_min)
+        if price_max:
+            products = products.filter(price__lte=price_max)
+        
+        # Pagination
+        paginator = Paginator(products, 12)
+        page_number = self.request.GET.get('page')
+        page_obj = paginator.get_page(page_number)
+        
+        context['products'] = page_obj
+        context['page_title'] = f"Téléphones {brand_slug.title()}"
+        
+        # Filtres disponibles
+        context['brands'] = Phone.objects.filter(brand__iexact=brand_slug).values('brand').distinct()
+        context['models'] = Phone.objects.filter(brand__iexact=brand_slug).values('model').distinct()
+        context['storages'] = Phone.objects.filter(brand__iexact=brand_slug).values('storage').distinct()
+        context['rams'] = Phone.objects.filter(brand__iexact=brand_slug).values('ram').distinct()
+        
+        # Filtres sélectionnés
+        context['selected_brand'] = brand_slug
+        context['selected_model'] = model
+        context['selected_storage'] = storage
+        context['selected_ram'] = ram
+        context['selected_price_min'] = price_min
+        context['selected_price_max'] = price_max
+        
         return context

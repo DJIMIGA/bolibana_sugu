@@ -23,24 +23,195 @@ print("Démarrage du chargement des paramètres Django")
 print("="*50 + "\n")
 
 # Charger les variables d'environnement
-env_path = os.path.join(BASE_DIR, 'saga/.env.secrets')
-load_dotenv(env_path)
+from dotenv import load_dotenv
+import os
 
-# SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = os.environ.get('SECRET_KEY', 'django-insecure-default-key-for-dev')
+# Chemin vers le fichier .env
+env_path = os.path.join(BASE_DIR, '.env')
+print(f"\nRecherche du fichier .env à : {env_path}")
 
-# Les autres configurations Stripe sont déjà chargées
+# Vérifier si le fichier existe
+if os.path.exists(env_path):
+    print("✓ Fichier .env trouvé")
+    load_dotenv(env_path)
+else:
+    print("✗ Fichier .env non trouvé")
+
+# Charger les variables d'environnement
+from dotenv import load_dotenv
+import os
+
+# Chemin vers le fichier .env.secrets
+env_path = os.path.join(BASE_DIR, 'saga', '.env.secrets')
+print(f"\nRecherche du fichier .env.secrets à : {env_path}")
+
+# Vérifier si le fichier existe
+if os.path.exists(env_path):
+    print("✓ Fichier .env.secrets trouvé")
+    load_dotenv(env_path)
+else:
+    print("✗ Fichier .env.secrets non trouvé")
+
+# ==================================================
+# CONFIGURATION DE BASE
+# ==================================================
+DEBUG = os.getenv('DEBUG', 'False') == 'True'
+print(f"\nDEBUG est {'activé' if DEBUG else 'désactivé'}")
+print(f"Valeur de DEBUG dans l'environnement : {os.getenv('DEBUG')}")
+
+# Forcer DEBUG à True en développement
+if not os.environ.get('HEROKU'):
+    DEBUG = True
+    print("DEBUG forcé à True car nous sommes en développement local")
+
+# Configuration de base
+SECRET_KEY = os.getenv('SECRET_KEY', 'django-insecure-default-key-for-dev')
+
+# Configuration des hôtes autorisés
+ALLOWED_HOSTS = os.getenv('ALLOWED_HOSTS', 'localhost,127.0.0.1').split(',')
+
+# ==================================================
+# CONFIGURATION DE LA BASE DE DONNÉES
+# ==================================================
+DATABASE_URL = os.getenv('DATABASE_URL')
+
+print("\n=== VÉRIFICATION CONFIGURATION BASE DE DONNÉES ===")
+if DATABASE_URL and not DEBUG:
+    print("Mode : Production (Heroku)")
+    print(f"URL de la base de données détectée")
+else:
+    print("Mode : Développement local")
+    print(f"DB_NAME : {os.getenv('DB_NAME')}")
+    print(f"DB_USER : {os.getenv('DB_USER')}")
+    print(f"DB_HOST : {os.getenv('DB_HOST')}")
+    print(f"DB_PORT : {os.getenv('DB_PORT')}")
+print("================================================\n")
+
+if DATABASE_URL and not DEBUG:
+    # Configuration pour Heroku (Production)
+    DATABASES = {
+        'default': dj_database_url.config(
+            default=DATABASE_URL,
+            conn_max_age=600,
+            ssl_require=True
+        )
+    }
+else:
+    # Configuration pour le développement local
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.postgresql',
+            'NAME': os.getenv('DB_NAME'),
+            'USER': os.getenv('DB_USER'),
+            'PASSWORD': os.getenv('DB_PASSWORD'),
+            'HOST': os.getenv('DB_HOST'),
+            'PORT': os.getenv('DB_PORT'),
+            'OPTIONS': {
+                'sslmode': 'disable',
+                'connect_timeout': 10,
+            },
+            'CONN_MAX_AGE': 600,
+            'ATOMIC_REQUESTS': True,
+        }
+    }
+
+# Vérification de la connexion à la base de données
+try:
+    from django.db import connections
+    connections['default'].ensure_connection()
+    print("✓ Connexion à la base de données établie avec succès")
+    print(f"Base de données utilisée : {DATABASES['default']['NAME']}")
+except Exception as e:
+    print(f"✗ Erreur de connexion à la base de données : {str(e)}")
+    print("\nVeuillez vérifier :")
+    print("1. Que PostgreSQL est en cours d'exécution")
+    print("2. Que les variables dans .env sont correctes")
+    print("3. Que l'utilisateur a les droits nécessaires")
+
+# ==================================================
+# CONFIGURATION DES FICHIERS STATIQUES ET MÉDIAS
+# ==================================================
+STATIC_URL = 'static/'
+STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
+STATICFILES_DIRS = [os.path.join(BASE_DIR, 'saga/static')]
+STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
+
+MEDIA_URL = "/media/"
+MEDIA_ROOT = BASE_DIR / "media"
+
+# Configuration Cloudinary
+CLOUDINARY_STORAGE = {
+    'CLOUD_NAME': os.getenv('CLOUDINARY_CLOUD_NAME'),
+    'API_KEY': os.getenv('CLOUDINARY_API_KEY'),
+    'API_SECRET': os.getenv('CLOUDINARY_API_SECRET')
+}
+DEFAULT_FILE_STORAGE = 'cloudinary_storage.storage.MediaCloudinaryStorage'
+
+# ==================================================
+# CONFIGURATION DE SÉCURITÉ
+# ==================================================
+if not DEBUG:
+    SECURE_SSL_REDIRECT = True
+    SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+    SESSION_COOKIE_SECURE = True
+    CSRF_COOKIE_SECURE = True
+    SECURE_HSTS_SECONDS = 31536000
+    SECURE_HSTS_INCLUDE_SUBDOMAINS = True
+    SECURE_HSTS_PRELOAD = True
+
+# ==================================================
+# CONFIGURATION DES SERVICES EXTERNES
+# ==================================================
+# Stripe
 STRIPE_PUBLIC_KEY = os.getenv('STRIPE_PUBLIC_KEY')
 STRIPE_SECRET_KEY = os.getenv('STRIPE_SECRET_KEY')
 STRIPE_WEBHOOK_SECRET = os.getenv('STRIPE_WEBHOOK_SECRET')
-STRIPE_API_VERSION = os.getenv('STRIPE_API_VERSION')
-
-# Configuration Stripe
-stripe.api_version = '2023-10-16'  # Utiliser la dernière version stable
+stripe.api_version = '2023-10-16'
 stripe.api_key = STRIPE_SECRET_KEY
 
-# SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True  # Forcé à True pour le développement local
+# Tinify
+TINIFY_API_KEY = os.getenv('TINIFY_API_KEY')
+
+# ==================================================
+# CONFIGURATION DE L'EMAIL
+# ==================================================
+EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+EMAIL_HOST = os.getenv('EMAIL_HOST', 'smtp.gmail.com')
+EMAIL_PORT = int(os.getenv('EMAIL_PORT', '587'))
+EMAIL_USE_TLS = True
+EMAIL_HOST_USER = os.getenv('EMAIL_HOST_USER')
+EMAIL_HOST_PASSWORD = os.getenv('EMAIL_HOST_PASSWORD')
+
+# ==================================================
+# CONFIGURATION REST FRAMEWORK
+# ==================================================
+REST_FRAMEWORK = {
+    'DEFAULT_AUTHENTICATION_CLASSES': [
+        'rest_framework_simplejwt.authentication.JWTAuthentication',
+        'rest_framework.authentication.SessionAuthentication',
+    ],
+    'DEFAULT_PERMISSION_CLASSES': [
+        'rest_framework.permissions.IsAuthenticatedOrReadOnly',
+    ],
+    'DEFAULT_FILTER_BACKENDS': [
+        'django_filters.rest_framework.DjangoFilterBackend',
+        'rest_framework.filters.SearchFilter',
+        'rest_framework.filters.OrderingFilter',
+    ],
+    'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
+    'PAGE_SIZE': 10
+}
+
+# ==================================================
+# LOGGING DE LA CONFIGURATION
+# ==================================================
+print("\n=== CONFIGURATION DE L'APPLICATION ===")
+print(f"Mode : {'Développement' if DEBUG else 'Production'}")
+print(f"Base de données : {'Heroku' if DATABASE_URL else 'Locale'}")
+print(f"Stockage médias : {'Cloudinary' if CLOUDINARY_STORAGE['CLOUD_NAME'] else 'Local'}")
+print(f"Stripe configuré : {'Oui' if STRIPE_SECRET_KEY else 'Non'}")
+print(f"Email configuré : {'Oui' if EMAIL_HOST_USER else 'Non'}")
+print("=====================================\n")
 
 # ======================================================================
 # PARAMÈTRES DE SÉCURITÉ SSL
@@ -102,15 +273,15 @@ SECURE_REFERRER_POLICY = 'same-origin'
 SECURE_CROSS_ORIGIN_OPENER_POLICY = 'same-origin'
 SECURE_CROSS_ORIGIN_EMBEDDER_POLICY = 'require-corp'
 
-# Domaines autorisés
-ALLOWED_HOSTS = [
-    'bolibana-sugu-d56937020d1c.herokuapp.com',
-    'localhost',
-    '127.0.0.1',
-    '.herokuapp.com',
-    'bolibana.com',
-    'www.bolibana.com'
-]
+# Configuration des hôtes autorisés
+if DEBUG:
+    ALLOWED_HOSTS = ['localhost', '127.0.0.1']
+else:
+    ALLOWED_HOSTS = [
+        'bolibana-sugu-d56937020d1c.herokuapp.com',
+        'bolibana.com',
+        'www.bolibana.com'
+    ]
 
 # Origines CSRF autorisées
 if DEBUG:
@@ -222,53 +393,6 @@ WSGI_APPLICATION = 'saga.wsgi.application'
 # CONFIGURATION DE LA BASE DE DONNÉES
 # ======================================================================
 
-# Configuration de la base de données
-if os.environ.get('DATABASE_URL'):
-    # Configuration pour Heroku (Production)
-    DATABASES = {
-        'default': dj_database_url.config(
-            default=os.environ.get('DATABASE_URL'),
-            conn_max_age=600,
-            ssl_require=True
-        )
-    }
-    print("Configuration de la base de données : Production (Heroku)")
-else:
-    # Configuration pour le développement local
-    DATABASES = {
-        'default': {
-            'ENGINE': 'django.db.backends.postgresql',
-            'NAME': 'd2gkbn4da24lcg',
-            'USER': 'postgres',
-            'PASSWORD': '240821',
-            'HOST': 'localhost',
-            'PORT': '5432',
-            'OPTIONS': {
-                'sslmode': 'disable',
-                'connect_timeout': 10,
-            },
-            'CONN_MAX_AGE': 500,
-            'ATOMIC_REQUESTS': True,
-            'TEST': {
-                'NAME': 'test_d2gkbn4da24lcg',
-            }
-        }
-    }
-    print("Configuration de la base de données : Développement local")
-
-# Configuration supplémentaire pour la base de données
-DATABASES['default']['ATOMIC_REQUESTS'] = True
-DATABASES['default']['CONN_MAX_AGE'] = 500
-
-# Vérification de la connexion à la base de données
-try:
-    from django.db import connections
-    connections['default'].ensure_connection()
-    print("✓ Connexion à la base de données établie avec succès")
-except Exception as e:
-    print(f"✗ Erreur de connexion à la base de données : {str(e)}")
-    print("Veuillez vérifier que PostgreSQL est en cours d'exécution et que les identifiants sont corrects")
-
 # Password validation
 # https://docs.djangoproject.com/en/5.1/ref/settings/#auth-password-validators
 
@@ -323,74 +447,12 @@ LOGIN_REDIRECT_URL = 'suppliers:supplier_index'
 
 REVIEW_PRODUCT_MODEL = 'product.Product'
 
-EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
-EMAIL_HOST = 'smtp.gmail.com'
-EMAIL_PORT = 587
-EMAIL_USE_TLS = True
-EMAIL_HOST_USER = 'pymalien@gmail.com'
-EMAIL_HOST_PASSWORD = """oild dqvk cabx jbcj"""
+# Configuration du module Django
+DJANGO_SETTINGS_MODULE = os.getenv('DJANGO_SETTINGS_MODULE', 'saga.settings')
 
-# Paramètres REST Framework
-REST_FRAMEWORK = {
-    'DEFAULT_AUTHENTICATION_CLASSES': [
-        'rest_framework_simplejwt.authentication.JWTAuthentication',
-        'rest_framework.authentication.SessionAuthentication',
-    ],
-    'DEFAULT_PERMISSION_CLASSES': [
-        'rest_framework.permissions.IsAuthenticatedOrReadOnly',
-    ],
-    'DEFAULT_FILTER_BACKENDS': [
-        'django_filters.rest_framework.DjangoFilterBackend',
-        'rest_framework.filters.SearchFilter',
-        'rest_framework.filters.OrderingFilter',
-    ],
-    'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
-    'PAGE_SIZE': 10
-}
-
-# Paramètres JWT
-from datetime import timedelta
-SIMPLE_JWT = {
-    'ACCESS_TOKEN_LIFETIME': timedelta(minutes=60),
-    'REFRESH_TOKEN_LIFETIME': timedelta(days=1),
-    'ROTATE_REFRESH_TOKENS': False,
-    'BLACKLIST_AFTER_ROTATION': True,
-    'UPDATE_LAST_LOGIN': False,
-    'ALGORITHM': 'HS256',
-    'SIGNING_KEY': SECRET_KEY,
-    'VERIFYING_KEY': None,
-    'AUTH_HEADER_TYPES': ('Bearer',),
-    'AUTH_HEADER_NAME': 'HTTP_AUTHORIZATION',
-    'USER_ID_FIELD': 'id',
-    'USER_ID_CLAIM': 'user_id',
-}
-
-# Configuration de crispy forms
-CRISPY_ALLOWED_TEMPLATE_PACKS = "tailwind"
-CRISPY_TEMPLATE_PACK = "tailwind"
-
-# Configuration de WhiteNoise
-STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
-
-# Configuration supplémentaire pour WhiteNoise
-WHITENOISE_MANIFEST_STRICT = False
-WHITENOISE_ALLOW_ALL_ORIGINS = True
-WHITENOISE_USE_FINDERS = True
-WHITENOISE_AUTOREFRESH = True
-
-# Configuration Cloudinary
-CLOUDINARY_STORAGE = {
-    'CLOUD_NAME': os.environ.get('CLOUDINARY_CLOUD_NAME'),
-    'API_KEY': os.environ.get('CLOUDINARY_API_KEY'),
-    'API_SECRET': os.environ.get('CLOUDINARY_API_SECRET')
-}
-
-
-
-# Configuration Tinify
-TINIFY_API_KEY = os.environ.get('TINIFY_API_KEY', '')
-if not TINIFY_API_KEY:
-    print("Clé API Tinify non configurée. L'optimisation des images sera désactivée.")
-
-# Utiliser Cloudinary comme backend de stockage
-DEFAULT_FILE_STORAGE = 'cloudinary_storage.storage.MediaCloudinaryStorage' 
+# Vérification des configurations critiques
+print("\n=== CONFIGURATION CRITIQUE ===")
+print(f"Mode DEBUG : {'Activé' if DEBUG else 'Désactivé'}")
+print(f"Clé secrète configurée : {'Oui' if SECRET_KEY != 'django-insecure-default-key-for-dev' else 'Non'}")
+print(f"Clé Stripe configurée : {'Oui' if STRIPE_SECRET_KEY else 'Non'}")
+print("=============================\n") 

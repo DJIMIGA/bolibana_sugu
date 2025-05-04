@@ -3,7 +3,7 @@
         <div class="mb-6 sm:mb-8">
     <div class="bg-white rounded-xl shadow-lg p-3 sm:p-4 mx-2 sm:mx-0">
         <form class="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-6 gap-2 sm:gap-3"
-              hx-get="{% url 'phone_list' %}"
+              hx-get="{% url 'suppliers:supplier_index' %}"
               hx-target="#phone-grid"
               hx-push-url="true"
               hx-trigger="change delay:500ms">
@@ -73,8 +73,8 @@
 
             <!-- Bouton de réinitialisation -->
             <div class="col-span-full flex justify-end">
-                <a href="{% url 'phone_list' %}" 
-                   hx-get="{% url 'phone_list' %}"
+                <a href="{% url 'suppliers:supplier_index' %}" 
+                   hx-get="{% url 'suppliers:supplier_index' %}"
                    hx-target="#phone-grid"
                    hx-push-url="true"
                    class="text-sm text-gray-500 hover:text-gray-700">
