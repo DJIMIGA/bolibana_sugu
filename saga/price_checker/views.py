@@ -1,21 +1,24 @@
-from django.shortcuts import render
-from django.views.generic import ListView, CreateView, DeleteView, TemplateView, UpdateView
+from django.shortcuts import render, get_object_or_404
+from django.views.generic import ListView, CreateView, DeleteView, TemplateView, UpdateView, DetailView
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 from django.contrib import messages
-from django.urls import reverse_lazy
+from django.urls import reverse_lazy, reverse
 from django.http import HttpResponseRedirect, JsonResponse
 from django.db.models import Q, Prefetch, Count, Avg, Max, Min
 from django.core.paginator import Paginator
 from django.http import Http404
 from django.views.decorators.http import require_GET
+from django.contrib.auth.decorators import login_required, user_passes_test
+from django.shortcuts import redirect
+from django.utils import timezone
+from django.db import transaction
+from django.core.cache import cache
 from .models import (
     PriceEntry, PriceSubmission, City, Product,
     PriceValidation, ProductStatus
 )
-from product.models import Phone, PhoneVariant
+from product.models import Phone
 from .forms import PriceSubmissionForm, CityForm
-from django.contrib.auth.decorators import login_required, user_passes_test
-from django.shortcuts import redirect
 
 def check_price(request):
     # Si c'est une requête HTMX
@@ -60,8 +63,8 @@ def check_price(request):
                 query &= term_query
             
             # Récupérer les variantes
-            similar_variants = PhoneVariant.objects.filter(query).select_related(
-                'phone',
+            similar_variants = Phone.objects.filter(query).select_related(
+                'product',
                 'color'
             ).prefetch_related(
                 Prefetch('price_entries', 
@@ -70,8 +73,7 @@ def check_price(request):
                         ).select_related('city')
                         .order_by('-created_at'))
             ).order_by(
-                'phone__brand',
-                'phone__model',
+                'product__title',
                 'ram',
                 'storage'
             )
@@ -90,7 +92,7 @@ def check_price(request):
                     if price_entry.city not in prices_by_city:
                         # Utiliser la nouvelle méthode get_average_price
                         avg_price_info = PriceEntry.get_average_price(
-                            product=variant.phone.product,
+                            product=variant.product,
                             variant=variant,
                             city=price_entry.city
                         )
@@ -105,7 +107,7 @@ def check_price(request):
                         }
                 
                 results.append({
-                    'product': variant.phone,
+                    'product': variant.product,
                     'ram': variant.ram,
                     'storage': variant.storage,
                     'color': variant.color,
@@ -412,19 +414,18 @@ class AdminPriceEntryListView(LoginRequiredMixin, UserPassesTestMixin, ListView)
         ).order_by('-created_at')
 
 class AdminProductStatusListView(LoginRequiredMixin, UserPassesTestMixin, ListView):
-    model = PhoneVariant
+    model = Phone
     template_name = 'price_checker/admin/product_status_list.html'
-    context_object_name = 'variants'
+    context_object_name = 'products'
     paginate_by = 10
 
     def test_func(self):
         return self.request.user.is_staff
 
     def get_queryset(self):
-        queryset = PhoneVariant.objects.select_related(
-            'phone__product__status',
-            'phone__product',
-            'color'
+        queryset = Phone.objects.select_related(
+            'product__status',
+            'product'
         )
 
         # Filtres
@@ -435,9 +436,9 @@ class AdminProductStatusListView(LoginRequiredMixin, UserPassesTestMixin, ListVi
         status = self.request.GET.get('status')
 
         if brand:
-            queryset = queryset.filter(phone__brand__iexact=brand)
+            queryset = queryset.filter(product__brand__iexact=brand)
         if model:
-            queryset = queryset.filter(phone__model__icontains=model)
+            queryset = queryset.filter(product__model__icontains=model)
         if storage:
             queryset = queryset.filter(storage=storage)
         if ram:
@@ -447,7 +448,7 @@ class AdminProductStatusListView(LoginRequiredMixin, UserPassesTestMixin, ListVi
         elif status == 'no_salam':
             queryset = queryset.filter(disponible_salam=False)
 
-        return queryset.order_by('phone__product__title', 'storage', 'ram')
+        return queryset.order_by('product__title', 'storage', 'ram')
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -462,17 +463,17 @@ class AdminProductStatusListView(LoginRequiredMixin, UserPassesTestMixin, ListVi
         }
         
         # Récupérer les marques uniques pour le filtre
-        context['brands'] = PhoneVariant.objects.values_list(
-            'phone__brand', flat=True
-        ).distinct().order_by('phone__brand')
+        context['brands'] = Phone.objects.values_list(
+            'product__brand', flat=True
+        ).distinct().order_by('product__brand')
         
         # Récupérer les valeurs de stockage uniques
-        context['storages'] = PhoneVariant.objects.values_list(
+        context['storages'] = Phone.objects.values_list(
             'storage', flat=True
         ).distinct().order_by('storage')
         
         # Récupérer les valeurs de RAM uniques
-        context['rams'] = PhoneVariant.objects.values_list(
+        context['rams'] = Phone.objects.values_list(
             'ram', flat=True
         ).distinct().order_by('ram')
         
@@ -556,8 +557,8 @@ def get_products_by_brand(request):
         return JsonResponse({'products': []})
     
     products = Phone.objects.filter(
-        brand__iexact=brand
-    ).values_list('id', 'model')
+        product__brand__iexact=brand
+    ).values_list('id', 'product__model')
     
     return JsonResponse({
         'products': list(products)
@@ -569,9 +570,9 @@ def get_phone_variants(request):
     if not product_id:
         return JsonResponse({'variants': []})
     
-        variants = PhoneVariant.objects.filter(
-        phone_id=product_id
-    ).select_related('color').values(
+    variants = Phone.objects.filter(
+        id=product_id
+    ).values(
         'id',
         'ram',
         'storage',
@@ -584,11 +585,169 @@ def get_phone_variants(request):
 
 @login_required
 @user_passes_test(lambda u: u.is_staff)
-def toggle_salam(request, variant_id):
+def toggle_salam(request, product_id):
     try:
-        variant = PhoneVariant.objects.get(pk=variant_id)
-        variant.disponible_salam = not variant.disponible_salam
-        variant.save()
+        product = Product.objects.get(pk=product_id)
+        product.status.is_active = not product.status.is_active
+        product.status.save()
         return redirect('price_checker:admin_product_status_list')
-    except PhoneVariant.DoesNotExist:
-        return redirect('price_checker:admin_product_status_list') 
+    except Product.DoesNotExist:
+        return redirect('price_checker:admin_product_status_list')
+
+class PriceEntryListView(ListView):
+    model = PriceEntry
+    template_name = 'price_checker/price_entry_list.html'
+    context_object_name = 'price_entries'
+    paginate_by = 10
+
+    def get_queryset(self):
+        queryset = super().get_queryset()
+        search_query = self.request.GET.get('q')
+        city = self.request.GET.get('city')
+        
+        if search_query:
+            queryset = queryset.filter(
+                Q(product__title__icontains=search_query) |
+                Q(city__name__icontains=search_query)
+            )
+        
+        if city:
+            queryset = queryset.filter(city__name=city)
+        
+        return queryset.select_related('product', 'city')
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['cities'] = City.objects.all()
+        context['selected_city'] = self.request.GET.get('city', '')
+        return context
+
+class PriceEntryDetailView(DetailView):
+    model = PriceEntry
+    template_name = 'price_checker/price_entry_detail.html'
+    context_object_name = 'price_entry'
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        price_entry = self.get_object()
+        
+        # Historique des prix
+        history = PriceEntry.objects.filter(
+            product=price_entry.product,
+            city=price_entry.city
+        ).order_by('-created_at')[:10]
+        context['price_history'] = history
+        
+        # Prix moyen
+        avg_price = history.aggregate(Avg('price'))['price__avg']
+        context['average_price'] = avg_price
+        
+        # Autres villes
+        other_cities = PriceEntry.objects.filter(
+            product=price_entry.product
+        ).exclude(
+            city=price_entry.city
+        ).select_related('city').order_by('price')
+        context['other_cities'] = other_cities
+        
+        return context
+
+@login_required
+def add_price_entry(request):
+    if request.method == 'POST':
+        product_id = request.POST.get('product_id')
+        city_id = request.POST.get('city_id')
+        price = request.POST.get('price')
+        
+        try:
+            with transaction.atomic():
+                # Désactiver les anciennes entrées
+                PriceEntry.objects.filter(
+                    product_id=product_id,
+                    city_id=city_id,
+                    is_active=True
+                ).update(is_active=False)
+                
+                # Créer la nouvelle entrée
+                entry = PriceEntry.objects.create(
+                    product_id=product_id,
+                    city_id=city_id,
+                    price=price,
+                    user=request.user,
+                    is_active=True
+                )
+                
+                messages.success(request, 'Prix ajouté avec succès.')
+                return JsonResponse({
+                    'status': 'success',
+                    'message': 'Prix ajouté avec succès.',
+                    'entry_id': entry.id
+                })
+                
+        except Exception as e:
+            messages.error(request, 'Erreur lors de l\'ajout du prix.')
+            return JsonResponse({
+                'status': 'error',
+                'message': str(e)
+            }, status=400)
+    
+    return JsonResponse({
+        'status': 'error',
+        'message': 'Méthode non autorisée.'
+    }, status=405)
+
+def get_phone_prices(request):
+    phone_id = request.GET.get('phone_id')
+    city_id = request.GET.get('city_id')
+    
+    if not phone_id or not city_id:
+        return JsonResponse({
+            'status': 'error',
+            'message': 'Paramètres manquants.'
+        }, status=400)
+    
+    try:
+        phone = Phone.objects.get(id=phone_id)
+        city = City.objects.get(id=city_id)
+        
+        # Récupérer les prix actifs
+        prices = PriceEntry.objects.filter(
+            product=phone.product,
+            city=city,
+            is_active=True
+        ).order_by('-created_at')
+        
+        data = {
+            'phone': {
+                'id': phone.id,
+                'name': str(phone),
+                'brand': phone.product.brand,
+                'model': phone.product.model,
+                'storage': phone.storage,
+                'ram': phone.ram,
+                'color': phone.color.name
+            },
+            'city': {
+                'id': city.id,
+                'name': city.name
+            },
+            'prices': [{
+                'id': price.id,
+                'price': price.price,
+                'created_at': price.created_at.strftime('%Y-%m-%d %H:%M:%S'),
+                'user': price.user.username
+            } for price in prices]
+        }
+        
+        return JsonResponse(data)
+        
+    except (Phone.DoesNotExist, City.DoesNotExist):
+        return JsonResponse({
+            'status': 'error',
+            'message': 'Téléphone ou ville non trouvé.'
+        }, status=404)
+    except Exception as e:
+        return JsonResponse({
+            'status': 'error',
+            'message': str(e)
+        }, status=500) 

@@ -2,7 +2,7 @@ from django.shortcuts import render
 from django.core.paginator import Paginator
 from django.http import Http404
 from django.db.models import Q, Prefetch
-from product.models import PhoneVariant
+from product.models import Phone
 from ..models import PriceEntry
 
 def check_price(request):
@@ -28,28 +28,27 @@ def check_price(request):
                 try:
                     numeric_value = int(clean_term)
                     term_query = (
-                        Q(phone__brand__icontains=term) |
-                        Q(phone__model__icontains=term) |
-                        Q(phone__operating_system__icontains=term) |
-                        Q(phone__processor__icontains=term) |
+                        Q(brand__icontains=term) |
+                        Q(model__icontains=term) |
+                        Q(operating_system__icontains=term) |
+                        Q(processor__icontains=term) |
                         Q(color__name__icontains=term) |
                         Q(ram=numeric_value) |
                         Q(storage=numeric_value)
                     )
                 except ValueError:
                     term_query = (
-                        Q(phone__brand__icontains=term) |
-                        Q(phone__model__icontains=term) |
-                        Q(phone__operating_system__icontains=term) |
-                        Q(phone__processor__icontains=term) |
+                        Q(brand__icontains=term) |
+                        Q(model__icontains=term) |
+                        Q(operating_system__icontains=term) |
+                        Q(processor__icontains=term) |
                         Q(color__name__icontains=term)
                     )
                 
                 query &= term_query
             
             # Récupérer les variantes
-            similar_variants = PhoneVariant.objects.filter(query).select_related(
-                'phone',
+            similar_variants = Phone.objects.filter(query).select_related(
                 'color'
             ).prefetch_related(
                 Prefetch('price_entries', 
@@ -58,8 +57,8 @@ def check_price(request):
                         ).select_related('city')
                         .order_by('-created_at'))
             ).order_by(
-                'phone__brand',
-                'phone__model',
+                'brand',
+                'model',
                 'ram',
                 'storage'
             )
@@ -78,7 +77,7 @@ def check_price(request):
                     if price_entry.city not in prices_by_city:
                         # Utiliser la nouvelle méthode get_average_price
                         avg_price_info = PriceEntry.get_average_price(
-                            product=variant.phone.product,
+                            product=variant.product,
                             variant=variant,
                             city=price_entry.city
                         )
@@ -93,7 +92,7 @@ def check_price(request):
                         }
                 
                 results.append({
-                    'product': variant.phone,
+                    'product': variant,
                     'ram': variant.ram,
                     'storage': variant.storage,
                     'color': variant.color,

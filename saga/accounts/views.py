@@ -141,7 +141,7 @@ def signup(request):
         if form.is_valid():
             user = form.save()
             login(request, user)
-            return redirect('supplier_index')
+            return redirect('suppliers:supplier_index')
     else:
         form = UserForm()
 
@@ -151,7 +151,7 @@ def signup(request):
 class LoginView(AuthLoginView):
     template_name = 'accounts/login.html'
     redirect_authenticated_user = True
-    success_url = reverse_lazy('supplier_index')
+    success_url = reverse_lazy('suppliers:supplier_index')
 
     def form_valid(self, form):
         """Surcharge pour préserver l'ancienne session key."""
@@ -171,7 +171,7 @@ class LoginView(AuthLoginView):
 
 def logout_user(request):
     logout(request)
-    return redirect('supplier_index')
+    return redirect('suppliers:supplier_index')
 
 
 def profile(request):

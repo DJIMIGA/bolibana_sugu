@@ -67,7 +67,7 @@
     <div class="grid grid-cols-1 gap-12 lg:grid-cols-3">
       <!-- Logo & Description -->
       <div class="text-center sm:text-left">
-        <a href="{% url 'supplier_index' %}" class="inline-block">
+        <a href="{% url 'suppliers:supplier_index' %}" class="inline-block">
           <img class="h-16 w-auto transition-all duration-300 hover:scale-110 hover:drop-shadow-lg"
                src="{% static 'icons/bolibana.png' %}" alt="Logo de BoliBana Sugu">
         </a>
@@ -230,8 +230,8 @@
     <div class="mt-12 border-t border-gray-200 pt-8 flex flex-col sm:flex-row justify-between items-center text-sm text-gray-500">
       <p>&copy; 2025 BoliBana - Tous droits réservés</p>
       <div class="flex space-x-6 mt-4 sm:mt-0">
-        <a href="{% url 'terms_conditions' %}" class="hover:text-green-600 transition-colors duration-300">Mentions Légales</a>
-        <a href="{% url 'cgv' %}" class="hover:text-green-600 transition-colors duration-300">CGV</a>
+        <a href="{% url 'product:terms_conditions' %}" class="hover:text-green-600 transition-colors duration-300">Mentions Légales</a>
+        <a href="{% url 'product:cgv' %}" class="hover:text-green-600 transition-colors duration-300">CGV</a>
       </div>
     </div>
   </div>

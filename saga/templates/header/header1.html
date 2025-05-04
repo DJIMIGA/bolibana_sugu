@@ -319,7 +319,7 @@
         <div class="max-w-7xl mx-auto h-16 px-4 flex items-center justify-between sm:px-6 lg:px-8">
           <!-- Logo (lg+) -->
           <div class="hidden lg:flex lg:items-center">
-            <a href="{% url 'supplier_index' %}">
+            <a href="{% url 'suppliers:supplier_index' %}">
               <span class="sr-only">Workflow</span>
               <img class="h-16 mx-auto transition-transform duration-300 hover:scale-110"
                    src="{% static 'icons/bolibana.png' %}" alt="logo de bolibana sugu">
@@ -715,7 +715,7 @@
 
               </div>
               <!-- Logo (lg-) -->
-              <a href="{% url 'supplier_index' %}" class="lg:hidden flex items-center">
+              <a href="{% url 'suppliers:supplier_index' %}" class="lg:hidden flex items-center">
                 <span class="sr-only">Workflow</span>
                 <div class="relative flex items-center justify-center h-12 w-12 rounded-full  hover:scale-110 transition-transform duration-300">
                   <img

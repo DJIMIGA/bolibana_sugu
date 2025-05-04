@@ -29,7 +29,7 @@
                           d="M10 19l-7-7m0 0l7-7m-7 7h18"/>
                 </svg>
             </button>
-            <form id="searchForm" method="get" autocomplete="off" action="{% url 'search' %}" class="flex-1 border-2 border-gray-200 rounded focus-within:ring-2 focus-within:ring-green-500 transition-all duration-200 px-2 m-2">
+            <form id="searchForm" method="get" autocomplete="off" action="{% url 'product:search' %}" class="flex-1 border-2 border-gray-200 rounded focus-within:ring-2 focus-within:ring-green-500 transition-all duration-200 px-2 m-2">
                 <div class="flex items-center w-full">
                     <svg class="pointer-events-none h-5 w-5 text-gray-400 mr-3"
                          xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"
@@ -43,7 +43,7 @@
                            placeholder="Rechercher un produit..."
                            aria-label="Search"
                            aria-describedby="search-icon"
-                           hx-get="{% url 'search' %}"
+                           hx-get="{% url 'product:search' %}"
                            hx-target="#searchResults"
                            hx-trigger="keyup changed delay:300ms"
                            hx-push-url="false"
@@ -51,7 +51,7 @@
                     />
                     <button type="button" id="clearSearch" 
                             class="text-gray-400 hover:text-gray-600 ml-2"
-                            hx-get="{% url 'search' %}"
+                            hx-get="{% url 'product:search' %}"
                             hx-trigger="'#searchInput',  'keyup'"
                             hx-vals='{"q": ""}'
                             hx-push-url="true"

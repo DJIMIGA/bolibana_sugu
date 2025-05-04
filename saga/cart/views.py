@@ -27,6 +27,7 @@ from django.db import transaction
 from django.views.decorators.http import require_POST
 from django.core.exceptions import ValidationError
 from django.utils.translation import gettext_lazy as _
+from product.models import Phone
 
 def add_to_cart(request, product_id):
     if request.method == 'POST':
@@ -809,9 +810,7 @@ def add_phone_to_cart(request, variant_id):
     
     if request.method == 'POST':
         try:
-            from product.models import PhoneVariant
-            print("Recherche de la variante...")
-            variant = get_object_or_404(PhoneVariant, id=variant_id)
+            variant = get_object_or_404(Phone, id=variant_id)
             print(f"Variante trouvée: {variant}")
             print(f"Produit associé: {variant.phone.product}")
             

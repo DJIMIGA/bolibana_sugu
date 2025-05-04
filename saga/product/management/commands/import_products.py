@@ -1,7 +1,7 @@
 import os
 from django.conf import settings
 from django.core.management.base import BaseCommand
-from product.models import Category, Color, Product, Phone, PhoneVariant
+from product.models import Category, Color, Product, Phone
 from suppliers.models import Supplier
 import json
 
@@ -55,16 +55,31 @@ class Command(BaseCommand):
                     print(f"\nErreur lors du parsing JSON : {e}")
                     return
 
-                # Créer le fournisseur par défaut s'il n'existe pas
-                supplier, created = Supplier.objects.get_or_create(
-                    name="Fournisseur par défaut",
+                # Créer le fournisseur Tecno s'il n'existe pas
+                tecno_supplier, created = Supplier.objects.get_or_create(
+                    name="Tecno",
                     defaults={
-                        'contact_name': "Contact par défaut",
-                        'email': "contact@fournisseur.com",
-                        'phone': "+22300000000"
+                        'description': "Fournisseur officiel Tecno",
+                        'email': "contact@tecno.com",
+                        'phone': "+22300000000",
+                        'specialty': 'Fournisseur de TELEPHONE',
+                        'slug': 'tecno'
                     }
                 )
-                print(f"\nFournisseur {'créé' if created else 'existant'} : {supplier}")
+                print(f"\nFournisseur Tecno {'créé' if created else 'existant'} : {tecno_supplier}")
+
+                # Créer le fournisseur par défaut s'il n'existe pas
+                default_supplier, created = Supplier.objects.get_or_create(
+                    name="Fournisseur par défaut",
+                    defaults={
+                        'description': "Fournisseur par défaut pour les produits",
+                        'email': "contact@fournisseur.com",
+                        'phone': "+22300000000",
+                        'specialty': 'Fournisseur de TELEPHONE',
+                        'slug': 'fournisseur-par-defaut'
+                    }
+                )
+                print(f"\nFournisseur par défaut {'créé' if created else 'existant'} : {default_supplier}")
 
                 # Importer les catégories
                 categories_count = 0
@@ -98,7 +113,7 @@ class Command(BaseCommand):
                             defaults={
                                 'description': product_data.get('description', ''),
                                 'category': category,
-                                'supplier': supplier
+                                'supplier': default_supplier
                             }
                         )
                         if created:
@@ -132,7 +147,7 @@ class Command(BaseCommand):
                     try:
                         phone = Phone.objects.get(product__name=variant_data['phone'])
                         color = Color.objects.get(name=variant_data['color'])
-                        variant, created = PhoneVariant.objects.get_or_create(
+                        variant, created = Phone.objects.get_or_create(
                             phone=phone,
                             color=color,
                             storage=variant_data.get('storage', '128GB'),

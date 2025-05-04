@@ -4,9 +4,12 @@ from django.core.validators import MinValueValidator, MaxValueValidator
 from django.db.models import Q, Avg, Max, Min
 from django.utils.text import slugify
 from django.conf import settings
-from product.models import Product, PhoneVariant
+from product.models import Product, Phone
 from saga.utils.image_optimizer import ImageOptimizer
 from datetime import timedelta
+from django.contrib.contenttypes.fields import GenericForeignKey
+from django.contrib.contenttypes.models import ContentType
+from accounts.models import Shopper
 
 class City(models.Model):
     name = models.CharField(max_length=100, verbose_name='Nom de la ville')
@@ -40,7 +43,7 @@ class PriceSubmission(models.Model):
     ]
     
     product = models.ForeignKey(Product, on_delete=models.CASCADE, related_name='price_submissions')
-    variant = models.ForeignKey(PhoneVariant, on_delete=models.CASCADE, related_name='price_submissions', null=True, blank=True)
+    variant = models.ForeignKey(Phone, on_delete=models.CASCADE, related_name='price_submissions', null=True, blank=True)
     city = models.ForeignKey(City, on_delete=models.CASCADE, related_name='price_submissions')
     price = models.DecimalField(max_digits=10, decimal_places=0)
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='price_submissions')
@@ -93,7 +96,7 @@ class PriceSubmission(models.Model):
 class PriceEntry(models.Model):
     """Modèle pour les prix validés et actifs"""
     product = models.ForeignKey(Product, on_delete=models.CASCADE, related_name='price_entries')
-    variant = models.ForeignKey(PhoneVariant, on_delete=models.CASCADE, related_name='price_entries', null=True, blank=True)
+    variant = models.ForeignKey(Phone, on_delete=models.CASCADE, related_name='price_entries', null=True, blank=True)
     city = models.ForeignKey(City, on_delete=models.CASCADE, related_name='price_entries')
     price = models.DecimalField(max_digits=10, decimal_places=0)
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='price_entries')

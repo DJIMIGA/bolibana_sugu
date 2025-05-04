@@ -2,7 +2,7 @@
 
 <div class="relative flex-1 max-w-md lg:max-w-lg mx-auto">
     <div class="relative flex items-center">
-        <form id="form-desktop" method="get" action="{% url 'search' %}" class="z-20 relative w-full">
+        <form id="form-desktop" method="get" action="{% url 'product:search' %}" class="z-20 relative w-full">
             <div class="flex items-center bg-white border border-green-300 rounded-lg shadow-md overflow-hidden focus-within:ring-2 focus-within:ring-green-500 transition-all duration-200">
                 
                 <!-- Icône loupe -->
@@ -21,7 +21,7 @@
                     placeholder="Rechercher un produit..."
                     aria-label="Search"
                     class="flex-grow bg-transparent text-sm text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-0 focus:border-0 py-1.5 px-3 border-0"
-                    hx-get="{% url 'search' %}"
+                    hx-get="{% url 'product:search' %}"
                     hx-target="#results-desktop"
                     hx-trigger="keyup changed delay:500ms"
                     hx-push-url="false"

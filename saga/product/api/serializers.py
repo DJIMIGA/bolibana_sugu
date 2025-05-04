@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from product.models import Product, Category, ImageProduct, PhoneVariant
+from product.models import Product, Category, ImageProduct, Phone
 
 
 
@@ -52,7 +52,7 @@ class ProductDetailSerializer(serializers.ModelSerializer):
             'specifications', 'weight', 'dimensions'
         ]
 
-class PhoneVariantSerializer(serializers.ModelSerializer):
+class PhoneSerializer(serializers.ModelSerializer):
     class Meta:
-        model = PhoneVariant
+        model = Phone
         fields = ['id', 'color', 'storage', 'price', 'stock', 'sku'] 

@@ -1,219 +1,161 @@
 [
+{
+  "model": "suppliers.supplier",
+  "pk": 1,
+  "fields": {
+    "phone": "+22395187176",
+    "email": "djimigakonis@gamil.com",
+    "address": "37 rue Daniel mayer",
+    "slug": null,
+    "name": "Tecno",
+    "description": "Tecno",
+    "image": null,
+    "specialty": "Fournisseur de TELEPHONE"
+  }
+},
+{
+  "model": "product.category",
+  "pk": 1,
+  "fields": {
+    "name": "Téléphones",
+    "slug": null,
+    "parent": null,
+    "image": null
+  }
+},
+{
+  "model": "product.category",
+  "pk": 2,
+  "fields": {
+    "name": "Samsung",
+    "slug": null,
+    "parent": 1,
+    "image": null
+  }
+},
+{
+  "model": "product.category",
+  "pk": 3,
+  "fields": {
+    "name": "Apple",
+    "slug": null,
+    "parent": 1,
+    "image": null
+  }
+},
+{
+  "model": "product.category",
+  "pk": 4,
+  "fields": {
+    "name": "Huawei",
+    "slug": null,
+    "parent": 1,
+    "image": null
+  }
+},
+{
+  "model": "product.category",
+  "pk": 5,
+  "fields": {
+    "name": "Tecno",
+    "slug": "tecno",
+    "parent": 1,
+    "image": null
+  }
+},
   {
-    "model": "suppliers.supplier",
+    "model": "product.color",
     "pk": 1,
     "fields": {
-      "phone": "+22395187176",
-      "email": "djimigakonis@gamil.com",
-      "address": "37 rue Daniel mayer",
-      "slug": null,
-      "name": "Tecno",
-      "description": "Tecno",
-      "image": null,
-      "specialty": "Fournisseur de TELEPHONE"
+      "name": "Noir",
+      "code": "#000000"
     }
   },
   {
-    "model": "product.category",
-    "pk": 1,
-    "fields": {
-      "name": "Téléphones",
-      "slug": null,
-      "parent": null,
-      "image": null
-    }
-  },
-  {
-    "model": "product.category",
+    "model": "product.color",
     "pk": 2,
     "fields": {
-      "name": "Samsung",
-      "slug": null,
-      "parent": 1,
-      "image": null
+      "name": "Bleu",
+      "code": "#0000FF"
     }
   },
   {
-    "model": "product.category",
+    "model": "product.color",
     "pk": 3,
     "fields": {
-      "name": "Apple",
-      "slug": null,
-      "parent": 1,
-      "image": null
+      "name": "Vert",
+      "code": "#00FF00"
+    }
+  },
+{
+  "model": "product.product",
+  "pk": 10,
+  "fields": {
+    "title": "Pop 8",
+    "category": 1,
+    "price": "0",
+    "description": "Le POP 8 est un smartphone économique avec un design moderne et des fonctionnalités essentielles.\n                    \nCaractéristiques principales :\n- Écran 6.6\" HD+ Hole\n- Processeur T606\n- Double caméra arrière 13MP + AI-CAM\n- Charge 10W\n- Haut-parleurs stéréo\n\nSpécifications détaillées :\n- Système d'exploitation : Android T-Go\n- Processeur : T606\n- Réseaux : 4G\n- Dimensions : \n  * Matériau composite : 163.69 x 75.6 x 8.55 mm\n  * Magic Skin : 163.69 x 75.6 x 8.75 mm\n- Écran : 6.6\" HD+ Hole\n- Résolution : 720 x 1612\n- Caméra avant : 8MP avec Double Flash\n- Caméra arrière : 13MP + AI-CAM avec Double Flash\n- Connectivité : GPS, WiFi, FM, OTG\n- Capteurs : Gyroscope Logiciel, Capteur d'empreintes latéral\n- Batterie : 5000 mAh avec charge 10W Type-C",
+    "highlight": "Écran 6.6\" HD+ Hole\nProcesseur T606\nDouble caméra 13MP + AI-CAM\nCharge 10W\nHaut-parleurs stéréo",
+    "image": null,
+    "supplier": 1,
+    "stripe_product_id": null,
+    "is_active": true,
+    "created_at": "2025-04-27T15:19:03.265Z",
+    "updated_at": "2025-04-27T15:19:03.265Z"
+  }
+},
+{
+    "model": "product.phone",
+    "pk": 1,
+  "fields": {
+      "product": 10,
+      "model": "Pop 8",
+      "brand": "Tecno",
+      "operating_system": "Android T-Go",
+      "screen_size": "6.6",
+      "resolution": "720 x 1612",
+      "processor": "T606",
+      "battery_capacity": 5000,
+      "camera_main": "13MP + AI-CAM",
+      "camera_front": "8MP",
+      "network": "4G",
+      "warranty": "12 mois",
+      "imei": null,
+      "is_new": true,
+      "box_included": true,
+      "accessories": "Chargeur, Câble USB, Manuel d'utilisation"
     }
   },
   {
-    "model": "product.category",
-    "pk": 4,
-    "fields": {
-      "name": "Huawei",
-      "slug": null,
-      "parent": 1,
-      "image": null
-    }
-  },
-  {
-    "model": "product.category",
-    "pk": 5,
-    "fields": {
-      "name": "Tecno",
-      "slug": "tecno",
-      "parent": 1,
-      "image": null
-    }
-  },
-  {
-    "model": "product.product",
-    "pk": 10,
-    "fields": {
-      "title": "Pop 8",
-      "category": 1,
-      "price": "0",
-      "description": "Le POP 8 est un smartphone économique avec un design moderne et des fonctionnalités essentielles.\n                    \nCaractéristiques principales :\n- Écran 6.6\" HD+ Hole\n- Processeur T606\n- Double caméra arrière 13MP + AI-CAM\n- Charge 10W\n- Haut-parleurs stéréo\n\nSpécifications détaillées :\n- Système d'exploitation : Android T-Go\n- Processeur : T606\n- Réseaux : 4G\n- Dimensions : \n  * Matériau composite : 163.69 x 75.6 x 8.55 mm\n  * Magic Skin : 163.69 x 75.6 x 8.75 mm\n- Écran : 6.6\" HD+ Hole\n- Résolution : 720 x 1612\n- Caméra avant : 8MP avec Double Flash\n- Caméra arrière : 13MP + AI-CAM avec Double Flash\n- Connectivité : GPS, WiFi, FM, OTG\n- Capteurs : Gyroscope Logiciel, Capteur d'empreintes latéral\n- Batterie : 5000 mAh avec charge 10W Type-C",
-      "highlight": "Écran 6.6\" HD+ Hole\nProcesseur T606\nDouble caméra 13MP + AI-CAM\nCharge 10W\nHaut-parleurs stéréo",
-      "image": null,
-      "supplier": 1,
-      "stripe_product_id": null,
-      "is_active": true,
+    "model": "product.phonevariant",
+    "pk": 1,
+  "fields": {
+      "phone": 1,
+      "color": 1,
+      "storage": 64,
+      "ram": 4,
+      "price": "129900",
+      "stock": 10,
+      "sku": "TEC-POP8-64-4-NOIR",
+      "disponible_salam": true,
       "created_at": "2025-04-27T15:19:03.265Z",
       "updated_at": "2025-04-27T15:19:03.265Z"
     }
   },
   {
-    "model": "product.product",
-    "pk": 11,
-    "fields": {
-      "title": "Pop 7",
-      "category": 1,
-      "price": "0",
-      "description": "Le POP 7 est un smartphone économique avec un design tendance et des fonctionnalités essentielles.\n                    \nCaractéristiques principales :\n- Écran 6.6\" HD+ Dot Notch\n- Processeur Octa-Core\n- Double caméra arrière 8MP AI\n- Batterie 5000mAh\n- Capteur d'empreintes arrière\n\nSpécifications détaillées :\n- Système d'exploitation : Android 12 (Go Edition)\n- Processeur : Octa-Core\n- Réseaux : 2G/3G/4G\n- Dimensions : 163.86 x 75.51 x 8.9 mm\n- Écran : 6.6\" HD+ Dot Notch\n- Résolution : 720 x 1612\n- Caméra avant : 5MP avec Double Flash\n- Caméra arrière : 8MP AI avec Double Flash\n- Connectivité : GPS, WiFi, FM, OTG\n- Capteurs : G-Sensor, Capteur d'empreintes, Capteur de lumière ambiante et de proximité\n- Batterie : 5000 mAh\n- Mémoire : 64GB ROM + 2GB RAM",
-      "highlight": "Écran 6.6\" HD+ Dot Notch\nProcesseur Octa-Core\nDouble caméra 8MP AI\nBatterie 5000mAh\nCapteur d'empreintes arrière",
-      "image": null,
-      "supplier": 1,
-      "stripe_product_id": null,
-      "is_active": true,
-      "created_at": "2025-04-27T15:21:35.107Z",
-      "updated_at": "2025-04-27T15:21:35.107Z"
-    }
-  },
-  {
-    "model": "product.product",
-    "pk": 12,
-    "fields": {
-      "title": "Pop 7 Pro",
-      "category": 1,
-      "price": "0",
-      "description": "Le POP 7 Pro est un smartphone économique avec un design tendance et des fonctionnalités améliorées.\n                    \nCaractéristiques principales :\n- Écran 6.6\" HD+ Dot Notch\n- Processeur Quad-Core\n- Double caméra arrière 13MP AI\n- Batterie 5000mAh Type-C\n- Capteur d'empreintes arrière\n\nSpécifications détaillées :\n- Système d'exploitation : Android S\n- Processeur : Quad-Core\n- Réseaux : 2G/3G/4G\n- Dimensions : 163.86 x 75.51 x 8.9 mm\n- Écran : 6.6\" HD+ Dot Notch\n- Résolution : 720 x 1612\n- Caméra avant : 5MP avec Double Flash\n- Caméra arrière : 13MP AI avec Double Flash\n- Connectivité : GPS, WiFi, FM, OTG\n- Capteurs : G-Sensor, Capteur d'empreintes, Capteur de lumière ambiante et de proximité\n- Batterie : 5000 mAh Type-C",
-      "highlight": "Écran 6.6\" HD+ Dot Notch\nProcesseur Quad-Core\nDouble caméra 13MP AI\nBatterie 5000mAh Type-C\nCapteur d'empreintes arrière",
-      "image": null,
-      "supplier": 1,
-      "stripe_product_id": null,
-      "is_active": true,
-      "created_at": "2025-04-27T15:25:47.325Z",
-      "updated_at": "2025-04-27T15:25:47.325Z"
-    }
-  },
-  {
-    "model": "product.product",
-    "pk": 13,
-    "fields": {
-      "title": "Pop 6 Pro",
-      "category": 1,
-      "price": "0",
-      "description": "Le POP 6 Pro est un smartphone économique avec un design moderne et des fonctionnalités essentielles.\n                    \nCaractéristiques principales :\n- Écran 6.6\" HD+ Dot Notch\n- Processeur Quad-Core\n- Double caméra arrière 8MP AI\n- Batterie 5000mAh\n- Capteur d'empreintes latéral\n\nSpécifications détaillées :\n- Système d'exploitation : Android S-GO\n- Processeur : Quad-Core\n- Réseaux : 2G/3G/4G\n- Dimensions : 164.85 x 76.25 x 8.75 mm\n- Écran : 6.6\" HD+ Dot Notch\n- Résolution : 720 x 1612\n- Caméra avant : 5MP avec Flash\n- Caméra arrière : 8MP AI avec Double Flash\n- Connectivité : GPS, WiFi, FM, OTG\n- Capteurs : G-Sensor, Capteur de lumière ambiante et de proximité, Capteur d'empreintes latéral\n- Batterie : 5000 mAh\n- Mémoire : 32GB ROM + 2GB RAM",
-      "highlight": "Écran 6.6\" HD+ Dot Notch\nProcesseur Quad-Core\nDouble caméra 8MP AI\nBatterie 5000mAh\nCapteur d'empreintes latéral",
-      "image": null,
-      "supplier": 1,
-      "stripe_product_id": null,
-      "is_active": true,
-      "created_at": "2025-04-27T15:29:46.228Z",
-      "updated_at": "2025-04-27T15:29:46.240Z"
-    }
-  },
-  {
-    "model": "product.product",
-    "pk": 14,
-    "fields": {
-      "title": "Pop 6",
-      "category": 1,
-      "price": "0",
-      "description": "Le POP 6 est un smartphone économique avec un design moderne et des fonctionnalités essentielles.\n                    \nCaractéristiques principales :\n- Écran 6.1\" HD+ Dot Notch\n- Processeur Quad-Core\n- Double caméra 5MP\n- Battery Lab 2.1\n- Smart Switch 1.0\n\nSpécifications détaillées :\n- Système d'exploitation : Android R-GO\n- Processeur : Quad-Core\n- Réseaux : GSM/GPRS/EDGE/WCDMA/FDD-LTE/TDD-LTE\n- Dimensions : 157.8 x 73.84 x 9.7 mm\n- Écran : 6.1\" HD+ Dot Notch\n- Résolution : 720 x 1560\n- Caméra avant : 5MP avec Flash\n- Caméra arrière : 5MP QVGA avec Flash\n- Connectivité : GPS, WiFi, FM, OTG\n- Capteurs : Face ID, Capteur d'empreintes\n- Mémoire : 32GB ROM + 2GB RAM",
-      "highlight": "Écran 6.1\" HD+ Dot Notch\nProcesseur Quad-Core\nDouble caméra 5MP\nBattery Lab 2.1\nSmart Switch 1.0",
-      "image": null,
-      "supplier": 1,
-      "stripe_product_id": null,
-      "is_active": true,
-      "created_at": "2025-04-27T15:31:37.742Z",
-      "updated_at": "2025-04-27T15:31:37.742Z"
-    }
-  },
-  {
-    "model": "product.product",
-    "pk": 15,
-    "fields": {
-      "title": "Pop 5 Pro",
-      "category": 1,
-      "price": "0",
-      "description": "Le POP 5 Pro est un smartphone économique avec un design moderne et des fonctionnalités essentielles.\n                    \nCaractéristiques principales :\n- Écran 16.56cm (6.52\") HD+ Dot Notch\n- Processeur Quad-Core\n- Double caméra 8MP\n- Batterie 6000mAh\n- Reconnaissance d'empreintes\n\nSpécifications détaillées :\n- Système d'exploitation : Android 11 (Go Edition)\n- Processeur : Quad-Core\n- Réseaux : GSM/4G\n- Dimensions : 164.87 x 76.09 x 9.52 mm\n- Écran : 16.56cm (6.52\") HD+ Dot Notch\n- Résolution : 720 x 1600\n- Caméra avant : 5MP avec Flash\n- Caméra arrière : 8MP QVGA avec Double Flash\n- Connectivité : GPS, WiFi, FM, OTG\n- Capteurs : G-Sensor, Capteur de lumière ambiante et de proximité, Reconnaissance d'empreintes\n- Batterie : 6000 mAh\n- Mémoire : 32GB ROM + 3GB RAM",
-      "highlight": "Écran 16.56cm HD+ Dot Notch\nProcesseur Quad-Core\nDouble caméra 8MP\nBatterie 6000mAh\nReconnaissance d'empreintes",
-      "image": null,
-      "supplier": 1,
-      "stripe_product_id": null,
-      "is_active": true,
-      "created_at": "2025-04-27T15:34:48.355Z",
-      "updated_at": "2025-04-27T15:34:48.355Z"
-    }
-  },
-  {
-    "model": "product.product",
-    "pk": 16,
-    "fields": {
-      "title": "Pop 5 Lte",
-      "category": 1,
-      "price": "0",
-      "description": "Le POP 5 LTE est un smartphone économique avec un design moderne et des fonctionnalités essentielles.\n                    \nCaractéristiques principales :\n- Écran 6.52\" HD+ Dot Notch\n- Processeur Quad-Core\n- Double caméra 8MP AI\n- Batterie 5000mAh\n- Déverrouillage par empreinte digitale\n\nSpécifications détaillées :\n- Système d'exploitation : Android 11 (Go Edition)\n- Processeur : Quad-Core\n- Réseaux : GSM/GPRS/EDGE/WCDMA/FDD-LTE/TDD-LTE\n- Dimensions : 164.87 x 76.09 x 8.75 mm\n- Écran : 6.52\" HD+ Dot Notch\n- Résolution : 720 x 1600\n- Caméra avant : 5MP avec Flash\n- Caméra arrière : 8MP AI avec Double Flash\n- Connectivité : GPS, WiFi, FM, OTG\n- Capteurs : G-Sensor, Capteur de lumière ambiante et de proximité, Capteur d'empreintes\n- Batterie : 5000 mAh\n- Mémoire : 32GB ROM + 2GB RAM",
-      "highlight": "Écran 6.52\" HD+ Dot Notch\nProcesseur Quad-Core\nDouble caméra 8MP AI\nBatterie 5000mAh\nDéverrouillage par empreinte",
-      "image": null,
-      "supplier": 1,
-      "stripe_product_id": null,
-      "is_active": true,
-      "created_at": "2025-04-27T15:37:00.029Z",
-      "updated_at": "2025-04-27T15:37:00.029Z"
-    }
-  },
-  {
-    "model": "product.product",
-    "pk": 17,
-    "fields": {
-      "title": "Pop 5",
-      "category": 1,
-      "price": "0",
-      "description": "Le POP 5 est un smartphone économique avec un design moderne et des fonctionnalités essentielles.\n                    \nCaractéristiques principales :\n- Écran 6.1\" HD+ Dot Notch\n- Processeur Quad-Core 1.3 GHz\n- Double caméra 5MP\n- Batterie 4000mAh\n- Déverrouillage facial et par empreinte\n\nSpécifications détaillées :\n- Système d'exploitation : HiOS basé sur Android 10 (Go Edition)\n- Processeur : Quad-Core 1.3 GHz\n- Réseaux : GSM/WCDMA\n- Dimensions : 157.7 x 75.7 x 9.55 mm\n- Écran : 6.1\" HD+ Dot Notch\n- Résolution : 720 x 1560\n- Caméra avant : 5MP avec Flash\n- Caméra arrière : 5MP Double avec Flash\n- Connectivité : GPS, WiFi, FM\n- Capteurs : G-Sensor, Capteur d'empreintes\n- Batterie : 4000 mAh\n- Mémoire : 16GB ROM + 1GB RAM",
-      "highlight": "Écran 6.1\" HD+ Dot Notch\nProcesseur Quad-Core 1.3 GHz\nDouble caméra 5MP\nBatterie 4000mAh\nDéverrouillage facial et par empreinte",
-      "image": null,
-      "supplier": 1,
-      "stripe_product_id": null,
-      "is_active": true,
-      "created_at": "2025-04-27T15:39:27.218Z",
-      "updated_at": "2025-04-27T15:39:27.218Z"
-    }
-  },
-  {
-    "model": "product.product",
-    "pk": 18,
-    "fields": {
-      "title": "Pop 2F",
-      "category": 1,
-      "price": "0",
-      "description": "Le POP 2F est un smartphone économique avec un design moderne et des fonctionnalités essentielles.\n                    \nCaractéristiques principales :\n- Écran 5.5\" Touchscreen\n- Processeur Quad-Core 1.3 GHz\n- Caméra beauté 8MP avant\n- Batterie 2400mAh\n- Déverrouillage facial et par empreinte\n\nSpécifications détaillées :\n- Système d'exploitation : HiOS basé sur Android 8.1 (Go Edition)\n- Processeur : Quad-Core 1.3 GHz\n- Réseaux : WiFi\n- Dimensions : 149.76 x 72.8 x 9.35 mm\n- Écran : 5.5\" Touchscreen\n- Résolution : 480 x 960\n- Caméra avant : 8MP avec Flash\n- Caméra arrière : 5MP avec Flash\n- Connectivité : WiFi\n- Capteurs : G-Sensor, Capteur d'empreintes\n- Batterie : 2400 mAh\n- Mémoire : 16GB ROM + 1GB RAM",
-      "highlight": "Écran 5.5\" Touchscreen\nProcesseur Quad-Core 1.3 GHz\nCaméra beauté 8MP avant\nBatterie 2400mAh\nDéverrouillage facial et par empreinte",
-      "image": null,
-      "supplier": 1,
-      "stripe_product_id": null,
-      "is_active": true,
-      "created_at": "2025-04-27T15:40:30.506Z",
-      "updated_at": "2025-04-27T15:40:30.506Z"
+    "model": "product.phonevariant",
+    "pk": 2,
+  "fields": {
+      "phone": 1,
+      "color": 2,
+      "storage": 128,
+      "ram": 6,
+      "price": "149900",
+      "stock": 5,
+      "sku": "TEC-POP8-128-6-BLEU",
+      "disponible_salam": true,
+      "created_at": "2025-04-27T15:19:03.265Z",
+      "updated_at": "2025-04-27T15:19:03.265Z"
     }
   }
 ] 

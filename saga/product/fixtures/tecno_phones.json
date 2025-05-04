@@ -1,0 +1,71 @@
+[
+    {
+        "name": "Tecno POP 2F Or Champagne",
+        "model": "POP 2F",
+        "description": "Le Tecno POP 2F en Or Champagne est un smartphone économique avec un design élégant et des fonctionnalités essentielles. Doté d'un écran de 5.5 pouces, d'une caméra beauté de 8MP à l'avant et 5MP à l'arrière, il offre également un déverrouillage facial et un capteur d'empreintes digitales. Fonctionnant sous HiOS basé sur Android 8.1 (Go edition), il est parfait pour un usage quotidien.",
+        "operating_system": "Android 8.1 (Go edition)",
+        "processor": "Processeur Quad-Core 1.3 GHz",
+        "screen_size": 5.5,
+        "main_camera": "Caméra arrière 5MP avec Flash",
+        "front_camera": "Caméra avant 8MP avec Flash",
+        "battery": "Batterie 2400mAh",
+        "dimensions": {
+            "height": "149.76 mm",
+            "width": "72.8 mm",
+            "thickness": "9.35 mm"
+        },
+        "display": "Résolution 960*480px",
+        "color": "Or Champagne",
+        "storage": 16,
+        "ram": 1,
+        "price": "75000",
+        "stock": 20,
+        "sku": "TEC-P2F-16-1-OC"
+    },
+    {
+        "name": "Tecno POP 2F Noir Minuit",
+        "model": "POP 2F",
+        "description": "Le Tecno POP 2F en Noir Minuit est un smartphone économique avec un design élégant et des fonctionnalités essentielles. Doté d'un écran de 5.5 pouces, d'une caméra beauté de 8MP à l'avant et 5MP à l'arrière, il offre également un déverrouillage facial et un capteur d'empreintes digitales. Fonctionnant sous HiOS basé sur Android 8.1 (Go edition), il est parfait pour un usage quotidien.",
+        "operating_system": "Android 8.1 (Go edition)",
+        "processor": "Processeur Quad-Core 1.3 GHz",
+        "screen_size": 5.5,
+        "main_camera": "Caméra arrière 5MP avec Flash",
+        "front_camera": "Caméra avant 8MP avec Flash",
+        "battery": "Batterie 2400mAh",
+        "dimensions": {
+            "height": "149.76 mm",
+            "width": "72.8 mm",
+            "thickness": "9.35 mm"
+        },
+        "display": "Résolution 960*480px",
+        "color": "Noir Minuit",
+        "storage": 16,
+        "ram": 1,
+        "price": "75000",
+        "stock": 20,
+        "sku": "TEC-P2F-16-1-NM"
+    },
+    {
+        "name": "Tecno POP 2F Bleu Ville",
+        "model": "POP 2F",
+        "description": "Le Tecno POP 2F en Bleu Ville est un smartphone économique avec un design élégant et des fonctionnalités essentielles. Doté d'un écran de 5.5 pouces, d'une caméra beauté de 8MP à l'avant et 5MP à l'arrière, il offre également un déverrouillage facial et un capteur d'empreintes digitales. Fonctionnant sous HiOS basé sur Android 8.1 (Go edition), il est parfait pour un usage quotidien.",
+        "operating_system": "Android 8.1 (Go edition)",
+        "processor": "Processeur Quad-Core 1.3 GHz",
+        "screen_size": 5.5,
+        "main_camera": "Caméra arrière 5MP avec Flash",
+        "front_camera": "Caméra avant 8MP avec Flash",
+        "battery": "Batterie 2400mAh",
+        "dimensions": {
+            "height": "149.76 mm",
+            "width": "72.8 mm",
+            "thickness": "9.35 mm"
+        },
+        "display": "Résolution 960*480px",
+        "color": "Bleu Ville",
+        "storage": 16,
+        "ram": 1,
+        "price": "75000",
+        "stock": 20,
+        "sku": "TEC-P2F-16-1-BV"
+    }
+] 

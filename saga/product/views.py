@@ -2,10 +2,10 @@ from django.contrib import messages
 from django.db.models import Avg, Count, Q, Min, Max
 from django.shortcuts import render, redirect, get_object_or_404
 import requests
-from .models import Product, Review, Clothing, Size, ShippingMethod, Category, Phone, PhoneVariant, PhoneVariantImage
-from .forms import ReviewForm, ProductForm, PhoneForm, PhoneVariantForm, PhoneVariantImageFormSet
+from .models import Product, Review, Clothing, Size, ShippingMethod, Category, Phone
+from .forms import ReviewForm, ProductForm, PhoneForm
 from django.http import HttpResponse, JsonResponse
-from django.views.generic import ListView, TemplateView
+from django.views.generic import ListView, TemplateView, DetailView
 from django.contrib.auth.decorators import login_required
 from django.core.paginator import Paginator
 from django.template.loader import render_to_string
@@ -296,10 +296,8 @@ def create_product_with_phone(request):
     if request.method == 'POST':
         product_form = ProductForm(request.POST, request.FILES)
         phone_form = PhoneForm(request.POST)
-        variant_form = PhoneVariantForm(request.POST)
-        image_formset = PhoneVariantImageFormSet(request.POST, request.FILES)
         
-        if all([product_form.is_valid(), phone_form.is_valid(), variant_form.is_valid(), image_formset.is_valid()]):
+        if all([product_form.is_valid(), phone_form.is_valid()]):
             try:
                 # Sauvegarder le produit
                 product = product_form.save()
@@ -310,23 +308,7 @@ def create_product_with_phone(request):
                 phone.id = product.id
                 phone.save()
                 
-                # Créer la variante
-                variant = variant_form.save(commit=False)
-                variant.phone = phone
-                variant.save()
-                
-                # Sauvegarder les images
-                image_formset.instance = variant
-                instances = image_formset.save(commit=False)
-                
-                # Traiter chaque instance d'image
-                for instance in instances:
-                    # Si c'est la première image, la marquer comme primaire
-                    if not variant.images.exists():
-                        instance.is_primary = True
-                    instance.save()
-                
-                messages.success(request, 'Le produit, le téléphone, sa variante et les images ont été créés avec succès.')
+                messages.success(request, 'Le produit, le téléphone et les images ont été créés avec succès.')
                 return redirect('product_detail', product_id=product.id)
             except Exception as e:
                 messages.error(request, f'Une erreur est survenue lors de la création : {str(e)}')
@@ -334,88 +316,63 @@ def create_product_with_phone(request):
     else:
         product_form = ProductForm()
         phone_form = PhoneForm()
-        variant_form = PhoneVariantForm()
-        image_formset = PhoneVariantImageFormSet()
     
     context = {
         'product_form': product_form,
         'phone_form': phone_form,
-        'variant_form': variant_form,
-        'image_formset': image_formset,
     }
     return render(request, 'product/create_product_with_phone.html', context)
 
 
 class PhoneListView(ListView):
-    model = PhoneVariant
+    model = Phone
     template_name = 'product/phone_list.html'
-    context_object_name = 'variants'
+    context_object_name = 'phones'
     paginate_by = 12
 
     def get_queryset(self):
-        queryset = super().get_queryset().select_related(
-            'phone',
-            'color'
-        ).prefetch_related(
-            'images'
-        )
+        queryset = Phone.objects.select_related('product', 'color').prefetch_related('images')
         
         # Filtres
         brand = self.request.GET.get('brand')
-        model = self.request.GET.get('model')
         storage = self.request.GET.get('storage')
         ram = self.request.GET.get('ram')
-        price_min = self.request.GET.get('price_min')
-        price_max = self.request.GET.get('price_max')
+        color = self.request.GET.get('color')
+        min_price = self.request.GET.get('min_price')
+        max_price = self.request.GET.get('max_price')
         
         if brand:
-            queryset = queryset.filter(phone__brand__iexact=brand)
-        if model:
-            queryset = queryset.filter(phone__model__icontains=model)
+            queryset = queryset.filter(brand__iexact=brand)
         if storage:
             queryset = queryset.filter(storage=storage)
         if ram:
             queryset = queryset.filter(ram=ram)
-        if price_min:
-            queryset = queryset.filter(price__gte=price_min)
-        if price_max:
-            queryset = queryset.filter(price__lte=price_max)
-        
-        return queryset.order_by('phone__brand', 'phone__model', 'storage', 'ram')
+        if color:
+            queryset = queryset.filter(color__name__iexact=color)
+        if min_price:
+            queryset = queryset.filter(product__price__gte=min_price)
+        if max_price:
+            queryset = queryset.filter(product__price__lte=max_price)
+            
+        return queryset.order_by('brand', 'model')
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
+        phones = self.get_queryset()
         
-        # Récupérer les filtres actuels
-        context['selected_brand'] = self.request.GET.get('brand')
-        context['selected_model'] = self.request.GET.get('model')
-        context['selected_storage'] = self.request.GET.get('storage')
-        context['selected_ram'] = self.request.GET.get('ram')
-        context['selected_price_min'] = self.request.GET.get('price_min')
-        context['selected_price_max'] = self.request.GET.get('price_max')
+        # Données pour les filtres
+        context['brands'] = phones.values_list('brand', flat=True).distinct()
+        context['storages'] = phones.values_list('storage', flat=True).distinct()
+        context['rams'] = phones.values_list('ram', flat=True).distinct()
+        context['colors'] = phones.values_list('color__name', flat=True).distinct()
         
-        # Récupérer les marques disponibles
-        context['brands'] = Phone.objects.values('brand').distinct().order_by('brand')
-        
-        # Récupérer les modèles disponibles
-        if context['selected_brand']:
-            context['models'] = Phone.objects.filter(
-                brand=context['selected_brand']
-            ).values('model').distinct().order_by('model')
-        else:
-            context['models'] = Phone.objects.values('model').distinct().order_by('model')
-        
-        # Récupérer les stockages disponibles
-        context['storages'] = PhoneVariant.objects.values('storage').distinct().order_by('storage')
-        
-        # Récupérer les RAM disponibles
-        context['rams'] = PhoneVariant.objects.values('ram').distinct().order_by('ram')
-        
-        # Définir le titre de la page
-        if context['selected_brand']:
-            context['page_title'] = f"Nos {context['selected_brand']}"
-        else:
-            context['page_title'] = "Nos téléphones"
+        # Filtres sélectionnés
+        context['selected_brand'] = self.request.GET.get('brand', '')
+        context['selected_storage'] = self.request.GET.get('storage', '')
+        context['selected_ram'] = self.request.GET.get('ram', '')
+        context['selected_color'] = self.request.GET.get('color', '')
+        context['selected_min_price'] = self.request.GET.get('min_price', '')
+        context['selected_max_price'] = self.request.GET.get('max_price', '')
         
         return context
 
@@ -430,68 +387,84 @@ class PhoneListView(ListView):
         return super().render_to_response(context, **response_kwargs)
 
 
-def phone_detail(request, phone_id):
-    phone = get_object_or_404(Phone, id=phone_id)
-    phone = Phone.objects.select_related(
-        'product__category',
-        'product__supplier'
-    ).prefetch_related(
-        'variants__color',
-        'variants__images'
-    ).get(id=phone_id)
+class PhoneDetailView(DetailView):
+    model = Phone
+    template_name = 'product/phone_detail.html'
+    context_object_name = 'phone'
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        phone = self.get_object()
+        
+        # Images
+        context['primary_image'] = phone.images.filter(is_primary=True).first()
+        context['other_images'] = phone.images.filter(is_primary=False)
+        
+        # Téléphones similaires
+        similar_phones = Phone.objects.filter(
+            Q(brand=phone.brand) | 
+            Q(storage=phone.storage) |
+            Q(ram=phone.ram)
+        ).exclude(id=phone.id)[:4]
+        context['similar_phones'] = similar_phones
+        
+        # Avis
+        reviews = phone.product.reviews.all()
+        context['reviews'] = reviews
+        context['review_form'] = ReviewForm()
+        
+        if reviews.exists():
+            context['average_rating'] = reviews.aggregate(Avg('rating'))['rating__avg']
+            context['review_count'] = reviews.count()
+        
+        return context
+
+
+@login_required
+def add_review(request, product_id):
+    product = get_object_or_404(Product, id=product_id)
     
-    context = {
-        'phone': phone,
-    }
-    return render(request, 'product/phone_detail.html', context)
+    if request.method == 'POST':
+        form = ReviewForm(request.POST)
+        if form.is_valid():
+            review = form.save(commit=False)
+            review.product = product
+            review.user = request.user
+            review.save()
+            messages.success(request, 'Votre avis a été ajouté avec succès.')
+            return redirect('product_detail', product_id=product.id)
+    
+    return redirect('product_detail', product_id=product.id)
 
 
-def get_variant_images(request, variant_id):
-    try:
-        # Vérifier le cache
-        cache_key = f'variant_images_{variant_id}'
-        cached_data = cache.get(cache_key)
+def get_filtered_phones(request):
+    brand = request.GET.get('brand')
+    storage = request.GET.get('storage')
+    ram = request.GET.get('ram')
+    color = request.GET.get('color')
+    
+    phones = Phone.objects.all()
+    
+    if brand:
+        phones = phones.filter(brand=brand)
+    if storage:
+        phones = phones.filter(storage=storage)
+    if ram:
+        phones = phones.filter(ram=ram)
+    if color:
+        phones = phones.filter(color__name=color)
         
-        if cached_data and not request.GET.get('refresh'):
-            return cached_data
-
-        # Optimisation des requêtes
-        variant = get_object_or_404(
-            PhoneVariant.objects.select_related('phone', 'color')
-                              .prefetch_related('images'),
-            id=variant_id
-        )
-        
-        # Préparer les données des images
-        images_data = [{
-            'id': image.id,
-            'image': {
-                'url': image.image.url,
-                'alt': f"{variant.phone.model} - {variant.color.name} - {variant.storage}Go"
-            },
-            'is_primary': image.is_primary
-        } for image in variant.images.all()]
-        
-        # Préparer la réponse
-        response_data = {
-            'variant': {
-                'id': variant.id,
-                'price': str(variant.price),
-                'color': variant.color.name,
-                'storage': variant.storage
-            },
-            'images': images_data
+    data = []
+    for phone in phones:
+        phone_data = {
+            'id': phone.id,
+            'name': str(phone),
+            'price': str(phone.product.price),
+            'image': phone.images.filter(is_primary=True).first().image.url if phone.images.filter(is_primary=True).exists() else None
         }
-        
-        response = JsonResponse(response_data)
-        # Mettre en cache la réponse
-        cache.set(cache_key, response, 3600)  # Cache pour 1 heure
-        return response
-
-    except PhoneVariant.DoesNotExist:
-        return JsonResponse({'error': 'Variante non trouvée'}, status=404)
-    except Exception as e:
-        return JsonResponse({'error': 'Erreur serveur'}, status=500)
+        data.append(phone_data)
+    
+    return JsonResponse({'phones': data})
 
 
 

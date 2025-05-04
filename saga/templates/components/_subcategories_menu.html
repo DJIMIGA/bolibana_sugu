@@ -6,7 +6,7 @@
             {% if category %}
             <button type="button" 
                     class="text-gray-600 hover:text-green-600 transition-colors duration-200"
-                    hx-get="{% url 'category_tree' %}"
+                    hx-get="{% url 'product:category_tree' %}"
                     hx-target="#subcategoriesMenu"
                     hx-swap="innerHTML"
                     hx-trigger="click"
@@ -40,13 +40,13 @@
                 <button type="button"
                         class="w-full text-left px-4 py-3 text-sm text-gray-700 hover:bg-green-50 hover:text-green-700 transition-colors duration-200 rounded-lg border border-gray-100"
                         {% if category.children.exists %}
-                        hx-get="{% url 'category_subcategories' category.id %}"
+                        hx-get="{% url 'product:category_subcategories' category.id %}"
                         hx-target="#subcategoriesMenu"
                         hx-swap="innerHTML"
                         hx-trigger="click"
                         hx-push-url="false"
                         {% else %}
-                        onclick="window.location.href='{% url 'product_list' %}?category={{ category.id }}'"
+                        onclick="window.location.href='{% url 'product:product_list' %}?category={{ category.id }}'"
                         {% endif %}>
                     <div class="flex items-center justify-between">
                         <span class="font-medium">{{ category.name }}</span>
@@ -70,13 +70,13 @@
                     <button type="button"
                             class="w-full text-left px-4 py-3 text-sm text-gray-700 hover:bg-green-50 hover:text-green-700 transition-colors duration-200 rounded-lg border border-gray-100"
                             {% if subcategory.children.exists %}
-                            hx-get="{% url 'category_subcategories' subcategory.id %}"
+                            hx-get="{% url 'product:category_subcategories' subcategory.id %}"
                             hx-target="#subcategoriesMenu"
                             hx-swap="innerHTML"
                             hx-trigger="click"
                             hx-push-url="false"
                             {% else %}
-                            onclick="window.location.href='{% url 'category_products' subcategory.id %}'"
+                            onclick="window.location.href='{% url 'product:category_products' subcategory.id %}'"
                             {% endif %}>
                         <div class="flex items-center justify-between">
                             <span class="font-medium">{{ subcategory.name }}</span>

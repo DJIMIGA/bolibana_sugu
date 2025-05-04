@@ -23,21 +23,17 @@ print("Démarrage du chargement des paramètres Django")
 print("="*50 + "\n")
 
 # Charger les variables d'environnement
-env_path = os.path.join(BASE_DIR, 'saga/.env.secrets')  # Chemin corrigé
-print(f"Chemin du fichier .env.secrets: {env_path}")  # Pour vérifier le chemin
+env_path = os.path.join(BASE_DIR, 'saga/.env.secrets')
 load_dotenv(env_path)
 
 # SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = os.environ.get('SECRET_KEY', 'django-insecure-default-key-for-dev')
-print(f"SECRET_KEY chargée: {'Oui' if SECRET_KEY else 'Non'}")
 
 # Les autres configurations Stripe sont déjà chargées
 STRIPE_PUBLIC_KEY = os.getenv('STRIPE_PUBLIC_KEY')
 STRIPE_SECRET_KEY = os.getenv('STRIPE_SECRET_KEY')
 STRIPE_WEBHOOK_SECRET = os.getenv('STRIPE_WEBHOOK_SECRET')
 STRIPE_API_VERSION = os.getenv('STRIPE_API_VERSION')
-print("STRIPE_API_VERSION:", STRIPE_API_VERSION)
-print(f"Configuration Stripe chargée: {'Oui' if STRIPE_SECRET_KEY else 'Non'}")
 
 # Configuration Stripe
 stripe.api_version = '2023-10-16'  # Utiliser la dernière version stable
@@ -227,17 +223,51 @@ WSGI_APPLICATION = 'saga.wsgi.application'
 # ======================================================================
 
 # Configuration de la base de données
-DATABASES = {
-    'default': dj_database_url.config(
-        default=os.environ.get('DATABASE_URL'),
-        conn_max_age=600,
-        ssl_require=True
-    )
-}
+if os.environ.get('DATABASE_URL'):
+    # Configuration pour Heroku (Production)
+    DATABASES = {
+        'default': dj_database_url.config(
+            default=os.environ.get('DATABASE_URL'),
+            conn_max_age=600,
+            ssl_require=True
+        )
+    }
+    print("Configuration de la base de données : Production (Heroku)")
+else:
+    # Configuration pour le développement local
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.postgresql',
+            'NAME': 'd2gkbn4da24lcg',
+            'USER': 'postgres',
+            'PASSWORD': '240821',
+            'HOST': 'localhost',
+            'PORT': '5432',
+            'OPTIONS': {
+                'sslmode': 'disable',
+                'connect_timeout': 10,
+            },
+            'CONN_MAX_AGE': 500,
+            'ATOMIC_REQUESTS': True,
+            'TEST': {
+                'NAME': 'test_d2gkbn4da24lcg',
+            }
+        }
+    }
+    print("Configuration de la base de données : Développement local")
 
 # Configuration supplémentaire pour la base de données
 DATABASES['default']['ATOMIC_REQUESTS'] = True
 DATABASES['default']['CONN_MAX_AGE'] = 500
+
+# Vérification de la connexion à la base de données
+try:
+    from django.db import connections
+    connections['default'].ensure_connection()
+    print("✓ Connexion à la base de données établie avec succès")
+except Exception as e:
+    print(f"✗ Erreur de connexion à la base de données : {str(e)}")
+    print("Veuillez vérifier que PostgreSQL est en cours d'exécution et que les identifiants sont corrects")
 
 # Password validation
 # https://docs.djangoproject.com/en/5.1/ref/settings/#auth-password-validators
@@ -288,7 +318,7 @@ AUTH_USER_MODEL = 'accounts.Shopper'
 PHONENUMBER_DEFAULT_REGION = "ML"
 
 # Configuration de la redirection après connexion
-LOGIN_REDIRECT_URL = 'supplier_index'
+LOGIN_REDIRECT_URL = 'suppliers:supplier_index'
 
 
 REVIEW_PRODUCT_MODEL = 'product.Product'

@@ -45,7 +45,7 @@ class Cart(models.Model):
 class CartItem(models.Model):
     cart = models.ForeignKey(Cart, related_name='cart_items', on_delete=models.CASCADE)
     product = models.ForeignKey(Product, on_delete=models.CASCADE)
-    variant = models.ForeignKey('product.PhoneVariant', on_delete=models.CASCADE, null=True, blank=True)
+    variant = models.ForeignKey('product.Phone', on_delete=models.CASCADE, null=True, blank=True)
     quantity = models.PositiveIntegerField(default=1)
     colors = models.ManyToManyField(Color, blank=True)
     sizes = models.ManyToManyField(Size, blank=True)
