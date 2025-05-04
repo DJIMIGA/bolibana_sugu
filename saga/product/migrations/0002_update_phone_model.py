@@ -50,37 +50,37 @@ class Migration(migrations.Migration):
             name='ram',
             field=models.IntegerField(default=4, help_text='RAM en GB'),
         ),
-        migrations.AddField(
+        migrations.AlterField(
             model_name='phone',
             name='battery_capacity',
             field=models.IntegerField(default=3000, help_text='Capacité de la batterie en mAh'),
         ),
-        migrations.AddField(
+        migrations.AlterField(
             model_name='phone',
             name='camera_front',
             field=models.CharField(default='Inconnue', max_length=100, verbose_name='Caméra frontale'),
         ),
-        migrations.AddField(
+        migrations.AlterField(
             model_name='phone',
             name='camera_main',
             field=models.CharField(default='Inconnue', max_length=100, verbose_name='Caméra principale'),
         ),
-        migrations.AddField(
+        migrations.AlterField(
             model_name='phone',
             name='network',
             field=models.CharField(default='4G', max_length=100),
         ),
-        migrations.AddField(
+        migrations.AlterField(
             model_name='phone',
             name='warranty',
             field=models.CharField(default='12 mois', max_length=100),
         ),
-        migrations.AddField(
+        migrations.AlterField(
             model_name='phone',
             name='accessories',
             field=models.TextField(blank=True, null=True),
         ),
-        migrations.AddField(
+        migrations.AlterField(
             model_name='phone',
             name='box_included',
             field=models.BooleanField(default=True),
