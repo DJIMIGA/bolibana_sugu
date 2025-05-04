@@ -3,6 +3,7 @@ from django.db import models
 from django.db.models import Sum, F
 from product.models import Product, Color, Size, ShippingMethod
 from django.conf import settings
+from django.core.exceptions import ValidationError
 
 User = get_user_model()
 
@@ -44,7 +45,7 @@ class Cart(models.Model):
 
 class CartItem(models.Model):
     cart = models.ForeignKey(Cart, related_name='cart_items', on_delete=models.CASCADE)
-    product = models.ForeignKey(Product, on_delete=models.CASCADE)
+    product = models.ForeignKey(Product, on_delete=models.CASCADE, null=True, blank=True)
     variant = models.ForeignKey('product.Phone', on_delete=models.CASCADE, null=True, blank=True)
     quantity = models.PositiveIntegerField(default=1)
     colors = models.ManyToManyField(Color, blank=True)
@@ -107,7 +108,7 @@ class Order(models.Model):
     paid_at = models.DateTimeField(null=True, blank=True)
     
     # Livraison
-    shipping_address = models.ForeignKey('accounts.ShippingAddress', on_delete=models.PROTECT)
+    shipping_address = models.ForeignKey('accounts.ShippingAddress', on_delete=models.PROTECT, null=True, blank=True)
     shipping_method = models.ForeignKey('product.ShippingMethod', on_delete=models.PROTECT, null=True, blank=True)
     tracking_number = models.CharField(max_length=100, blank=True)
     shipped_at = models.DateTimeField(null=True, blank=True)
@@ -186,6 +187,12 @@ class Order(models.Model):
         self.status = self.CANCELLED
         self.cancellation_reason = reason
         self.save()
+
+    def clean(self):
+        if not self.user:
+            raise ValidationError("Un utilisateur est requis pour la commande.")
+        if not self.user.is_active:
+            raise ValidationError("L'utilisateur doit être actif pour créer une commande.")
 
 
 class OrderItem(models.Model):
