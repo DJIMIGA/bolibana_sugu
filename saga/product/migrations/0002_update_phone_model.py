@@ -10,28 +10,50 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
-        migrations.RemoveField(
+        migrations.AlterField(
             model_name='phone',
-            name='battery',
+            name='brand',
+            field=models.CharField(default='Inconnu', max_length=100),
         ),
-        migrations.RemoveField(
+        migrations.AlterField(
             model_name='phone',
-            name='camera',
+            name='model',
+            field=models.CharField(default='Inconnu', max_length=100),
         ),
-        migrations.AddField(
+        migrations.AlterField(
             model_name='phone',
-            name='accessories',
-            field=models.TextField(blank=True, null=True),
+            name='operating_system',
+            field=models.CharField(default='Android', max_length=50),
+        ),
+        migrations.AlterField(
+            model_name='phone',
+            name='screen_size',
+            field=models.DecimalField(decimal_places=2, default=6.0, max_digits=4),
+        ),
+        migrations.AlterField(
+            model_name='phone',
+            name='processor',
+            field=models.CharField(default='Inconnu', max_length=100),
+        ),
+        migrations.AlterField(
+            model_name='phone',
+            name='imei',
+            field=models.CharField(blank=True, max_length=15, null=True, unique=True),
+        ),
+        migrations.AlterField(
+            model_name='phone',
+            name='storage',
+            field=models.IntegerField(default=64, help_text='Capacité de stockage en GB'),
+        ),
+        migrations.AlterField(
+            model_name='phone',
+            name='ram',
+            field=models.IntegerField(default=4, help_text='RAM en GB'),
         ),
         migrations.AddField(
             model_name='phone',
             name='battery_capacity',
             field=models.IntegerField(default=3000, help_text='Capacité de la batterie en mAh'),
-        ),
-        migrations.AddField(
-            model_name='phone',
-            name='box_included',
-            field=models.BooleanField(default=True),
         ),
         migrations.AddField(
             model_name='phone',
@@ -53,44 +75,14 @@ class Migration(migrations.Migration):
             name='warranty',
             field=models.CharField(default='12 mois', max_length=100),
         ),
-        migrations.AlterField(
+        migrations.AddField(
             model_name='phone',
-            name='brand',
-            field=models.CharField(default='Inconnu', max_length=100),
+            name='accessories',
+            field=models.TextField(blank=True, null=True),
         ),
-        migrations.AlterField(
+        migrations.AddField(
             model_name='phone',
-            name='imei',
-            field=models.CharField(blank=True, max_length=15, null=True, unique=True),
-        ),
-        migrations.AlterField(
-            model_name='phone',
-            name='model',
-            field=models.CharField(default='Inconnu', max_length=100),
-        ),
-        migrations.AlterField(
-            model_name='phone',
-            name='operating_system',
-            field=models.CharField(default='Android', max_length=50),
-        ),
-        migrations.AlterField(
-            model_name='phone',
-            name='processor',
-            field=models.CharField(default='Inconnu', max_length=100),
-        ),
-        migrations.AlterField(
-            model_name='phone',
-            name='ram',
-            field=models.IntegerField(default=4, help_text='RAM en GB'),
-        ),
-        migrations.AlterField(
-            model_name='phone',
-            name='screen_size',
-            field=models.DecimalField(decimal_places=2, default=6.0, max_digits=4),
-        ),
-        migrations.AlterField(
-            model_name='phone',
-            name='storage',
-            field=models.IntegerField(default=64, help_text='Capacité de stockage en GB'),
+            name='box_included',
+            field=models.BooleanField(default=True),
         ),
     ]
