@@ -98,21 +98,23 @@ class PriceEntry(models.Model):
     product = models.ForeignKey(Product, on_delete=models.CASCADE, related_name='price_entries')
     variant = models.ForeignKey(Phone, on_delete=models.CASCADE, related_name='price_entries', null=True, blank=True)
     city = models.ForeignKey(City, on_delete=models.CASCADE, related_name='price_entries')
-    price = models.DecimalField(max_digits=10, decimal_places=0)
+    price = models.DecimalField(max_digits=10, decimal_places=2)
+    currency = models.CharField(max_length=3, default='XOF')
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='price_entries')
     validated_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True, related_name='validated_price_entries')
     submission = models.OneToOneField(PriceSubmission, on_delete=models.SET_NULL, null=True, blank=True, related_name='price_entry')
     is_active = models.BooleanField(default=True)
+    notes = models.TextField(blank=True, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
-        verbose_name = 'Prix validé'
-        verbose_name_plural = 'Prix validés'
+        verbose_name = 'Entrée de prix'
+        verbose_name_plural = 'Entrées de prix'
         ordering = ['-created_at']
 
     def __str__(self):
-        return f"{self.product.title} - {self.price} FCFA ({self.city.name})"
+        return f"{self.product.title} - {self.price} {self.currency} ({self.city.name})"
 
     @classmethod
     def get_average_price(cls, product, variant, city):
@@ -268,7 +270,7 @@ class PriceValidation(models.Model):
         ('REJECTED', 'Rejeté'),
     ]
     
-    price_entry = models.ForeignKey(PriceEntry, on_delete=models.CASCADE, related_name='validations')
+    price_entry = models.ForeignKey(PriceEntry, on_delete=models.CASCADE, related_name='validations', null=True, blank=True)
     admin_user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='price_validations')
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='PENDING')
     notes = models.TextField(blank=True, null=True)

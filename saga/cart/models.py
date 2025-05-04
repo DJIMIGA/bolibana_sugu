@@ -96,7 +96,7 @@ class Order(models.Model):
     ]
 
     # Informations de base
-    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.PROTECT, related_name='orders')
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.PROTECT, related_name='orders', null=True, blank=True)
     order_number = models.CharField(max_length=20, unique=True, editable=False)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -196,8 +196,8 @@ class Order(models.Model):
 
 
 class OrderItem(models.Model):
-    order = models.ForeignKey(Order, related_name='items', on_delete=models.CASCADE)
-    product = models.ForeignKey('product.Product', on_delete=models.PROTECT)
+    order = models.ForeignKey(Order, related_name='items', on_delete=models.CASCADE, null=True, blank=True)
+    product = models.ForeignKey('product.Product', on_delete=models.PROTECT, null=True, blank=True)
     quantity = models.PositiveIntegerField()
     price = models.DecimalField(max_digits=10, decimal_places=2)
     colors = models.ManyToManyField('product.Color', blank=True)
