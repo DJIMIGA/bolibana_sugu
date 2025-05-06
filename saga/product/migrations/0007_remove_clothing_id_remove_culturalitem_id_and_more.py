@@ -3,29 +3,16 @@
 import django.db.models.deletion
 from django.db import migrations, models
 
-def check_and_remove_id_columns(apps, schema_editor):
-    # Vérifier si les colonnes existent avant de les supprimer
-    db = schema_editor.connection.cursor()
-    
-    # Vérifier la colonne id dans product_clothing
-    db.execute("""
-        SELECT column_name 
-        FROM information_schema.columns 
-        WHERE table_name = 'product_clothing' 
-        AND column_name = 'id'
+def remove_id_columns(apps, schema_editor):
+    # Supprimer la colonne id de product_clothing
+    schema_editor.execute("""
+        ALTER TABLE product_clothing DROP COLUMN IF EXISTS id;
     """)
-    if db.fetchone():
-        db.execute("ALTER TABLE product_clothing DROP COLUMN id")
     
-    # Vérifier la colonne id dans product_culturalitem
-    db.execute("""
-        SELECT column_name 
-        FROM information_schema.columns 
-        WHERE table_name = 'product_culturalitem' 
-        AND column_name = 'id'
+    # Supprimer la colonne id de product_culturalitem
+    schema_editor.execute("""
+        ALTER TABLE product_culturalitem DROP COLUMN IF EXISTS id;
     """)
-    if db.fetchone():
-        db.execute("ALTER TABLE product_culturalitem DROP COLUMN id")
 
 class Migration(migrations.Migration):
 
@@ -34,7 +21,7 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
-        migrations.RunPython(check_and_remove_id_columns),
+        migrations.RunPython(remove_id_columns),
         migrations.AlterField(
             model_name='clothing',
             name='product',
