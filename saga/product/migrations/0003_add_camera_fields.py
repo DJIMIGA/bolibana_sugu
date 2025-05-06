@@ -4,7 +4,7 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('product', '0002_add_network_field'),
+        ('product', '0001_initial'),
     ]
 
     operations = [
