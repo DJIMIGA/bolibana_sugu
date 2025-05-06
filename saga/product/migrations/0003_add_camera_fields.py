@@ -1,9 +1,10 @@
 from django.db import migrations, models
 
+
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('product', '0002_add_battery_capacity'),
+        ('product', '0002_add_network_field'),
     ]
 
     operations = [
