@@ -49,6 +49,7 @@ Dimensions :
 
 Connectivité :
 - WiFi
+- 4G LTE
 - Capteurs : G-Sensor, Capteur d'empreintes digitales
 
 Contenu de la boîte :
@@ -69,7 +70,8 @@ Contenu de la boîte :
                 'sku': 'TEC-P2F-16-1-OC',
                 'color_name': 'Or Champagne',
                 'color_code': '#FFD700',
-                'box_contents': 'Téléphone, Câble de chargeur, Chargeur'
+                'box_contents': 'Téléphone, Câble de chargeur, Chargeur',
+                'network': '4G LTE'
             },
             {
                 'title': 'Tecno POP 2F Noir Minuit',
@@ -95,6 +97,7 @@ Dimensions :
 
 Connectivité :
 - WiFi
+- 4G LTE
 - Capteurs : G-Sensor, Capteur d'empreintes digitales
 
 Contenu de la boîte :
@@ -115,7 +118,8 @@ Contenu de la boîte :
                 'sku': 'TEC-P2F-16-1-NM',
                 'color_name': 'Noir Minuit',
                 'color_code': '#000000',
-                'box_contents': 'Téléphone, Câble de chargeur, Chargeur'
+                'box_contents': 'Téléphone, Câble de chargeur, Chargeur',
+                'network': '4G LTE'
             },
             {
                 'title': 'Tecno POP 2F Bleu Ville',
@@ -141,6 +145,7 @@ Dimensions :
 
 Connectivité :
 - WiFi
+- 4G LTE
 - Capteurs : G-Sensor, Capteur d'empreintes digitales
 
 Contenu de la boîte :
@@ -161,7 +166,8 @@ Contenu de la boîte :
                 'sku': 'TEC-P2F-16-1-BV',
                 'color_name': 'Bleu Ville',
                 'color_code': '#1E90FF',
-                'box_contents': 'Téléphone, Câble de chargeur, Chargeur'
+                'box_contents': 'Téléphone, Câble de chargeur, Chargeur',
+                'network': '4G LTE'
             }
         ]
 
@@ -200,7 +206,8 @@ Contenu de la boîte :
                     storage=phone_data['storage'],
                     ram=phone_data['ram'],
                     color=color,
-                    accessories=phone_data['box_contents']
+                    accessories=phone_data['box_contents'],
+                    network=phone_data['network']
                 )
 
                 self.stdout.write(self.style.SUCCESS(f"Téléphone {phone_data['title']} ajouté avec succès"))
