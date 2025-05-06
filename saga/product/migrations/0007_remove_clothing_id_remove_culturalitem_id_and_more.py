@@ -3,14 +3,16 @@
 import django.db.models.deletion
 from django.db import migrations, models
 
-def remove_id_columns(apps, schema_editor):
-    # Supprimer la colonne id de product_clothing
+def remove_primary_keys(apps, schema_editor):
+    # Supprimer les contraintes de clé primaire existantes
     schema_editor.execute("""
-        ALTER TABLE product_clothing DROP COLUMN IF EXISTS id;
+        ALTER TABLE product_clothing DROP CONSTRAINT IF EXISTS product_clothing_pkey;
+        ALTER TABLE product_culturalitem DROP CONSTRAINT IF EXISTS product_culturalitem_pkey;
     """)
     
-    # Supprimer la colonne id de product_culturalitem
+    # Supprimer les colonnes id
     schema_editor.execute("""
+        ALTER TABLE product_clothing DROP COLUMN IF EXISTS id;
         ALTER TABLE product_culturalitem DROP COLUMN IF EXISTS id;
     """)
 
@@ -21,7 +23,7 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
-        migrations.RunPython(remove_id_columns),
+        migrations.RunPython(remove_primary_keys),
         migrations.AlterField(
             model_name='clothing',
             name='product',
