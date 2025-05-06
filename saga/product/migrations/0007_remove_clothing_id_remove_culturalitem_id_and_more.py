@@ -3,6 +3,29 @@
 import django.db.models.deletion
 from django.db import migrations, models
 
+def check_and_remove_id_columns(apps, schema_editor):
+    # Vérifier si les colonnes existent avant de les supprimer
+    db = schema_editor.connection.cursor()
+    
+    # Vérifier la colonne id dans product_clothing
+    db.execute("""
+        SELECT column_name 
+        FROM information_schema.columns 
+        WHERE table_name = 'product_clothing' 
+        AND column_name = 'id'
+    """)
+    if db.fetchone():
+        db.execute("ALTER TABLE product_clothing DROP COLUMN id")
+    
+    # Vérifier la colonne id dans product_culturalitem
+    db.execute("""
+        SELECT column_name 
+        FROM information_schema.columns 
+        WHERE table_name = 'product_culturalitem' 
+        AND column_name = 'id'
+    """)
+    if db.fetchone():
+        db.execute("ALTER TABLE product_culturalitem DROP COLUMN id")
 
 class Migration(migrations.Migration):
 
@@ -11,22 +34,15 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
-        migrations.RemoveField(
-            model_name='clothing',
-            name='id',
-        ),
-        migrations.RemoveField(
-            model_name='culturalitem',
-            name='id',
-        ),
+        migrations.RunPython(check_and_remove_id_columns),
         migrations.AlterField(
             model_name='clothing',
             name='product',
-            field=models.OneToOneField(default=1, on_delete=django.db.models.deletion.CASCADE, primary_key=True, related_name='clothing_product', serialize=False, to='product.product'),
+            field=models.OneToOneField(default=1, on_delete=django.db.models.deletion.CASCADE, primary_key=True, related_name='clothing_product', to='product.product'),
         ),
         migrations.AlterField(
             model_name='culturalitem',
             name='product',
-            field=models.OneToOneField(default=1, on_delete=django.db.models.deletion.CASCADE, primary_key=True, related_name='cultural_product', serialize=False, to='product.product'),
+            field=models.OneToOneField(default=1, on_delete=django.db.models.deletion.CASCADE, primary_key=True, related_name='cultural_product', to='product.product'),
         ),
     ]
