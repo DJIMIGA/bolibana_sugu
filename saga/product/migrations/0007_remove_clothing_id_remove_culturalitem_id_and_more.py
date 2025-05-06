@@ -19,7 +19,7 @@ def remove_primary_keys(apps, schema_editor):
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('product', '0006_auto_20250506_1657'),
+        ('product', '0005_load_initial_data'),
     ]
 
     operations = [
