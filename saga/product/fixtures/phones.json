@@ -160,5 +160,167 @@
     "name": "Bleu Ville",
     "code": "#1E90FF"
   }
+},
+{
+  "model": "product.phone",
+  "pk": 4,
+  "fields": {
+    "product": 4,
+    "brand": "Tecno",
+    "model": "POP 5",
+    "operating_system": "HiOS basé sur Android 10 (Go edition)",
+    "screen_size": "6.10",
+    "resolution": "1560x720px",
+    "processor": "Processeur Quad-Core 1.3 GHz",
+    "battery_capacity": 4000,
+    "camera_main": "Caméra arrière 5MP Dual avec Flash",
+    "camera_front": "Caméra avant 5MP avec Flash",
+    "network": "GSM, WCDMA",
+    "warranty": "12 mois",
+    "imei": null,
+    "is_new": true,
+    "box_included": true,
+    "accessories": "Téléphone, Câble de chargeur, Chargeur",
+    "storage": 16,
+    "ram": 1,
+    "color": 4
+  }
+},
+{
+  "model": "product.phone",
+  "pk": 5,
+  "fields": {
+    "product": 5,
+    "brand": "Tecno",
+    "model": "POP 5",
+    "operating_system": "HiOS basé sur Android 10 (Go edition)",
+    "screen_size": "6.10",
+    "resolution": "1560x720px",
+    "processor": "Processeur Quad-Core 1.3 GHz",
+    "battery_capacity": 4000,
+    "camera_main": "Caméra arrière 5MP Dual avec Flash",
+    "camera_front": "Caméra avant 5MP avec Flash",
+    "network": "GSM, WCDMA",
+    "warranty": "12 mois",
+    "imei": null,
+    "is_new": true,
+    "box_included": true,
+    "accessories": "Téléphone, Câble de chargeur, Chargeur",
+    "storage": 16,
+    "ram": 1,
+    "color": 5
+  }
+},
+{
+  "model": "product.phone",
+  "pk": 6,
+  "fields": {
+    "product": 6,
+    "brand": "Tecno",
+    "model": "POP 5",
+    "operating_system": "HiOS basé sur Android 10 (Go edition)",
+    "screen_size": "6.10",
+    "resolution": "1560x720px",
+    "processor": "Processeur Quad-Core 1.3 GHz",
+    "battery_capacity": 4000,
+    "camera_main": "Caméra arrière 5MP Dual avec Flash",
+    "camera_front": "Caméra avant 5MP avec Flash",
+    "network": "GSM, WCDMA",
+    "warranty": "12 mois",
+    "imei": null,
+    "is_new": true,
+    "box_included": true,
+    "accessories": "Téléphone, Câble de chargeur, Chargeur",
+    "storage": 16,
+    "ram": 1,
+    "color": 6
+  }
+},
+{
+  "model": "product.product",
+  "pk": 4,
+  "fields": {
+    "title": "Tecno Pop 5 Vert Ice Lake",
+    "category": 1,
+    "price": "85000",
+    "description": "Le Tecno POP 5 en Vert Ice Lake est un smartphone économique avec un design moderne et des fonctionnalités essentielles.\n\nCaractéristiques principales :\n- Écran tactile de 6.1 pouces (1560x720px)\n- 16GB de stockage interne\n- 1GB de RAM\n- Processeur Quad-Core 1.3 GHz\n- Batterie 4000mAh\n- Caméra avant 5MP avec Flash\n- Caméra arrière 5MP Dual avec Flash\n- Déverrouillage facial\n- Capteur d'empreintes digitales\n- Système d'exploitation HiOS basé sur Android 10 (Go edition)\n\nDimensions :\n- Hauteur : 157.7 mm\n- Largeur : 75.7 mm\n- Épaisseur : 9.55 mm\n\nConnectivité :\n- GSM\n- WCDMA\n- GPS\n- WiFi\n- FM\n\nCapteurs :\n- G-Sensor\n- Capteur d'empreintes digitales\n\nContenu de la boîte :\n- Téléphone\n- Câble de chargeur\n- Chargeur",
+    "highlight": "6.1\" Dot Notch Screen\n4000mAh Battery\n16GB ROM + 1GB RAM\nFace Unlock\n5MP Front Camera with Flash\n5MP Dual Rear Camera with Flash\nFingerprint Sensor",
+    "image": null,
+    "supplier": 1,
+    "stripe_product_id": null,
+    "is_active": true,
+    "created_at": "2025-05-06T14:24:56.694Z",
+    "updated_at": "2025-05-06T14:24:56.694Z",
+    "disponible_salam": false,
+    "stock": 20,
+    "sku": "TEC-P5-16-1-ILG",
+    "color": 4
+  }
+},
+{
+  "model": "product.product",
+  "pk": 5,
+  "fields": {
+    "title": "Tecno Pop 5 Noir Obsidien",
+    "category": 1,
+    "price": "85000",
+    "description": "Le Tecno POP 5 en Noir Obsidien est un smartphone économique avec un design moderne et des fonctionnalités essentielles.\n\nCaractéristiques principales :\n- Écran tactile de 6.1 pouces (1560x720px)\n- 16GB de stockage interne\n- 1GB de RAM\n- Processeur Quad-Core 1.3 GHz\n- Batterie 4000mAh\n- Caméra avant 5MP avec Flash\n- Caméra arrière 5MP Dual avec Flash\n- Déverrouillage facial\n- Capteur d'empreintes digitales\n- Système d'exploitation HiOS basé sur Android 10 (Go edition)\n\nDimensions :\n- Hauteur : 157.7 mm\n- Largeur : 75.7 mm\n- Épaisseur : 9.55 mm\n\nConnectivité :\n- GSM\n- WCDMA\n- GPS\n- WiFi\n- FM\n\nCapteurs :\n- G-Sensor\n- Capteur d'empreintes digitales\n\nContenu de la boîte :\n- Téléphone\n- Câble de chargeur\n- Chargeur",
+    "highlight": "6.1\" Dot Notch Screen\n4000mAh Battery\n16GB ROM + 1GB RAM\nFace Unlock\n5MP Front Camera with Flash\n5MP Dual Rear Camera with Flash\nFingerprint Sensor",
+    "image": null,
+    "supplier": 1,
+    "stripe_product_id": null,
+    "is_active": true,
+    "created_at": "2025-05-06T14:24:56.714Z",
+    "updated_at": "2025-05-06T14:24:56.714Z",
+    "disponible_salam": false,
+    "stock": 20,
+    "sku": "TEC-P5-16-1-OB",
+    "color": 5
+  }
+},
+{
+  "model": "product.product",
+  "pk": 6,
+  "fields": {
+    "title": "Tecno Pop 5 Bleu Ice",
+    "category": 1,
+    "price": "85000",
+    "description": "Le Tecno POP 5 en Bleu Ice est un smartphone économique avec un design moderne et des fonctionnalités essentielles.\n\nCaractéristiques principales :\n- Écran tactile de 6.1 pouces (1560x720px)\n- 16GB de stockage interne\n- 1GB de RAM\n- Processeur Quad-Core 1.3 GHz\n- Batterie 4000mAh\n- Caméra avant 5MP avec Flash\n- Caméra arrière 5MP Dual avec Flash\n- Déverrouillage facial\n- Capteur d'empreintes digitales\n- Système d'exploitation HiOS basé sur Android 10 (Go edition)\n\nDimensions :\n- Hauteur : 157.7 mm\n- Largeur : 75.7 mm\n- Épaisseur : 9.55 mm\n\nConnectivité :\n- GSM\n- WCDMA\n- GPS\n- WiFi\n- FM\n\nCapteurs :\n- G-Sensor\n- Capteur d'empreintes digitales\n\nContenu de la boîte :\n- Téléphone\n- Câble de chargeur\n- Chargeur",
+    "highlight": "6.1\" Dot Notch Screen\n4000mAh Battery\n16GB ROM + 1GB RAM\nFace Unlock\n5MP Front Camera with Flash\n5MP Dual Rear Camera with Flash\nFingerprint Sensor",
+    "image": null,
+    "supplier": 1,
+    "stripe_product_id": null,
+    "is_active": true,
+    "created_at": "2025-05-06T14:24:56.734Z",
+    "updated_at": "2025-05-06T14:24:56.734Z",
+    "disponible_salam": false,
+    "stock": 20,
+    "sku": "TEC-P5-16-1-IB",
+    "color": 6
+  }
+},
+{
+  "model": "product.color",
+  "pk": 4,
+  "fields": {
+    "name": "Vert Ice Lake",
+    "code": "#1E4D2B"
+  }
+},
+{
+  "model": "product.color",
+  "pk": 5,
+  "fields": {
+    "name": "Noir Obsidien",
+    "code": "#000000"
+  }
+},
+{
+  "model": "product.color",
+  "pk": 6,
+  "fields": {
+    "name": "Bleu Ice",
+    "code": "#00BFFF"
+  }
 }
 ]
