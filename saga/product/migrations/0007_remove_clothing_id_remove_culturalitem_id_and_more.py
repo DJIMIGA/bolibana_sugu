@@ -4,10 +4,10 @@ import django.db.models.deletion
 from django.db import migrations, models
 
 def remove_primary_keys(apps, schema_editor):
-    # Supprimer les contraintes de clé primaire existantes
+    # Supprimer les contraintes de clé primaire existantes avec CASCADE
     schema_editor.execute("""
-        ALTER TABLE product_clothing DROP CONSTRAINT IF EXISTS product_clothing_pkey;
-        ALTER TABLE product_culturalitem DROP CONSTRAINT IF EXISTS product_culturalitem_pkey;
+        ALTER TABLE product_clothing DROP CONSTRAINT IF EXISTS product_clothing_pkey CASCADE;
+        ALTER TABLE product_culturalitem DROP CONSTRAINT IF EXISTS product_culturalitem_pkey CASCADE;
     """)
     
     # Supprimer les colonnes id
