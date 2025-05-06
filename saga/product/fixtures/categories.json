@@ -4,8 +4,8 @@
         "pk": 1,
         "fields": {
             "name": "Téléphones",
-            "slug": "telephones",
-            "description": "Tous nos téléphones"
+            "parent": null,
+            "image": null
         }
     },
     {
@@ -13,8 +13,8 @@
         "pk": 2,
         "fields": {
             "name": "Accessoires",
-            "slug": "accessoires",
-            "description": "Accessoires pour téléphones"
+            "parent": null,
+            "image": null
         }
     }
 ] 
