@@ -1,0 +1,20 @@
+[
+    {
+        "model": "product.category",
+        "pk": 1,
+        "fields": {
+            "name": "Téléphones",
+            "slug": "telephones",
+            "description": "Tous nos téléphones"
+        }
+    },
+    {
+        "model": "product.category",
+        "pk": 2,
+        "fields": {
+            "name": "Accessoires",
+            "slug": "accessoires",
+            "description": "Accessoires pour téléphones"
+        }
+    }
+] 
