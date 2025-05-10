@@ -61,3 +61,4 @@ uritemplate==4.1.1
 urllib3==2.3.0
 waitress==3.0.2
 whitenoise==6.6.0
+django-cloudinary-storage==0.3.0
