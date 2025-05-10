@@ -62,4 +62,4 @@ urllib3==2.3.0
 waitress==3.0.2
 whitenoise==6.6.0
 django-cloudinary-storage==0.3.0
-rembg==2.0.50
+rembg==2.0.65
