@@ -39,14 +39,20 @@ class Shopper(AbstractUser):
                                     verbose_name="Numéro de téléphone")
     date_of_birth = models.DateField(null=True, blank=True, verbose_name="Date de naissance")
     fidelys_number = models.CharField(max_length=240, null=True, blank=True, unique=True, verbose_name="Numéro Fidelys")
-    profile_picture = models.ImageField(upload_to='profile_pics/', null=True, blank=True)
+    profile_picture = models.ImageField(
+        upload_to='profile_pics/%Y/%m/%d/',
+        null=True,
+        blank=True,
+        help_text="Photo de profil de l'utilisateur"
+    )
     USERNAME_FIELD = "email"
     # d'autres champs requis en + de email
     REQUIRED_FIELDS = []
     objects = CustomUserManager()
 
     def save(self, *args, **kwargs):
-        self.fidelys_number = ''.join(str(random.randint(0, 9)) for _ in range(7))
+        if not self.fidelys_number:
+            self.fidelys_number = ''.join(str(random.randint(0, 9)) for _ in range(7))
         super().save(*args, **kwargs)
 
 

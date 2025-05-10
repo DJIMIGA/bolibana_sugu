@@ -139,13 +139,45 @@ STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 MEDIA_URL = "/media/"
 MEDIA_ROOT = BASE_DIR / "media"
 
-# Configuration Cloudinary
-CLOUDINARY_STORAGE = {
-    'CLOUD_NAME': os.getenv('CLOUDINARY_CLOUD_NAME'),
-    'API_KEY': os.getenv('CLOUDINARY_API_KEY'),
-    'API_SECRET': os.getenv('CLOUDINARY_API_SECRET')
+# Configuration AWS S3
+AWS_ACCESS_KEY_ID = os.getenv('AWS_ACCESS_KEY_ID')
+AWS_SECRET_ACCESS_KEY = os.getenv('AWS_SECRET_ACCESS_KEY')
+AWS_STORAGE_BUCKET_NAME = os.getenv('AWS_STORAGE_BUCKET_NAME')
+AWS_S3_REGION_NAME = os.getenv('AWS_S3_REGION_NAME', 'us-east-1')
+AWS_S3_FILE_OVERWRITE = False
+AWS_DEFAULT_ACL = 'public-read'
+AWS_S3_VERIFY = True
+AWS_S3_CUSTOM_DOMAIN = f'{AWS_STORAGE_BUCKET_NAME}.s3.amazonaws.com'
+
+# Paramètres de cache S3
+AWS_S3_OBJECT_PARAMETERS = {
+    'CacheControl': 'max-age=86400',
 }
-DEFAULT_FILE_STORAGE = 'cloudinary_storage.storage.MediaCloudinaryStorage'
+
+# Configuration du stockage des médias
+DEFAULT_FILE_STORAGE = 'storages.backends.s3boto3.S3Boto3Storage'
+MEDIA_URL = f'https://{AWS_S3_CUSTOM_DOMAIN}/media/'
+
+# Configuration du stockage des fichiers statiques
+STATICFILES_STORAGE = 'storages.backends.s3boto3.S3StaticStorage'
+STATIC_URL = f'https://{AWS_S3_CUSTOM_DOMAIN}/static/'
+
+# Configuration du stockage des fichiers privés
+PRIVATE_MEDIA_LOCATION = 'private'
+PRIVATE_FILE_STORAGE = 'storages.backends.s3boto3.S3Boto3Storage'
+
+# Configuration des emplacements de stockage
+AWS_LOCATION = 'static'
+AWS_QUERYSTRING_AUTH = False
+AWS_HEADERS = {
+    'Cache-Control': 'max-age=86400',
+}
+
+# Configuration des fichiers statiques
+STATICFILES_DIRS = [
+    os.path.join(BASE_DIR, 'saga/static'),
+]
+STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
 
 # ==================================================
 # CONFIGURATION DE SÉCURITÉ
@@ -208,7 +240,7 @@ REST_FRAMEWORK = {
 print("\n=== CONFIGURATION DE L'APPLICATION ===")
 print(f"Mode : {'Développement' if DEBUG else 'Production'}")
 print(f"Base de données : {'Heroku' if DATABASE_URL else 'Locale'}")
-print(f"Stockage médias : {'Cloudinary' if CLOUDINARY_STORAGE['CLOUD_NAME'] else 'Local'}")
+print(f"Stockage médias : {'S3' if AWS_STORAGE_BUCKET_NAME else 'Local'}")
 print(f"Stripe configuré : {'Oui' if STRIPE_SECRET_KEY else 'Non'}")
 print(f"Email configuré : {'Oui' if EMAIL_HOST_USER else 'Non'}")
 print("=====================================\n")
@@ -339,10 +371,13 @@ INSTALLED_APPS = [
     'stripe',
     'crispy_forms',
     'crispy_tailwind',
-    'cloudinary',
+    'storages',  # Ajout de django-storages
     'cloudinary_storage',
-    'price_checker',
+    'cloudinary',
     'tinify',
+    'rembg',
+    'onnxruntime',
+    'price_checker',
 ]
 
 MIDDLEWARE = [
@@ -456,3 +491,33 @@ print(f"Mode DEBUG : {'Activé' if DEBUG else 'Désactivé'}")
 print(f"Clé secrète configurée : {'Oui' if SECRET_KEY != 'django-insecure-default-key-for-dev' else 'Non'}")
 print(f"Clé Stripe configurée : {'Oui' if STRIPE_SECRET_KEY else 'Non'}")
 print("=============================\n") 
+
+# Configuration du logging
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'formatters': {
+        'verbose': {
+            'format': '{levelname} {asctime} {module} {message}',
+            'style': '{',
+        },
+    },
+    'handlers': {
+        'console': {
+            'class': 'logging.StreamHandler',
+            'formatter': 'verbose',
+        },
+        'file': {
+            'class': 'logging.FileHandler',
+            'filename': 'debug.log',
+            'formatter': 'verbose',
+        },
+    },
+    'loggers': {
+        'saga.utils.image_optimizer': {
+            'handlers': ['console', 'file'],
+            'level': 'INFO',
+            'propagate': True,
+        },
+    },
+} 

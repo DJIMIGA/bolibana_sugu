@@ -5,11 +5,19 @@ from django.contrib.contenttypes.models import ContentType
 from django.utils.text import slugify
 from django.db.models.signals import pre_save
 from django.dispatch import receiver
-from cloudinary.models import CloudinaryField
 from suppliers.models import Supplier
 from saga.utils.image_optimizer import ImageOptimizer
 from django.utils import timezone
 from django.core.exceptions import ValidationError
+from django.conf import settings
+from django.core.files.storage import default_storage
+from django.core.files.base import ContentFile
+from .utils import generate_unique_slug
+from decimal import Decimal
+import logging
+import os
+
+logger = logging.getLogger(__name__)
 
 
 class ShippingMethod(models.Model):
@@ -35,7 +43,7 @@ class Category(models.Model):
     name = models.CharField(max_length=255)
     slug = models.SlugField(max_length=255, unique=True, null=True, blank=True)
     parent = models.ForeignKey('self', null=True, blank=True, related_name='children', on_delete=models.CASCADE)
-    image = CloudinaryField('image', blank=True, null=True)
+    image = models.ImageField(upload_to='categories/%Y/%m/%d/', blank=True, null=True)
 
     def __str__(self):
         return self.name
@@ -89,7 +97,7 @@ class Product(models.Model):
     price = models.DecimalField(max_digits=10, decimal_places=0, verbose_name='Prix')
     description = models.TextField(verbose_name='Description', blank=True, null=True)
     highlight = models.TextField(verbose_name='Points forts', blank=True, null=True)
-    image = CloudinaryField('image', blank=True, null=True)
+    image = models.ImageField(upload_to='products/%Y/%m/%d/', blank=True, null=True)
     supplier = models.ForeignKey('suppliers.Supplier', on_delete=models.SET_NULL, related_name='products', null=True, blank=True)
     stripe_product_id = models.CharField(max_length=255, blank=True, null=True)
     is_active = models.BooleanField(default=True, verbose_name='Actif')
@@ -99,6 +107,7 @@ class Product(models.Model):
     stock = models.PositiveIntegerField(default=0, verbose_name='Stock')
     sku = models.CharField(max_length=100, unique=True, verbose_name='SKU', default='SKU-0000')
     color = models.ForeignKey('Color', on_delete=models.CASCADE, related_name='products', null=True, blank=True)
+    slug = models.SlugField(max_length=255, unique=True, null=True, blank=True)
 
     class Meta:
         verbose_name = 'Produit'
@@ -121,11 +130,45 @@ class Product(models.Model):
             self.description = self.description.strip()
         if self.highlight:
             self.highlight = self.highlight.strip()
-        if self.image and hasattr(self.image, 'file'):
-            optimizer = ImageOptimizer()
-            if optimizer.validate_image(self.image.file):
-                self.image.file = optimizer.optimize_image(self.image.file)
+            
+        # Génération du slug si nécessaire
+        if not self.slug:
+            self.slug = generate_unique_slug(self.title, Product)
+            
+        # Optimisation de l'image principale
+        if self.image and hasattr(self.image, 'file') and not isinstance(self.image.file, str):
+            try:
+                optimizer = ImageOptimizer()
+                if optimizer.validate_image(self.image.file):
+                    # Optimiser l'image avec redimensionnement et suppression d'arrière-plan
+                    optimized_image = optimizer.optimize_image(self.image.file)
+                    if optimized_image:
+                        # Sauvegarder l'image optimisée
+                        file_name = os.path.basename(self.image.name)
+                        file_path = f'products/{self.slug}/{file_name}'
+                        self.image.save(file_path, ContentFile(optimized_image.read()), save=False)
+                        logger.info(f"Image optimisée pour le produit: {self.title}")
+            except Exception as e:
+                logger.error(f"Erreur lors de l'optimisation de l'image principale: {str(e)}")
+                
         super().save(*args, **kwargs)
+        
+        # Optimisation des images supplémentaires après la sauvegarde
+        if hasattr(self, 'image_products'):
+            for image_product in self.image_products.all():
+                if image_product.image and hasattr(image_product.image, 'file') and not isinstance(image_product.image.file, str):
+                    try:
+                        optimizer = ImageOptimizer()
+                        if optimizer.validate_image(image_product.image.file):
+                            optimized_image = optimizer.optimize_image(image_product.image.file)
+                            if optimized_image:
+                                file_name = os.path.basename(image_product.image.name)
+                                file_path = f'products/{self.slug}/{file_name}'
+                                image_product.image.save(file_path, ContentFile(optimized_image.read()), save=False)
+                                image_product.save()
+                                logger.info(f"Image supplémentaire optimisée pour le produit: {self.title}")
+                    except Exception as e:
+                        logger.error(f"Erreur lors de l'optimisation de l'image supplémentaire: {str(e)}")
 
     def get_highlights(self):
         if self.highlight:
@@ -172,8 +215,7 @@ class Size(models.Model):
 
 
 class Clothing(models.Model):
-    product = models.OneToOneField(Product, primary_key=True, on_delete=models.CASCADE, related_name='clothing_product',
-                                   default=1)
+    product = models.OneToOneField(Product, on_delete=models.CASCADE, related_name='clothing_product')
     GENDER_CHOICES = [
         ('H', 'Homme'),
         ('F', 'Femme'),
@@ -187,10 +229,9 @@ class Clothing(models.Model):
 
 
 class CulturalItem(models.Model):  # Espace Culturel
-    product = models.OneToOneField(Product, primary_key=True, on_delete=models.CASCADE, related_name='cultural_product',
-                                   default=1)
+    product = models.OneToOneField(Product, on_delete=models.CASCADE, related_name='cultural_product')
     author = models.CharField(max_length=255, blank=True, null=True)  # Auteur
-    isbn = models.CharField(max_length=20, blank=True, null=True)  # ISBN (International Standard Book Number)
+    isbn = models.CharField(max_length=20, blank=True, null=True)  # ISBN
     date = models.DateField(blank=True, null=True)  # Date de publication
 
     def __str__(self):
@@ -204,7 +245,7 @@ class CulturalItem(models.Model):  # Espace Culturel
 
 
 class ImageProduct(models.Model):
-    image = CloudinaryField('image', blank=True)
+    image = models.ImageField(upload_to='products/%Y/%m/%d/', blank=True)
     product = models.ForeignKey(Product, on_delete=models.CASCADE,
                                 related_name='image_products')
     ordre = models.IntegerField(default=0)
@@ -217,6 +258,22 @@ class ImageProduct(models.Model):
 
     def __str__(self):
         return f"{self.product.title} - Image {self.ordre}"
+
+    def save(self, *args, **kwargs):
+        if self.image and hasattr(self.image, 'file') and not isinstance(self.image.file, str):
+            try:
+                optimizer = ImageOptimizer()
+                if optimizer.validate_image(self.image.file):
+                    optimized_image = optimizer.optimize_image(self.image.file)
+                    if optimized_image:
+                        file_name = os.path.basename(self.image.name)
+                        file_path = f'products/{self.product.slug}/{file_name}'
+                        self.image.save(file_path, ContentFile(optimized_image.read()), save=False)
+                        logger.info(f"Image optimisée pour le produit: {self.product.title}")
+            except Exception as e:
+                logger.error(f"Erreur lors de l'optimisation de l'image: {str(e)}")
+        
+        super().save(*args, **kwargs)
 
 
 class Review(models.Model):

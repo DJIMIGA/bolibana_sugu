@@ -322,5 +322,59 @@
     "name": "Bleu Ice",
     "code": "#00BFFF"
   }
+},
+{
+  "model": "product.color",
+  "pk": 7,
+  "fields": {
+    "name": "Argent",
+    "code": "#C0C0C0"
+  }
+},
+{
+  "model": "product.product",
+  "pk": 7,
+  "fields": {
+    "title": "Samsung Galaxy A05 64 Go Argent",
+    "category": 1,
+    "price": "53500",
+    "description": "Le Samsung Galaxy A05 en Argent est un smartphone performant avec un design moderne et des fonctionnalités avancées.\n\nCaractéristiques principales :\n- Écran Super AMOLED de 6.5 pouces (1080 x 2340 pixels)\n- 64GB de stockage interne\n- 4GB de RAM\n- Processeur Octa-Core (2.2 GHz + 2 GHz)\n- Batterie 5000mAh\n- Triple caméra arrière : 50MP (F1.8) + 5MP (F2.2) + 2MP (F2.4)\n- Caméra frontale 13MP (F2.0)\n- Déverrouillage facial\n- Capteur d'empreintes digitales\n- Système d'exploitation Android 13\n\nCaractéristiques de la caméra :\n- Zoom numérique jusqu'à 10x\n- Mise au point automatique\n- Enregistrement vidéo FHD à 30 ips\n- Ralenti à 120 ips en HD\n\nConnectivité :\n- 4G LTE\n- WiFi\n- Bluetooth\n- GPS\n\nVersion américaine 🇺🇸\n\nContenu de la boîte :\n- Téléphone\n- Câble USB-C\n- Guide d'utilisation",
+    "highlight": "Écran Super AMOLED 6.5\" FHD+\nTriple caméra 50MP + 5MP + 2MP\nCaméra frontale 13MP\nProcesseur Octa-Core\n4GB RAM + 64GB stockage\nBatterie 5000mAh\nVersion américaine 🇺🇸",
+    "image": null,
+    "supplier": 1,
+    "stripe_product_id": null,
+    "is_active": true,
+    "created_at": "2024-03-19T12:00:00.000Z",
+    "updated_at": "2024-03-19T12:00:00.000Z",
+    "disponible_salam": false,
+    "stock": 15,
+    "sku": "SAM-A05-64-4-AR",
+    "color": 7
+  }
+},
+{
+  "model": "product.phone",
+  "pk": 7,
+  "fields": {
+    "product": 7,
+    "brand": "Samsung",
+    "model": "Galaxy A05",
+    "operating_system": "Android 13",
+    "screen_size": "6.50",
+    "resolution": "1080x2340px",
+    "processor": "Octa-Core (2.2 GHz + 2 GHz)",
+    "battery_capacity": 5000,
+    "camera_main": "Triple caméra : 50MP (F1.8) + 5MP (F2.2) + 2MP (F2.4)",
+    "camera_front": "13MP (F2.0)",
+    "network": "4G LTE",
+    "warranty": "12 mois",
+    "imei": null,
+    "is_new": true,
+    "box_included": true,
+    "accessories": "Téléphone, Câble USB-C, Guide d'utilisation",
+    "storage": 64,
+    "ram": 4,
+    "color": 7
+  }
 }
 ]

@@ -28,7 +28,7 @@ class Supplier(models.Model):
         default=0
     )
     is_verified = models.BooleanField(default=False)
-    created_at = models.DateTimeField(null=True, blank=True)
+    created_at = models.DateTimeField(default=timezone.now)
     updated_at = models.DateTimeField(default=timezone.now)
     slug = models.SlugField(max_length=255, unique=True, null=True, blank=True)
     specialty = models.CharField(max_length=100, choices=SUPPLIER_SPECIALTY_CHOICES, null=True, blank=True)
@@ -39,8 +39,6 @@ class Supplier(models.Model):
     def save(self, *args, **kwargs):
         if not self.slug and self.company_name:
             self.slug = slugify(self.company_name)
-        if not self.created_at:
-            self.created_at = timezone.now()
         self.updated_at = timezone.now()
         super().save(*args, **kwargs)
 
