@@ -2,10 +2,10 @@ const path = require('path');
 
 module.exports = {
     entry: {
-        accounts: './saga/static/accounts/js/main.js',
+        accounts: './static/accounts/js/main.js',
     },
     output: {
-        path: path.resolve(__dirname, 'saga/static/accounts/dist'),
+        path: path.resolve(__dirname, 'static/accounts/dist'),
         filename: '[name].bundle.js',
     },
     module: {
@@ -25,7 +25,7 @@ module.exports = {
     resolve: {
         extensions: ['.js'],
         alias: {
-            '@': path.resolve(__dirname, 'saga/static/accounts/js')
+            '@': path.resolve(__dirname, 'static/accounts/js')
         }
     },
     devtool: 'source-map',
