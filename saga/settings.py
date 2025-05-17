@@ -54,14 +54,9 @@ else:
 # ==================================================
 # CONFIGURATION DE BASE
 # ==================================================
-DEBUG = config('DEBUG', default=False, cast=bool)
+DEBUG = False  # Forcé à False pour tester S3
 print(f"\nDEBUG est {'activé' if DEBUG else 'désactivé'}")
 print(f"Valeur de DEBUG dans l'environnement : {os.getenv('DEBUG')}")
-
-# Forcer DEBUG à True en développement
-if not os.environ.get('HEROKU'):
-    DEBUG = True
-    print("DEBUG forcé à True car nous sommes en développement local")
 
 # Configuration de base
 SECRET_KEY = os.getenv('SECRET_KEY', 'django-insecure-default-key-for-dev')
@@ -156,26 +151,20 @@ AWS_DEFAULT_ACL = None
 AWS_QUERYSTRING_AUTH = True
 AWS_S3_FILE_OVERWRITE = False
 
-# Configuration conditionnelle pour les fichiers statiques et médias
-if DEBUG:
-    # Configuration pour le développement local
-    STATICFILES_STORAGE = 'django.contrib.staticfiles.storage.StaticFilesStorage'
-    STATIC_URL = '/static/'
-    STATIC_ROOT = os.path.join(BASE_DIR, 'static')
-    STATICFILES_DIRS = [
-        os.path.join(BASE_DIR, 'saga/static'),
-    ]
-else:
-    # Configuration pour la production
+# Configuration des fichiers statiques
+STATIC_URL = '/static/'
+STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
+STATICFILES_DIRS = [
+    os.path.join(BASE_DIR, 'static'),
+]
+
+if not DEBUG:
     STATICFILES_STORAGE = 'saga.storage_backends.StaticStorage'
-    STATIC_URL = f'https://{AWS_S3_CUSTOM_DOMAIN}/static/'
-    STATIC_ROOT = None
-    STATICFILES_DIRS = []
+    STATIC_URL = f"https://{AWS_S3_CUSTOM_DOMAIN}/static/"
 
 # Configuration S3 pour les médias (toujours utilisée)
 DEFAULT_FILE_STORAGE = 'saga.storage_backends.MediaStorage'
 MEDIA_URL = '/media/' if DEBUG else f'https://{AWS_S3_CUSTOM_DOMAIN}/'
-MEDIA_ROOT = None
 
 # Configuration du stockage des fichiers
 FILE_UPLOAD_HANDLERS = [
@@ -192,14 +181,10 @@ if DEBUG:
     # En développement, utiliser le stockage local
     MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
     MEDIA_URL = '/media/'
-    STATIC_ROOT = os.path.join(BASE_DIR, 'static')
-    STATIC_URL = '/static/'
 else:
     # En production, utiliser S3
     MEDIA_ROOT = None
     MEDIA_URL = f'https://{AWS_S3_CUSTOM_DOMAIN}/media/'
-    STATIC_ROOT = None
-    STATIC_URL = f'https://{AWS_S3_CUSTOM_DOMAIN}/static/'
 
 # Configuration des dossiers pour les images
 PRODUCT_IMAGES_DIR = 'products'  # Dossier racine pour tous les produits
@@ -646,3 +631,8 @@ class FileRequestLoggingMiddleware:
             )
         
         return response 
+
+# Suppression de la configuration WhiteNoise qui entre en conflit avec S3
+# if not DEBUG:
+#     STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
+#     MIDDLEWARE.insert(1, 'whitenoise.middleware.WhiteNoiseMiddleware') 
