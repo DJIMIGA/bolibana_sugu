@@ -50,15 +50,26 @@ class SupplierListView(ListView):
         # Récupérer les produits actifs avec leurs téléphones
         active_products = Product.objects.filter(is_active=True).select_related('phone')
         
-        # Récupérer les marques de téléphones des produits actifs
-        phone_brands = active_products.values('phone__brand').distinct()
-        context['phone_categories'] = [{'brand': item['phone__brand']} for item in phone_brands if item['phone__brand']]
+        # Récupérer les marques de téléphones des produits actifs (sans doublons, sans valeurs vides, triées)
+        brands_list = list(active_products.values_list('phone__brand', flat=True))
+        brands_clean = sorted(set(filter(None, brands_list)))
+        context['phone_categories'] = [{'brand': b} for b in brands_clean]
+        context['brands'] = [{'phone__brand': b} for b in brands_clean]
         
-        # Récupérer les filtres pour les téléphones des produits actifs
-        context['brands'] = active_products.values('phone__brand').distinct()
-        context['models'] = active_products.values('phone__model').distinct()
-        context['storages'] = active_products.values('phone__storage').distinct()
-        context['rams'] = active_products.values('phone__ram').distinct()
+        # Récupérer les modèles des produits actifs (sans doublons, sans valeurs vides, triés)
+        models_list = list(active_products.values_list('phone__model', flat=True))
+        models_clean = sorted(set(filter(None, models_list)))
+        context['models'] = [{'phone__model': m} for m in models_clean]
+        
+        # Récupérer les stockages des produits actifs (sans doublons, sans valeurs vides, triés)
+        storages_list = list(active_products.values_list('phone__storage', flat=True))
+        storages_clean = sorted(set(filter(None, storages_list)))
+        context['storages'] = [{'phone__storage': s} for s in storages_clean]
+        
+        # Récupérer les RAM des produits actifs (sans doublons, sans valeurs vides, triés)
+        rams_list = list(active_products.values_list('phone__ram', flat=True))
+        rams_clean = sorted(set(filter(None, rams_list)))
+        context['rams'] = [{'phone__ram': r} for r in rams_clean]
         
         # Filtres sélectionnés
         context['selected_brand'] = self.request.GET.get('brand', '')
