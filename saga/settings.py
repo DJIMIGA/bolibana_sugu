@@ -143,7 +143,7 @@ if not all([AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY, AWS_STORAGE_BUCKET_NAME]):
     raise ValueError("Les variables AWS sont requises. Veuillez configurer AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY et AWS_STORAGE_BUCKET_NAME dans votre fichier .env")
 
 # Configuration CloudFront
-AWS_S3_CUSTOM_DOMAIN = 'd3tcb6ounmojtn.cloudfront.net'  # Domaine CloudFront fixe
+AWS_S3_CUSTOM_DOMAIN = 'd3tcb6ounmojtn.cloudfront.net'  # Domaine CloudFront sans https://
 
 # Configuration S3
 AWS_S3_OBJECT_PARAMETERS = {
@@ -164,14 +164,14 @@ STATICFILES_DIRS = [
 if not DEBUG:
     # En production (Heroku + S3 + CloudFront)
     STATICFILES_STORAGE = 'saga.storage_backends.StaticStorage'
-    STATIC_URL = f"https://{AWS_S3_CUSTOM_DOMAIN}/static/"
+    STATIC_URL = f'https://{AWS_S3_CUSTOM_DOMAIN}/static/'
 else:
     # En développement
     STATICFILES_STORAGE = 'django.contrib.staticfiles.storage.StaticFilesStorage'
 
 # Configuration S3 pour les médias (toujours utilisée)
 DEFAULT_FILE_STORAGE = 'saga.storage_backends.MediaStorage'
-MEDIA_URL = '/media/' if DEBUG else f'https://{AWS_S3_CUSTOM_DOMAIN}/'
+MEDIA_URL = '/media/' if DEBUG else f'https://{AWS_S3_CUSTOM_DOMAIN}/media/'
 
 # Configuration du stockage des fichiers
 FILE_UPLOAD_HANDLERS = [
