@@ -4,6 +4,7 @@ from django.core.validators import MinValueValidator, MaxValueValidator
 from django.utils.text import slugify
 from django.utils import timezone
 import os
+from django.core.files.storage import default_storage
 
 # Create your models here.
 
@@ -20,7 +21,12 @@ class Supplier(models.Model):
     phone = models.CharField(max_length=20, null=True, blank=True)
     email = models.EmailField(null=True, blank=True)
     website = models.URLField(blank=True, null=True)
-    image = models.ImageField(upload_to='suppliers/%Y/%m/%d/', blank=True, null=True)
+    image = models.ImageField(
+        upload_to='suppliers/%Y/%m/%d/',
+        storage=default_storage,
+        blank=True,
+        null=True
+    )
     rating = models.DecimalField(
         max_digits=3,
         decimal_places=2,

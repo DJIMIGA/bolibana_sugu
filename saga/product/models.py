@@ -7,6 +7,7 @@ from django.db.models.signals import pre_save
 from django.dispatch import receiver
 from suppliers.models import Supplier
 from saga.utils.image_optimizer import ImageOptimizer
+from saga.utils.path_utils import get_product_image_path
 from django.utils import timezone
 from django.core.exceptions import ValidationError
 from django.conf import settings
@@ -16,6 +17,11 @@ from .utils import generate_unique_slug
 from decimal import Decimal
 import logging
 import os
+import boto3
+from storages.backends.s3boto3 import S3Boto3Storage
+from saga.storage_backends import ProductImageStorage
+from PIL import Image
+from io import BytesIO
 
 logger = logging.getLogger(__name__)
 
@@ -43,7 +49,12 @@ class Category(models.Model):
     name = models.CharField(max_length=255)
     slug = models.SlugField(max_length=255, unique=True, null=True, blank=True)
     parent = models.ForeignKey('self', null=True, blank=True, related_name='children', on_delete=models.CASCADE)
-    image = models.ImageField(upload_to='categories/%Y/%m/%d/', blank=True, null=True)
+    image = models.ImageField(
+        upload_to='categories/%Y/%m/%d/',
+        storage=default_storage,
+        blank=True,
+        null=True
+    )
 
     def __str__(self):
         return self.name
@@ -91,13 +102,25 @@ class Category(models.Model):
         return ' > '.join(reversed(path))
 
 
+def get_product_main_image_upload_path(instance, filename):
+    return get_product_image_path(instance, filename, 'main')
+
+def get_product_gallery_image_upload_path(instance, filename):
+    return get_product_image_path(instance, filename, 'gallery')
+
 class Product(models.Model):
     title = models.CharField(max_length=200, verbose_name='Titre')
     category = models.ForeignKey(Category, on_delete=models.CASCADE, related_name='products')
     price = models.DecimalField(max_digits=10, decimal_places=0, verbose_name='Prix')
     description = models.TextField(verbose_name='Description', blank=True, null=True)
     highlight = models.TextField(verbose_name='Points forts', blank=True, null=True)
-    image = models.ImageField(upload_to='products/%Y/%m/%d/', blank=True, null=True)
+    image = models.ImageField(
+        upload_to=get_product_main_image_upload_path,
+        storage=ProductImageStorage(),
+        null=True,
+        blank=True
+    )
+    image_urls = models.JSONField(default=dict, blank=True, null=True, verbose_name='URLs des images')
     supplier = models.ForeignKey('suppliers.Supplier', on_delete=models.SET_NULL, related_name='products', null=True, blank=True)
     stripe_product_id = models.CharField(max_length=255, blank=True, null=True)
     is_active = models.BooleanField(default=True, verbose_name='Actif')
@@ -125,55 +148,151 @@ class Product(models.Model):
             )
 
     def save(self, *args, **kwargs):
-        self.title = self.title.strip().title()
-        if self.description:
-            self.description = self.description.strip()
-        if self.highlight:
-            self.highlight = self.highlight.strip()
-            
-        # Génération du slug si nécessaire
         if not self.slug:
-            self.slug = generate_unique_slug(self.title, Product)
-            
-        # Optimisation de l'image principale
-        if self.image and hasattr(self.image, 'file') and not isinstance(self.image.file, str):
-            try:
-                optimizer = ImageOptimizer()
-                if optimizer.validate_image(self.image.file):
-                    # Optimiser l'image avec redimensionnement et suppression d'arrière-plan
-                    optimized_image = optimizer.optimize_image(self.image.file)
-                    if optimized_image:
-                        # Sauvegarder l'image optimisée
-                        file_name = os.path.basename(self.image.name)
-                        file_path = f'products/{self.slug}/{file_name}'
-                        self.image.save(file_path, ContentFile(optimized_image.read()), save=False)
-                        logger.info(f"Image optimisée pour le produit: {self.title}")
-            except Exception as e:
-                logger.error(f"Erreur lors de l'optimisation de l'image principale: {str(e)}")
-                
-        super().save(*args, **kwargs)
+            self.slug = slugify(self.title)
         
-        # Optimisation des images supplémentaires après la sauvegarde
-        if hasattr(self, 'image_products'):
-            for image_product in self.image_products.all():
-                if image_product.image and hasattr(image_product.image, 'file') and not isinstance(image_product.image.file, str):
-                    try:
-                        optimizer = ImageOptimizer()
-                        if optimizer.validate_image(image_product.image.file):
-                            optimized_image = optimizer.optimize_image(image_product.image.file)
-                            if optimized_image:
-                                file_name = os.path.basename(image_product.image.name)
-                                file_path = f'products/{self.slug}/{file_name}'
-                                image_product.image.save(file_path, ContentFile(optimized_image.read()), save=False)
-                                image_product.save()
-                                logger.info(f"Image supplémentaire optimisée pour le produit: {self.title}")
-                    except Exception as e:
-                        logger.error(f"Erreur lors de l'optimisation de l'image supplémentaire: {str(e)}")
+        if self.image:
+            logger.info(f"Début du traitement de l'image pour le produit {self.title}")
+            
+            # Créer une instance de ProductImageStorage
+            storage = ProductImageStorage()
+            
+            # Lire le contenu du fichier
+            image_content = self.image.read()
+            logger.info(f"Image lue, taille: {len(image_content)} bytes")
+            
+            # Optimiser l'image principale avec suppression du fond
+            optimizer = ImageOptimizer()
+            
+            # Forcer la suppression du fond pour l'image principale
+            img = Image.open(BytesIO(image_content))
+            output = optimizer.remove_background(img)
+            if output:
+                main_content = output
+                logger.info("Fond supprimé avec succès")
+            else:
+                main_content = BytesIO(image_content)
+                logger.info("Utilisation de l'image originale (pas de suppression de fond)")
+            
+            # Générer le chemin
+            main_path = get_product_image_path(self, self.image.name, 'main')
+            logger.info(f"Chemin généré - Main: {main_path}")
+            
+            # Sauvegarder l'image principale optimisée
+            storage.save(main_path, ContentFile(main_content.getvalue()))
+            self.image.name = main_path
+            logger.info("Image principale sauvegardée")
+            
+            # Mettre à jour les URLs dans image_urls
+            self.image_urls = {
+                'main': storage.url(main_path)
+            }
+            logger.info(f"URL mise à jour: {self.image_urls}")
+            
+            # Supprimer l'ancienne image si elle existe
+            if self.pk:
+                old_instance = Product.objects.get(pk=self.pk)
+                if old_instance.image and old_instance.image != self.image:
+                    storage.delete(old_instance.image.name)
+                    logger.info("Ancienne image supprimée")
+        
+        super().save(*args, **kwargs)
+
+    def delete(self, *args, **kwargs):
+        # Supprimer l'image du stockage
+        if self.image:
+            storage = ProductImageStorage()
+            storage.delete(self.image.name)
+        super().delete(*args, **kwargs)
 
     def get_highlights(self):
         if self.highlight:
             return self.highlight.splitlines()
         return []
+
+    def get_image_url(self):
+        """Retourne l'URL de l'image principale"""
+        if self.image:
+            return self.image.url
+        return None
+
+    def get_thumbnail_url(self):
+        """Retourne l'URL de la miniature"""
+        if self.image_urls and 'thumb' in self.image_urls:
+            return self.image_urls['thumb']
+        return None
+
+    def save_image(self, image_file, image_type='main'):
+        """
+        Sauvegarde une image pour le produit.
+        
+        Args:
+            image_file: Le fichier image à sauvegarder
+            image_type: Le type d'image ('main', 'thumb', ou 'gallery')
+        """
+        if not image_file:
+            return None
+            
+        # Créer une instance de ProductImageStorage
+        storage = ProductImageStorage()
+        
+        # Générer le chemin de l'image
+        filename = os.path.basename(image_file.name)
+        path = get_product_image_path(self, filename, image_type)
+        
+        # Sauvegarder l'image
+        storage.save(path, image_file)
+        
+        # Si c'est une image principale, créer la miniature
+        if image_type == 'main':
+            self.create_thumbnail(image_file)
+            
+        return path
+
+    def create_thumbnail(self, image_file):
+        """
+        Crée une miniature à partir de l'image principale.
+        
+        Args:
+            image_file: Le fichier image source
+        """
+        try:
+            # Créer une instance de ProductImageStorage
+            storage = ProductImageStorage()
+            
+            # Ouvrir l'image
+            img = Image.open(image_file)
+            
+            # Convertir en RGB si nécessaire
+            if img.mode in ('RGBA', 'LA'):
+                background = Image.new('RGB', img.size, (255, 255, 255))
+                background.paste(img, mask=img.split()[-1])
+                img = background
+            
+            # Redimensionner l'image
+            img.thumbnail((300, 300), Image.Resampling.LANCZOS)
+            
+            # Optimiser l'image
+            optimizer = ImageOptimizer()
+            img = optimizer.optimize_image(img)
+            
+            # Sauvegarder la miniature
+            thumb_io = BytesIO()
+            img.save(thumb_io, format='JPEG', quality=85)
+            thumb_io.seek(0)
+            
+            # Générer le chemin de la miniature
+            filename = os.path.basename(image_file.name)
+            thumb_path = get_product_image_path(self, filename, 'thumb')
+            
+            # Sauvegarder la miniature
+            storage.save(thumb_path, ContentFile(thumb_io.getvalue()))
+            
+            return thumb_path
+            
+        except Exception as e:
+            print(f"Erreur lors de la création de la miniature : {str(e)}")
+            return None
 
 
 class Color(models.Model):
@@ -245,35 +364,47 @@ class CulturalItem(models.Model):  # Espace Culturel
 
 
 class ImageProduct(models.Model):
-    image = models.ImageField(upload_to='products/%Y/%m/%d/', blank=True)
-    product = models.ForeignKey(Product, on_delete=models.CASCADE,
-                                related_name='image_products')
-    ordre = models.IntegerField(default=0)
-    is_main = models.BooleanField(default=False)
+    product = models.ForeignKey(Product, on_delete=models.CASCADE, related_name='images')
+    image = models.ImageField(
+        upload_to=get_product_gallery_image_upload_path,
+        storage=ProductImageStorage(),
+        null=True,
+        blank=True
+    )
+    ordre = models.PositiveIntegerField(default=0)
+    created_at = models.DateTimeField(default=timezone.now)
+    updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
-        ordering = ['ordre']
-        verbose_name = 'Image du produit'
-        verbose_name_plural = 'Images du produit'
+        ordering = ['ordre', 'created_at']
+        verbose_name = 'Image produit'
+        verbose_name_plural = 'Images produit'
 
     def __str__(self):
-        return f"{self.product.title} - Image {self.ordre}"
+        return f"Image {self.ordre} pour {self.product.title}"
 
     def save(self, *args, **kwargs):
-        if self.image and hasattr(self.image, 'file') and not isinstance(self.image.file, str):
-            try:
-                optimizer = ImageOptimizer()
-                if optimizer.validate_image(self.image.file):
-                    optimized_image = optimizer.optimize_image(self.image.file)
-                    if optimized_image:
-                        file_name = os.path.basename(self.image.name)
-                        file_path = f'products/{self.product.slug}/{file_name}'
-                        self.image.save(file_path, ContentFile(optimized_image.read()), save=False)
-                        logger.info(f"Image optimisée pour le produit: {self.product.title}")
-            except Exception as e:
-                logger.error(f"Erreur lors de l'optimisation de l'image: {str(e)}")
+        if self.image and self.pk:
+            # Supprimer l'ancienne image si elle existe
+            old_instance = ImageProduct.objects.get(pk=self.pk)
+            if old_instance.image and old_instance.image != self.image:
+                storage = ProductImageStorage()
+                storage.delete(old_instance.image.name)
         
         super().save(*args, **kwargs)
+
+    def delete(self, *args, **kwargs):
+        # Supprimer l'image du stockage
+        if self.image:
+            storage = ProductImageStorage()
+            storage.delete(self.image.name)
+        super().delete(*args, **kwargs)
+
+    def get_image_url(self):
+        """Retourne l'URL de l'image"""
+        if self.image:
+            return self.image.url
+        return None
 
 
 class Review(models.Model):

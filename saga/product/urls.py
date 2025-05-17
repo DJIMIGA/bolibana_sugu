@@ -1,5 +1,3 @@
-from django.conf import settings
-from django.conf.urls.static import static
 from django.urls import path
 from . import views
 from .views import create_product_with_phone
@@ -8,7 +6,7 @@ app_name = 'product'
 
 urlpatterns = [
     # Routes principales
-    path('', views.product_list, name='product_list'),
+    path('products/', views.product_list, name='product_list'),
     path('search/', views.search, name='search'),
     
     # Routes pour les produits
@@ -31,4 +29,4 @@ urlpatterns = [
     # Routes légales
     path('terms-conditions/', views.TermsConditionsView.as_view(), name='terms_conditions'),
     path('cgv/', views.CGVView.as_view(), name='cgv'),
-] + static(settings.STATIC_URL, document_root=settings.STATIC_ROOT) + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+]

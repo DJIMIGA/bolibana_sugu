@@ -20,6 +20,42 @@ heroku run python saga/manage.py migrate
 
 ### Résolution des problèmes courants
 
+#### Problème de stockage S3
+- Problème : Erreur lors du téléchargement d'images dans l'interface d'administration
+  ```
+  TypeError: _path_normpath: path should be string, bytes or os.PathLike, not NoneType
+  ```
+- Cause : Configuration incorrecte du stockage S3 dans les modèles Django
+- Solution :
+  1. Créer une instance explicite de S3Boto3Storage dans les modèles :
+     ```python
+     s3_storage = S3Boto3Storage(
+         bucket_name=settings.AWS_STORAGE_BUCKET_NAME,
+         region_name=settings.AWS_S3_REGION_NAME,
+         custom_domain=settings.AWS_S3_CUSTOM_DOMAIN,
+         access_key=settings.AWS_ACCESS_KEY_ID,
+         secret_key=settings.AWS_SECRET_ACCESS_KEY,
+         file_overwrite=False,
+         default_acl=None,
+         querystring_auth=True,
+         object_parameters=settings.AWS_S3_OBJECT_PARAMETERS
+     )
+     ```
+  2. Utiliser cette instance pour sauvegarder les fichiers :
+     ```python
+     self.image = s3_storage.save(filename, ContentFile(file_content))
+     ```
+  3. Vérifier les variables d'environnement dans .env :
+     ```
+     AWS_ACCESS_KEY_ID=votre_clé_access
+     AWS_SECRET_ACCESS_KEY=votre_clé_secrète
+     AWS_STORAGE_BUCKET_NAME=nom_de_votre_bucket
+     AWS_S3_REGION_NAME=eu-north-1
+     ```
+  4. Structure des fichiers sur S3 :
+     - Format : `products/YYYY/MM/DD/nom-du-produit_identifiant.extension`
+     - Exemple : `products/2025/05/13/samsung-galaxy-a05-64-go-argent_LVkZakf.jpg`
+
 #### ModuleNotFoundError
 - Problème : "ModuleNotFoundError: No module named 'product'" ou autres modules
 - Solutions :

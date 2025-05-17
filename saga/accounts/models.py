@@ -10,6 +10,8 @@ import uuid
 
 from datetime import timedelta
 from django.utils import timezone
+from django.conf import settings
+from django.core.files.storage import default_storage
 
 
 class CustomUserManager(BaseUserManager):
@@ -41,8 +43,9 @@ class Shopper(AbstractUser):
     fidelys_number = models.CharField(max_length=240, null=True, blank=True, unique=True, verbose_name="Numéro Fidelys")
     profile_picture = models.ImageField(
         upload_to='profile_pics/%Y/%m/%d/',
-        null=True,
+        storage=default_storage,
         blank=True,
+        null=True,
         help_text="Photo de profil de l'utilisateur"
     )
     USERNAME_FIELD = "email"

@@ -67,6 +67,11 @@ class SupplierListView(ListView):
         
         return context
 
+    def get_template_names(self):
+        if self.request.headers.get('HX-Request'):
+            return ['suppliers/components/_product_grid.html']
+        return [self.template_name]
+
 
 class BrandDetailView(TemplateView):
     template_name = 'suppliers/supplier_detail.html'
@@ -126,3 +131,8 @@ class BrandDetailView(TemplateView):
         context['selected_price_max'] = price_max
         
         return context
+
+    def get_template_names(self):
+        if self.request.headers.get('HX-Request'):
+            return ['suppliers/components/_product_grid.html']
+        return [self.template_name]

@@ -23,11 +23,11 @@
 
           <!-- Product card -->
           {% for product in products %}
-          <div id="product-card" class="mx-auto group relative w-full bg-white h-[500px] p-10 rounded-xl shadow-lg overflow-hidden transition-all duration-300 hover:shadow-xl hover:-translate-y-1"
+          <div id="product-card" class="mx-auto group relative w-full bg-white h-[400px] p-6 rounded-xl shadow-lg overflow-hidden transition-all duration-300 hover:shadow-xl hover:-translate-y-1"
                data-product-id="{{ product.id }}">
               <!-- Titre et prix -->
-              <div class="mb-4">
-                  <h3 class="font-medium text-2xl text-gray-900">
+              <div class="mb-2">
+                  <h3 class="font-medium text-lg text-gray-900 truncate">
                       {{ product.title }}
                   </h3>
                   <p class="mt-1 text-lg font-bold text-yellow-500">
@@ -36,15 +36,15 @@
               </div>
 
               <!-- Image du produit -->
-              <a href="{% url 'product_detail' product.id %}" class="block h-[300px]">
-                  {% if product.image %}
+              <a href="{% url 'product:product_detail' product.id %}" class="block h-[250px]">
+                  {% if product.image_urls %}
                   <div class="relative h-full overflow-hidden flex items-center justify-center">
                       <img
-                              src="{{ product.image.url }}"
+                              src="{{ product.image_urls.main }}"
                               alt="{{ product.title }}"
-                              class="max-h-full max-w-full object-contain "
+                              class="max-h-full max-w-full object-contain"
+                              loading="lazy"
                       >
-                      <!-- Overlay au survol -->
                   </div>
                   {% endif %}
               </a>

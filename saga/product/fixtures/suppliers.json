@@ -3,14 +3,13 @@
         "model": "suppliers.supplier",
         "pk": 1,
         "fields": {
-            "name": "Tecno Mobile",
-            "description": "Fournisseur officiel de téléphones Tecno au Sénégal",
+            "company_name": "Tecno",
+            "description": "Fabricant de smartphones",
+            "email": "contact@tecno.com",
+            "phone": "+243000000000",
+            "is_verified": true,
             "specialty": "Fournisseur de TELEPHONE",
-            "email": "contact@tecnomobile.com",
-            "phone": "+221 33 123 45 67",
-            "address": "Dakar, Sénégal",
-            "slug": "tecno-mobile",
-            "image": null
+            "slug": "tecno"
         }
     }
 ] 

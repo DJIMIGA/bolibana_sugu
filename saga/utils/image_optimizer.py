@@ -9,60 +9,66 @@ from rembg import remove as remove_background
 import numpy as np
 import boto3
 from botocore.exceptions import ClientError
+import time
+from django.core.files.storage import default_storage
+from django.core.cache import cache
+from botocore.config import Config
+from django.utils import timezone
+from .path_utils import get_product_image_path
 
 logger = logging.getLogger(__name__)
 
 class ImageOptimizer:
     def __init__(self):
-        # Configuration de Tinify avec la clé API
-        tinify.key = settings.TINIFY_API_KEY
-        self.max_size = 5 * 1024 * 1024  # 5MB
-        self.max_dimensions = (4000, 4000)  # max width, height
-        self.quality = 80  # qualité de compression (0-100)
+        # Configuration S3 avec retry
+        self.s3_config = Config(
+            retries=dict(
+                max_attempts=3,
+                mode='adaptive'
+            ),
+            connect_timeout=5,
+            read_timeout=10
+        )
         
-        # Configuration S3
+        # Initialisation du client S3 avec la configuration
         self.s3_client = boto3.client(
             's3',
-            aws_access_key_id=settings.AWS_ACCESS_KEY_ID,
-            aws_secret_access_key=settings.AWS_SECRET_ACCESS_KEY,
+            config=self.s3_config,
             region_name=settings.AWS_S3_REGION_NAME
         )
         
-        # Formats d'image prédéfinis
-        self.image_formats = {
-            'original': {
-                'width': 630, 
-                'height': 732,
-                'usage': 'product_detail',
-                'required': True,
-                'description': 'Version originale optimisée pour la page détaillée du produit'
-            },
-            'thumbnail': {
-                'width': 200,
-                'height': 232,
-                'usage': 'product_list',
-                'required': True,
-                'description': 'Miniature pour les listes de produits et aperçus'
-            },
-            'medium': {
-                'width': 400,
-                'height': 464,
-                'usage': 'product_grid',
-                'required': True,
-                'description': 'Format moyen pour la grille de produits'
-            },
-            'large': {
-                'width': 800,
-                'height': 928,
-                'usage': 'product_zoom',
-                'required': True,
-                'description': 'Format grand pour le zoom sur les produits'
-            }
-        }
+        self.bucket_name = settings.AWS_STORAGE_BUCKET_NAME
+        self.region = settings.AWS_S3_REGION_NAME
+        self.tinify_key = settings.TINIFY_API_KEY
+        
+        if self.tinify_key:
+            tinify.key = self.tinify_key
+            
+        # Récupération des paramètres depuis settings.py
+        self.max_size = settings.MAX_IMAGE_SIZE
+        self.max_dimensions = settings.MAX_IMAGE_DIMENSIONS
+        self.quality = settings.IMAGE_QUALITY
+        self.image_formats = settings.IMAGE_FORMATS
+
+    def get_cache_key(self, image_path, format_name):
+        """Génère une clé de cache unique pour une image."""
+        return f"image_optimizer_{image_path}_{format_name}"
+
+    def get_cached_url(self, image_path, format_name):
+        """Récupère l'URL de l'image depuis le cache."""
+        cache_key = self.get_cache_key(image_path, format_name)
+        return cache.get(cache_key)
+
+    def set_cached_url(self, image_path, format_name, url):
+        """Stocke l'URL de l'image dans le cache."""
+        cache_key = self.get_cache_key(image_path, format_name)
+        cache.set(cache_key, url, timeout=3600)  # Cache pour 1 heure
 
     def remove_background(self, image):
         """Supprime le fond de l'image."""
+        start_time = time.time()
         try:
+            logger.info("Début de la suppression du fond")
             # Convertir l'image en tableau numpy
             img_array = np.array(image)
             
@@ -77,6 +83,7 @@ class ImageOptimizer:
             output_image.save(output, format='PNG', optimize=True, compress_level=9)
             output.seek(0)
             
+            logger.info(f"Suppression du fond terminée en {time.time() - start_time:.2f} secondes")
             return output
         except Exception as e:
             logger.error(f"Erreur lors de la suppression du fond: {str(e)}")
@@ -84,7 +91,9 @@ class ImageOptimizer:
 
     def resize_image(self, image, target_size):
         """Redimensionne l'image aux dimensions cibles."""
+        start_time = time.time()
         try:
+            logger.info(f"Début du redimensionnement vers {target_size}")
             # Calculer les nouvelles dimensions en conservant le ratio
             width, height = image.size
             target_width, target_height = target_size
@@ -100,32 +109,99 @@ class ImageOptimizer:
             resized.save(output, format='PNG', optimize=True, compress_level=9)
             output.seek(0)
             
+            logger.info(f"Redimensionnement terminé en {time.time() - start_time:.2f} secondes")
             return output
         except Exception as e:
             logger.error(f"Erreur lors du redimensionnement: {str(e)}")
             return None
 
-    def optimize_image(self, image):
-        """Optimise l'image en utilisant Tinify."""
+    def upload_to_s3(self, image_data, key, content_type='image/jpeg'):
+        """Upload une image vers S3 avec gestion des erreurs et retry."""
+        max_retries = 3
+        retry_delay = 1  # secondes
+        
+        for attempt in range(max_retries):
+            try:
+                self.s3_client.put_object(
+                    Bucket=self.bucket_name,
+                    Key=key,
+                    Body=image_data,
+                    ContentType=content_type,
+                    CacheControl='max-age=86400'  # Cache pour 24h
+                )
+                return f"https://{self.bucket_name}.s3.{self.region}.amazonaws.com/{key}"
+            except ClientError as e:
+                error_code = e.response['Error']['Code']
+                if error_code == 'NoSuchBucket':
+                    logger.error(f"Le bucket {self.bucket_name} n'existe pas")
+                    raise
+                elif error_code == 'AccessDenied':
+                    logger.error(f"Accès refusé au bucket {self.bucket_name}")
+                    raise
+                else:
+                    if attempt < max_retries - 1:
+                        logger.warning(f"Tentative {attempt + 1} échouée, nouvelle tentative dans {retry_delay} secondes")
+                        time.sleep(retry_delay)
+                        retry_delay *= 2  # Augmentation exponentielle du délai
+                    else:
+                        logger.error(f"Échec de l'upload après {max_retries} tentatives: {str(e)}")
+                        raise
+
+    def check_s3_object_exists(self, key):
+        """Vérifie si un objet existe dans S3."""
         try:
-            # Vérifier si l'image est valide
+            self.s3_client.head_object(Bucket=self.bucket_name, Key=key)
+            return True
+        except ClientError as e:
+            if e.response['Error']['Code'] == '404':
+                return False
+            raise
+
+    def optimize_image(self, image, model_instance=None):
+        """Optimise l'image avec gestion des erreurs améliorée."""
+        start_time = time.time()
+        try:
+            logger.info("Début de l'optimisation de l'image")
+            
             if not self.validate_image(image):
-                return None
+                return None, {}
+
+            # Vérifier le cache si un modèle est fourni
+            if model_instance and hasattr(model_instance, 'image'):
+                image_path = model_instance.image.name
+                cached_urls = {}
+                for format_name in self.image_formats.keys():
+                    cached_url = self.get_cached_url(image_path, format_name)
+                    if cached_url and self.check_s3_object_exists(image_path):
+                        cached_urls[format_name] = cached_url
+                if cached_urls:
+                    return None, cached_urls
+
+            # Ouvrir l'image avec PIL
+            if isinstance(image, InMemoryUploadedFile):
+                img = Image.open(image)
+            else:
+                img = Image.open(image)
 
             # Sauvegarder la taille initiale
-            initial_size = image.size
+            initial_size = img.size
             logger.info(f"Taille initiale de l'image: {initial_size[0]}x{initial_size[1]}")
 
             # Supprimer le fond si nécessaire
             if hasattr(image, 'name') and image.name.lower().endswith(('.png', '.jpg', '.jpeg')):
-                output = self.remove_background(image)
+                output = self.remove_background(img)
                 if output:
-                    image = Image.open(output)
-                    logger.info(f"Taille après suppression du fond: {image.size[0]}x{image.size[1]}")
+                    img = Image.open(output)
+                    logger.info(f"Taille après suppression du fond: {img.size[0]}x{img.size[1]}")
 
             # Optimiser avec Tinify
             try:
-                source = tinify.from_file(image)
+                # Sauvegarder l'image dans un buffer temporaire
+                temp_buffer = BytesIO()
+                img.save(temp_buffer, format='PNG')
+                temp_buffer.seek(0)
+                
+                source = tinify.from_buffer(temp_buffer.getvalue())
                 optimized = source.to_buffer()
                 
                 # Sauvegarder l'image optimisée
@@ -133,32 +209,46 @@ class ImageOptimizer:
                 output.seek(0)
                 
                 # Créer les versions redimensionnées
+                urls = {}
                 for format_name, format_config in self.image_formats.items():
                     if format_config['required']:
                         resized = self.resize_image(Image.open(output), 
                                                   (format_config['width'], format_config['height']))
                         if resized:
-                            # Sauvegarder dans S3
-                            file_name = f"{os.path.splitext(image.name)[0]}_{format_name}.png"
-                            self.s3_client.upload_fileobj(
+                            # Utiliser get_product_image_path pour générer le chemin
+                            if model_instance:
+                                file_name = get_product_image_path(model_instance, image.name, format_name)
+                            else:
+                                # Fallback si pas de modèle
+                                file_name = f"{os.path.splitext(image.name)[0]}_{format_name}.{format_config['format'].lower()}"
+                            
+                            # Upload vers S3 avec le bon content-type
+                            url = self.upload_to_s3(
                                 resized,
-                                settings.AWS_STORAGE_BUCKET_NAME,
-                                f"products/{format_name}/{file_name}",
-                                ExtraArgs={'ACL': 'public-read', 'ContentType': 'image/png'}
+                                file_name,
+                                content_type=f'image/{format_config["format"].lower()}'
                             )
+                            if url:
+                                urls[format_name] = url
                 
-                return output
+                # Mettre en cache les URLs générées
+                if model_instance and hasattr(model_instance, 'image'):
+                    for format_name, url in urls.items():
+                        self.set_cached_url(model_instance.image.name, format_name, url)
+
+                logger.info(f"Optimisation terminée en {time.time() - start_time:.2f} secondes")
+                return output, urls
             except Exception as e:
                 logger.error(f"Erreur Tinify: {str(e)}")
                 # Fallback vers PIL si Tinify échoue
                 output = BytesIO()
-                image.save(output, format='PNG', optimize=True, compress_level=9)
+                img.save(output, format='PNG', optimize=True, compress_level=9)
                 output.seek(0)
-                return output
+                return output, {}
 
         except Exception as e:
             logger.error(f"Erreur lors de l'optimisation: {str(e)}")
-            return None
+            return None, {}
 
     def validate_image(self, image):
         """Vérifie si l'image est valide."""
@@ -188,4 +278,85 @@ class ImageOptimizer:
             return True
         except Exception as e:
             logger.error(f"Erreur lors de la validation: {str(e)}")
-            return False 
+            return False
+
+    def optimize_product_image(self, image, product_instance):
+        """Optimise spécifiquement une image de produit."""
+        try:
+            if not self.validate_image(image):
+                return None, {}
+
+            # Vérifier le cache
+            image_path = product_instance.image.name
+            cached_urls = {}
+            for format_name in self.image_formats.keys():
+                cached_url = self.get_cached_url(image_path, format_name)
+                if cached_url and self.check_s3_object_exists(image_path):
+                    cached_urls[format_name] = cached_url
+            if cached_urls:
+                return None, cached_urls
+
+            # Ouvrir l'image avec PIL
+            if isinstance(image, InMemoryUploadedFile):
+                img = Image.open(image)
+            else:
+                img = Image.open(image)
+
+            # Supprimer le fond si c'est une image de produit
+            if hasattr(image, 'name') and image.name.lower().endswith(('.png', '.jpg', '.jpeg')):
+                output = self.remove_background(img)
+                if output:
+                    img = Image.open(output)
+
+            # Créer les versions optimisées
+            urls = {}
+            for format_name, format_config in self.image_formats.items():
+                if format_config['required']:
+                    # Redimensionner l'image
+                    resized = self.resize_image(
+                        img, 
+                        (format_config['width'], format_config['height'])
+                    )
+                    
+                    if resized:
+                        # Générer le chemin avec la fonction utilitaire
+                        file_name = get_product_image_path(product_instance, image.name, format_name)
+                        
+                        # Optimiser avec Tinify si disponible
+                        try:
+                            if self.tinify_key:
+                                temp_buffer = BytesIO()
+                                Image.open(resized).save(temp_buffer, format=format_config['format'])
+                                temp_buffer.seek(0)
+                                
+                                source = tinify.from_buffer(temp_buffer.getvalue())
+                                optimized = source.to_buffer()
+                                
+                                # Upload vers S3
+                                url = self.upload_to_s3(
+                                    optimized,
+                                    file_name,
+                                    content_type=f'image/{format_config["format"].lower()}'
+                                )
+                            else:
+                                # Fallback vers PIL si Tinify n'est pas disponible
+                                url = self.upload_to_s3(
+                                    resized,
+                                    file_name,
+                                    content_type=f'image/{format_config["format"].lower()}'
+                                )
+                            
+                            if url:
+                                urls[format_name] = url
+                                # Mettre en cache
+                                self.set_cached_url(image_path, format_name, url)
+                                
+                        except Exception as e:
+                            logger.error(f"Erreur lors de l'optimisation {format_name}: {str(e)}")
+                            continue
+
+            return None, urls
+
+        except Exception as e:
+            logger.error(f"Erreur lors de l'optimisation de l'image produit: {str(e)}")
+            return None, {} 

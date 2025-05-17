@@ -12,21 +12,24 @@ https://docs.djangoproject.com/en/5.1/ref/settings/
 import os
 from pathlib import Path
 from dotenv import load_dotenv
+import django
+from django.core.files.storage import FileSystemStorage
+from django.contrib.staticfiles.storage import StaticFilesStorage
+from storages.backends.s3boto3 import S3Boto3Storage
+import stripe
+import dj_database_url
+import boto3
+from decouple import config
+
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 print(f"BASE_DIR: {BASE_DIR}")  # Pour vérifier le chemin
-import stripe
-import dj_database_url
 
 print("\n" + "="*50)
 print("Démarrage du chargement des paramètres Django")
 print("="*50 + "\n")
 
 # Charger les variables d'environnement
-from dotenv import load_dotenv
-import os
-
-# Chemin vers le fichier .env
 env_path = os.path.join(BASE_DIR, '.env')
 print(f"\nRecherche du fichier .env à : {env_path}")
 
@@ -36,10 +39,6 @@ if os.path.exists(env_path):
     load_dotenv(env_path)
 else:
     print("✗ Fichier .env non trouvé")
-
-# Charger les variables d'environnement
-from dotenv import load_dotenv
-import os
 
 # Chemin vers le fichier .env.secrets
 env_path = os.path.join(BASE_DIR, 'saga', '.env.secrets')
@@ -55,7 +54,7 @@ else:
 # ==================================================
 # CONFIGURATION DE BASE
 # ==================================================
-DEBUG = os.getenv('DEBUG', 'False') == 'True'
+DEBUG = config('DEBUG', default=False, cast=bool)
 print(f"\nDEBUG est {'activé' if DEBUG else 'désactivé'}")
 print(f"Valeur de DEBUG dans l'environnement : {os.getenv('DEBUG')}")
 
@@ -131,53 +130,81 @@ except Exception as e:
 # ==================================================
 # CONFIGURATION DES FICHIERS STATIQUES ET MÉDIAS
 # ==================================================
-STATIC_URL = 'static/'
-STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
-STATICFILES_DIRS = [os.path.join(BASE_DIR, 'saga/static')]
-STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
-
-MEDIA_URL = "/media/"
-MEDIA_ROOT = BASE_DIR / "media"
-
 # Configuration AWS S3
-AWS_ACCESS_KEY_ID = os.getenv('AWS_ACCESS_KEY_ID')
-AWS_SECRET_ACCESS_KEY = os.getenv('AWS_SECRET_ACCESS_KEY')
-AWS_STORAGE_BUCKET_NAME = os.getenv('AWS_STORAGE_BUCKET_NAME')
-AWS_S3_REGION_NAME = os.getenv('AWS_S3_REGION_NAME', 'us-east-1')
-AWS_S3_FILE_OVERWRITE = False
-AWS_DEFAULT_ACL = 'public-read'
-AWS_S3_VERIFY = True
-AWS_S3_CUSTOM_DOMAIN = f'{AWS_STORAGE_BUCKET_NAME}.s3.amazonaws.com'
+AWS_ACCESS_KEY_ID = config('AWS_ACCESS_KEY_ID')
+AWS_SECRET_ACCESS_KEY = config('AWS_SECRET_ACCESS_KEY')
+AWS_STORAGE_BUCKET_NAME = config('AWS_STORAGE_BUCKET_NAME')
+AWS_S3_REGION_NAME = config('AWS_S3_REGION_NAME', default='eu-north-1')
 
-# Paramètres de cache S3
+print("\n=== CONFIGURATION AWS S3 ===")
+print(f"AWS_ACCESS_KEY_ID: {'✓ Configuré' if AWS_ACCESS_KEY_ID else '✗ Non configuré'}")
+print(f"AWS_SECRET_ACCESS_KEY: {'✓ Configuré' if AWS_SECRET_ACCESS_KEY else '✗ Non configuré'}")
+print(f"AWS_STORAGE_BUCKET_NAME: {'✓ Configuré' if AWS_STORAGE_BUCKET_NAME else '✗ Non configuré'}")
+print(f"AWS_S3_REGION_NAME: {AWS_S3_REGION_NAME}")
+print("===========================\n")
+
+# Vérification des paramètres AWS
+if not all([AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY, AWS_STORAGE_BUCKET_NAME]):
+    raise ValueError("Les variables AWS sont requises. Veuillez configurer AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY et AWS_STORAGE_BUCKET_NAME dans votre fichier .env")
+
+# Configuration S3
+AWS_S3_CUSTOM_DOMAIN = f'{AWS_STORAGE_BUCKET_NAME}.s3.{AWS_S3_REGION_NAME}.amazonaws.com'
 AWS_S3_OBJECT_PARAMETERS = {
     'CacheControl': 'max-age=86400',
 }
+AWS_DEFAULT_ACL = None
+AWS_QUERYSTRING_AUTH = True
+AWS_S3_FILE_OVERWRITE = False
 
-# Configuration du stockage des médias
-DEFAULT_FILE_STORAGE = 'storages.backends.s3boto3.S3Boto3Storage'
-MEDIA_URL = f'https://{AWS_S3_CUSTOM_DOMAIN}/media/'
+# Configuration conditionnelle pour les fichiers statiques et médias
+if DEBUG:
+    # Configuration pour le développement local
+    STATICFILES_STORAGE = 'django.contrib.staticfiles.storage.StaticFilesStorage'
+    STATIC_URL = '/static/'
+    STATIC_ROOT = os.path.join(BASE_DIR, 'static')
+    STATICFILES_DIRS = [
+        os.path.join(BASE_DIR, 'saga/static'),
+    ]
+else:
+    # Configuration pour la production
+    STATICFILES_STORAGE = 'saga.storage_backends.StaticStorage'
+    STATIC_URL = f'https://{AWS_S3_CUSTOM_DOMAIN}/static/'
+    STATIC_ROOT = None
+    STATICFILES_DIRS = []
 
-# Configuration du stockage des fichiers statiques
-STATICFILES_STORAGE = 'storages.backends.s3boto3.S3StaticStorage'
-STATIC_URL = f'https://{AWS_S3_CUSTOM_DOMAIN}/static/'
+# Configuration S3 pour les médias (toujours utilisée)
+DEFAULT_FILE_STORAGE = 'saga.storage_backends.MediaStorage'
+MEDIA_URL = '/media/' if DEBUG else f'https://{AWS_S3_CUSTOM_DOMAIN}/'
+MEDIA_ROOT = None
 
-# Configuration du stockage des fichiers privés
-PRIVATE_MEDIA_LOCATION = 'private'
-PRIVATE_FILE_STORAGE = 'storages.backends.s3boto3.S3Boto3Storage'
-
-# Configuration des emplacements de stockage
-AWS_LOCATION = 'static'
-AWS_QUERYSTRING_AUTH = False
-AWS_HEADERS = {
-    'Cache-Control': 'max-age=86400',
-}
-
-# Configuration des fichiers statiques
-STATICFILES_DIRS = [
-    os.path.join(BASE_DIR, 'saga/static'),
+# Configuration du stockage des fichiers
+FILE_UPLOAD_HANDLERS = [
+    'django.core.files.uploadhandler.MemoryFileUploadHandler',
+    'django.core.files.uploadhandler.TemporaryFileUploadHandler',
 ]
-STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
+
+# Configuration du stockage des fichiers médias
+FILE_UPLOAD_MAX_MEMORY_SIZE = 5242880  # 5MB
+DATA_UPLOAD_MAX_MEMORY_SIZE = 5242880  # 5MB
+
+# Configuration des dossiers de stockage
+if DEBUG:
+    # En développement, utiliser le stockage local
+    MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
+    MEDIA_URL = '/media/'
+    STATIC_ROOT = os.path.join(BASE_DIR, 'static')
+    STATIC_URL = '/static/'
+else:
+    # En production, utiliser S3
+    MEDIA_ROOT = None
+    MEDIA_URL = f'https://{AWS_S3_CUSTOM_DOMAIN}/media/'
+    STATIC_ROOT = None
+    STATIC_URL = f'https://{AWS_S3_CUSTOM_DOMAIN}/static/'
+
+# Configuration des dossiers pour les images
+PRODUCT_IMAGES_DIR = 'products'  # Dossier racine pour tous les produits
+PRODUCT_MAIN_IMAGES_DIR = 'main'  # Sous-dossier pour les images principales
+PRODUCT_GALLERY_IMAGES_DIR = 'gallery'  # Sous-dossier pour la galerie
 
 # ==================================================
 # CONFIGURATION DE SÉCURITÉ
@@ -203,6 +230,50 @@ stripe.api_key = STRIPE_SECRET_KEY
 
 # Tinify
 TINIFY_API_KEY = os.getenv('TINIFY_API_KEY')
+
+# Configuration de l'optimisation d'images
+MAX_IMAGE_SIZE = 5 * 1024 * 1024  # 5MB
+MAX_IMAGE_DIMENSIONS = (4000, 4000)
+IMAGE_QUALITY = 80
+
+# Formats d'image configurables
+IMAGE_FORMATS = {
+    'main': {
+        'width': 1200,
+        'height': 1200,
+        'usage': 'product_detail',
+        'required': True,
+        'description': 'Image principale pour la page détaillée du produit',
+        'quality': 85,
+        'format': 'JPEG'
+    },
+    'thumb': {
+        'width': 300,
+        'height': 300,
+        'usage': 'product_list',
+        'required': True,
+        'description': 'Miniature pour la liste des produits',
+        'quality': 80,
+        'format': 'JPEG'
+    },
+    'gallery': {
+        'width': 800,
+        'height': 800,
+        'usage': 'product_gallery',
+        'required': True,
+        'description': 'Image pour la galerie du produit',
+        'quality': 85,
+        'format': 'JPEG'
+    }
+}
+
+# Configuration du cache pour les images
+CACHES = {
+    'default': {
+        'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
+        'LOCATION': 'unique-snowflake',
+    }
+}
 
 # ==================================================
 # CONFIGURATION DE L'EMAIL
@@ -391,6 +462,7 @@ MIDDLEWARE = [
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'django_htmx.middleware.HtmxMiddleware',
     'corsheaders.middleware.CorsMiddleware',
+    'saga.settings.FileRequestLoggingMiddleware',  # Ajout du middleware de logging
 ]
 
 ROOT_URLCONF = 'saga.urls'
@@ -460,15 +532,6 @@ USE_TZ = True
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/5.1/howto/static-files/
 
-STATIC_URL = 'static/'
-STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
-STATICFILES_DIRS = [
-    os.path.join(BASE_DIR, 'saga/static'),
-    # other static file directories...
-]
-
-MEDIA_URL = "/media/"
-MEDIA_ROOT = BASE_DIR / "media"
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.1/ref/settings/#default-auto-field
 
@@ -493,12 +556,22 @@ print(f"Clé Stripe configurée : {'Oui' if STRIPE_SECRET_KEY else 'Non'}")
 print("=============================\n") 
 
 # Configuration du logging
+import logging
+
 LOGGING = {
     'version': 1,
     'disable_existing_loggers': False,
     'formatters': {
         'verbose': {
-            'format': '{levelname} {asctime} {module} {message}',
+            'format': '{levelname} {asctime} {module} {process:d} {thread:d} {message}',
+            'style': '{',
+        },
+        'simple': {
+            'format': '{levelname} {asctime} {message}',
+            'style': '{',
+        },
+        'file_request': {
+            'format': '{asctime} {levelname} {message} - {path} - {method} - {status}',
             'style': '{',
         },
     },
@@ -509,15 +582,67 @@ LOGGING = {
         },
         'file': {
             'class': 'logging.FileHandler',
-            'filename': 'debug.log',
+            'filename': 'django_debug.log',
             'formatter': 'verbose',
+        },
+        'file_request': {
+            'class': 'logging.FileHandler',
+            'filename': 'file_requests.log',
+            'formatter': 'file_request',
         },
     },
     'loggers': {
-        'saga.utils.image_optimizer': {
+        'django': {
             'handlers': ['console', 'file'],
             'level': 'INFO',
             'propagate': True,
         },
+        'saga': {
+            'handlers': ['console', 'file'],
+            'level': 'DEBUG',
+            'propagate': True,
+        },
+        'storages': {
+            'handlers': ['console', 'file', 'file_request'],
+            'level': 'DEBUG',
+            'propagate': True,
+        },
+        'django.request': {
+            'handlers': ['console', 'file', 'file_request'],
+            'level': 'DEBUG',
+            'propagate': False,
+        },
+        'boto3': {
+            'handlers': ['console', 'file'],
+            'level': 'DEBUG',
+            'propagate': True,
+        },
+        'botocore': {
+            'handlers': ['console', 'file'],
+            'level': 'DEBUG',
+            'propagate': True,
+        },
     },
-} 
+}
+
+# Middleware pour logger les requêtes de fichiers
+class FileRequestLoggingMiddleware:
+    def __init__(self, get_response):
+        self.get_response = get_response
+        self.logger = logging.getLogger('storages')
+
+    def __call__(self, request):
+        response = self.get_response(request)
+        
+        # Vérifier si c'est une requête pour un fichier statique ou média
+        if request.path.startswith(('/static/', '/media/')):
+            self.logger.info(
+                f"File request: {request.path}",
+                extra={
+                    'path': request.path,
+                    'method': request.method,
+                    'status': response.status_code,
+                }
+            )
+        
+        return response 

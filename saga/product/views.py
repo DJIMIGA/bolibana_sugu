@@ -172,12 +172,14 @@ def category(request):
 
 
 def product_list(request):
-    # Récupérer les produits avec leurs variantes et couleurs
+    # Récupérer les produits avec leurs relations
     products = Product.objects.select_related(
         'category',
-        'supplier'
+        'supplier',
+        'phone',
+        'phone__color'
     ).prefetch_related(
-        'phone__variants__color'
+        'images'
     ).all()
 
     return render(request, 'product_list.html', {'products': products})

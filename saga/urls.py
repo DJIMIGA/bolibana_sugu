@@ -9,12 +9,14 @@ from django.urls import path, include
 urlpatterns = [
     # Vues Django classiques (web)
     path('admin/', admin.site.urls),
-    path('', include('suppliers.urls')),
     path('products/', include('product.urls')),
     path('accounts/', include('accounts.urls')),
-    path('cart/', include('cart.urls', namespace='cart')),
-    path('prix/', include('price_checker.urls', namespace='price_checker')),
-    
-    # API pour React Native (mobile et web moderne)
-    path('api/v1/', include('product.api.urls')),
-] + static(settings.STATIC_URL, document_root=settings.STATIC_ROOT) + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT) 
+    path('', include('suppliers.urls')),
+    path('cart/', include('cart.urls')),
+    path('api/', include('product.api.urls')),
+    path('price-checker/', include('price_checker.urls', namespace='price_checker')),
+]
+
+# Ajouter les URLs pour les fichiers statiques uniquement en développement
+if settings.DEBUG:
+    urlpatterns += static(settings.STATIC_URL, document_root=settings.STATIC_ROOT) 

@@ -57,95 +57,10 @@
         </div>
 
         <!-- Filtres -->
-        <div class="mb-6 sm:mb-8">
-            <div class="bg-white rounded-xl shadow-lg p-3 sm:p-4 mx-2 sm:mx-0">
-                <form class="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-6 gap-2 sm:gap-3"
-                      hx-get="{% url 'suppliers:supplier_index' %}"
-                      hx-target="#phone-grid"
-                      hx-push-url="true"
-                      hx-trigger="change delay:500ms">
-                    <!-- Filtre par marque -->
-                    <div class="space-y-1">
-                        <select name="brand" class="w-full text-sm rounded-lg border border-gray-200 px-2 py-1.5 text-gray-700 focus:outline-none focus:ring-1 focus:ring-green-500">
-                            <option value="">Marque</option>
-                            {% for brand in brands %}
-                            <option value="{{ brand.brand }}" {% if brand.brand == selected_brand %}selected{% endif %}>
-                                {{ brand.brand }}
-                            </option>
-                            {% endfor %}
-                        </select>
-                    </div>
+        {% include "suppliers/components/_filters.html" with is_detail=False %}
 
-                    <!-- Filtre par modèle -->
-                    <div class="space-y-1">
-                        <select name="model" class="w-full text-sm rounded-lg border border-gray-200 px-2 py-1.5 text-gray-700 focus:outline-none focus:ring-1 focus:ring-green-500">
-                            <option value="">Modèle</option>
-                            {% for model in models %}
-                            <option value="{{ model.model }}" {% if model.model == selected_model %}selected{% endif %}>
-                                {{ model.model }}
-                            </option>
-                            {% endfor %}
-                        </select>
-                    </div>
-
-                    <!-- Filtre par stockage -->
-                    <div class="space-y-1">
-                        <select name="storage" class="w-full text-sm rounded-lg border border-gray-200 px-2 py-1.5 text-gray-700 focus:outline-none focus:ring-1 focus:ring-green-500">
-                            <option value="">Stockage</option>
-                            {% for storage in storages %}
-                            <option value="{{ storage.storage }}" {% if storage.storage|stringformat:"s" == selected_storage %}selected{% endif %}>
-                                {{ storage.storage }} Go
-                            </option>
-                            {% endfor %}
-                        </select>
-                    </div>
-
-                    <!-- Filtre par RAM -->
-                    <div class="space-y-1">
-                        <select name="ram" class="w-full text-sm rounded-lg border border-gray-200 px-2 py-1.5 text-gray-700 focus:outline-none focus:ring-1 focus:ring-green-500">
-                            <option value="">RAM</option>
-                            {% for ram in rams %}
-                            <option value="{{ ram.ram }}" {% if ram.ram|stringformat:"s" == selected_ram %}selected{% endif %}>
-                                {{ ram.ram }} Go
-                            </option>
-                            {% endfor %}
-                        </select>
-                    </div>
-
-                    <!-- Filtre par prix minimum -->
-                    <div class="space-y-1">
-                        <input type="number" name="price_min" 
-                               value="{{ selected_price_min }}"
-                               class="w-full text-sm rounded-lg border border-gray-200 px-2 py-1.5 text-gray-700 focus:outline-none focus:ring-1 focus:ring-green-500"
-                               placeholder="Prix min">
-                    </div>
-
-                    <!-- Filtre par prix maximum -->
-                    <div class="space-y-1">
-                        <input type="number" name="price_max" 
-                               value="{{ selected_price_max }}"
-                               class="w-full text-sm rounded-lg border border-gray-200 px-2 py-1.5 text-gray-700 focus:outline-none focus:ring-1 focus:ring-green-500"
-                               placeholder="Prix max">
-                    </div>
-
-                    <!-- Bouton de réinitialisation -->
-                    <div class="col-span-full flex justify-end">
-                        <a href="{% url 'suppliers:supplier_index' %}" 
-                           hx-get="{% url 'suppliers:supplier_index' %}"
-                           hx-target="#phone-grid"
-                           hx-push-url="true"
-                           class="text-sm text-gray-500 hover:text-gray-700">
-                            Réinitialiser les filtres
-                        </a>
-                    </div>
-                </form>
-            </div>
-        </div>
-
-        <!-- Grille des téléphones -->
-        <div id="phone-grid">
-            {% include 'product/phone_list.html' %}
-        </div>
+        <!-- Grille des produits -->
+        {% include "suppliers/components/_product_grid.html" %}
     </div>
 </div>
 {% endblock %}
