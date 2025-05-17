@@ -119,3 +119,60 @@ heroku run python saga/manage.py migrate
 - Toujours utiliser le chemin complet `saga/manage.py` pour les commandes Django sur Heroku
 - Vérifier les logs Heroku en cas d'erreur avec `heroku logs --tail`
 - Utiliser `--traceback` pour plus de détails sur les erreurs de migration 
+
+## Gestion des fichiers statiques et médias
+
+### Environnement de production (Heroku)
+- **WhiteNoise** est utilisé pour servir les fichiers statiques (CSS, JS, images, etc.) directement depuis le serveur Heroku, sans passer par S3.
+- **Amazon S3** est utilisé uniquement pour les fichiers médias (uploads utilisateurs, images produits, etc.).
+- Les fichiers statiques sont collectés dans le dossier `staticfiles` lors du déploiement et servis de façon optimisée (compression, cache, manifest) par WhiteNoise.
+- Les médias sont stockés sur S3 pour garantir la persistance et l'évolutivité.
+
+### Environnement de développement (local)
+- Les fichiers statiques sont servis depuis le dossier local `static`.
+- Les fichiers médias sont stockés et servis depuis le dossier local `media`.
+- Cela permet un développement plus rapide et une gestion simplifiée des fichiers.
+
+### Pourquoi cette configuration ?
+- **Performance & Simplicité** : WhiteNoise est optimisé pour la production, gère la compression, le cache et le manifest des fichiers statiques, tout en évitant la complexité d'un stockage S3 pour les fichiers statiques.
+- **Développement fluide** : En local, tout reste simple et rapide grâce au stockage local.
+- **Économie & Sécurité** : S3 n'est utilisé que pour les médias en production, ce qui réduit les coûts et limite l'exposition des fichiers statiques.
+- **Bonne pratique Django** : Cette approche suit les recommandations officielles pour Django sur Heroku.
+
+### Schéma de gestion des fichiers
+
+```
++---------------------+         +-------------------+
+|  Utilisateur final  | <-----> |     Heroku        |
++---------------------+         +-------------------+
+                                         |  |
+                                         |  | (statique)
+                                         v  v
+                                 +-------------------+
+                                 |   WhiteNoise      |
+                                 +-------------------+
+                                         |
+                                         | (médias)
+                                         v
+                                 +-------------------+
+                                 |      S3           |
+                                 +-------------------+
+```
+
+- **Statique** : WhiteNoise sert les fichiers statiques directement depuis Heroku.
+- **Médias** : Les fichiers uploadés sont stockés sur S3 en production.
+
+### Exemple de configuration (settings.py)
+
+```python
+# Production
+if not DEBUG:
+    STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
+    DEFAULT_FILE_STORAGE = 'saga.storage_backends.MediaStorage'  # S3 pour les médias
+    MEDIA_URL = f'https://{AWS_S3_CUSTOM_DOMAIN}/media/'
+else:
+    STATICFILES_STORAGE = 'django.contrib.staticfiles.storage.StaticFilesStorage'
+    DEFAULT_FILE_STORAGE = 'django.core.files.storage.FileSystemStorage'
+    MEDIA_URL = '/media/'
+    MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
+``` 

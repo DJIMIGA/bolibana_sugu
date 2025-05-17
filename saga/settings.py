@@ -54,7 +54,7 @@ else:
 # ==================================================
 # CONFIGURATION DE BASE
 # ==================================================
-DEBUG = False  # Forcé à False pour tester S3
+DEBUG = os.getenv('DEBUG', 'False').lower() == 'true'
 print(f"\nDEBUG est {'activé' if DEBUG else 'désactivé'}")
 print(f"Valeur de DEBUG dans l'environnement : {os.getenv('DEBUG')}")
 
@@ -142,10 +142,8 @@ print("===========================\n")
 if not all([AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY, AWS_STORAGE_BUCKET_NAME]):
     raise ValueError("Les variables AWS sont requises. Veuillez configurer AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY et AWS_STORAGE_BUCKET_NAME dans votre fichier .env")
 
-# Configuration CloudFront
-AWS_S3_CUSTOM_DOMAIN = 'd3tcb6ounmojtn.cloudfront.net'  # Domaine CloudFront sans https://
-
 # Configuration S3
+AWS_S3_CUSTOM_DOMAIN = f'{AWS_STORAGE_BUCKET_NAME}.s3.{AWS_S3_REGION_NAME}.amazonaws.com'
 AWS_S3_OBJECT_PARAMETERS = {
     'CacheControl': 'max-age=86400',
 }
@@ -156,44 +154,26 @@ AWS_S3_FILE_OVERWRITE = False
 # Configuration des fichiers statiques
 STATIC_URL = '/static/'
 STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
+STATICFILES_DIRS = [
+    os.path.join(BASE_DIR, 'static'),  # Dossier static à la racine
+]
 
 # Configuration du stockage des fichiers statiques
 if not DEBUG:
-    # En production (Heroku + S3 + CloudFront)
-    STATICFILES_STORAGE = 'saga.storage_backends.StaticStorage'
-    STATIC_URL = f'https://{AWS_S3_CUSTOM_DOMAIN}/static/'
-    # Ne pas utiliser STATICFILES_DIRS en production
-    STATICFILES_DIRS = []
-else:
-    # En développement
-    STATICFILES_STORAGE = 'django.contrib.staticfiles.storage.StaticFilesStorage'
-    STATICFILES_DIRS = [
-        os.path.join(BASE_DIR, 'static'),
-    ]
-
-# Configuration S3 pour les médias (toujours utilisée)
-DEFAULT_FILE_STORAGE = 'saga.storage_backends.MediaStorage'
-MEDIA_URL = '/media/' if DEBUG else f'https://{AWS_S3_CUSTOM_DOMAIN}/media/'
-
-# Configuration du stockage des fichiers
-FILE_UPLOAD_HANDLERS = [
-    'django.core.files.uploadhandler.MemoryFileUploadHandler',
-    'django.core.files.uploadhandler.TemporaryFileUploadHandler',
-]
-
-# Configuration du stockage des fichiers médias
-FILE_UPLOAD_MAX_MEMORY_SIZE = 5242880  # 5MB
-DATA_UPLOAD_MAX_MEMORY_SIZE = 5242880  # 5MB
-
-# Configuration des dossiers de stockage
-if DEBUG:
-    # En développement, utiliser le stockage local
-    MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
-    MEDIA_URL = '/media/'
-else:
-    # En production, utiliser S3
-    MEDIA_ROOT = None
+    # En production (Heroku)
+    STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
+    WHITENOISE_USE_FINDERS = True
+    WHITENOISE_MANIFEST_STRICT = False
+    WHITENOISE_ALLOW_ALL_ORIGINS = True
+    # Configuration S3 pour les médias uniquement
+    DEFAULT_FILE_STORAGE = 'saga.storage_backends.MediaStorage'
     MEDIA_URL = f'https://{AWS_S3_CUSTOM_DOMAIN}/media/'
+else:
+    # En développement (local)
+    STATICFILES_STORAGE = 'django.contrib.staticfiles.storage.StaticFilesStorage'
+    DEFAULT_FILE_STORAGE = 'django.core.files.storage.FileSystemStorage'
+    MEDIA_URL = '/media/'
+    MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 
 # Configuration des dossiers pour les images
 PRODUCT_IMAGES_DIR = 'products'  # Dossier racine pour tous les produits
@@ -447,6 +427,7 @@ INSTALLED_APPS = [
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
+    'whitenoise.middleware.WhiteNoiseMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
@@ -640,7 +621,7 @@ class FileRequestLoggingMiddleware:
         
         return response 
 
-# Suppression de la configuration WhiteNoise qui n'est plus nécessaire
+# Suppression de la configuration WhiteNoise qui entre en conflit avec S3
 # if not DEBUG:
 #     STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 #     MIDDLEWARE.insert(1, 'whitenoise.middleware.WhiteNoiseMiddleware') 

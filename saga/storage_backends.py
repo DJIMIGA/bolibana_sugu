@@ -1,52 +1,48 @@
 from storages.backends.s3boto3 import S3Boto3Storage
 from django.conf import settings
-import boto3
 
 class MediaStorage(S3Boto3Storage):
     location = 'media'
     file_overwrite = False
-    default_acl = 'private'
-    querystring_auth = True
+    default_acl = None
     bucket_name = settings.AWS_STORAGE_BUCKET_NAME
     region_name = settings.AWS_S3_REGION_NAME
     custom_domain = settings.AWS_S3_CUSTOM_DOMAIN
+    querystring_auth = True
+    object_parameters = settings.AWS_S3_OBJECT_PARAMETERS
+    access_key = settings.AWS_ACCESS_KEY_ID
+    secret_key = settings.AWS_SECRET_ACCESS_KEY
+    auto_create_bucket = True
+    auto_create_acl = True
 
 class StaticStorage(S3Boto3Storage):
     location = 'static'
     file_overwrite = True
     default_acl = 'public-read'
-    querystring_auth = False
     bucket_name = settings.AWS_STORAGE_BUCKET_NAME
     region_name = settings.AWS_S3_REGION_NAME
     custom_domain = settings.AWS_S3_CUSTOM_DOMAIN
+    querystring_auth = False
+    object_parameters = settings.AWS_S3_OBJECT_PARAMETERS
+    access_key = settings.AWS_ACCESS_KEY_ID
+    secret_key = settings.AWS_SECRET_ACCESS_KEY
     auto_create_bucket = True
     auto_create_acl = True
 
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        # Créer le dossier static dans S3 s'il n'existe pas
-        s3 = boto3.client('s3',
-            aws_access_key_id=settings.AWS_ACCESS_KEY_ID,
-            aws_secret_access_key=settings.AWS_SECRET_ACCESS_KEY,
-            region_name=settings.AWS_S3_REGION_NAME
-        )
-        try:
-            s3.put_object(
-                Bucket=self.bucket_name,
-                Key=f'{self.location}/',
-                Body=''
-            )
-        except Exception as e:
-            print(f"Erreur lors de la création du dossier static: {e}")
-
 class ProductImageStorage(S3Boto3Storage):
-    location = 'products'
+    """Stockage spécifique pour les images de produits"""
+    location = 'media/products'  # Base location pour tous les médias produits
     file_overwrite = False
-    default_acl = 'public-read'
-    querystring_auth = False
+    default_acl = None
     bucket_name = settings.AWS_STORAGE_BUCKET_NAME
     region_name = settings.AWS_S3_REGION_NAME
     custom_domain = settings.AWS_S3_CUSTOM_DOMAIN
+    querystring_auth = True
+    object_parameters = settings.AWS_S3_OBJECT_PARAMETERS
+    access_key = settings.AWS_ACCESS_KEY_ID
+    secret_key = settings.AWS_SECRET_ACCESS_KEY
+    auto_create_bucket = True
+    auto_create_acl = True
 
     def get_available_name(self, name, max_length=None):
         """Surcharge pour gérer les noms de fichiers uniques"""
