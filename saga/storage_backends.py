@@ -1,5 +1,6 @@
 from storages.backends.s3boto3 import S3Boto3Storage
 from django.conf import settings
+import boto3
 
 class MediaStorage(S3Boto3Storage):
     location = 'media'
@@ -18,6 +19,25 @@ class StaticStorage(S3Boto3Storage):
     bucket_name = settings.AWS_STORAGE_BUCKET_NAME
     region_name = settings.AWS_S3_REGION_NAME
     custom_domain = settings.AWS_S3_CUSTOM_DOMAIN
+    auto_create_bucket = True
+    auto_create_acl = True
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # Créer le dossier static dans S3 s'il n'existe pas
+        s3 = boto3.client('s3',
+            aws_access_key_id=settings.AWS_ACCESS_KEY_ID,
+            aws_secret_access_key=settings.AWS_SECRET_ACCESS_KEY,
+            region_name=settings.AWS_S3_REGION_NAME
+        )
+        try:
+            s3.put_object(
+                Bucket=self.bucket_name,
+                Key=f'{self.location}/',
+                Body=''
+            )
+        except Exception as e:
+            print(f"Erreur lors de la création du dossier static: {e}")
 
 class ProductImageStorage(S3Boto3Storage):
     location = 'products'
