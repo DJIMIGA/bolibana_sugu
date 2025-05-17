@@ -156,18 +156,20 @@ AWS_S3_FILE_OVERWRITE = False
 # Configuration des fichiers statiques
 STATIC_URL = '/static/'
 STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
-STATICFILES_DIRS = [
-    os.path.join(BASE_DIR, 'static'),
-]
 
 # Configuration du stockage des fichiers statiques
 if not DEBUG:
     # En production (Heroku + S3 + CloudFront)
     STATICFILES_STORAGE = 'saga.storage_backends.StaticStorage'
     STATIC_URL = f'https://{AWS_S3_CUSTOM_DOMAIN}/static/'
+    # Ne pas utiliser STATICFILES_DIRS en production
+    STATICFILES_DIRS = []
 else:
     # En développement
     STATICFILES_STORAGE = 'django.contrib.staticfiles.storage.StaticFilesStorage'
+    STATICFILES_DIRS = [
+        os.path.join(BASE_DIR, 'static'),
+    ]
 
 # Configuration S3 pour les médias (toujours utilisée)
 DEFAULT_FILE_STORAGE = 'saga.storage_backends.MediaStorage'
