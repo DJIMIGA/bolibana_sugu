@@ -18,7 +18,7 @@
     <div class="lg:col-span-2 mx-auto w-full block sm:flex">
     <div class="group relative product-item lg:col-span-1 mx-auto" data-product-id="{{ product.id }}">
       {% if product.image and product.image.url %}
-        <a href="{% url 'product_detail' product.id %}" class="block product-link">
+        <a href="{% url 'product:product_detail' product.id %}" class="block product-link">
           <img src="{{ product.image.url }}"
                alt="{{ product.title }}"
                class="aspect-square w-full sm:w-64 rounded-lg bg-gray-200 object-cover group-hover:opacity-75 xl:aspect-[7/8]">
