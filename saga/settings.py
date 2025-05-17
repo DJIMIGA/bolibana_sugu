@@ -158,9 +158,14 @@ STATICFILES_DIRS = [
     os.path.join(BASE_DIR, 'static'),  # Dossier static à la racine
 ]
 
+# Configuration du stockage des fichiers statiques
 if not DEBUG:
+    # En production (Heroku + S3)
     STATICFILES_STORAGE = 'saga.storage_backends.StaticStorage'
     STATIC_URL = f"https://{AWS_S3_CUSTOM_DOMAIN}/static/"
+else:
+    # En développement
+    STATICFILES_STORAGE = 'django.contrib.staticfiles.storage.StaticFilesStorage'
 
 # Configuration S3 pour les médias (toujours utilisée)
 DEFAULT_FILE_STORAGE = 'saga.storage_backends.MediaStorage'
