@@ -47,15 +47,18 @@ class SupplierListView(ListView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         
-        # Récupérer les marques de téléphones
-        phone_brands = Phone.objects.values('brand').distinct()
-        context['phone_categories'] = phone_brands
+        # Récupérer les produits actifs avec leurs téléphones
+        active_products = Product.objects.filter(is_active=True).select_related('phone')
         
-        # Récupérer les filtres pour les téléphones
-        context['brands'] = Phone.objects.values('brand').distinct()
-        context['models'] = Phone.objects.values('model').distinct()
-        context['storages'] = Phone.objects.values('storage').distinct()
-        context['rams'] = Phone.objects.values('ram').distinct()
+        # Récupérer les marques de téléphones des produits actifs
+        phone_brands = active_products.values('phone__brand').distinct()
+        context['phone_categories'] = [{'brand': item['phone__brand']} for item in phone_brands if item['phone__brand']]
+        
+        # Récupérer les filtres pour les téléphones des produits actifs
+        context['brands'] = active_products.values('phone__brand').distinct()
+        context['models'] = active_products.values('phone__model').distinct()
+        context['storages'] = active_products.values('phone__storage').distinct()
+        context['rams'] = active_products.values('phone__ram').distinct()
         
         # Filtres sélectionnés
         context['selected_brand'] = self.request.GET.get('brand', '')
