@@ -132,10 +132,10 @@ class PhoneAdmin(admin.ModelAdmin):
             'fields': ('operating_system', 'screen_size', 'processor', 'ram', 'storage')
         }),
         ('Multimédia et batterie', {
-            'fields': ('camera', 'battery')
+            'fields': ('camera_main', 'camera_front', 'battery_capacity')
         }),
         ('Connectivité et garantie', {
-            'fields': ('color',)
+            'fields': ('network', 'warranty', 'color')
         }),
     )
 

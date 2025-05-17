@@ -42,18 +42,18 @@ def detail(request, product_id):
         for size in all_sizes
     ]
     reviews = product.reviews.all()
-    average_rating = reviews.aggregate(Avg('note'))['note__avg'] or 0
+    average_rating = reviews.aggregate(Avg('rating'))['rating__avg'] or 0
     average_rating = round(average_rating, 1)
-    images = product.image_products.all()
+    images = product.images.all()
     total_reviews = reviews.count()
-    note_reviews = reviews.values('note')
+    note_reviews = reviews.values('rating')
     # Compter le nombre d'avis pour chaque note
-    ratings_count = reviews.values('note').annotate(count=Count('id')).order_by('note')
+    ratings_count = reviews.values('rating').annotate(count=Count('id')).order_by('rating')
 
     # Créer un dictionnaire pour stocker le nombre d'avis par note
     ratings_distribution = {1: 0, 2: 0, 3: 0, 4: 0, 5: 0}
     for rating in ratings_count:
-        ratings_distribution[rating['note']] = rating['count']
+        ratings_distribution[rating['rating']] = rating['count']
 
     # Calculer les pourcentages
     ratings_percentage = {key: (value / total_reviews * 100) if total_reviews > 0 else 0 for key, value in
@@ -61,11 +61,11 @@ def detail(request, product_id):
 
     if request.method == 'POST':
         if request.user.is_authenticated:  # Vérifiez si l'utilisateur est connecté
-            note = request.POST.get('note')
+            rating = request.POST.get('rating')
             comment = request.POST.get('comment')
 
             # Créer un nouvel avis
-            Review.objects.create(product=product, author=request.user, note=note, comment=comment)
+            Review.objects.create(product=product, user=request.user, rating=rating, comment=comment)
 
             messages.success(request, 'Votre avis a été soumis avec succès!')
             return redirect('product_detail', product_id=product.id)
@@ -91,18 +91,18 @@ def detail(request, product_id):
 def review(request, product_id):
     product = get_object_or_404(Product, id=product_id)
     reviews = product.reviews.all()
-    average_rating = reviews.aggregate(Avg('note'))['note__avg'] or 0
+    average_rating = reviews.aggregate(Avg('rating'))['rating__avg'] or 0
     average_rating = round(average_rating, 1)
-    images = product.image_products.all()
+    images = product.images.all()
     total_reviews = reviews.count()
-    note_reviews = reviews.values('note')
+    note_reviews = reviews.values('rating')
     # Compter le nombre d'avis pour chaque note
-    ratings_count = reviews.values('note').annotate(count=Count('id')).order_by('note')
+    ratings_count = reviews.values('rating').annotate(count=Count('id')).order_by('rating')
 
     # Créer un dictionnaire pour stocker le nombre d'avis par note
     ratings_distribution = {1: 0, 2: 0, 3: 0, 4: 0, 5: 0}
     for rating in ratings_count:
-        ratings_distribution[rating['note']] = rating['count']
+        ratings_distribution[rating['rating']] = rating['count']
 
     # Calculer les pourcentages
     ratings_percentage = {key: (value / total_reviews * 100) if total_reviews > 0 else 0 for key, value in
@@ -110,11 +110,11 @@ def review(request, product_id):
 
     if request.method == 'POST':
         if request.user.is_authenticated:  # Vérifiez si l'utilisateur est connecté
-            note = request.POST.get('note')
+            rating = request.POST.get('rating')
             comment = request.POST.get('comment')
 
             # Créer un nouvel avis
-            Review.objects.create(product=product, author=request.user, note=note, comment=comment)
+            Review.objects.create(product=product, user=request.user, rating=rating, comment=comment)
 
             messages.success(request, 'Votre avis a été soumis avec succès!')
             return redirect('product_detail', product_id=product.id)
@@ -136,7 +136,7 @@ def review(request, product_id):
 def quick_view(request, product_id):
     product = get_object_or_404(Product, id=product_id)
     reviews = product.reviews.all()
-    average_rating = reviews.aggregate(Avg('note'))['note__avg'] or 0
+    average_rating = reviews.aggregate(Avg('rating'))['rating__avg'] or 0
     average_rating = round(average_rating, 1)
     clothing = getattr(product, 'clothing_product', None)
     all_sizes = Size.objects.all()

@@ -72,7 +72,7 @@
               {% endfor %}
             </div>
             <p class="sr-only">{{ average_rating|floatformat:1 }} out of 5 stars</p>
-            <a href="{% url 'review' product.id %}" class="ml-3 text-sm font-medium text-indigo-600 hover:text-indigo-500">{{ reviews.count }} avis</a>
+            <a href="{% url 'product:add_review' product.id %}" class="ml-3 text-sm font-medium text-indigo-600 hover:text-indigo-500">{{ reviews.count }} avis</a>
           </div>
         </div>
               </section>

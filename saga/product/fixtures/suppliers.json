@@ -11,5 +11,31 @@
             "specialty": "Fournisseur de TELEPHONE",
             "slug": "tecno"
         }
+    },
+    {
+        "model": "suppliers.supplier",
+        "pk": 2,
+        "fields": {
+            "company_name": "Samsung",
+            "description": "Leader mondial dans la fabrication de smartphones et d'électronique",
+            "email": "contact@samsung.com",
+            "phone": "+243000000001",
+            "is_verified": true,
+            "specialty": "Fournisseur de TELEPHONE",
+            "slug": "samsung"
+        }
+    },
+    {
+        "model": "suppliers.supplier",
+        "pk": 3,
+        "fields": {
+            "company_name": "Apple",
+            "description": "Entreprise leader dans la fabrication d'iPhone et d'appareils électroniques",
+            "email": "contact@apple.com",
+            "phone": "+243000000002",
+            "is_verified": true,
+            "specialty": "Fournisseur de TELEPHONE",
+            "slug": "apple"
+        }
     }
 ] 
