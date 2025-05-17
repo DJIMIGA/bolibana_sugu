@@ -142,8 +142,10 @@ print("===========================\n")
 if not all([AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY, AWS_STORAGE_BUCKET_NAME]):
     raise ValueError("Les variables AWS sont requises. Veuillez configurer AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY et AWS_STORAGE_BUCKET_NAME dans votre fichier .env")
 
+# Configuration CloudFront
+AWS_S3_CUSTOM_DOMAIN = 'd3tcb6ounmojtn.cloudfront.net'  # Domaine CloudFront fixe
+
 # Configuration S3
-AWS_S3_CUSTOM_DOMAIN = f'{AWS_STORAGE_BUCKET_NAME}.s3.{AWS_S3_REGION_NAME}.amazonaws.com'
 AWS_S3_OBJECT_PARAMETERS = {
     'CacheControl': 'max-age=86400',
 }
@@ -155,12 +157,12 @@ AWS_S3_FILE_OVERWRITE = False
 STATIC_URL = '/static/'
 STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
 STATICFILES_DIRS = [
-    os.path.join(BASE_DIR, 'static'),  # Dossier static à la racine
+    os.path.join(BASE_DIR, 'static'),
 ]
 
 # Configuration du stockage des fichiers statiques
 if not DEBUG:
-    # En production (Heroku + S3)
+    # En production (Heroku + S3 + CloudFront)
     STATICFILES_STORAGE = 'saga.storage_backends.StaticStorage'
     STATIC_URL = f"https://{AWS_S3_CUSTOM_DOMAIN}/static/"
 else:
@@ -443,7 +445,6 @@ INSTALLED_APPS = [
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
-    'whitenoise.middleware.WhiteNoiseMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
@@ -452,7 +453,7 @@ MIDDLEWARE = [
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'django_htmx.middleware.HtmxMiddleware',
     'corsheaders.middleware.CorsMiddleware',
-    'saga.settings.FileRequestLoggingMiddleware',  # Ajout du middleware de logging
+    'saga.settings.FileRequestLoggingMiddleware',
 ]
 
 ROOT_URLCONF = 'saga.urls'
@@ -637,7 +638,7 @@ class FileRequestLoggingMiddleware:
         
         return response 
 
-# Suppression de la configuration WhiteNoise qui entre en conflit avec S3
+# Suppression de la configuration WhiteNoise qui n'est plus nécessaire
 # if not DEBUG:
 #     STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 #     MIDDLEWARE.insert(1, 'whitenoise.middleware.WhiteNoiseMiddleware') 
