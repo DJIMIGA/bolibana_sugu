@@ -175,36 +175,51 @@ class Command(BaseCommand):
 
             # Déployer les produits
             for product_data in data['products']:
-                product, created = Product.objects.update_or_create(
-                    pk=product_data['pk'],
-                    defaults=product_data['fields']
-                )
-                if created:
-                    created_products += 1
-                else:
-                    updated_products += 1
+                try:
+                    product, created = Product.objects.update_or_create(
+                        pk=product_data['pk'],
+                        defaults=product_data['fields']
+                    )
+                    if created:
+                        created_products += 1
+                    else:
+                        updated_products += 1
+                except Exception as e:
+                    self.stdout.write(self.style.WARNING(f'Erreur lors de la mise à jour du produit {product_data["pk"]}: {str(e)}'))
 
             # Déployer les téléphones
             for phone_data in data['phones']:
-                phone, created = Phone.objects.update_or_create(
-                    pk=phone_data['pk'],
-                    defaults=phone_data['fields']
-                )
-                if created:
-                    created_phones += 1
-                else:
-                    updated_phones += 1
+                try:
+                    phone, created = Phone.objects.update_or_create(
+                        pk=phone_data['pk'],
+                        defaults=phone_data['fields']
+                    )
+                    if created:
+                        created_phones += 1
+                    else:
+                        updated_phones += 1
+                except Exception as e:
+                    self.stdout.write(self.style.WARNING(f'Erreur lors de la mise à jour du téléphone {phone_data["pk"]}: {str(e)}'))
 
             # Déployer les images
             for image_data in data['images']:
-                image, created = ImageProduct.objects.update_or_create(
-                    pk=image_data['pk'],
-                    defaults=image_data['fields']
-                )
-                if created:
-                    created_images += 1
-                else:
-                    updated_images += 1
+                try:
+                    # Vérifier si le produit existe
+                    product_id = image_data['fields'].get('product_id')
+                    if not Product.objects.filter(pk=product_id).exists():
+                        self.stdout.write(self.style.WARNING(f'Le produit {product_id} n\'existe pas pour l\'image {image_data["pk"]}'))
+                        continue
+
+                    image, created = ImageProduct.objects.update_or_create(
+                        pk=image_data['pk'],
+                        defaults=image_data['fields']
+                    )
+                    if created:
+                        created_images += 1
+                    else:
+                        updated_images += 1
+                except Exception as e:
+                    self.stdout.write(self.style.WARNING(f'Erreur lors de la mise à jour de l\'image {image_data["pk"]}: {str(e)}'))
 
             # Afficher les statistiques
             self.stdout.write(self.style.SUCCESS(

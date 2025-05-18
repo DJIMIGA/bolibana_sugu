@@ -124,6 +124,13 @@ class Product(models.Model):
     is_available = models.BooleanField(default=True, verbose_name='Disponible')
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+    image = models.ImageField(
+        upload_to=get_product_main_image_upload_path,
+        storage=ProductImageStorage(),
+        null=True,
+        blank=True,
+        verbose_name='Image principale'
+    )
     image_urls = models.JSONField(default=dict, blank=True, null=True, verbose_name='URLs des images')
     sku = models.CharField(max_length=50, unique=True, default='SKU-0000', verbose_name='SKU')
     stock = models.PositiveIntegerField(default=0, verbose_name='Stock')
@@ -142,6 +149,13 @@ class Product(models.Model):
     def save(self, *args, **kwargs):
         if not self.slug:
             self.slug = generate_unique_slug(self.title, Product)
+        
+        # Mettre à jour image_urls si une image principale est définie
+        if self.image:
+            if not self.image_urls:
+                self.image_urls = {}
+            self.image_urls['main'] = self.image.url
+        
         super().save(*args, **kwargs)
 
     def get_absolute_url(self):
@@ -154,6 +168,8 @@ class Product(models.Model):
 
     def get_main_image_url(self):
         """Retourne l'URL de l'image principale"""
+        if self.image:
+            return self.image.url
         if self.image_urls and 'main' in self.image_urls:
             return self.image_urls['main']
         return None
@@ -163,6 +179,25 @@ class Product(models.Model):
         if self.image_urls and 'gallery' in self.image_urls:
             return self.image_urls['gallery']
         return []
+
+    def update_image_urls(self):
+        """Met à jour le champ image_urls avec les URLs des images"""
+        if not self.image_urls:
+            self.image_urls = {}
+        
+        # Mettre à jour l'URL de l'image principale
+        if self.image:
+            self.image_urls['main'] = self.image.url
+        
+        # Mettre à jour les URLs de la galerie
+        gallery_urls = []
+        for image in self.images.all().order_by('ordre'):
+            if image.image:
+                gallery_urls.append(image.image.url)
+        if gallery_urls:
+            self.image_urls['gallery'] = gallery_urls
+        
+        self.save(update_fields=['image_urls'])
 
 
 class Color(models.Model):
