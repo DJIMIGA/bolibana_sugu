@@ -31,6 +31,7 @@ class ProductForm(forms.ModelForm):
             'specifications',
             'weight',
             'dimensions',
+            'image',
             'image_urls'
         ]
         widgets = {
