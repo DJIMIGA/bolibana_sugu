@@ -15,9 +15,9 @@ class SupplierListView(ListView):
     paginate_by = 12
 
     def get_queryset(self):
-        queryset = Product.objects.filter(is_active=True).select_related(
+        queryset = Product.objects.filter(is_available=True).select_related(
             'phone',
-            'color',
+            'phone__color',
             'supplier'
         )
         
@@ -48,7 +48,7 @@ class SupplierListView(ListView):
         context = super().get_context_data(**kwargs)
         
         # Récupérer les produits actifs avec leurs téléphones
-        active_products = Product.objects.filter(is_active=True).select_related('phone')
+        active_products = Product.objects.filter(is_available=True).select_related('phone', 'phone__color')
         
         # Récupérer les marques de téléphones des produits actifs (sans doublons, sans valeurs vides, triées)
         brands_list = list(active_products.values_list('phone__brand', flat=True))
@@ -97,10 +97,10 @@ class BrandDetailView(TemplateView):
         # Récupérer les produits de cette marque
         products = Product.objects.filter(
             phone__brand__iexact=brand_slug,
-            is_active=True
+            is_available=True
         ).select_related(
             'phone',
-            'color',
+            'phone__color',
             'supplier'
         )
         

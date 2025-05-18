@@ -18,9 +18,25 @@ class ReviewForm(forms.ModelForm):
 class ProductForm(forms.ModelForm):
     class Meta:
         model = Product
-        fields = ['title', 'description', 'price', 'category', 'supplier', 'image']
+        fields = [
+            'title',
+            'description',
+            'price',
+            'category',
+            'supplier',
+            'brand',
+            'is_available',
+            'sku',
+            'stock',
+            'specifications',
+            'weight',
+            'dimensions',
+            'image_urls'
+        ]
         widgets = {
             'description': forms.Textarea(attrs={'rows': 4}),
+            'specifications': forms.Textarea(attrs={'rows': 4}),
+            'image_urls': forms.HiddenInput()
         }
 
 

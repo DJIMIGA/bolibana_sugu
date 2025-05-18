@@ -34,16 +34,16 @@
     <!-- Image gallery -->
     <div class="mx-auto mt-6 max-w-2xl sm:px-6 lg:grid lg:max-w-7xl lg:grid-cols-3 lg:gap-x-8 lg:px-8">
       <!-- Image principale -->
-      {% if product.image and product.image.url %}
-      <img src="{{ product.image.url }}" alt="{{ product.title }}"
+      {% with first_image=images.first %}
+      {% if first_image %}
+      <img src="{{ first_image.image.url }}" alt="{{ product.title }}"
            class="hidden size-full rounded-lg object-cover lg:block">
       {% endif %}
+      {% endwith %}
 
       <div class="hidden lg:grid lg:grid-cols-1 lg:gap-y-8">
         {% for image in images %}
-        {% if forloop.counter == 1 and image.image and image.image.url %}
-        <img src="{{ image.image.url }}" alt="{{ product.title }}" class="aspect-3/2 w-full rounded-lg object-cover">
-        {% elif forloop.counter == 2 and image.image and image.image.url %}
+        {% if forloop.counter <= 2 %}
         <img src="{{ image.image.url }}" alt="{{ product.title }}" class="aspect-3/2 w-full rounded-lg object-cover">
         {% endif %}
         {% endfor %}
@@ -51,7 +51,7 @@
 
       <!-- Afficher les autres images -->
       {% for image in images %}
-      {% if forloop.counter > 2 and image.image and image.image.url %}
+      {% if forloop.counter > 2 %}
       <img src="{{ image.image.url }}" alt="{{ product.title }}"
            class="aspect-4/5 size-full object-cover sm:rounded-lg lg:aspect-auto">
       {% endif %}
@@ -170,7 +170,6 @@
     {% if images %}
     <div class="grid grid-cols-4 gap-6" aria-orientation="horizontal" role="tablist">
       {% for image in images %}
-      {% if image.image and image.image.url %}
       <button id="tabs-1-tab-{{ forloop.counter }}"
               class="relative h-24 bg-white rounded-md flex items-center justify-center text-sm font-medium uppercase text-gray-900 cursor-pointer hover:bg-gray-50 focus:outline-none focus:ring focus:ring-offset-4 focus:ring-opacity-50"
               aria-controls="tabs-1-panel-{{ forloop.counter }}"
@@ -183,20 +182,21 @@
         </span>
         <span class="ring-transparent absolute inset-0 rounded-md ring-2 ring-offset-2 pointer-events-none" aria-hidden="true"></span>
       </button>
-      {% endif %}
       {% endfor %}
     </div>
     {% endif %}
   </div>
  
   <!-- Image principale -->
-   {% if product.image and product.image.url %}
-  <div class="aspect-w-1 aspect-h-1 mb-4">
-    <div id="main-image-container" class="w-full h-full">
-      <img id="main-image" src="{{ product.image.url }}" alt="{{ product.title }}" class="w-full h-full object-center object-cover sm:rounded-lg">
-    </div>
-  </div>
-  {% endif %}
+   {% with first_image=images.first %}
+   {% if first_image %}
+   <div class="aspect-w-1 aspect-h-1 mb-4">
+     <div id="main-image-container" class="w-full h-full">
+       <img id="main-image" src="{{ first_image.image.url }}" alt="{{ product.title }}" class="w-full h-full object-center object-cover sm:rounded-lg">
+     </div>
+   </div>
+   {% endif %}
+   {% endwith %}
 </div>
 
       <!-- Product info -->
@@ -367,6 +367,22 @@ document.body.addEventListener('htmx:beforeSwap', function(evt) {
         }, 3000);
     }
 });
+
+function changeMainImage(url, button) {
+  const mainImage = document.getElementById('main-image');
+  if (mainImage) {
+    mainImage.src = url;
+  }
+  
+  // Mettre à jour l'état actif du bouton
+  const buttons = document.querySelectorAll('[role="tab"]');
+  buttons.forEach(btn => {
+    btn.classList.remove('ring-indigo-500');
+    btn.classList.add('ring-transparent');
+  });
+  button.classList.remove('ring-transparent');
+  button.classList.add('ring-indigo-500');
+}
 </script>
 {% endblock %}
 

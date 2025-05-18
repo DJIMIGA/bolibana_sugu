@@ -21,71 +21,40 @@ def index(request):
 
 
 def detail(request, product_id):
-    
     product = get_object_or_404(Product, id=product_id)
-    shipping_method = ShippingMethod.objects.all()
-    clothing = getattr(product, 'clothing_product', None)
-    all_sizes = Size.objects.all()
-
-    if clothing:
-        colors = clothing.color.all()
-        product_sizes = clothing.size.all()
-    else:
-        colors = []
-        product_sizes = []
-
-    sizes_info = [
-        {
-            'size': size,
-            'available': size in product_sizes
-        }
-        for size in all_sizes
-    ]
     reviews = product.reviews.all()
-    average_rating = reviews.aggregate(Avg('rating'))['rating__avg'] or 0
-    average_rating = round(average_rating, 1)
-    images = product.images.all()
-    total_reviews = reviews.count()
-    note_reviews = reviews.values('rating')
-    # Compter le nombre d'avis pour chaque note
-    ratings_count = reviews.values('rating').annotate(count=Count('id')).order_by('rating')
-
-    # Créer un dictionnaire pour stocker le nombre d'avis par note
-    ratings_distribution = {1: 0, 2: 0, 3: 0, 4: 0, 5: 0}
-    for rating in ratings_count:
-        ratings_distribution[rating['rating']] = rating['count']
-
-    # Calculer les pourcentages
-    ratings_percentage = {key: (value / total_reviews * 100) if total_reviews > 0 else 0 for key, value in
-                          ratings_distribution.items()}
-
-    if request.method == 'POST':
-        if request.user.is_authenticated:  # Vérifiez si l'utilisateur est connecté
-            rating = request.POST.get('rating')
-            comment = request.POST.get('comment')
-
-            # Créer un nouvel avis
-            Review.objects.create(product=product, user=request.user, rating=rating, comment=comment)
-
-            messages.success(request, 'Votre avis a été soumis avec succès!')
-            return redirect('product_detail', product_id=product.id)
-        else:
-            messages.error(request, 'Vous devez être connecté pour soumettre un avis.')
-            return redirect('login')  # Redirigez vers la page de connexion
-
+    average_rating = reviews.aggregate(Avg('rating'))['rating__avg'] if reviews else None
+    
+    if request.method == 'POST' and request.user.is_authenticated:
+        review_form = ReviewForm(request.POST)
+        if review_form.is_valid():
+            review = review_form.save(commit=False)
+            review.product = product
+            review.user = request.user
+            review.save()
+            return redirect('product:product_detail', product_id=product.id)
+    else:
+        review_form = ReviewForm()
+    
     context = {
         'product': product,
-        'shipping_method': shipping_method,
-        'product_sizes': product_sizes,
-        'colors': colors,
-        'sizes_info': sizes_info,
-        'images': images,
         'reviews': reviews,
         'average_rating': average_rating,
-        'ratings_percentage': ratings_percentage,
-        'note_reviews': note_reviews,
+        'review_form': review_form,
+        'images': product.images.all().order_by('ordre'),
     }
-    return render(request, 'detail.html', context)
+    
+    # Ajouter les attributs spécifiques au téléphone si c'est un téléphone
+    if hasattr(product, 'phone'):
+        context['phone'] = product.phone
+        # Récupérer les téléphones similaires comme variantes
+        similar_phones = Phone.objects.filter(
+            Q(brand=product.phone.brand) | 
+            Q(model=product.phone.model)
+        ).exclude(id=product.phone.id)
+        context['variants'] = similar_phones
+    
+    return render(request, 'product/detail.html', context)
 
 
 def review(request, product_id):
@@ -398,9 +367,8 @@ class PhoneDetailView(DetailView):
         context = super().get_context_data(**kwargs)
         phone = self.get_object()
         
-        # Images
-        context['primary_image'] = phone.images.filter(is_primary=True).first()
-        context['other_images'] = phone.images.filter(is_primary=False)
+        # Images via le produit associé
+        context['images'] = phone.product.images.all().order_by('ordre')
         
         # Téléphones similaires
         similar_phones = Phone.objects.filter(

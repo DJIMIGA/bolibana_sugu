@@ -18,49 +18,6 @@
                             <div class="mt-2 w-24 h-1 bg-gradient-to-r from-green-600 via-yellow-500 to-red-500 rounded-full"></div>
                         </div>
 
-                        <!-- Variantes disponibles -->
-                        <div class="space-y-3 sm:space-y-4">
-                            <h3 class="text-lg font-semibold text-gray-900">Variantes disponibles</h3>
-                            <div class="grid grid-cols-1 gap-3">
-                                {% for variant in phone.variants.all %}
-                                <button type="button"
-                                        id="variant-{{ variant.id }}"
-                                        class="w-full text-left p-4 bg-white rounded-xl shadow-sm border border-gray-200 hover:shadow-md hover:border-green-500 transition-all duration-300 {% if forloop.first %}ring-2 ring-green-500 ring-offset-2{% endif %}"
-                                        data-variant-id="{{ variant.id }}"
-                                        data-variant-price="{{ variant.price|floatformat:0 }}"
-                                        data-variant-images='[{% for image in variant.images.all %}{"id": {{ image.id }}, "image": {"url": "{{ image.image.url }}", "alt": "{{ phone.model }} - {{ variant.color.name }} - {{ variant.storage }}Go"}, "is_primary": {% if image.is_primary %}true{% else %}false{% endif %}}{% if not forloop.last %},{% endif %}{% endfor %}]'
-                                        onclick="handleVariantClick(this)">
-                                    <div class="flex items-center justify-between">
-                                        <div class="flex items-center gap-3">
-                                            <div class="w-6 h-6 sm:w-8 sm:h-8 rounded-full border-2 border-gray-200" 
-                                                 style="background-color: {{ variant.color.code }}"
-                                                 title="{{ variant.color.name }}">
-                                            </div>
-                                            <div>
-                                                <p class="font-medium text-gray-900">{{ phone.model }}</p>
-                                                <p class="text-sm text-gray-600">{{ variant.color.name }} - {{ variant.storage }} Go</p>
-                                            </div>
-                                        </div>
-                                        <div class="text-right">
-                                            <p class="text-lg font-bold bg-gradient-to-r from-green-600 via-yellow-500 to-red-500 bg-clip-text text-transparent">
-                                                {{ variant.price|floatformat:0 }} FCFA
-                                            </p>
-                                        </div>
-                                    </div>
-                                    <!-- Détails de la variante pour la mise à jour dynamique -->
-                                    <div class="variant-details hidden">
-                                        <span class="font-medium text-gray-900">{{ phone.model }}</span>
-                                        <div class="w-3 h-3 rounded-full border border-gray-200" 
-                                             style="background-color: {{ variant.color.code }}"
-                                             title="{{ variant.color.name }}">
-                                        </div>
-                                        <span class="text-sm text-gray-600">{{ variant.color.name }} - {{ variant.storage }} Go</span>
-                                    </div>
-                                </button>
-                                {% endfor %}
-                            </div>
-                        </div>
-
                         <!-- Caractéristiques -->
                         <div class="space-y-3 sm:space-y-4">
                             <h3 class="text-lg font-semibold text-gray-900">Caractéristiques principales</h3>
@@ -140,9 +97,9 @@
                             <div id="main-image-container" class="w-full h-[300px] sm:h-[400px]">
                                 <div id="phone-image-wrapper" class="relative group w-full h-full flex items-center justify-center bg-gray-50 rounded-xl shadow-sm p-4">
                                     <div class="absolute inset-0 bg-gray-900/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-                                    {% with first_variant=phone.variants.first %}
-                                        {% if first_variant.primary_image %}
-                                        <img src="{{ first_variant.primary_image.image.url }}"
+                                    {% with first_image=images.first %}
+                                        {% if first_image %}
+                                        <img src="{{ first_image.image.url }}"
                                              alt="{{ phone.model }}"
                                              class="max-h-full max-w-full object-contain"
                                              id="phone-image">
@@ -158,93 +115,40 @@
                             </div>
                         </div>
 
-                        <!-- Images de la variante sélectionnée -->
+                        <!-- Images disponibles -->
                         <div class="space-y-3">
                             <h3 class="text-lg font-semibold text-gray-900">Images disponibles</h3>
                             <div id="variant-images" class="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-2 p-2 bg-gray-50 rounded-xl shadow-sm border border-gray-200">
-                                {% with first_variant=phone.variants.first %}
-                                    {% for image in first_variant.images.all %}
-                                    <div class="relative group w-20 h-20 cursor-pointer"
-                                         onclick="updateMainImage({
-                                             id: {{ image.id }},
-                                             image: {
-                                                 url: '{{ image.image.url }}',
-                                                 alt: '{{ phone.model }} - {{ first_variant.color.name }} - {{ first_variant.storage }}Go'
-                                             }
-                                         })">
-                                        <div class="w-full h-full rounded-lg overflow-hidden bg-white shadow-sm border border-gray-200 transition-all duration-300 hover:shadow-md hover:border-green-500">
-                                            <div class="absolute inset-0 bg-gray-900/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-                                            <div class="w-full h-full p-1 flex items-center justify-center">
-                                                <img src="{{ image.image.url }}"
-                                                     alt="{{ phone.model }} - {{ first_variant.color.name }} - {{ first_variant.storage }}Go"
-                                                     class="w-full h-full object-contain transition-transform duration-300 group-hover:scale-110">
-                                            </div>
+                                {% for image in images %}
+                                <div class="relative group w-20 h-20 cursor-pointer"
+                                     onclick="updateMainImage({
+                                         id: {{ image.id }},
+                                         image: {
+                                             url: '{{ image.image.url }}',
+                                             alt: '{{ phone.model }}'
+                                         }
+                                     })">
+                                    <div class="w-full h-full rounded-lg overflow-hidden bg-white shadow-sm border border-gray-200 transition-all duration-300 hover:shadow-md hover:border-green-500">
+                                        <div class="absolute inset-0 bg-gray-900/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                                        <div class="w-full h-full p-1 flex items-center justify-center">
+                                            <img src="{{ image.image.url }}"
+                                                 alt="{{ phone.model }}"
+                                                 class="w-full h-full object-contain transition-transform duration-300 group-hover:scale-110">
                                         </div>
-                                        {% if image.is_primary %}
-                                        <span class="absolute top-1 right-1 bg-green-500 text-white text-[8px] px-1 py-0.5 rounded-full">
-                                            Principal
-                                        </span>
-                                        {% endif %}
                                     </div>
-                                    {% endfor %}
-                                {% endwith %}
+                                </div>
+                                {% endfor %}
                             </div>
                         </div>
 
                         <!-- Prix et bouton d'ajout au panier -->
                         <div class="space-y-3">
                             <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-4">
-                                <p class="text-2xl sm:text-3xl font-bold bg-gradient-to-r from-green-600 via-yellow-500 to-red-500 bg-clip-text text-transparent" id="variant-price">
-                                    {{ phone.variants.first.price|floatformat:0 }} FCFA
+                                <p class="text-2xl sm:text-3xl font-bold bg-gradient-to-r from-green-600 via-yellow-500 to-red-500 bg-clip-text text-transparent">
+                                    {{ phone.product.price|floatformat:0 }} FCFA
                                 </p>
                                 <p class="text-sm text-gray-600">Prix TTC, livraison incluse</p>
-                                
-                                <!-- Informations de la variante -->
-                                <div class="mt-2 flex items-center gap-2" id="variant-info">
-                                    <span>{{ phone.model }}</span>
-                                    <div class="w-3 h-3 rounded-full border border-gray-200" 
-                                         style="background-color: {{ phone.variants.first.color.code }}"
-                                         title="{{ phone.variants.first.color.name }}">
-                                    </div>
-                                    <span class="text-sm text-gray-600">{{ phone.variants.first.color.name }} - {{ phone.variants.first.storage }} Go</span>
-                                </div>
-                                
-                                <!-- Informations additionnelles -->
-                                <div class="mt-4 space-y-2 border-t border-gray-100 pt-3">
-                               
-                                    <div class="flex items-center gap-2 text-sm text-gray-600">
-                                        <svg class="w-4 h-4 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                                        </svg>
-                                        <span>En stock</span>
-                                    </div>
-                                    <div class="flex items-center gap-2 text-sm text-gray-600">
-                                        <svg class="w-4 h-4 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                                        </svg>
-                                        <span>Livraison sous 24h</span>
-                                    </div>
-                                    <div class="flex items-center gap-2 text-sm text-gray-600">
-                                        <svg class="w-4 h-4 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
-                                        </svg>
-                                        <span>Paiement sécurisé</span>
-                                    </div>
-                                </div>
                             </div>
-                            <button type="button"
-                                    class="w-full bg-green-600 text-white py-3 sm:py-4 rounded-xl font-semibold hover:bg-green-700 transition-all duration-300"
-                                    hx-post="#"
-                                    hx-include="[name='variant_id']"
-                                    hx-trigger="click">
-                                <div class="flex items-center justify-center gap-2">
-                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />
-                                    </svg>
-                                    <span>Ajouter au panier</span>
-                                </div>
-                            </button>
-                            <input type="hidden" name="variant_id" value="{{ phone.variants.first.id }}">
                         </div>
                     </div>
                 </div>

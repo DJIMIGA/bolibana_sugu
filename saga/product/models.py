@@ -32,6 +32,11 @@ class ShippingMethod(models.Model):
     min_delivery_days = models.PositiveSmallIntegerField()
     max_delivery_days = models.PositiveSmallIntegerField()
 
+    class Meta:
+        app_label = 'product'
+        verbose_name = 'Méthode de livraison'
+        verbose_name_plural = 'Méthodes de livraison'
+
     def __str__(self):
         return self.name
 
@@ -110,189 +115,54 @@ def get_product_gallery_image_upload_path(instance, filename):
 
 class Product(models.Model):
     title = models.CharField(max_length=200, verbose_name='Titre')
-    category = models.ForeignKey(Category, on_delete=models.CASCADE, related_name='products')
-    price = models.DecimalField(max_digits=10, decimal_places=0, verbose_name='Prix')
-    description = models.TextField(verbose_name='Description', blank=True, null=True)
-    highlight = models.TextField(verbose_name='Points forts', blank=True, null=True)
-    image = models.ImageField(
-        upload_to=get_product_main_image_upload_path,
-        storage=ProductImageStorage(),
-        null=True,
-        blank=True
-    )
-    image_urls = models.JSONField(default=dict, blank=True, null=True, verbose_name='URLs des images')
-    supplier = models.ForeignKey('suppliers.Supplier', on_delete=models.SET_NULL, related_name='products', null=True, blank=True)
-    stripe_product_id = models.CharField(max_length=255, blank=True, null=True)
-    is_active = models.BooleanField(default=True, verbose_name='Actif')
+    slug = models.SlugField(max_length=200, unique=True, blank=True, null=True)
+    description = models.TextField(verbose_name='Description', null=True, blank=True)
+    price = models.DecimalField(max_digits=10, decimal_places=2, verbose_name='Prix')
+    category = models.ForeignKey('Category', on_delete=models.CASCADE, related_name='products', verbose_name='Catégorie')
+    supplier = models.ForeignKey('suppliers.Supplier', on_delete=models.SET_NULL, null=True, blank=True, related_name='products', verbose_name='Fournisseur')
+    brand = models.CharField(max_length=100, blank=True, null=True, verbose_name='Marque')
+    is_available = models.BooleanField(default=True, verbose_name='Disponible')
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
-    disponible_salam = models.BooleanField(default=False, verbose_name='Disponible en Salam')
+    image_urls = models.JSONField(default=dict, blank=True, null=True, verbose_name='URLs des images')
+    sku = models.CharField(max_length=50, unique=True, default='SKU-0000', verbose_name='SKU')
     stock = models.PositiveIntegerField(default=0, verbose_name='Stock')
-    sku = models.CharField(max_length=100, unique=True, verbose_name='SKU', default='SKU-0000')
-    color = models.ForeignKey('Color', on_delete=models.CASCADE, related_name='products', null=True, blank=True)
-    slug = models.SlugField(max_length=255, unique=True, null=True, blank=True)
+    specifications = models.JSONField(default=dict, blank=True, null=True, verbose_name='Spécifications')
+    weight = models.DecimalField(max_digits=6, decimal_places=2, null=True, blank=True, verbose_name='Poids (kg)')
+    dimensions = models.CharField(max_length=50, blank=True, null=True, verbose_name='Dimensions')
 
     class Meta:
+        ordering = ['-created_at']
         verbose_name = 'Produit'
         verbose_name_plural = 'Produits'
-        ordering = ['-created_at']
-        unique_together = [['title', 'category']]
 
     def __str__(self):
         return self.title
 
-    def clean(self):
-        if Product.objects.filter(title=self.title, category=self.category).exclude(pk=self.pk).exists():
-            raise ValidationError(
-                {'title': 'Un produit avec ce titre existe déjà dans cette catégorie.'}
-            )
-
     def save(self, *args, **kwargs):
         if not self.slug:
-            self.slug = slugify(self.title)
-        
-        if self.image:
-            logger.info(f"Début du traitement de l'image pour le produit {self.title}")
-            
-            # Créer une instance de ProductImageStorage
-            storage = ProductImageStorage()
-            
-            # Lire le contenu du fichier
-            image_content = self.image.read()
-            logger.info(f"Image lue, taille: {len(image_content)} bytes")
-            
-            # Optimiser l'image principale avec suppression du fond
-            optimizer = ImageOptimizer()
-            
-            # Forcer la suppression du fond pour l'image principale
-            img = Image.open(BytesIO(image_content))
-            output = optimizer.remove_background(img)
-            if output:
-                main_content = output
-                logger.info("Fond supprimé avec succès")
-            else:
-                main_content = BytesIO(image_content)
-                logger.info("Utilisation de l'image originale (pas de suppression de fond)")
-            
-            # Générer le chemin
-            main_path = get_product_image_path(self, self.image.name, 'main')
-            logger.info(f"Chemin généré - Main: {main_path}")
-            
-            # Sauvegarder l'image principale optimisée
-            storage.save(main_path, ContentFile(main_content.getvalue()))
-            self.image.name = main_path
-            logger.info("Image principale sauvegardée")
-            
-            # Mettre à jour les URLs dans image_urls
-            self.image_urls = {
-                'main': storage.url(main_path)
-            }
-            logger.info(f"URL mise à jour: {self.image_urls}")
-            
-            # Supprimer l'ancienne image si elle existe
-            if self.pk:
-                old_instance = Product.objects.get(pk=self.pk)
-                if old_instance.image and old_instance.image != self.image:
-                    storage.delete(old_instance.image.name)
-                    logger.info("Ancienne image supprimée")
-        
+            self.slug = generate_unique_slug(self.title, Product)
         super().save(*args, **kwargs)
 
-    def delete(self, *args, **kwargs):
-        # Supprimer l'image du stockage
-        if self.image:
-            storage = ProductImageStorage()
-            storage.delete(self.image.name)
-        super().delete(*args, **kwargs)
+    def get_absolute_url(self):
+        return reverse('product:product_detail', args=[self.id])
 
     def get_highlights(self):
-        if self.highlight:
-            return self.highlight.splitlines()
+        if self.specifications:
+            return self.specifications.get('highlights', [])
         return []
 
-    def get_image_url(self):
+    def get_main_image_url(self):
         """Retourne l'URL de l'image principale"""
-        if self.image:
-            return self.image.url
+        if self.image_urls and 'main' in self.image_urls:
+            return self.image_urls['main']
         return None
 
-    def get_thumbnail_url(self):
-        """Retourne l'URL de la miniature"""
-        if self.image_urls and 'thumb' in self.image_urls:
-            return self.image_urls['thumb']
-        return None
-
-    def save_image(self, image_file, image_type='main'):
-        """
-        Sauvegarde une image pour le produit.
-        
-        Args:
-            image_file: Le fichier image à sauvegarder
-            image_type: Le type d'image ('main', 'thumb', ou 'gallery')
-        """
-        if not image_file:
-            return None
-            
-        # Créer une instance de ProductImageStorage
-        storage = ProductImageStorage()
-        
-        # Générer le chemin de l'image
-        filename = os.path.basename(image_file.name)
-        path = get_product_image_path(self, filename, image_type)
-        
-        # Sauvegarder l'image
-        storage.save(path, image_file)
-        
-        # Si c'est une image principale, créer la miniature
-        if image_type == 'main':
-            self.create_thumbnail(image_file)
-            
-        return path
-
-    def create_thumbnail(self, image_file):
-        """
-        Crée une miniature à partir de l'image principale.
-        
-        Args:
-            image_file: Le fichier image source
-        """
-        try:
-            # Créer une instance de ProductImageStorage
-            storage = ProductImageStorage()
-            
-            # Ouvrir l'image
-            img = Image.open(image_file)
-            
-            # Convertir en RGB si nécessaire
-            if img.mode in ('RGBA', 'LA'):
-                background = Image.new('RGB', img.size, (255, 255, 255))
-                background.paste(img, mask=img.split()[-1])
-                img = background
-            
-            # Redimensionner l'image
-            img.thumbnail((300, 300), Image.Resampling.LANCZOS)
-            
-            # Optimiser l'image
-            optimizer = ImageOptimizer()
-            img = optimizer.optimize_image(img)
-            
-            # Sauvegarder la miniature
-            thumb_io = BytesIO()
-            img.save(thumb_io, format='JPEG', quality=85)
-            thumb_io.seek(0)
-            
-            # Générer le chemin de la miniature
-            filename = os.path.basename(image_file.name)
-            thumb_path = get_product_image_path(self, filename, 'thumb')
-            
-            # Sauvegarder la miniature
-            storage.save(thumb_path, ContentFile(thumb_io.getvalue()))
-            
-            return thumb_path
-            
-        except Exception as e:
-            print(f"Erreur lors de la création de la miniature : {str(e)}")
-            return None
+    def get_gallery_urls(self):
+        """Retourne la liste des URLs de la galerie"""
+        if self.image_urls and 'gallery' in self.image_urls:
+            return self.image_urls['gallery']
+        return []
 
 
 class Color(models.Model):
