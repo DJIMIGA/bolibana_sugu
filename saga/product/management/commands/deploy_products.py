@@ -32,12 +32,10 @@ class Command(BaseCommand):
             existing_phones = Phone.objects.count()
             
             if existing_products > 0 or existing_phones > 0:
-                if not options['force']:
-                    self.stdout.write(self.style.ERROR(
-                        f'Des données existent déjà ({existing_products} produits, {existing_phones} téléphones). '
-                        'Utilisez --force pour forcer le déploiement ou --backup pour créer une sauvegarde.'
-                    ))
-                    return
+                self.stdout.write(self.style.WARNING(
+                    f'Des données existent déjà ({existing_products} produits, {existing_phones} téléphones). '
+                    'Les données seront mises à jour.'
+                ))
                 
                 if options['backup']:
                     # Créer une sauvegarde
@@ -167,30 +165,54 @@ class Command(BaseCommand):
             # Déployer les données
             self.stdout.write(self.style.SUCCESS('Déploiement des données en cours...'))
 
+            # Compteurs pour les statistiques
+            updated_products = 0
+            created_products = 0
+            updated_phones = 0
+            created_phones = 0
+            updated_images = 0
+            created_images = 0
+
             # Déployer les produits
             for product_data in data['products']:
-                Product.objects.update_or_create(
+                product, created = Product.objects.update_or_create(
                     pk=product_data['pk'],
                     defaults=product_data['fields']
                 )
+                if created:
+                    created_products += 1
+                else:
+                    updated_products += 1
 
             # Déployer les téléphones
             for phone_data in data['phones']:
-                Phone.objects.update_or_create(
+                phone, created = Phone.objects.update_or_create(
                     pk=phone_data['pk'],
                     defaults=phone_data['fields']
                 )
+                if created:
+                    created_phones += 1
+                else:
+                    updated_phones += 1
 
             # Déployer les images
             for image_data in data['images']:
-                ImageProduct.objects.update_or_create(
+                image, created = ImageProduct.objects.update_or_create(
                     pk=image_data['pk'],
                     defaults=image_data['fields']
                 )
+                if created:
+                    created_images += 1
+                else:
+                    updated_images += 1
 
-            self.stdout.write(
-                self.style.SUCCESS('Déploiement terminé avec succès!')
-            )
+            # Afficher les statistiques
+            self.stdout.write(self.style.SUCCESS(
+                f'Déploiement terminé avec succès!\n'
+                f'Produits : {created_products} créés, {updated_products} mis à jour\n'
+                f'Téléphones : {created_phones} créés, {updated_phones} mis à jour\n'
+                f'Images : {created_images} créées, {updated_images} mises à jour'
+            ))
 
         except Exception as e:
             self.stdout.write(
