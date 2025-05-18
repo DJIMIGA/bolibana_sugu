@@ -1,0 +1,363 @@
+{
+  "products": [
+    {
+      "model": "product.product",
+      "pk": 6,
+      "fields": {
+        "title": "Tecno Pop 5 Bleu Ice",
+        "slug": "tecno-pop-5-bleu-ice",
+        "description": "Le Tecno POP 5 en Bleu Ice est un smartphone économique avec un design moderne et des fonctionnalités essentielles.\r\n\r\nCaractéristiques principales :\r\n- Écran tactile de 6.1 pouces (1560x720px)\r\n- 16GB de stockage interne\r\n- 1GB de RAM\r\n- Processeur Quad-Core 1.3 GHz\r\n- Batterie 4000mAh\r\n- Caméra avant 5MP avec Flash\r\n- Caméra arrière 5MP Dual avec Flash\r\n- Déverrouillage facial\r\n- Capteur d'empreintes digitales\r\n- Système d'exploitation HiOS basé sur Android 10 (Go edition)\r\n\r\nDimensions :\r\n- Hauteur : 157.7 mm\r\n- Largeur : 75.7 mm\r\n- Épaisseur : 9.55 mm\r\n\r\nConnectivité :\r\n- GSM\r\n- WCDMA\r\n- GPS\r\n- WiFi\r\n- FM\r\n\r\nCapteurs :\r\n- G-Sensor\r\n- Capteur d'empreintes digitales\r\n\r\nContenu de la boîte :\r\n- Téléphone\r\n- Câble de chargeur\r\n- Chargeur",
+        "price": "85000.00",
+        "category_id": 1,
+        "supplier_id": 1,
+        "brand": null,
+        "is_available": true,
+        "created_at": "2025-05-06T14:24:56.734000+00:00",
+        "updated_at": "2025-05-18T14:10:56.134004+00:00",
+        "image_urls": {
+          "main": "https://sagakore.s3.eu-north-1.amazonaws.com/media/products/main/2025/05/18/tecno-pop-5-bleu-ice.jpg"
+        },
+        "sku": "TEC-P5-16-1-IB",
+        "stock": 20,
+        "specifications": {},
+        "weight": null,
+        "dimensions": null
+      }
+    },
+    {
+      "model": "product.product",
+      "pk": 5,
+      "fields": {
+        "title": "Tecno Pop 5 Noir Obsidien",
+        "slug": "tecno-pop-5-noir-obsidien",
+        "description": "Le Tecno POP 5 en Noir Obsidien est un smartphone économique avec un design moderne et des fonctionnalités essentielles.\r\n\r\nCaractéristiques principales :\r\n- Écran tactile de 6.1 pouces (1560x720px)\r\n- 16GB de stockage interne\r\n- 1GB de RAM\r\n- Processeur Quad-Core 1.3 GHz\r\n- Batterie 4000mAh\r\n- Caméra avant 5MP avec Flash\r\n- Caméra arrière 5MP Dual avec Flash\r\n- Déverrouillage facial\r\n- Capteur d'empreintes digitales\r\n- Système d'exploitation HiOS basé sur Android 10 (Go edition)\r\n\r\nDimensions :\r\n- Hauteur : 157.7 mm\r\n- Largeur : 75.7 mm\r\n- Épaisseur : 9.55 mm\r\n\r\nConnectivité :\r\n- GSM\r\n- WCDMA\r\n- GPS\r\n- WiFi\r\n- FM\r\n\r\nCapteurs :\r\n- G-Sensor\r\n- Capteur d'empreintes digitales\r\n\r\nContenu de la boîte :\r\n- Téléphone\r\n- Câble de chargeur\r\n- Chargeur",
+        "price": "85000.00",
+        "category_id": 1,
+        "supplier_id": 1,
+        "brand": null,
+        "is_available": true,
+        "created_at": "2025-05-06T14:24:56.714000+00:00",
+        "updated_at": "2025-05-18T12:16:20.835779+00:00",
+        "image_urls": null,
+        "sku": "TEC-P5-16-1-OB",
+        "stock": 20,
+        "specifications": {},
+        "weight": null,
+        "dimensions": null
+      }
+    },
+    {
+      "model": "product.product",
+      "pk": 4,
+      "fields": {
+        "title": "Tecno Pop 5 Vert Ice Lake",
+        "slug": "tecno-pop-5-vert-ice-lake",
+        "description": "Le Tecno POP 5 en Vert Ice Lake est un smartphone économique avec un design moderne et des fonctionnalités essentielles.\r\n\r\nCaractéristiques principales :\r\n- Écran tactile de 6.1 pouces (1560x720px)\r\n- 16GB de stockage interne\r\n- 1GB de RAM\r\n- Processeur Quad-Core 1.3 GHz\r\n- Batterie 4000mAh\r\n- Caméra avant 5MP avec Flash\r\n- Caméra arrière 5MP Dual avec Flash\r\n- Déverrouillage facial\r\n- Capteur d'empreintes digitales\r\n- Système d'exploitation HiOS basé sur Android 10 (Go edition)\r\n\r\nDimensions :\r\n- Hauteur : 157.7 mm\r\n- Largeur : 75.7 mm\r\n- Épaisseur : 9.55 mm\r\n\r\nConnectivité :\r\n- GSM\r\n- WCDMA\r\n- GPS\r\n- WiFi\r\n- FM\r\n\r\nCapteurs :\r\n- G-Sensor\r\n- Capteur d'empreintes digitales\r\n\r\nContenu de la boîte :\r\n- Téléphone\r\n- Câble de chargeur\r\n- Chargeur",
+        "price": "85000.00",
+        "category_id": 1,
+        "supplier_id": 1,
+        "brand": null,
+        "is_available": true,
+        "created_at": "2025-05-06T14:24:56.694000+00:00",
+        "updated_at": "2025-05-18T12:14:16.179993+00:00",
+        "image_urls": null,
+        "sku": "TEC-P5-16-1-ILG",
+        "stock": 20,
+        "specifications": {},
+        "weight": null,
+        "dimensions": null
+      }
+    },
+    {
+      "model": "product.product",
+      "pk": 3,
+      "fields": {
+        "title": "Tecno Pop 2F Bleu Ville",
+        "slug": "tecno-pop-2f-bleu-ville",
+        "description": "Le Tecno POP 2F en Bleu Ville est un smartphone économique avec un design élégant et des fonctionnalités essentielles.\r\n\r\nCaractéristiques principales :\r\n- Écran tactile de 5.5 pouces (960x480px)\r\n- 16GB de stockage interne\r\n- 1GB de RAM\r\n- Processeur Quad-Core 1.3 GHz\r\n- Batterie 2400mAh\r\n- Caméra avant 8MP avec Flash\r\n- Caméra arrière 5MP avec Flash\r\n- Déverrouillage facial\r\n- Capteur d'empreintes digitales\r\n- Système d'exploitation HiOS basé sur Android 8.1 (Go edition)\r\n\r\nDimensions :\r\n- Hauteur : 149.76 mm\r\n- Largeur : 72.8 mm\r\n- Épaisseur : 9.35 mm\r\n\r\nConnectivité :\r\n- WiFi\r\n- 4G LTE\r\n- Capteurs : G-Sensor, Capteur d'empreintes digitales\r\n\r\nContenu de la boîte :\r\n- Téléphone\r\n- Câble de chargeur\r\n- Chargeur",
+        "price": "75000.00",
+        "category_id": 1,
+        "supplier_id": 1,
+        "brand": null,
+        "is_available": true,
+        "created_at": "2025-05-06T14:24:56.674000+00:00",
+        "updated_at": "2025-05-18T12:14:24.219487+00:00",
+        "image_urls": null,
+        "sku": "TEC-P2F-16-1-BV",
+        "stock": 20,
+        "specifications": {},
+        "weight": null,
+        "dimensions": null
+      }
+    },
+    {
+      "model": "product.product",
+      "pk": 2,
+      "fields": {
+        "title": "Tecno Pop 2F Noir Minuit",
+        "slug": "tecno-pop-2f-noir-minuit",
+        "description": "Le Tecno POP 2F en Noir Minuit est un smartphone économique avec un design élégant et des fonctionnalités essentielles.\r\n\r\nCaractéristiques principales :\r\n- Écran tactile de 5.5 pouces (960x480px)\r\n- 16GB de stockage interne\r\n- 1GB de RAM\r\n- Processeur Quad-Core 1.3 GHz\r\n- Batterie 2400mAh\r\n- Caméra avant 8MP avec Flash\r\n- Caméra arrière 5MP avec Flash\r\n- Déverrouillage facial\r\n- Capteur d'empreintes digitales\r\n- Système d'exploitation HiOS basé sur Android 8.1 (Go edition)\r\n\r\nDimensions :\r\n- Hauteur : 149.76 mm\r\n- Largeur : 72.8 mm\r\n- Épaisseur : 9.35 mm\r\n\r\nConnectivité :\r\n- WiFi\r\n- 4G LTE\r\n- Capteurs : G-Sensor, Capteur d'empreintes digitales\r\n\r\nContenu de la boîte :\r\n- Téléphone\r\n- Câble de chargeur\r\n- Chargeur",
+        "price": "75000.00",
+        "category_id": 1,
+        "supplier_id": 1,
+        "brand": null,
+        "is_available": true,
+        "created_at": "2025-05-06T14:24:56.654000+00:00",
+        "updated_at": "2025-05-18T12:14:33.105184+00:00",
+        "image_urls": null,
+        "sku": "TEC-P2F-16-1-NM",
+        "stock": 20,
+        "specifications": {},
+        "weight": null,
+        "dimensions": null
+      }
+    },
+    {
+      "model": "product.product",
+      "pk": 1,
+      "fields": {
+        "title": "Tecno Pop 2F Or Champagne",
+        "slug": "tecno-pop-2f-or-champagne",
+        "description": "Le Tecno POP 2F en Or Champagne est un smartphone économique avec un design élégant et des fonctionnalités essentielles.\r\n\r\nCaractéristiques principales :\r\n- Écran tactile de 5.5 pouces (960x480px)\r\n- 16GB de stockage interne\r\n- 1GB de RAM\r\n- Processeur Quad-Core 1.3 GHz\r\n- Batterie 2400mAh\r\n- Caméra avant 8MP avec Flash\r\n- Caméra arrière 5MP avec Flash\r\n- Déverrouillage facial\r\n- Capteur d'empreintes digitales\r\n- Système d'exploitation HiOS basé sur Android 8.1 (Go edition)\r\n\r\nDimensions :\r\n- Hauteur : 149.76 mm\r\n- Largeur : 72.8 mm\r\n- Épaisseur : 9.35 mm\r\n\r\nConnectivité :\r\n- WiFi\r\n- 4G LTE\r\n- Capteurs : G-Sensor, Capteur d'empreintes digitales\r\n\r\nContenu de la boîte :\r\n- Téléphone\r\n- Câble de chargeur\r\n- Chargeur",
+        "price": "75000.00",
+        "category_id": 1,
+        "supplier_id": 1,
+        "brand": null,
+        "is_available": true,
+        "created_at": "2025-05-06T14:24:56.611000+00:00",
+        "updated_at": "2025-05-18T12:14:43.546887+00:00",
+        "image_urls": null,
+        "sku": "TEC-P2F-16-1-OC",
+        "stock": 20,
+        "specifications": {},
+        "weight": null,
+        "dimensions": null
+      }
+    },
+    {
+      "model": "product.product",
+      "pk": 7,
+      "fields": {
+        "title": "Samsung Galaxy A05 64 Go Argent",
+        "slug": "samsung-galaxy-a05-64-go-argent",
+        "description": "Le Samsung Galaxy A05 en Argent est un smartphone performant avec un design moderne et des fonctionnalités avancées.\r\n\r\nCaractéristiques principales :\r\n- Écran Super AMOLED de 6.5 pouces (1080 x 2340 pixels)\r\n- 64GB de stockage interne\r\n- 4GB de RAM\r\n- Processeur Octa-Core (2.2 GHz + 2 GHz)\r\n- Batterie 5000mAh\r\n- Triple caméra arrière : 50MP (F1.8) + 5MP (F2.2) + 2MP (F2.4)\r\n- Caméra frontale 13MP (F2.0)\r\n- Déverrouillage facial\r\n- Capteur d'empreintes digitales\r\n- Système d'exploitation Android 13\r\n\r\nCaractéristiques de la caméra :\r\n- Zoom numérique jusqu'à 10x\r\n- Mise au point automatique\r\n- Enregistrement vidéo FHD à 30 ips\r\n- Ralenti à 120 ips en HD\r\n\r\nConnectivité :\r\n- 4G LTE\r\n- WiFi\r\n- Bluetooth\r\n- GPS\r\n\r\nVersion américaine 🇺🇸\r\n\r\nContenu de la boîte :\r\n- Téléphone\r\n- Câble USB-C\r\n- Guide d'utilisation",
+        "price": "53500.00",
+        "category_id": 1,
+        "supplier_id": 1,
+        "brand": null,
+        "is_available": true,
+        "created_at": "2024-03-19T12:00:00+00:00",
+        "updated_at": "2025-05-17T20:38:52.034755+00:00",
+        "image_urls": {
+          "main": "https://sagakore.s3.eu-north-1.amazonaws.com/media/products/main/2025/05/17/samsung-galaxy-a05-64-go-argent.jpg"
+        },
+        "sku": "SAM-A05-64-4-AR",
+        "stock": 15,
+        "specifications": {},
+        "weight": null,
+        "dimensions": null
+      }
+    }
+  ],
+  "phones": [
+    {
+      "model": "product.phone",
+      "pk": 1,
+      "fields": {
+        "product_id": 1,
+        "brand": "Tecno",
+        "model": "POP 2F",
+        "operating_system": "HiOS basé sur Android 8.1 (Go edition)",
+        "screen_size": "5.50",
+        "resolution": "960x480px",
+        "processor": "Processeur Quad-Core 1.3 GHz",
+        "battery_capacity": 2400,
+        "camera_main": "Caméra arrière 5MP avec Flash",
+        "camera_front": "Caméra avant 8MP avec Flash",
+        "network": "4G LTE",
+        "warranty": "12 mois",
+        "imei": null,
+        "is_new": true,
+        "box_included": true,
+        "accessories": "Téléphone, Câble de chargeur, Chargeur",
+        "storage": 16,
+        "ram": 1,
+        "color_id": 1
+      }
+    },
+    {
+      "model": "product.phone",
+      "pk": 2,
+      "fields": {
+        "product_id": 2,
+        "brand": "Tecno",
+        "model": "POP 2F",
+        "operating_system": "HiOS basé sur Android 8.1 (Go edition)",
+        "screen_size": "5.50",
+        "resolution": "960x480px",
+        "processor": "Processeur Quad-Core 1.3 GHz",
+        "battery_capacity": 2400,
+        "camera_main": "Caméra arrière 5MP avec Flash",
+        "camera_front": "Caméra avant 8MP avec Flash",
+        "network": "4G LTE",
+        "warranty": "12 mois",
+        "imei": null,
+        "is_new": true,
+        "box_included": true,
+        "accessories": "Téléphone, Câble de chargeur, Chargeur",
+        "storage": 16,
+        "ram": 1,
+        "color_id": 2
+      }
+    },
+    {
+      "model": "product.phone",
+      "pk": 3,
+      "fields": {
+        "product_id": 3,
+        "brand": "Tecno",
+        "model": "POP 2F",
+        "operating_system": "HiOS basé sur Android 8.1 (Go edition)",
+        "screen_size": "5.50",
+        "resolution": "960x480px",
+        "processor": "Processeur Quad-Core 1.3 GHz",
+        "battery_capacity": 2400,
+        "camera_main": "Caméra arrière 5MP avec Flash",
+        "camera_front": "Caméra avant 8MP avec Flash",
+        "network": "4G LTE",
+        "warranty": "12 mois",
+        "imei": null,
+        "is_new": true,
+        "box_included": true,
+        "accessories": "Téléphone, Câble de chargeur, Chargeur",
+        "storage": 16,
+        "ram": 1,
+        "color_id": 3
+      }
+    },
+    {
+      "model": "product.phone",
+      "pk": 4,
+      "fields": {
+        "product_id": 4,
+        "brand": "Tecno",
+        "model": "POP 5",
+        "operating_system": "HiOS basé sur Android 10 (Go edition)",
+        "screen_size": "6.10",
+        "resolution": "1560x720px",
+        "processor": "Processeur Quad-Core 1.3 GHz",
+        "battery_capacity": 4000,
+        "camera_main": "Caméra arrière 5MP Dual avec Flash",
+        "camera_front": "Caméra avant 5MP avec Flash",
+        "network": "GSM, WCDMA",
+        "warranty": "12 mois",
+        "imei": null,
+        "is_new": true,
+        "box_included": true,
+        "accessories": "Téléphone, Câble de chargeur, Chargeur",
+        "storage": 16,
+        "ram": 1,
+        "color_id": 4
+      }
+    },
+    {
+      "model": "product.phone",
+      "pk": 5,
+      "fields": {
+        "product_id": 5,
+        "brand": "Tecno",
+        "model": "POP 5",
+        "operating_system": "HiOS basé sur Android 10 (Go edition)",
+        "screen_size": "6.10",
+        "resolution": "1560x720px",
+        "processor": "Processeur Quad-Core 1.3 GHz",
+        "battery_capacity": 4000,
+        "camera_main": "Caméra arrière 5MP Dual avec Flash",
+        "camera_front": "Caméra avant 5MP avec Flash",
+        "network": "GSM, WCDMA",
+        "warranty": "12 mois",
+        "imei": null,
+        "is_new": true,
+        "box_included": true,
+        "accessories": "Téléphone, Câble de chargeur, Chargeur",
+        "storage": 16,
+        "ram": 1,
+        "color_id": 5
+      }
+    },
+    {
+      "model": "product.phone",
+      "pk": 6,
+      "fields": {
+        "product_id": 6,
+        "brand": "Tecno",
+        "model": "POP 5",
+        "operating_system": "HiOS basé sur Android 10 (Go edition)",
+        "screen_size": "6.10",
+        "resolution": "1560x720px",
+        "processor": "Processeur Quad-Core 1.3 GHz",
+        "battery_capacity": 4000,
+        "camera_main": "Caméra arrière 5MP Dual avec Flash",
+        "camera_front": "Caméra avant 5MP avec Flash",
+        "network": "GSM, WCDMA",
+        "warranty": "12 mois",
+        "imei": null,
+        "is_new": true,
+        "box_included": true,
+        "accessories": "Téléphone, Câble de chargeur, Chargeur",
+        "storage": 16,
+        "ram": 1,
+        "color_id": 6
+      }
+    },
+    {
+      "model": "product.phone",
+      "pk": 7,
+      "fields": {
+        "product_id": 7,
+        "brand": "Samsung",
+        "model": "Galaxy A05",
+        "operating_system": "Android 13",
+        "screen_size": "6.50",
+        "resolution": "1080x2340px",
+        "processor": "Octa-Core (2.2 GHz + 2 GHz)",
+        "battery_capacity": 5000,
+        "camera_main": "Triple caméra : 50MP (F1.8) + 5MP (F2.2) + 2MP (F2.4)",
+        "camera_front": "13MP (F2.0)",
+        "network": "4G LTE",
+        "warranty": "12 mois",
+        "imei": null,
+        "is_new": true,
+        "box_included": true,
+        "accessories": "Téléphone, Câble USB-C, Guide d'utilisation",
+        "storage": 64,
+        "ram": 4,
+        "color_id": 7
+      }
+    }
+  ],
+  "images": [
+    {
+      "model": "product.imageproduct",
+      "pk": 4,
+      "fields": {
+        "product_id": 7,
+        "image": "gallery/2025/05/18/samsung-galaxy-a05-64-go-argent.jpg",
+        "ordre": 0,
+        "created_at": "2025-05-18T12:47:12+00:00",
+        "updated_at": "2025-05-18T12:47:32.939637+00:00"
+      }
+    },
+    {
+      "model": "product.imageproduct",
+      "pk": 5,
+      "fields": {
+        "product_id": 7,
+        "image": "gallery/2025/05/18/samsung-galaxy-a05-64-go-argent_1.jpg",
+        "ordre": 1,
+        "created_at": "2025-05-18T12:47:44+00:00",
+        "updated_at": "2025-05-18T12:48:07.168196+00:00"
+      }
+    }
+  ]
+}
