@@ -10,11 +10,11 @@ Chemins valides dans PYTHONPATH :
 ✓ C:\Users\djimi\sagakore\saga\suppliers
 ✓ C:\Users\djimi\sagakore\saga\cart
 ✓ C:\Users\djimi\sagakore\saga\price_checker
+✓ C:\Users\djimi\sagakore\.env
+✓ C:\Program Files\Python312\Lib
 ✓ C:\Program Files\Python312\DLLs
 ✓ C:\Program Files\Python312
-✓ C:\Users\djimi\sagakore\.env
 ✓ C:\Users\djimi\sagakore\.env\Lib\site-packages
-✓ C:\Program Files\Python312\Lib
 
 === Fin de la correction du PYTHONPATH ===
 
