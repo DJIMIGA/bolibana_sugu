@@ -15,7 +15,10 @@ class SupplierListView(ListView):
     paginate_by = 12
 
     def get_queryset(self):
-        queryset = Product.objects.filter(is_available=True).select_related(
+        queryset = Product.objects.filter(
+            is_available=True,
+            is_salam=True
+        ).select_related(
             'phone',
             'phone__color',
             'supplier'
@@ -48,7 +51,10 @@ class SupplierListView(ListView):
         context = super().get_context_data(**kwargs)
         
         # Récupérer les produits actifs avec leurs téléphones
-        active_products = Product.objects.filter(is_available=True).select_related('phone', 'phone__color')
+        active_products = Product.objects.filter(
+            is_available=True,
+            is_salam=True
+        ).select_related('phone', 'phone__color')
         
         # Récupérer les marques de téléphones des produits actifs (sans doublons, sans valeurs vides, triées)
         brands_list = list(active_products.values_list('phone__brand', flat=True))
@@ -97,7 +103,8 @@ class BrandDetailView(TemplateView):
         # Récupérer les produits de cette marque
         products = Product.objects.filter(
             phone__brand__iexact=brand_slug,
-            is_available=True
+            is_available=True,
+            is_salam=True
         ).select_related(
             'phone',
             'phone__color',
@@ -131,18 +138,30 @@ class BrandDetailView(TemplateView):
         context['page_title'] = f"Téléphones {brand_slug.title()}"
         
         # Filtres disponibles
-        context['brands'] = Phone.objects.filter(brand__iexact=brand_slug).values('brand').distinct()
-        context['models'] = Phone.objects.filter(brand__iexact=brand_slug).values('model').distinct()
-        context['storages'] = Phone.objects.filter(brand__iexact=brand_slug).values('storage').distinct()
-        context['rams'] = Phone.objects.filter(brand__iexact=brand_slug).values('ram').distinct()
+        context['brands'] = Phone.objects.filter(
+            brand__iexact=brand_slug,
+            product__is_salam=True
+        ).values('brand').distinct()
+        context['models'] = Phone.objects.filter(
+            brand__iexact=brand_slug,
+            product__is_salam=True
+        ).values('model').distinct()
+        context['storages'] = Phone.objects.filter(
+            brand__iexact=brand_slug,
+            product__is_salam=True
+        ).values('storage').distinct()
+        context['rams'] = Phone.objects.filter(
+            brand__iexact=brand_slug,
+            product__is_salam=True
+        ).values('ram').distinct()
         
         # Filtres sélectionnés
         context['selected_brand'] = brand_slug
-        context['selected_model'] = model
-        context['selected_storage'] = storage
-        context['selected_ram'] = ram
-        context['selected_price_min'] = price_min
-        context['selected_price_max'] = price_max
+        context['selected_model'] = self.request.GET.get('model', '')
+        context['selected_storage'] = self.request.GET.get('storage', '')
+        context['selected_ram'] = self.request.GET.get('ram', '')
+        context['selected_price_min'] = self.request.GET.get('price_min', '')
+        context['selected_price_max'] = self.request.GET.get('price_max', '')
         
         return context
 

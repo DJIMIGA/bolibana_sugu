@@ -3,7 +3,7 @@ from django.core.validators import MinValueValidator, MaxValueValidator
 from django.contrib.contenttypes.fields import GenericForeignKey
 from django.contrib.contenttypes.models import ContentType
 from django.utils.text import slugify
-from django.db.models.signals import pre_save
+from django.db.models.signals import pre_save, post_delete
 from django.dispatch import receiver
 from suppliers.models import Supplier
 from saga.utils.image_optimizer import ImageOptimizer
@@ -122,6 +122,7 @@ class Product(models.Model):
     supplier = models.ForeignKey('suppliers.Supplier', on_delete=models.SET_NULL, null=True, blank=True, related_name='products', verbose_name='Fournisseur')
     brand = models.CharField(max_length=100, blank=True, null=True, verbose_name='Marque')
     is_available = models.BooleanField(default=True, verbose_name='Disponible')
+    is_salam = models.BooleanField(default=False, verbose_name='Produit Salam')
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     image = models.ImageField(
@@ -146,6 +147,67 @@ class Product(models.Model):
     def __str__(self):
         return self.title
 
+    def _remove_file_suffix(self, filename):
+        """Supprime le suffixe numérique du nom de fichier (ex: _12)"""
+        if not filename:
+            return filename
+        # Trouve le dernier point avant l'extension
+        last_dot = filename.rfind('.')
+        if last_dot == -1:
+            return filename
+        
+        # Trouve le dernier underscore avant l'extension
+        last_underscore = filename.rfind('_', 0, last_dot)
+        if last_underscore == -1:
+            return filename
+        
+        # Vérifie si le suffixe est numérique
+        suffix = filename[last_underscore + 1:last_dot]
+        if suffix.isdigit():
+            # Retourne le nom de fichier sans le suffixe
+            return filename[:last_underscore] + filename[last_dot:]
+        
+        return filename
+
+    def _normalize_image_path(self, path):
+        """Normalise le chemin de l'image pour stocker uniquement la partie relative après media/products/"""
+        if not path:
+            return ''
+        
+        # Supprimer le préfixe media/products/ s'il existe
+        if 'media/products/' in path:
+            path = path.split('media/products/')[-1]
+        
+        # Supprimer tout préfixe media/ s'il reste
+        if path.startswith('media/'):
+            path = path[6:]
+        
+        # Supprimer le suffixe numérique du nom de fichier
+        path_parts = path.split('/')
+        if path_parts:
+            filename = path_parts[-1]
+            path_parts[-1] = self._remove_file_suffix(filename)
+            path = '/'.join(path_parts)
+        
+        return path
+
+    def _get_relative_path(self, image, image_type='main'):
+        """Obtient le chemin relatif d'une image"""
+        if not image:
+            return None
+        try:
+            # Utilise la fonction appropriée selon le type d'image
+            if image_type == 'main':
+                path = get_product_main_image_upload_path(self, image.name)
+            else:
+                path = get_product_gallery_image_upload_path(self, image.name)
+            
+            # Conserve le préfixe media/products/ pour l'accès aux images
+            return path
+        except Exception as e:
+            logger.error(f"Erreur lors de la génération du chemin relatif: {str(e)}")
+            return None
+
     def save(self, *args, **kwargs):
         if not self.slug:
             self.slug = generate_unique_slug(self.title, Product)
@@ -154,7 +216,12 @@ class Product(models.Model):
         if self.image:
             if not self.image_urls:
                 self.image_urls = {}
-            self.image_urls['main'] = self.image.url
+            # Utilise le chemin final après l'ajout du numéro par le stockage
+            storage = ProductImageStorage()
+            path = get_product_main_image_upload_path(self, self.image.name)
+            final_path = storage.get_available_name(path)
+            # Ajoute le préfixe media/products/
+            self.image_urls['main'] = f"media/products/{final_path}"
         
         super().save(*args, **kwargs)
 
@@ -167,37 +234,114 @@ class Product(models.Model):
         return []
 
     def get_main_image_url(self):
-        """Retourne l'URL de l'image principale"""
+        """Retourne l'URL complète de l'image principale"""
         if self.image:
             return self.image.url
         if self.image_urls and 'main' in self.image_urls:
-            return self.image_urls['main']
+            storage = ProductImageStorage()
+            return storage.url(self.image_urls['main'])
         return None
 
     def get_gallery_urls(self):
-        """Retourne la liste des URLs de la galerie"""
+        """Retourne la liste des URLs complètes de la galerie"""
         if self.image_urls and 'gallery' in self.image_urls:
-            return self.image_urls['gallery']
-        return []
+            storage = ProductImageStorage()
+            return [storage.url(url) for url in self.image_urls['gallery']]
+        return None
+
+    def get_all_image_urls(self):
+        """Retourne un dictionnaire avec toutes les URLs d'images"""
+        urls = {}
+        if main_url := self.get_main_image_url():
+            urls['main'] = main_url
+        if gallery_urls := self.get_gallery_urls():
+            urls['gallery'] = gallery_urls
+        return urls
 
     def update_image_urls(self):
-        """Met à jour le champ image_urls avec les URLs des images"""
+        """Met à jour le champ image_urls avec les chemins des images"""
         if not self.image_urls:
             self.image_urls = {}
         
-        # Mettre à jour l'URL de l'image principale
+        # Mettre à jour le chemin de l'image principale
         if self.image:
-            self.image_urls['main'] = self.image.url
+            storage = ProductImageStorage()
+            path = get_product_main_image_upload_path(self, self.image.name)
+            final_path = storage.get_available_name(path)
+            # Ajoute le préfixe media/products/
+            self.image_urls['main'] = f"media/products/{final_path}"
+        else:
+            # Supprimer l'URL de l'image principale si elle n'existe plus
+            self.image_urls.pop('main', None)
         
-        # Mettre à jour les URLs de la galerie
-        gallery_urls = []
+        # Mettre à jour les chemins de la galerie
+        gallery_urls = set()  # Utiliser un set pour éviter les doublons
         for image in self.images.all().order_by('ordre'):
             if image.image:
-                gallery_urls.append(image.image.url)
+                storage = ProductImageStorage()
+                path = get_product_gallery_image_upload_path(self, image.image.name)
+                final_path = storage.get_available_name(path)
+                # Ajoute le préfixe media/products/
+                gallery_urls.add(f"media/products/{final_path}")
+        
+        # Mettre à jour ou supprimer la galerie
         if gallery_urls:
-            self.image_urls['gallery'] = gallery_urls
+            self.image_urls['gallery'] = list(gallery_urls)  # Convertir le set en liste
+        else:
+            self.image_urls.pop('gallery', None)
         
         self.save(update_fields=['image_urls'])
+
+    def _get_s3_url(self, relative_path):
+        """Construit l'URL S3 complète à partir du chemin relatif"""
+        if not relative_path:
+            return None
+        try:
+            storage = ProductImageStorage()
+            # Le chemin contient déjà media/products/, donc on l'utilise directement
+            return storage.url(relative_path)
+        except Exception as e:
+            logger.error(f"Erreur lors de la construction de l'URL S3: {str(e)}")
+            return None
+
+    def delete(self, *args, **kwargs):
+        """Supprime le produit et ses images associées"""
+        # Sauvegarder une référence à l'image avant la suppression
+        image_to_delete = self.image
+        
+        # Supprimer l'instance
+        super().delete(*args, **kwargs)
+        
+        # Supprimer l'image du stockage après la suppression de l'instance
+        if image_to_delete:
+            try:
+                storage = ProductImageStorage()
+                storage.delete(image_to_delete.name)
+            except Exception as e:
+                logger.error(f"Erreur lors de la suppression de l'image principale: {str(e)}")
+
+
+@receiver(post_delete, sender=Product)
+def handle_product_deletion(sender, instance, **kwargs):
+    """Gère la suppression d'un produit et de ses images associées"""
+    try:
+        # Supprimer l'image principale si elle existe
+        if instance.image:
+            storage = ProductImageStorage()
+            storage.delete(instance.image.name)
+        
+        # Supprimer les images de la galerie
+        for image in instance.images.all():
+            if image.image:
+                storage = ProductImageStorage()
+                storage.delete(image.image.name)
+        
+        # Réinitialiser image_urls
+        if instance.image_urls:
+            instance.image_urls = {}
+            instance.save(update_fields=['image_urls'])
+    except Exception as e:
+        logger.error(f"Erreur lors de la suppression des images du produit: {str(e)}")
 
 
 class Color(models.Model):
@@ -297,19 +441,39 @@ class ImageProduct(models.Model):
                 storage.delete(old_instance.image.name)
         
         super().save(*args, **kwargs)
+        
+        # Mettre à jour image_urls du produit
+        if self.image:
+            self.product.update_image_urls()
 
     def delete(self, *args, **kwargs):
+        # Sauvegarder une référence au produit avant la suppression
+        product = self.product
+        
         # Supprimer l'image du stockage
         if self.image:
             storage = ProductImageStorage()
             storage.delete(self.image.name)
+        
+        # Supprimer l'instance
         super().delete(*args, **kwargs)
+        
+        # Mettre à jour image_urls du produit après la suppression
+        product.refresh_from_db()  # Rafraîchir pour avoir l'état actuel
+        product.update_image_urls()
 
     def get_image_url(self):
         """Retourne l'URL de l'image"""
         if self.image:
             return self.image.url
         return None
+
+
+@receiver(post_delete, sender=ImageProduct)
+def update_product_image_urls_on_delete(sender, instance, **kwargs):
+    """Met à jour les URLs des images du produit après la suppression d'une image"""
+    if instance.product:
+        instance.product.update_image_urls()
 
 
 class Review(models.Model):

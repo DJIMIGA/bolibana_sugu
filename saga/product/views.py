@@ -149,7 +149,7 @@ def product_list(request):
         'phone__color'
     ).prefetch_related(
         'images'
-    ).all()
+    ).filter(is_salam=True)  # Ne montrer que les produits salam
 
     return render(request, 'product_list.html', {'products': products})
 
