@@ -37,16 +37,27 @@
 
               <!-- Image du produit -->
               <a href="{% url 'product:product_detail' product.id %}" class="block h-[250px]">
-                  {% if product.image_urls %}
                   <div class="relative h-full overflow-hidden flex items-center justify-center">
-                      <img
-                              src="{{ product.image_urls.main }}"
-                              alt="{{ product.title }}"
-                              class="max-h-full max-w-full object-contain"
-                              loading="lazy"
-                      >
+                      {% if product.image_urls and product.image_urls.main %}
+                          <img
+                                  src="{{ product.image_urls.main }}"
+                                  alt="{{ product.title }}"
+                                  class="max-h-full max-w-full object-contain"
+                                  loading="lazy"
+                          >
+                      {% elif product.image %}
+                          <img
+                                  src="{{ product.image.url }}"
+                                  alt="{{ product.title }}"
+                                  class="max-h-full max-w-full object-contain"
+                                  loading="lazy"
+                          >
+                      {% else %}
+                          <div class="w-full h-full bg-gray-100 flex items-center justify-center">
+                              <span class="text-gray-400">Aucune image disponible</span>
+                          </div>
+                      {% endif %}
                   </div>
-                  {% endif %}
               </a>
 
               <!-- Couleurs disponibles -->

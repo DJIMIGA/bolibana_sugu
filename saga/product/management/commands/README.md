@@ -22,6 +22,7 @@ Options disponibles :
 
 ```bash
 # Déploiement simple
+heroku run python manage.py deploy_products
 python manage.py deploy_products
 
 # Déploiement avec sauvegarde

@@ -81,6 +81,14 @@ class Category(models.Model):
             ids.extend(child.get_all_children_ids())
         return ids
 
+    def get_all_parent_ids(self):
+        """Récupère récursivement tous les IDs des catégories parents"""
+        ids = []
+        if self.parent:
+            ids.append(self.parent.id)
+            ids.extend(self.parent.get_all_parent_ids())
+        return ids
+
     def get_all_children(self):
         """Récupère récursivement toutes les sous-catégories"""
         categories = [self]

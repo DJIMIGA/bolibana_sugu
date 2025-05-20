@@ -59,48 +59,6 @@
         <!-- Filtres -->
         {% include "suppliers/components/_filters.html" with is_detail=False %}
 
-        <!-- DEBUG: URLs des images -->
-        <div class="bg-yellow-100 p-4 rounded-lg mb-6">
-            <h3 class="font-bold text-yellow-800 mb-2">DEBUG: URLs des images</h3>
-            <div class="space-y-4">
-                {% for product in products %}
-                <div class="bg-white p-4 rounded shadow">
-                    <h4 class="font-semibold text-gray-900 mb-2">{{ product.title }}</h4>
-                    <div class="space-y-2">
-                        <div>
-                            <span class="text-sm font-medium text-gray-600">Image principale:</span>
-                            {% if product.image %}
-                                <p class="text-xs font-mono break-all">{{ product.image.url }}</p>
-                            {% else %}
-                                <p class="text-xs text-gray-500">Aucune image principale</p>
-                            {% endif %}
-                        </div>
-                        <div>
-                            <span class="text-sm font-medium text-gray-600">Image URLs (JSON):</span>
-                            {% if product.image_urls %}
-                                <p class="text-xs font-mono break-all">{{ product.image_urls }}</p>
-                            {% else %}
-                                <p class="text-xs text-gray-500">Aucune URL d'image en JSON</p>
-                            {% endif %}
-                        </div>
-                        <div>
-                            <span class="text-sm font-medium text-gray-600">Images liées:</span>
-                            <ul class="text-xs font-mono">
-                                {% for image in product.images.all %}
-                                    {% if image.image %}
-                                        <li class="break-all">{{ image.image.url }}</li>
-                                    {% endif %}
-                                {% empty %}
-                                    <li class="text-gray-500">Aucune image liée</li>
-                                {% endfor %}
-                            </ul>
-                        </div>
-                    </div>
-                </div>
-                {% endfor %}
-            </div>
-        </div>
-
         <!-- Grille des produits -->
         {% include "suppliers/components/_product_grid.html" %}
     </div>

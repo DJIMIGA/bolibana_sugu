@@ -4,6 +4,7 @@ from django.db.models import Q
 import json
 import os
 from django.core import serializers
+import codecs
 
 class Command(BaseCommand):
     help = 'Synchronise les données locales vers Heroku'
@@ -40,10 +41,10 @@ class Command(BaseCommand):
             self.stdout.write(self.style.WARNING('Aucun produit trouvé avec les filtres spécifiés'))
             return
 
-        # Créer un fichier temporaire pour les données
+        # Créer un fichier temporaire pour les données avec encodage UTF-8
         temp_file = 'temp_products.json'
-        with open(temp_file, 'w') as f:
-            serializers.serialize('json', products, stream=f)
+        with codecs.open(temp_file, 'w', encoding='utf-8') as f:
+            serializers.serialize('json', products, stream=f, ensure_ascii=False)
 
         self.stdout.write(self.style.SUCCESS(f'{products.count()} produits exportés vers {temp_file}'))
 

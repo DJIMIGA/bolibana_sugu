@@ -6,6 +6,7 @@ from datetime import datetime
 import os
 import requests
 from django.conf import settings
+import glob
 
 class Command(BaseCommand):
     help = 'Déploie les données des produits sur Heroku'
@@ -24,212 +25,158 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):
         # Vérifier si nous sommes sur Heroku
-        if not settings.DEBUG:
-            self.stdout.write(self.style.WARNING('Vérification de l\'environnement Heroku...'))
-            
-            # Vérifier si des données existent déjà
-            existing_products = Product.objects.count()
-            existing_phones = Phone.objects.count()
-            
-            if existing_products > 0 or existing_phones > 0:
+        if not os.environ.get('DYNO'):
+            self.stdout.write(self.style.ERROR('Cette commande doit être exécutée sur Heroku'))
+            return
+
+        # Vérifier si des données existent déjà
+        product_count = Product.objects.count()
+        phone_count = Phone.objects.count()
+        
+        if product_count > 0 or phone_count > 0:
+            if not options['force'] and not options['backup']:
                 self.stdout.write(self.style.WARNING(
-                    f'Des données existent déjà ({existing_products} produits, {existing_phones} téléphones). '
+                    f'Des données existent déjà ({product_count} produits, {phone_count} téléphones). '
+                    'Utilisez --force pour forcer le déploiement ou --backup pour créer une sauvegarde.'
+                ))
+                return
+            else:
+                self.stdout.write(self.style.WARNING(
+                    f'Des données existent déjà ({product_count} produits, {phone_count} téléphones). '
                     'Les données seront mises à jour.'
                 ))
-                
-                if options['backup']:
-                    # Créer une sauvegarde
-                    self.create_backup()
+
+        # Créer une sauvegarde si demandé
+        if options['backup']:
+            self.create_backup()
+
+        self.stdout.write('Déploiement des données en cours...')
+
+        # Compteurs pour le rapport
+        products_created = 0
+        products_updated = 0
+        phones_created = 0
+        phones_updated = 0
+        images_created = 0
+        images_updated = 0
+
+        try:
+            # Trouver le fichier JSON le plus récent
+            dumps_dir = os.path.join(settings.BASE_DIR, 'product', 'dumps')
+            json_files = glob.glob(os.path.join(dumps_dir, 'products_dump_*.json'))
             
-            # Procéder au déploiement
-            self.deploy_data()
-        else:
-            self.stdout.write(self.style.ERROR('Cette commande doit être exécutée sur Heroku'))
+            if not json_files:
+                self.stdout.write(self.style.ERROR('Aucun fichier de dump trouvé dans le dossier dumps'))
+                return
+                
+            latest_json = max(json_files, key=os.path.getctime)
+            self.stdout.write(f'Utilisation du fichier : {latest_json}')
+            
+            # Lire le fichier JSON
+            with open(latest_json, 'r', encoding='utf-8') as f:
+                data = json.load(f)
+
+            # Traiter les produits
+            for product_data in data['products']:
+                product, created = Product.objects.update_or_create(
+                    id=product_data['id'],
+                    defaults={
+                        'name': product_data['name'],
+                        'description': product_data['description'],
+                        'price': product_data['price'],
+                        'image': product_data.get('image', ''),
+                        'image_urls': product_data.get('image_urls', []),
+                        'created_at': product_data['created_at'],
+                        'updated_at': product_data['updated_at']
+                    }
+                )
+                if created:
+                    products_created += 1
+                else:
+                    products_updated += 1
+
+            # Traiter les téléphones
+            for phone_data in data['phones']:
+                phone, created = Phone.objects.update_or_create(
+                    id=phone_data['id'],
+                    defaults={
+                        'product_id': phone_data['product'],
+                        'brand': phone_data['brand'],
+                        'model': phone_data['model'],
+                        'color': phone_data['color'],
+                        'storage': phone_data['storage'],
+                        'condition': phone_data['condition'],
+                        'created_at': phone_data['created_at'],
+                        'updated_at': phone_data['updated_at']
+                    }
+                )
+                if created:
+                    phones_created += 1
+                else:
+                    phones_updated += 1
+
+            # Traiter les images
+            for image_data in data['images']:
+                try:
+                    image, created = ImageProduct.objects.update_or_create(
+                        id=image_data['id'],
+                        defaults={
+                            'product_id': image_data['product'],
+                            'image': image_data['image'],
+                            'is_primary': image_data['is_primary'],
+                            'created_at': image_data['created_at'],
+                            'updated_at': image_data['updated_at']
+                        }
+                    )
+                    if created:
+                        images_created += 1
+                    else:
+                        images_updated += 1
+                except ImageProduct.DoesNotExist:
+                    # Si l'image n'existe pas, on la crée
+                    ImageProduct.objects.create(
+                        id=image_data['id'],
+                        product_id=image_data['product'],
+                        image=image_data['image'],
+                        is_primary=image_data['is_primary'],
+                        created_at=image_data['created_at'],
+                        updated_at=image_data['updated_at']
+                    )
+                    images_created += 1
+                    self.stdout.write(self.style.SUCCESS(f'Image {image_data["id"]} créée avec succès'))
+
+            self.stdout.write(self.style.SUCCESS('Déploiement terminé avec succès!'))
+            self.stdout.write(f'Produits : {products_created} créés, {products_updated} mis à jour')
+            self.stdout.write(f'Téléphones : {phones_created} créés, {phones_updated} mis à jour')
+            self.stdout.write(f'Images : {images_created} créées, {images_updated} mises à jour')
+
+        except Exception as e:
+            self.stdout.write(self.style.ERROR(f'Erreur lors du déploiement : {str(e)}'))
 
     def create_backup(self):
         """Crée une sauvegarde des données existantes"""
-        current_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-        backup_dir = os.path.join(current_dir, 'backups')
-        if not os.path.exists(backup_dir):
-            os.makedirs(backup_dir)
-
-        timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
-        filename = f'{backup_dir}/heroku_backup_{timestamp}.json'
-
-        data = {
-            'products': [],
-            'phones': [],
-            'images': []
-        }
-
-        # Sauvegarder les produits
-        for product in Product.objects.all():
-            product_data = {
-                'model': 'product.product',
-                'pk': product.pk,
-                'fields': {
-                    'title': product.title,
-                    'slug': product.slug,
-                    'description': product.description,
-                    'price': str(product.price),
-                    'category_id': product.category_id,
-                    'supplier_id': product.supplier_id,
-                    'brand': product.brand,
-                    'is_available': product.is_available,
-                    'created_at': product.created_at.isoformat(),
-                    'updated_at': product.updated_at.isoformat(),
-                    'image_urls': product.image_urls,
-                    'sku': product.sku,
-                    'stock': product.stock,
-                    'specifications': product.specifications,
-                    'weight': str(product.weight) if product.weight else None,
-                    'dimensions': product.dimensions
-                }
-            }
-            data['products'].append(product_data)
-
-        # Sauvegarder les téléphones
-        for phone in Phone.objects.all():
-            phone_data = {
-                'model': 'product.phone',
-                'pk': phone.pk,
-                'fields': {
-                    'product_id': phone.product_id,
-                    'brand': phone.brand,
-                    'model': phone.model,
-                    'operating_system': phone.operating_system,
-                    'screen_size': str(phone.screen_size),
-                    'resolution': phone.resolution,
-                    'processor': phone.processor,
-                    'battery_capacity': phone.battery_capacity,
-                    'camera_main': phone.camera_main,
-                    'camera_front': phone.camera_front,
-                    'network': phone.network,
-                    'warranty': phone.warranty,
-                    'imei': phone.imei,
-                    'is_new': phone.is_new,
-                    'box_included': phone.box_included,
-                    'accessories': phone.accessories,
-                    'storage': phone.storage,
-                    'ram': phone.ram,
-                    'color_id': phone.color_id
-                }
-            }
-            data['phones'].append(phone_data)
-
-        # Sauvegarder les images
-        for image in ImageProduct.objects.all():
-            image_data = {
-                'model': 'product.imageproduct',
-                'pk': image.pk,
-                'fields': {
-                    'product_id': image.product_id,
-                    'image': image.image.name if image.image else None,
-                    'ordre': image.ordre,
-                    'created_at': image.created_at.isoformat(),
-                    'updated_at': image.updated_at.isoformat()
-                }
-            }
-            data['images'].append(image_data)
-
-        with open(filename, 'w', encoding='utf-8') as f:
-            json.dump(data, f, ensure_ascii=False, indent=2)
-
-        self.stdout.write(
-            self.style.SUCCESS(f'Sauvegarde créée avec succès dans {filename}')
-        )
-
-    def deploy_data(self):
-        """Déploie les données sur Heroku"""
         try:
-            # Vérifier si le fichier de dump existe
-            current_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-            dump_dir = os.path.join(current_dir, 'dumps')
-            if not os.path.exists(dump_dir):
-                self.stdout.write(self.style.ERROR('Aucun fichier de dump trouvé. Exécutez d\'abord dump_products.'))
-                return
+            # Créer le dossier de sauvegarde s'il n'existe pas
+            backup_dir = os.path.join(settings.BASE_DIR, 'product', 'backups')
+            if not os.path.exists(backup_dir):
+                os.makedirs(backup_dir)
 
-            # Trouver le dernier fichier de dump
-            dump_files = [f for f in os.listdir(dump_dir) if f.startswith('products_dump_')]
-            if not dump_files:
-                self.stdout.write(self.style.ERROR('Aucun fichier de dump trouvé.'))
-                return
+            # Générer le nom du fichier de sauvegarde
+            timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+            backup_file = os.path.join(backup_dir, f'backup_{timestamp}.json')
 
-            latest_dump = sorted(dump_files)[-1]
-            dump_path = os.path.join(dump_dir, latest_dump)
+            # Récupérer les données
+            data = {
+                'products': serializers.serialize('python', Product.objects.all()),
+                'phones': serializers.serialize('python', Phone.objects.all()),
+                'images': serializers.serialize('python', ImageProduct.objects.all())
+            }
 
-            # Lire les données du dump
-            with open(dump_path, 'r', encoding='utf-8') as f:
-                data = json.load(f)
+            # Sauvegarder les données
+            with open(backup_file, 'w', encoding='utf-8') as f:
+                json.dump(data, f, ensure_ascii=False, indent=2)
 
-            # Déployer les données
-            self.stdout.write(self.style.SUCCESS('Déploiement des données en cours...'))
-
-            # Compteurs pour les statistiques
-            updated_products = 0
-            created_products = 0
-            updated_phones = 0
-            created_phones = 0
-            updated_images = 0
-            created_images = 0
-
-            # Déployer les produits
-            for product_data in data['products']:
-                try:
-                    product, created = Product.objects.update_or_create(
-                        pk=product_data['pk'],
-                        defaults=product_data['fields']
-                    )
-                    if created:
-                        created_products += 1
-                    else:
-                        updated_products += 1
-                except Exception as e:
-                    self.stdout.write(self.style.WARNING(f'Erreur lors de la mise à jour du produit {product_data["pk"]}: {str(e)}'))
-
-            # Déployer les téléphones
-            for phone_data in data['phones']:
-                try:
-                    phone, created = Phone.objects.update_or_create(
-                        pk=phone_data['pk'],
-                        defaults=phone_data['fields']
-                    )
-                    if created:
-                        created_phones += 1
-                    else:
-                        updated_phones += 1
-                except Exception as e:
-                    self.stdout.write(self.style.WARNING(f'Erreur lors de la mise à jour du téléphone {phone_data["pk"]}: {str(e)}'))
-
-            # Déployer les images
-            for image_data in data['images']:
-                try:
-                    # Vérifier si le produit existe
-                    product_id = image_data['fields'].get('product_id')
-                    if not Product.objects.filter(pk=product_id).exists():
-                        self.stdout.write(self.style.WARNING(f'Le produit {product_id} n\'existe pas pour l\'image {image_data["pk"]}'))
-                        continue
-
-                    image, created = ImageProduct.objects.update_or_create(
-                        pk=image_data['pk'],
-                        defaults=image_data['fields']
-                    )
-                    if created:
-                        created_images += 1
-                    else:
-                        updated_images += 1
-                except Exception as e:
-                    self.stdout.write(self.style.WARNING(f'Erreur lors de la mise à jour de l\'image {image_data["pk"]}: {str(e)}'))
-
-            # Afficher les statistiques
-            self.stdout.write(self.style.SUCCESS(
-                f'Déploiement terminé avec succès!\n'
-                f'Produits : {created_products} créés, {updated_products} mis à jour\n'
-                f'Téléphones : {created_phones} créés, {updated_phones} mis à jour\n'
-                f'Images : {created_images} créées, {updated_images} mises à jour'
-            ))
+            self.stdout.write(self.style.SUCCESS(f'Sauvegarde créée : {backup_file}'))
 
         except Exception as e:
-            self.stdout.write(
-                self.style.ERROR(f'Erreur lors du déploiement: {str(e)}')
-            ) 
+            self.stdout.write(self.style.ERROR(f'Erreur lors de la création de la sauvegarde : {str(e)}')) 
