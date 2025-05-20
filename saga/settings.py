@@ -437,6 +437,7 @@ MIDDLEWARE = [
     'django_htmx.middleware.HtmxMiddleware',
     'corsheaders.middleware.CorsMiddleware',
     'saga.settings.FileRequestLoggingMiddleware',
+    'saga.middleware.AdminLoginAttemptMiddleware',  # Ajout du middleware de sécurité admin
 ]
 
 ROOT_URLCONF = 'saga.urls'
@@ -483,6 +484,9 @@ AUTH_PASSWORD_VALIDATORS = [
     },
     {
         'NAME': 'django.contrib.auth.password_validation.MinimumLengthValidator',
+        'OPTIONS': {
+            'min_length': 10,
+        }
     },
     {
         'NAME': 'django.contrib.auth.password_validation.CommonPasswordValidator',
@@ -625,3 +629,30 @@ class FileRequestLoggingMiddleware:
 # if not DEBUG:
 #     STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 #     MIDDLEWARE.insert(1, 'whitenoise.middleware.WhiteNoiseMiddleware') 
+
+# Configuration de sécurité pour l'admin
+ADMIN_URL = 'admin/'  # Changer l'URL de l'admin pour plus de sécurité
+ADMIN_SITE_HEADER = "Bolibana Administration"
+ADMIN_SITE_TITLE = "Bolibana Admin Portal"
+ADMIN_INDEX_TITLE = "Bienvenue dans le portail d'administration"
+
+# Configuration de sécurité avancée
+SECURE_SSL_REDIRECT = True
+SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+SESSION_COOKIE_SECURE = True
+CSRF_COOKIE_SECURE = True
+SECURE_HSTS_SECONDS = 31536000  # 1 an
+SECURE_HSTS_INCLUDE_SUBDOMAINS = True
+SECURE_HSTS_PRELOAD = True
+
+# Configuration des sessions
+SESSION_COOKIE_AGE = 3600  # 1 heure
+SESSION_EXPIRE_AT_BROWSER_CLOSE = True
+SESSION_SAVE_EVERY_REQUEST = True
+
+# Protection XSS et CSRF
+SECURE_BROWSER_XSS_FILTER = True
+SECURE_CONTENT_TYPE_NOSNIFF = True
+X_FRAME_OPTIONS = 'DENY'
+CSRF_COOKIE_HTTPONLY = True
+SESSION_COOKIE_HTTPONLY = True 

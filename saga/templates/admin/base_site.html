@@ -1,0 +1,126 @@
+{% extends "admin/base.html" %}
+{% load static %}
+
+{% block title %}{{ title }} | {{ site_title|default:_('Administration Bolibana') }}{% endblock %}
+
+{% block extrastyle %}
+<style>
+    :root {
+        --primary: #417690;
+        --secondary: #2b5070;
+        --accent: #79aec8;
+        --primary-fg: #fff;
+        --body-fg: #333;
+        --body-bg: #f8f9fa;
+        --header-color: #fff;
+        --header-bg: #417690;
+        --header-link-color: #fff;
+        --breadcrumbs-bg: #f8f9fa;
+        --breadcrumbs-fg: #666;
+        --link-fg: #447e9b;
+        --link-hover-color: #036;
+        --link-selected-fg: #fff;
+        --button-fg: #fff;
+        --button-bg: #417690;
+        --button-hover-bg: #2b5070;
+        --default-button-bg: #417690;
+        --default-button-hover-bg: #2b5070;
+        --close-button-bg: #888;
+        --close-button-hover-bg: #747474;
+        --delete-button-bg: #ba2121;
+        --delete-button-hover-bg: #a41515;
+        --object-tools-fg: #fff;
+        --object-tools-bg: #417690;
+        --object-tools-hover-bg: #2b5070;
+    }
+
+    #header {
+        background: var(--header-bg);
+        color: var(--header-color);
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+
+    #branding h1 {
+        font-weight: 600;
+    }
+
+    .module h2, .module caption {
+        background: var(--header-bg);
+        color: var(--header-color);
+        font-weight: 600;
+    }
+
+    .button, input[type=submit], input[type=button], .submit-row input {
+        background: var(--button-bg);
+        color: var(--button-fg);
+        border-radius: 4px;
+        padding: 10px 15px;
+        border: none;
+        font-weight: 500;
+    }
+
+    .button:hover, input[type=submit]:hover, input[type=button]:hover {
+        background: var(--button-hover-bg);
+    }
+
+    .button.default {
+        background: var(--default-button-bg);
+    }
+
+    .button.default:hover {
+        background: var(--default-button-hover-bg);
+    }
+
+    .button.delete {
+        background: var(--delete-button-bg);
+    }
+
+    .button.delete:hover {
+        background: var(--delete-button-hover-bg);
+    }
+
+    .object-tools a {
+        background: var(--object-tools-bg);
+        color: var(--object-tools-fg);
+        border-radius: 4px;
+        padding: 8px 12px;
+        font-weight: 500;
+    }
+
+    .object-tools a:hover {
+        background: var(--object-tools-hover-bg);
+    }
+
+    #changelist-filter h2 {
+        background: var(--header-bg);
+        color: var(--header-color);
+        border-radius: 4px 4px 0 0;
+    }
+
+    #changelist-filter li.selected a {
+        color: var(--link-selected-fg);
+        background: var(--header-bg);
+    }
+
+    .paginator a:link, .paginator a:visited {
+        background: var(--button-bg);
+        color: var(--button-fg);
+        border-radius: 4px;
+        padding: 8px 12px;
+    }
+
+    .paginator a:hover {
+        background: var(--button-hover-bg);
+    }
+</style>
+{% endblock %}
+
+{% block branding %}
+<h1 id="site-name">
+    <a href="{% url 'admin:index' %}">
+        {{ site_header|default:_('Administration Bolibana') }}
+    </a>
+</h1>
+{% endblock %}
+
+{% block nav-global %}{% endblock %} 
