@@ -46,7 +46,7 @@
                         hx-trigger="click"
                         hx-push-url="false"
                         {% else %}
-                        onclick="window.location.href='{% url 'product:product_list' %}?category={{ category.id }}'"
+                        onclick="window.location.href='{% url 'suppliers:category_detail' category.slug %}'"
                         {% endif %}>
                     <div class="flex items-center justify-between">
                         <span class="font-medium">{{ category.name }}</span>
@@ -76,7 +76,7 @@
                             hx-trigger="click"
                             hx-push-url="false"
                             {% else %}
-                            onclick="window.location.href='{% url 'product:category_products' subcategory.id %}'"
+                            onclick="window.location.href='{% url 'suppliers:category_detail' subcategory.slug %}'"
                             {% endif %}>
                         <div class="flex items-center justify-between">
                             <span class="font-medium">{{ subcategory.name }}</span>
