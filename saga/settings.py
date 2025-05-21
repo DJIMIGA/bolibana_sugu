@@ -195,6 +195,9 @@ if not DEBUG:
 # URL d'administration sécurisée
 ADMIN_URL = os.getenv('ADMIN_URL', 's3cur3d4dm1n-p4n3l-2024/')
 
+# Configuration des IPs autorisées pour l'admin
+ADMIN_ALLOWED_IPS = os.getenv('ADMIN_ALLOWED_IPS', '127.0.0.1').split(',')
+
 # ==================================================
 # CONFIGURATION DES SERVICES EXTERNES
 # ==================================================
