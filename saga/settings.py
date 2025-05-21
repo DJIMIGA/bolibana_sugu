@@ -428,6 +428,9 @@ INSTALLED_APPS = [
     'price_checker',
 ]
 
+# Configuration des IPs autorisées pour l'admin
+ADMIN_ALLOWED_IPS = os.getenv('ADMIN_ALLOWED_IPS', '127.0.0.1').split(',')
+
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
     'whitenoise.middleware.WhiteNoiseMiddleware',
@@ -439,7 +442,8 @@ MIDDLEWARE = [
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'django_htmx.middleware.HtmxMiddleware',
     'corsheaders.middleware.CorsMiddleware',
-    'saga.settings.FileRequestLoggingMiddleware',
+    'saga.middleware.FileRequestLoggingMiddleware',
+    'saga.middleware.AdminIPRestrictionMiddleware',
 ]
 
 ROOT_URLCONF = 'saga.urls'
@@ -601,41 +605,6 @@ LOGGING = {
         },
     },
 }
-
-# Middleware pour logger les requêtes de fichiers
-class FileRequestLoggingMiddleware:
-    def __init__(self, get_response):
-        self.get_response = get_response
-        self.logger = logging.getLogger('storages')
-
-    def __call__(self, request):
-        response = self.get_response(request)
-        
-        # Vérifier si c'est une requête pour un fichier statique ou média
-        if request.path.startswith(('/static/', '/media/')):
-            self.logger.info(
-                f"File request: {request.path}",
-                extra={
-                    'path': request.path,
-                    'method': request.method,
-                    'status': response.status_code,
-                }
-            )
-        
-        # Logger les tentatives d'accès à l'interface d'administration
-        if request.path.startswith(f'/{ADMIN_URL}'):
-            self.logger.info(
-                f"Admin access attempt: {request.path}",
-                extra={
-                    'path': request.path,
-                    'method': request.method,
-                    'status': response.status_code,
-                    'user': request.user.username if request.user.is_authenticated else 'anonymous',
-                    'ip': request.META.get('REMOTE_ADDR'),
-                }
-            )
-        
-        return response 
 
 # Suppression de la configuration WhiteNoise qui entre en conflit avec S3
 # if not DEBUG:
