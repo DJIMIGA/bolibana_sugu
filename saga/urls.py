@@ -6,9 +6,11 @@ from django.conf.urls.static import static
 from django.contrib import admin
 from django.urls import path, include
 
+# Chemin d'accès admin sécurisé
+ADMIN_URL = settings.ADMIN_URL
 urlpatterns = [
     # Vues Django classiques (web)
-    path('admin/', admin.site.urls),
+    path(ADMIN_URL, admin.site.urls),
     path('products/', include('product.urls')),
     path('accounts/', include('accounts.urls')),
     path('', include('suppliers.urls')),

@@ -192,6 +192,9 @@ if not DEBUG:
     SECURE_HSTS_INCLUDE_SUBDOMAINS = True
     SECURE_HSTS_PRELOAD = True
 
+# URL d'administration sécurisée
+ADMIN_URL = os.getenv('ADMIN_URL', 's3cur3d4dm1n-p4n3l-2024/')
+
 # ==================================================
 # CONFIGURATION DES SERVICES EXTERNES
 # ==================================================
@@ -616,6 +619,19 @@ class FileRequestLoggingMiddleware:
                     'path': request.path,
                     'method': request.method,
                     'status': response.status_code,
+                }
+            )
+        
+        # Logger les tentatives d'accès à l'interface d'administration
+        if request.path.startswith(f'/{ADMIN_URL}'):
+            self.logger.info(
+                f"Admin access attempt: {request.path}",
+                extra={
+                    'path': request.path,
+                    'method': request.method,
+                    'status': response.status_code,
+                    'user': request.user.username if request.user.is_authenticated else 'anonymous',
+                    'ip': request.META.get('REMOTE_ADDR'),
                 }
             )
         
