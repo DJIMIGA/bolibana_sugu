@@ -1,0 +1,63 @@
+"""
+Configuration de Gunicorn pour l'application Django.
+"""
+import multiprocessing
+import os
+
+# Nombre de workers réduit pour économiser la mémoire
+workers = min(multiprocessing.cpu_count() * 2 + 1, 4)
+
+# Configuration des workers
+worker_class = 'gthread'
+threads = 2
+worker_connections = 1000
+
+# Timeouts
+timeout = 30
+keepalive = 2
+graceful_timeout = 30
+
+# Logging
+accesslog = '-'
+errorlog = '-'
+loglevel = 'info'
+
+# Performance
+max_requests = 1000
+max_requests_jitter = 50
+
+# Memory
+worker_tmp_dir = '/dev/shm'
+max_worker_connections = 1000
+
+# Security
+limit_request_line = 4094
+limit_request_fields = 100
+limit_request_field_size = 8190
+
+# Process naming
+proc_name = 'saga'
+
+# Server mechanics
+daemon = False
+pidfile = None
+umask = 0
+user = None
+group = None
+tmp_upload_dir = None
+
+# SSL
+keyfile = None
+certfile = None
+
+# Configuration du proxy
+forwarded_allow_ips = '*'
+secure_scheme_headers = {
+    'X-FORWARDED-PROTOCOL': 'ssl',
+    'X-FORWARDED-PROTO': 'https',
+    'X-FORWARDED-SSL': 'on'
+}
+
+# Configuration du worker
+worker_timeout = 30
+worker_abort_on_memory_error = True 
