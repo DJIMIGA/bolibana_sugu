@@ -1,4 +1,5 @@
 from django.urls import path
+from django.conf import settings
 from . import views
 
 app_name = 'price_checker'
@@ -15,26 +16,25 @@ public_urls = [
 
 # URLs admin
 admin_urls = [
-    path('admin/', views.AdminDashboardView.as_view(), name='admin_dashboard'),
+    path(f'{settings.ADMIN_URL}', views.AdminDashboardView.as_view(), name='admin_dashboard'),
     
     # Gestion des soumissions
-    path('admin/submissions/', views.AdminPriceSubmissionListView.as_view(), name='admin_price_submission_list'),
-    path('admin/submissions/<int:pk>/approve/', views.approve_price_submission, name='admin_price_submission_approve'),
-    path('admin/submissions/<int:pk>/reject/', views.reject_price_submission, name='admin_price_submission_reject'),
+    path(f'{settings.ADMIN_URL}submissions/', views.AdminPriceSubmissionListView.as_view(), name='admin_price_submission_list'),
+    path(f'{settings.ADMIN_URL}submissions/<int:pk>/approve/', views.approve_price_submission, name='admin_price_submission_approve'),
+    path(f'{settings.ADMIN_URL}submissions/<int:pk>/reject/', views.reject_price_submission, name='admin_price_submission_reject'),
     
     # Gestion des prix
-    path('admin/prices/', views.AdminPriceEntryListView.as_view(), name='admin_price_entry_list'),
+    path(f'{settings.ADMIN_URL}prices/', views.AdminPriceEntryListView.as_view(), name='admin_price_entry_list'),
     
     # Gestion des produits
-    path('admin/products/', views.AdminProductStatusListView.as_view(), name='admin_product_status_list'),
-    path('admin/products/<int:pk>/toggle/', views.toggle_product_status, name='admin_toggle_product_status'),
+    path(f'{settings.ADMIN_URL}products/', views.AdminProductStatusListView.as_view(), name='admin_product_status_list'),
+    path(f'{settings.ADMIN_URL}products/<int:pk>/toggle/', views.toggle_product_status, name='admin_toggle_product_status'),
     
     # Gestion des villes
-    path('admin/cities/', views.AdminCityListView.as_view(), name='admin_city_list'),
-    path('admin/cities/add/', views.add_city, name='admin_add_city'),
-    path('admin/cities/<int:pk>/update/', views.update_city, name='admin_update_city'),
-    path('admin/cities/<int:pk>/delete/', views.delete_city, name='admin_delete_city'),
-    path('admin/product-status/toggle-salam/<int:variant_id>/', views.toggle_salam, name='admin_toggle_salam'),
+    path(f'{settings.ADMIN_URL}cities/', views.AdminCityListView.as_view(), name='admin_city_list'),
+    path(f'{settings.ADMIN_URL}cities/add/', views.add_city, name='admin_add_city'),
+    path(f'{settings.ADMIN_URL}cities/<int:pk>/update/', views.update_city, name='admin_update_city'),
+    path(f'{settings.ADMIN_URL}cities/<int:pk>/delete/', views.delete_city, name='admin_delete_city'),
 ]
 
 # URLs API
