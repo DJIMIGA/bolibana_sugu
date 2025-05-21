@@ -16,7 +16,7 @@ public_urls = [
 
 # URLs admin
 admin_urls = [
-    path(f'{settings.ADMIN_URL}', views.AdminDashboardView.as_view(), name='admin_dashboard'),
+    path(settings.ADMIN_URL, views.AdminDashboardView.as_view(), name='admin_dashboard'),
     
     # Gestion des soumissions
     path(f'{settings.ADMIN_URL}submissions/', views.AdminPriceSubmissionListView.as_view(), name='admin_price_submission_list'),
