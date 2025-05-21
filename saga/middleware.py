@@ -1,5 +1,6 @@
 import logging
 from django.http import HttpResponseForbidden
+from django.conf import settings
 
 class FileRequestLoggingMiddleware:
     def __init__(self, get_response):
@@ -21,7 +22,7 @@ class FileRequestLoggingMiddleware:
             )
         
         # Logger les tentatives d'accès à l'interface d'administration
-        if request.path.startswith(f'/{request.settings.ADMIN_URL}'):
+        if request.path.startswith(f'/{settings.ADMIN_URL}'):
             self.logger.info(
                 f"Admin access attempt: {request.path}",
                 extra={
@@ -41,9 +42,9 @@ class AdminIPRestrictionMiddleware:
         self.logger = logging.getLogger('django.security')
 
     def __call__(self, request):
-        if request.path.startswith(f'/{request.settings.ADMIN_URL}'):
+        if request.path.startswith(f'/{settings.ADMIN_URL}'):
             client_ip = request.META.get('REMOTE_ADDR')
-            if client_ip not in request.settings.ADMIN_ALLOWED_IPS:
+            if client_ip not in settings.ADMIN_ALLOWED_IPS:
                 self.logger.warning(
                     f"Tentative d'accès admin bloquée depuis l'IP: {client_ip}",
                     extra={
