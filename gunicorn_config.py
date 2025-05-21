@@ -5,7 +5,7 @@ import multiprocessing
 import os
 
 # Nombre de workers réduit pour économiser la mémoire
-workers = min(multiprocessing.cpu_count() * 2 + 1, 4)
+workers = 2  # Réduit de 4 à 2 workers
 
 # Configuration des workers
 worker_class = 'gthread'
