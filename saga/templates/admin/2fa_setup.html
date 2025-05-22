@@ -1,0 +1,63 @@
+{% extends "admin/base_site.html" %}
+{% load i18n static %}
+
+{% block extrastyle %}
+{{ block.super }}
+<link rel="stylesheet" href="{% static "admin/css/forms.css" %}">
+<style>
+    .qr-code {
+        margin: 20px 0;
+        padding: 20px;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        text-align: center;
+    }
+    .qr-code img {
+        max-width: 200px;
+    }
+    .form-row {
+        margin: 20px 0;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div id="content-main">
+    <h1>{% trans "Configuration de l'authentification à deux facteurs" %}</h1>
+    
+    {% if messages %}
+    <ul class="messagelist">
+        {% for message in messages %}
+        <li{% if message.tags %} class="{{ message.tags }}"{% endif %}>{{ message }}</li>
+        {% endfor %}
+    </ul>
+    {% endif %}
+
+    {% if not device.confirmed %}
+        <div class="qr-code">
+            <h2>{% trans "Étape 1 : Scannez le QR code" %}</h2>
+            <p>{% trans "Utilisez votre application d'authentification (Google Authenticator, Authy, etc.) pour scanner ce QR code :" %}</p>
+            <img src="data:image/png;base64,{{ qr_code }}" alt="QR Code">
+        </div>
+
+        <form method="post">
+            {% csrf_token %}
+            <div class="form-row">
+                <label for="token">{% trans "Étape 2 : Entrez le code de vérification" %}</label>
+                <input type="text" name="token" id="token" required>
+            </div>
+            <div class="submit-row">
+                <input type="submit" name="enable" value="{% trans 'Activer la 2FA' %}" class="default">
+            </div>
+        </form>
+    {% else %}
+        <p>{% trans "L'authentification à deux facteurs est déjà activée." %}</p>
+        <form method="post">
+            {% csrf_token %}
+            <div class="submit-row">
+                <input type="submit" name="disable" value="{% trans 'Désactiver la 2FA' %}" class="default">
+            </div>
+        </form>
+    {% endif %}
+</div>
+{% endblock %} 

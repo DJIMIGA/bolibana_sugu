@@ -12,6 +12,8 @@ from datetime import timedelta
 from django.utils import timezone
 from django.conf import settings
 from django.core.files.storage import default_storage
+from django.utils.translation import gettext_lazy as _
+from django_otp.plugins.otp_totp.models import TOTPDevice as BaseTOTPDevice
 
 
 class CustomUserManager(BaseUserManager):
@@ -37,9 +39,14 @@ class CustomUserManager(BaseUserManager):
 class Shopper(AbstractUser):
     username = None
     email = models.EmailField(max_length=240, unique=True, verbose_name="Adresse email")
-    phone_number = PhoneNumberField(null=True, blank=True, unique=True, help_text="ex: +223 76 00 00 00",
-                                    verbose_name="Numéro de téléphone")
-    date_of_birth = models.DateField(null=True, blank=True, verbose_name="Date de naissance")
+    phone = PhoneNumberField(verbose_name=_("Numéro de téléphone"), null=True, blank=True)
+    address = models.TextField(verbose_name=_("Adresse"), null=True, blank=True)
+    city = models.CharField(max_length=100, verbose_name=_("Ville"), null=True, blank=True)
+    country = models.CharField(max_length=100, verbose_name=_("Pays"), null=True, blank=True)
+    postal_code = models.CharField(max_length=20, verbose_name=_("Code postal"), null=True, blank=True)
+    is_verified = models.BooleanField(default=False, verbose_name=_("Vérifié"))
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
     fidelys_number = models.CharField(max_length=240, null=True, blank=True, unique=True, verbose_name="Numéro Fidelys")
     profile_picture = models.ImageField(
         upload_to='profile_pics/%Y/%m/%d/',
@@ -48,8 +55,8 @@ class Shopper(AbstractUser):
         null=True,
         help_text="Photo de profil de l'utilisateur"
     )
+    date_of_birth = models.DateField(null=True, blank=True, verbose_name="Date de naissance")
     USERNAME_FIELD = "email"
-    # d'autres champs requis en + de email
     REQUIRED_FIELDS = []
     objects = CustomUserManager()
 
@@ -57,6 +64,37 @@ class Shopper(AbstractUser):
         if not self.fidelys_number:
             self.fidelys_number = ''.join(str(random.randint(0, 9)) for _ in range(7))
         super().save(*args, **kwargs)
+
+    def __str__(self):
+        return self.email
+
+    def get_totp_device(self):
+        """Récupère ou crée un appareil TOTP pour l'utilisateur."""
+        device, created = BaseTOTPDevice.objects.get_or_create(
+            user=self,
+            defaults={'name': 'default'}
+        )
+        return device
+
+    def has_2fa_enabled(self):
+        """Vérifie si l'utilisateur a activé la 2FA."""
+        return BaseTOTPDevice.objects.filter(user=self, confirmed=True).exists()
+
+    def enable_2fa(self):
+        """Active la 2FA pour l'utilisateur."""
+        device = self.get_totp_device()
+        if not device.confirmed:
+            device.confirmed = True
+            device.save()
+        return device
+
+    def disable_2fa(self):
+        """Désactive la 2FA pour l'utilisateur."""
+        BaseTOTPDevice.objects.filter(user=self).delete()
+
+    def is_verified(self):
+        """Vérifie si l'utilisateur est vérifié."""
+        return self.is_verified
 
 
 class ShippingAddress(models.Model):
@@ -123,5 +161,12 @@ class TwoFactorCode(models.Model):
     @staticmethod
     def generate_reset_token():
         return ''.join(random.choices('abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789', k=64))
+
+
+class TOTPDevice(BaseTOTPDevice):
+    # Ce modèle étend le modèle TOTPDevice de django_otp.plugins.otp_totp
+    # pour gérer la liaison entre un utilisateur Django et son appareil OTP
+    # sans utiliser un modèle Django local.
+    pass
 
 

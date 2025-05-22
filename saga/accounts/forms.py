@@ -48,7 +48,7 @@ class PasswordChangeForm(forms.Form):
 class UserForm(forms.ModelForm):
     class Meta:
         model = Shopper
-        fields = ['first_name', 'last_name', 'email', 'phone_number', 'date_of_birth', 'password']
+        fields = ['first_name', 'last_name', 'email', 'phone', 'date_of_birth', 'password']
         widgets = {
             'first_name': forms.TextInput(attrs={
                 'type': 'text',
@@ -65,21 +65,19 @@ class UserForm(forms.ModelForm):
                 'class': 'appearance-none rounded-none relative block w-full px-3 py-2 border border-yellow-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-green-500 focus:border-green-500 focus:z-10 sm:text-sm',
                 'placeholder': 'Adresse E-mail'
             }),
-            'phone_number': forms.TextInput(attrs={
+            'phone': forms.TextInput(attrs={
                 'type': 'tel',
                 'class': 'appearance-none rounded-none relative block w-full px-3 py-2 border border-yellow-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-green-500 focus:border-green-500 focus:z-10 sm:text-sm',
                 'placeholder': 'Numéro de téléphone'
             }),
             'date_of_birth': forms.DateInput(attrs={
                 'type': 'date',
-                'class': 'appearance-none rounded-none relative block w-full px-3 py-2 border border-yellow-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-green-500 focus:border-green-500 focus:z-10 sm:text-sm',
-                'placeholder': 'Date de naissance'
+                'class': 'appearance-none rounded-none relative block w-full px-3 py-2 border border-yellow-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-green-500 focus:border-green-500 focus:z-10 sm:text-sm'
             }),
             'password': forms.PasswordInput(attrs={
-                'type': 'password',
                 'class': 'appearance-none rounded-none relative block w-full px-3 py-2 border border-yellow-300 placeholder-gray-500 text-gray-900 rounded-b-md focus:outline-none focus:ring-green-500 focus:border-green-500 focus:z-10 sm:text-sm',
                 'placeholder': 'Mot de passe'
-            }),
+            })
         }
 
     def __init__(self, *args, **kwargs):
@@ -153,7 +151,7 @@ class CustomSetPasswordForm(SetPasswordForm):
 class UpdateProfileForm(forms.ModelForm):
     class Meta:
         model = Shopper
-        fields = ['first_name', 'last_name', 'email', 'phone_number', 'date_of_birth']
+        fields = ['first_name', 'last_name', 'email', 'phone', 'date_of_birth']
         widgets = {
             'date_of_birth': forms.DateInput(
                 attrs={

@@ -415,20 +415,23 @@ INSTALLED_APPS = [
     'widget_tweaks',
     'cart.apps.CartConfig',
     'rest_framework',
-    'corsheaders', # pour le CORS 
-    # 'drf_yasg', # temporairement désactivé pour la collecte des fichiers statiques
+    'corsheaders',
     'django_filters', 
     'rest_framework_simplejwt',
     'stripe',
     'crispy_forms',
     'crispy_tailwind',
-    'storages',  # Ajout de django-storages
+    'storages',
     'cloudinary_storage',
     'cloudinary',
     'tinify',
     'rembg',
     'onnxruntime',
     'price_checker',
+    # Applications pour la 2FA
+    'django_otp',
+    'django_otp.plugins.otp_totp',
+    'django_otp.plugins.otp_static',
 ]
 
 # Configuration des IPs autorisées pour l'admin
@@ -438,15 +441,14 @@ MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
     'whitenoise.middleware.WhiteNoiseMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
+    'corsheaders.middleware.CorsMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
+    'django_otp.middleware.OTPMiddleware',  # Middleware OTP juste après AuthenticationMiddleware
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'django_htmx.middleware.HtmxMiddleware',
-    'corsheaders.middleware.CorsMiddleware',
-    'saga.middleware.FileRequestLoggingMiddleware',
-    'saga.middleware.AdminIPRestrictionMiddleware',
 ]
 
 ROOT_URLCONF = 'saga.urls'
@@ -523,8 +525,10 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 AUTH_USER_MODEL = 'accounts.Shopper'
 PHONENUMBER_DEFAULT_REGION = "ML"
 
-# Configuration de la redirection après connexion
-LOGIN_REDIRECT_URL = 'suppliers:supplier_index'
+# Configuration des URLs de login
+LOGIN_URL = f'/{ADMIN_URL}login/'
+LOGIN_REDIRECT_URL = f'/{ADMIN_URL}'
+LOGOUT_REDIRECT_URL = 'suppliers:supplier_index'
 
 
 REVIEW_PRODUCT_MODEL = 'product.Product'
@@ -540,8 +544,6 @@ print(f"Clé Stripe configurée : {'Oui' if STRIPE_SECRET_KEY else 'Non'}")
 print("=============================\n") 
 
 # Configuration du logging
-import logging
-
 LOGGING = {
     'version': 1,
     'disable_existing_loggers': False,
@@ -551,11 +553,11 @@ LOGGING = {
             'style': '{',
         },
         'simple': {
-            'format': '{levelname} {asctime} {message}',
+            'format': '{levelname} {message}',
             'style': '{',
         },
-        'file_request': {
-            'format': '{asctime} {levelname} {message} - {path} - {method} - {status}',
+        'django.server': {
+            'format': '[{server_time}] {message}',
             'style': '{',
         },
     },
@@ -566,13 +568,17 @@ LOGGING = {
         },
         'file': {
             'class': 'logging.FileHandler',
-            'filename': 'django_debug.log',
+            'filename': 'debug.log',
             'formatter': 'verbose',
         },
-        'file_request': {
+        'otp_file': {
             'class': 'logging.FileHandler',
-            'filename': 'file_requests.log',
-            'formatter': 'file_request',
+            'filename': 'otp_debug.log',
+            'formatter': 'verbose',
+        },
+        'django.server': {
+            'class': 'logging.StreamHandler',
+            'formatter': 'django.server',
         },
     },
     'loggers': {
@@ -581,30 +587,20 @@ LOGGING = {
             'level': 'INFO',
             'propagate': True,
         },
+        'django.server': {
+            'handlers': ['django.server'],
+            'level': 'INFO',
+            'propagate': False,
+        },
         'saga': {
             'handlers': ['console', 'file'],
             'level': 'DEBUG',
             'propagate': True,
         },
-        'storages': {
-            'handlers': ['console', 'file', 'file_request'],
-            'level': 'DEBUG',
-            'propagate': True,
-        },
-        'django.request': {
-            'handlers': ['console', 'file', 'file_request'],
+        'accounts.admin': {
+            'handlers': ['console', 'otp_file'],
             'level': 'DEBUG',
             'propagate': False,
-        },
-        'boto3': {
-            'handlers': ['console', 'file'],
-            'level': 'DEBUG',
-            'propagate': True,
-        },
-        'botocore': {
-            'handlers': ['console', 'file'],
-            'level': 'DEBUG',
-            'propagate': True,
         },
     },
 }
@@ -613,3 +609,17 @@ LOGGING = {
 # if not DEBUG:
 #     STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 #     MIDDLEWARE.insert(1, 'whitenoise.middleware.WhiteNoiseMiddleware') 
+
+# Configuration de la 2FA
+OTP_TOTP_ISSUER = 'SagaKore'
+OTP_LOGIN_URL = f'/{ADMIN_URL}login/'
+OTP_ADMIN_ENABLED = True
+OTP_ENFORCE_ADMIN = True
+OTP_ENFORCE_GLOBAL = True
+OTP_REQUIRED = True
+OTP_ADMIN_REQUIRED = True
+
+# Configuration des URLs de login
+LOGIN_URL = f'/{ADMIN_URL}login/'
+LOGIN_REDIRECT_URL = f'/{ADMIN_URL}'
+LOGOUT_REDIRECT_URL = 'suppliers:supplier_index' 

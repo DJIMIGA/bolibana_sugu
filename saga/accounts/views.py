@@ -14,6 +14,10 @@ from django.contrib.auth.tokens import default_token_generator
 from django.utils import timezone
 from django.contrib.auth.views import LoginView as AuthLoginView
 from django.utils.translation import gettext_lazy as _
+from django.contrib.admin.views.decorators import staff_member_required
+from django_otp.plugins.otp_totp.models import TOTPDevice
+from django_otp import devices_for_user
+from django_otp.decorators import otp_required
 User = get_user_model()
 
 from .models import Shopper, ShippingAddress, TwoFactorCode
@@ -205,7 +209,8 @@ def update_profile(request):
 
                 # Sauvegarde des modifications
                 updated_user = form.save(commit=False)
-                updated_user.email = new_email  # Assurez-vous que l'email est mis à jour
+                updated_user.email = new_email
+                updated_user.phone = form.cleaned_data.get('phone')
                 updated_user.save()
 
                 messages.success(request, 'Les modifications ont été apportées avec succès.')
@@ -300,3 +305,62 @@ def set_default_address(request, address_id):
     address.is_default = True
     address.save()
     return redirect("manage_addresses")
+
+
+@staff_member_required
+def setup_2fa(request):
+    """Vue pour configurer la 2FA."""
+    user = request.user
+    device = user.get_totp_device()
+    
+    if request.method == 'POST':
+        if 'enable' in request.POST:
+            if device.verify_token(request.POST.get('token')):
+                device.confirmed = True
+                device.save()
+                messages.success(request, 'La 2FA a été activée avec succès.')
+                return redirect('admin:index')
+            else:
+                messages.error(request, 'Code invalide. Veuillez réessayer.')
+        elif 'disable' in request.POST:
+            user.disable_2fa()
+            messages.success(request, 'La 2FA a été désactivée.')
+            return redirect('admin:index')
+    
+    # Générer le QR code si l'appareil n'est pas confirmé
+    if not device.confirmed:
+        device = TOTPDevice.objects.create(user=user, name='default')
+    
+    return render(request, 'admin/2fa_setup.html', {
+        'device': device,
+        'qr_code': device.config_url,
+    })
+
+@staff_member_required
+def admin_2fa_required(request):
+    """Vue intermédiaire pour la vérification 2FA."""
+    if not request.user.is_authenticated:
+        return redirect('admin_login')
+        
+    if not request.user.is_staff:
+        return redirect('home')
+        
+    # Vérifier si l'utilisateur a la 2FA activée
+    if not request.user.has_2fa_enabled():
+        messages.warning(request, "Vous devez activer l'authentification à deux facteurs pour accéder à l'administration.")
+        return redirect('setup_2fa')
+    
+    # Si l'utilisateur n'est pas vérifié, afficher la page de vérification
+    if not request.user.is_verified():
+        if request.method == 'POST':
+            token = request.POST.get('token')
+            device = request.user.get_totp_device()
+            if device.verify_token(token):
+                request.user.is_verified = True
+                request.user.save()
+                return redirect('admin:index')
+            else:
+                messages.error(request, "Code invalide. Veuillez réessayer.")
+        return render(request, 'admin/2fa_verify.html')
+    
+    return redirect('admin:index')
