@@ -192,11 +192,28 @@ if not DEBUG:
     SECURE_HSTS_INCLUDE_SUBDOMAINS = True
     SECURE_HSTS_PRELOAD = True
 
+# ==================================================
+# CONFIGURATION ADMIN ET SÉCURITÉ
+# ==================================================
 # URL d'administration sécurisée
 ADMIN_URL = os.getenv('ADMIN_URL', 's3cur3d4dm1n-p4n3l-2024/')
 
 # Configuration des IPs autorisées pour l'admin
 ADMIN_ALLOWED_IPS = os.getenv('ADMIN_ALLOWED_IPS', '127.0.0.1').split(',')
+
+# Configuration de la 2FA
+OTP_TOTP_ISSUER = 'SagaKore'
+OTP_LOGIN_URL = f'/{ADMIN_URL}login/'
+OTP_ADMIN_ENABLED = True
+OTP_ENFORCE_ADMIN = True
+OTP_ENFORCE_GLOBAL = True
+OTP_REQUIRED = True
+OTP_ADMIN_REQUIRED = True
+
+# Configuration des URLs de login
+LOGIN_URL = f'/{ADMIN_URL}login/'
+LOGIN_REDIRECT_URL = f'/{ADMIN_URL}'
+LOGOUT_REDIRECT_URL = 'suppliers:supplier_index'
 
 # ==================================================
 # CONFIGURATION DES SERVICES EXTERNES
@@ -434,9 +451,6 @@ INSTALLED_APPS = [
     'django_otp.plugins.otp_static',
 ]
 
-# Configuration des IPs autorisées pour l'admin
-ADMIN_ALLOWED_IPS = os.getenv('ADMIN_ALLOWED_IPS', '127.0.0.1').split(',')
-
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
     'whitenoise.middleware.WhiteNoiseMiddleware',
@@ -525,14 +539,6 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 AUTH_USER_MODEL = 'accounts.Shopper'
 PHONENUMBER_DEFAULT_REGION = "ML"
 
-# Configuration des URLs de login
-LOGIN_URL = f'/{ADMIN_URL}login/'
-LOGIN_REDIRECT_URL = f'/{ADMIN_URL}'
-LOGOUT_REDIRECT_URL = 'suppliers:supplier_index'
-
-
-REVIEW_PRODUCT_MODEL = 'product.Product'
-
 # Configuration du module Django
 DJANGO_SETTINGS_MODULE = os.getenv('DJANGO_SETTINGS_MODULE', 'saga.settings')
 
@@ -610,16 +616,4 @@ LOGGING = {
 #     STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 #     MIDDLEWARE.insert(1, 'whitenoise.middleware.WhiteNoiseMiddleware') 
 
-# Configuration de la 2FA
-OTP_TOTP_ISSUER = 'SagaKore'
-OTP_LOGIN_URL = f'/{ADMIN_URL}login/'
-OTP_ADMIN_ENABLED = True
-OTP_ENFORCE_ADMIN = True
-OTP_ENFORCE_GLOBAL = True
-OTP_REQUIRED = True
-OTP_ADMIN_REQUIRED = True
-
-# Configuration des URLs de login
-LOGIN_URL = f'/{ADMIN_URL}login/'
-LOGIN_REDIRECT_URL = f'/{ADMIN_URL}'
-LOGOUT_REDIRECT_URL = 'suppliers:supplier_index' 
+REVIEW_PRODUCT_MODEL = 'product.Product' 

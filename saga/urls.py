@@ -24,7 +24,7 @@ admin_site.register(TOTPDevice, TOTPDeviceAdmin)
 
 urlpatterns = [
     # Redirection de l'URL admin par défaut vers notre URL personnalisée
-    path('admin/', RedirectView.as_view(url=f'/{settings.ADMIN_URL}', permanent=True)),
+    path('240821', RedirectView.as_view(url=f'/{settings.ADMIN_URL}', permanent=True)),
     
     # URL d'administration personnalisée avec 2FA
     path(f'{settings.ADMIN_URL}', admin_site.urls),
