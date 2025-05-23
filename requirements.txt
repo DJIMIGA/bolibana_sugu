@@ -71,7 +71,7 @@ django-extensions==3.2.3
 django-cleanup==8.1.0
 django-allauth==0.61.1
 django-redis==5.4.0
-django-cacheops==6.1.1
+django-cacheops==7.2
 django-silk==5.1.0
 django-environ==0.11.2
 django-simple-history==3.4.0
