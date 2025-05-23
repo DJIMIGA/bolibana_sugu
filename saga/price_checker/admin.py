@@ -3,6 +3,7 @@ from django.utils.html import format_html
 from django.db.models import Avg, Max, Min, Count, F, Q
 from django.utils import timezone
 from datetime import timedelta
+from accounts.admin import admin_site
 from .models import (
     City, PriceSubmission, PriceEntry, 
     PriceDeactivation, ProductStatus, PriceValidation
@@ -143,4 +144,12 @@ class PriceValidationAdmin(admin.ModelAdmin):
     def get_queryset(self, request):
         return super().get_queryset(request).select_related(
             'price_entry', 'admin_user'
-        ) 
+        )
+
+# Enregistrement avec admin_site
+admin_site.register(City, CityAdmin)
+admin_site.register(PriceSubmission, PriceSubmissionAdmin)
+admin_site.register(PriceEntry, PriceEntryAdmin)
+admin_site.register(PriceDeactivation, PriceDeactivationAdmin)
+admin_site.register(ProductStatus, ProductStatusAdmin)
+admin_site.register(PriceValidation, PriceValidationAdmin) 

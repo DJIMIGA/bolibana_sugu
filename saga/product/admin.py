@@ -5,6 +5,7 @@ from django.urls import reverse
 from django.db.models import Count, Q, Avg
 from price_checker.models import PriceEntry
 from price_checker.admin import PriceEntryInline
+from accounts.admin import admin_site
 
 # Register your models here.
 from .models import Product, Category, ImageProduct, Review, Size, Color, Clothing, CulturalItem, ShippingMethod, Phone
@@ -92,17 +93,6 @@ class CategoryAdmin(admin.ModelAdmin):
     
     readonly_fields = ('get_full_path',)
 
-admin.site.register(Category, CategoryAdmin)
-admin.site.register(Size)
-admin.site.register(Product)
-admin.site.register(Color)
-admin.site.register(ShippingMethod)
-admin.site.register(ImageProduct)
-admin.site.register(Review)
-admin.site.register(Clothing)
-admin.site.register(CulturalItem)
-
-@admin.register(Phone)
 class PhoneAdmin(admin.ModelAdmin):
     list_display = ('get_name', 'brand', 'model', 'storage', 'ram', 'color', 'get_price', 'get_stock', 'get_sku')
     list_filter = ('brand', 'storage', 'ram', 'color')
@@ -145,3 +135,15 @@ class PhoneAdmin(admin.ModelAdmin):
             product = obj.product
             product.title = f"{obj.brand} {obj.model}"
             product.save()
+
+# Enregistrement des modèles dans l'interface d'administration 2FA
+admin_site.register(Category, CategoryAdmin)
+admin_site.register(Size)
+admin_site.register(Product)
+admin_site.register(Color)
+admin_site.register(ShippingMethod)
+admin_site.register(ImageProduct)
+admin_site.register(Review)
+admin_site.register(Clothing)
+admin_site.register(CulturalItem)
+admin_site.register(Phone, PhoneAdmin)

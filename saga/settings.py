@@ -460,6 +460,7 @@ MIDDLEWARE = [
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django_otp.middleware.OTPMiddleware',  # Middleware OTP juste après AuthenticationMiddleware
+    'saga.middleware.AdminIPRestrictionMiddleware',  # Middleware de restriction IP
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'django_htmx.middleware.HtmxMiddleware',

@@ -170,3 +170,36 @@ class TOTPDevice(BaseTOTPDevice):
     pass
 
 
+class AllowedIP(models.Model):
+    ip_address = models.GenericIPAddressField(verbose_name="Adresse IP")
+    description = models.CharField(max_length=200, verbose_name="Description")
+    is_active = models.BooleanField(default=True, verbose_name="Actif")
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name="Créé le")
+    updated_at = models.DateTimeField(auto_now=True, verbose_name="Mis à jour le")
+    last_used = models.DateTimeField(null=True, blank=True, verbose_name="Dernière utilisation")
+    expires_at = models.DateTimeField(null=True, blank=True, verbose_name="Expire le")
+    added_by = models.ForeignKey(
+        'Shopper',
+        on_delete=models.SET_NULL,
+        null=True,
+        verbose_name="Ajouté par"
+    )
+
+    class Meta:
+        verbose_name = "IP Autorisée"
+        verbose_name_plural = "IPs Autorisées"
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f"{self.ip_address} - {self.description}"
+
+    def is_expired(self):
+        if self.expires_at:
+            return timezone.now() > self.expires_at
+        return False
+
+    def update_last_used(self):
+        self.last_used = timezone.now()
+        self.save(update_fields=['last_used'])
+
+

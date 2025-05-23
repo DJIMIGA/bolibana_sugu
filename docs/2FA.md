@@ -16,14 +16,19 @@ Ce document décrit l'implémentation de l'authentification à deux facteurs (2F
 pip install django-otp django-otp-totp
 ```
 
-2. **Configuration dans settings.py**
+## Configuration par Fichier
+
+### 1. settings.py
 ```python
+# Applications requises
 INSTALLED_APPS = [
     # ...
     'django_otp',
     'django_otp.plugins.otp_totp',
+    'django_otp.plugins.otp_static',
 ]
 
+# Middleware
 MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django_otp.middleware.OTPMiddleware',  # Doit être après AuthenticationMiddleware
@@ -37,22 +42,102 @@ OTP_ENFORCE_ADMIN = True
 OTP_ENFORCE_GLOBAL = True
 OTP_REQUIRED = True
 OTP_ADMIN_REQUIRED = True
+
+# Configuration du logging pour OTP
+LOGGING = {
+    'handlers': {
+        'otp_file': {
+            'class': 'logging.FileHandler',
+            'filename': 'otp_debug.log',
+            'formatter': 'verbose',
+        },
+    },
+    'loggers': {
+        'accounts.admin': {
+            'handlers': ['console', 'otp_file'],
+            'level': 'DEBUG',
+            'propagate': False,
+        },
+    },
+}
 ```
 
-## Structure du Projet
-
-### Modèles
-- `Shopper` : Modèle utilisateur personnalisé
-- `SagaDevice` : Modèle abstrait pour les devices OTP
-- `TOTPDevice` : Modèle pour l'authentification TOTP
-
-### Administration
+### 2. urls.py
 ```python
+from django_otp.admin import OTPAdminSite
+from django.contrib import admin
+
+# Configuration de l'admin sécurisé
+admin.site.__class__ = OTPAdminSite
+
+urlpatterns = [
+    path(f'{settings.ADMIN_URL}', admin.site.urls),
+    # ... autres URLs
+]
+```
+
+### 3. admin.py
+```python
+from django.contrib import admin
+from django_otp.admin import OTPAdminSite
+from .models import Shopper
+
 class MyOTPAdminSite(OTPAdminSite):
     def has_permission(self, request):
         if not super().has_permission(request):
             return False
         return request.user.is_verified()
+
+# Enregistrement des modèles
+admin.site.register(Shopper)
+```
+
+### 4. models.py
+```python
+from django.contrib.auth.models import AbstractUser
+from django_otp.models import Device
+
+class Shopper(AbstractUser):
+    # Champs personnalisés
+    pass
+
+class SagaDevice(Device):
+    # Configuration du device OTP
+    pass
+```
+
+### 5. middleware.py
+```python
+from django.conf import settings
+from django.http import HttpResponseForbidden
+from ipaddress import ip_address, ip_network
+
+class AdminIPRestrictionMiddleware:
+    def __init__(self, get_response):
+        self.get_response = get_response
+
+    def __call__(self, request):
+        if request.path.startswith(f'/{settings.ADMIN_URL}'):
+            client_ip = self.get_client_ip(request)
+            if not self.is_ip_allowed(client_ip):
+                return HttpResponseForbidden('Accès non autorisé')
+        return self.get_response(request)
+
+    def get_client_ip(self, request):
+        x_forwarded_for = request.META.get('HTTP_X_FORWARDED_FOR')
+        if x_forwarded_for:
+            return x_forwarded_for.split(',')[0]
+        return request.META.get('REMOTE_ADDR')
+
+    def is_ip_allowed(self, client_ip):
+        try:
+            client_ip = ip_address(client_ip)
+            return any(
+                client_ip in ip_network(allowed_ip)
+                for allowed_ip in settings.ADMIN_ALLOWED_IPS
+            )
+        except ValueError:
+            return False
 ```
 
 ## Utilisation
@@ -68,17 +153,13 @@ class MyOTPAdminSite(OTPAdminSite):
 2. Saisie du code TOTP généré par l'application
 3. Accès à l'interface d'administration si le code est valide
 
-### 3. Gestion des Devices
-- Ajout de nouveaux devices
-- Désactivation de devices existants
-- Réinitialisation en cas de perte
-
 ## Sécurité
 
 ### Protection de l'Admin
 - URL personnalisée : `s3cur3d4dm1n-p4n3l-2024/`
 - Vérification OTP obligatoire
 - Protection contre les accès non autorisés
+- Restriction des IPs autorisées
 
 ### Bonnes Pratiques
 1. **Pour les Administrateurs**
@@ -108,7 +189,6 @@ class MyOTPAdminSite(OTPAdminSite):
 ### Logs
 Les logs de vérification OTP sont disponibles dans :
 - `otp_debug.log` pour les informations détaillées
-- Configuration du logging dans `settings.py`
 
 ## Maintenance
 
@@ -137,7 +217,4 @@ Les logs de vérification OTP sont disponibles dans :
 Pour toute question ou problème :
 1. Consulter les logs dans `otp_debug.log`
 2. Vérifier la documentation officielle
-3. Contacter l'équipe de développement
-
-## Licence
-Ce projet est sous licence MIT. Voir le fichier LICENSE pour plus de détails. 
+3. Contacter l'équipe de développement 
