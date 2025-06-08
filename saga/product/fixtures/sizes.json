@@ -1,0 +1,44 @@
+[
+    {
+        "model": "product.size",
+        "pk": 1,
+        "fields": {
+            "name": "XS"
+        }
+    },
+    {
+        "model": "product.size",
+        "pk": 2,
+        "fields": {
+            "name": "S"
+        }
+    },
+    {
+        "model": "product.size",
+        "pk": 3,
+        "fields": {
+            "name": "M"
+        }
+    },
+    {
+        "model": "product.size",
+        "pk": 4,
+        "fields": {
+            "name": "L"
+        }
+    },
+    {
+        "model": "product.size",
+        "pk": 5,
+        "fields": {
+            "name": "XL"
+        }
+    },
+    {
+        "model": "product.size",
+        "pk": 6,
+        "fields": {
+            "name": "XXL"
+        }
+    }
+] 

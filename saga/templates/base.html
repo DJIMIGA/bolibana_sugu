@@ -13,11 +13,17 @@
     <!-- CSS -->
     <link rel="stylesheet" href="{% static 'src/output.css' %}">
 
+    <!-- GSAP -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+
     <!-- HTMX -->
     <script src="https://unpkg.com/htmx.org@1.9.10"></script>
 
     <!-- Hyperscript animation  apres ajout au panier-->
     <script src="https://unpkg.com/hyperscript.org@0.9.12"></script>
+
+    <!-- Notifications -->
+    {% include "suppliers/components/_notyf.html" %}
 
     {% block extra_head %}{% endblock %}
 </head>
@@ -48,5 +54,7 @@
     </script>
 
     {% block extra_scripts %}{% endblock %}
+
+  
 </body>
 </html>

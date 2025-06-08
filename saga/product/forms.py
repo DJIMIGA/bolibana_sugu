@@ -3,6 +3,7 @@ from crispy_forms.helper import FormHelper
 from crispy_forms.layout import Layout, Submit, Row, Column, Field
 from .models import Product, Phone, Category, Color, Review
 from django.core.exceptions import ValidationError
+from django.utils.text import slugify
 
 
 class ReviewForm(forms.ModelForm):
@@ -26,19 +27,29 @@ class ProductForm(forms.ModelForm):
             'supplier',
             'brand',
             'is_available',
+            'is_salam',
             'sku',
             'stock',
             'specifications',
             'weight',
             'dimensions',
             'image',
-            'image_urls'
+            'image_urls',
+            'shipping_methods'
         ]
         widgets = {
             'description': forms.Textarea(attrs={'rows': 4}),
             'specifications': forms.Textarea(attrs={'rows': 4}),
             'image_urls': forms.HiddenInput()
         }
+
+    def save(self, commit=True):
+        instance = super().save(commit=False)
+        if not instance.slug:
+            instance.slug = slugify(instance.title)
+        if commit:
+            instance.save()
+        return instance
 
 
 class PhoneForm(forms.ModelForm):
@@ -47,8 +58,8 @@ class PhoneForm(forms.ModelForm):
         fields = [
             'brand', 'model', 'operating_system', 'screen_size', 'resolution',
             'processor', 'battery_capacity', 'camera_main', 'camera_front',
-            'network', 'warranty', 'imei', 'is_new', 'box_included',
-            'accessories', 'storage', 'ram', 'color'
+            'network', 'imei', 'is_new', 'box_included', 'accessories',
+            'storage', 'ram', 'color'
         ]
         widgets = {
             'screen_size': forms.NumberInput(attrs={'step': '0.1'}),

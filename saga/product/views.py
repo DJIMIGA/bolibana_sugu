@@ -11,6 +11,8 @@ from django.core.paginator import Paginator
 from django.template.loader import render_to_string
 from django.core.cache import cache
 import logging
+from django.contrib.auth.mixins import LoginRequiredMixin
+import json
 
 logger = logging.getLogger(__name__)
 
@@ -159,15 +161,40 @@ def search(request):
     products_count = 0
     categories_count = 0
     products = []
-    search_categories = []  # Renamed from categories
+    search_categories = []
+
     if query:
-        products = Product.objects.filter(title__icontains=query)
-        search_categories = Category.objects.filter(name__icontains=query)
-        products_count = len(products)
-        categories_count = len(search_categories)
+        # Recherche dans les produits
+        products = Product.objects.filter(
+            Q(title__icontains=query) |
+            Q(description__icontains=query) |
+            Q(phone__brand__icontains=query) |
+            Q(phone__model__icontains=query) |
+            Q(clothing_product__type__icontains=query) |
+            Q(fabric_product__fabric_type__icontains=query) |
+            Q(cultural_product__author__icontains=query)
+        ).select_related(
+            'phone',
+            'clothing_product',
+            'fabric_product',
+            'cultural_product',
+            'category'
+        ).prefetch_related(
+            'images'
+        ).filter(is_available=True, is_salam=True)
+
+        # Recherche dans les catégories
+        search_categories = Category.objects.filter(
+            Q(name__icontains=query) |
+            Q(description__icontains=query)
+        ).prefetch_related('children')
+
+        products_count = products.count()
+        categories_count = search_categories.count()
+
     return render(request, 'search_results.html', {
         'products': products,
-        'search_categories': search_categories,  # Renamed from categories
+        'search_categories': search_categories,
         'products_count': products_count,
         'categories_count': categories_count,
         'query': query
@@ -199,17 +226,23 @@ class CategoryTreeView(ListView):
 def category_subcategories(request, category_id):
     try:
         category = Category.objects.get(id=category_id)
+        # Récupérer les sous-catégories avec leurs enfants
         subcategories = category.children.all().prefetch_related('children')
+        
+        # Si la catégorie n'a pas d'enfants, on renvoie vers la page de détail
+        if not subcategories.exists():
+            return redirect('suppliers:category_detail', slug=category.slug)
+            
         return render(request, 'components/_subcategories_menu.html', {
             'category': category,
             'subcategories': subcategories,
-            'categories': Category.objects.filter(parent=None).prefetch_related('children')
+            'dropdown_categories': Category.objects.filter(parent=None).prefetch_related('children')
         })
     except Category.DoesNotExist:
         return render(request, 'components/_subcategories_menu.html', {
             'category': None,
             'subcategories': [],
-            'categories': Category.objects.filter(parent=None).prefetch_related('children')
+            'dropdown_categories': Category.objects.filter(parent=None).prefetch_related('children')
         })
 
 

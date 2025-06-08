@@ -6,9 +6,11 @@ from django.db.models import Count, Q, Avg
 from price_checker.models import PriceEntry
 from price_checker.admin import PriceEntryInline
 from accounts.admin import admin_site
+from .forms import ProductForm
+from django.utils.text import slugify
 
 # Register your models here.
-from .models import Product, Category, ImageProduct, Review, Size, Color, Clothing, CulturalItem, ShippingMethod, Phone
+from .models import Product, Category, ImageProduct, Review, Size, Color, Clothing, CulturalItem, ShippingMethod, Phone, Fabric
 from django.contrib import admin
 from django.contrib.contenttypes.admin import GenericStackedInline
 
@@ -32,7 +34,7 @@ class CategoryLevelFilter(admin.SimpleListFilter):
             return queryset.filter(parent__parent__isnull=False)
 
 class CategoryAdmin(admin.ModelAdmin):
-    list_display = ('name', 'parent_name', 'get_full_path', 'image_preview', 'subcategories_count', 'subsubcategories_count')
+    list_display = ('name', 'parent_name', 'get_full_path', 'image_preview', 'subcategories_count', 'subsubcategories_count', 'category_type', 'color')
     list_filter = (CategoryLevelFilter, 'parent',)
     search_fields = ('name',)
     ordering = ('parent__name', 'name')
@@ -83,15 +85,14 @@ class CategoryAdmin(admin.ModelAdmin):
 
     fieldsets = (
         ('Informations de base', {
-            'fields': ('name', 'parent', 'image')
+            'fields': ('name', 'slug', 'parent', 'description', 'image', 'color')
         }),
-        ('Hiérarchie', {
-            'fields': ('get_full_path',),
-            'classes': ('collapse',)
+        ('Configuration', {
+            'fields': ('is_main', 'order', 'category_type', 'content_type', 'filter_criteria')
         }),
     )
     
-    readonly_fields = ('get_full_path',)
+    readonly_fields = ('get_full_path', 'slug')
 
 class PhoneAdmin(admin.ModelAdmin):
     list_display = ('get_name', 'brand', 'model', 'storage', 'ram', 'color', 'get_price', 'get_stock', 'get_sku')
@@ -124,8 +125,8 @@ class PhoneAdmin(admin.ModelAdmin):
         ('Multimédia et batterie', {
             'fields': ('camera_main', 'camera_front', 'battery_capacity')
         }),
-        ('Connectivité et garantie', {
-            'fields': ('network', 'warranty', 'color')
+        ('Connectivité', {
+            'fields': ('network', 'color')
         }),
     )
 
@@ -136,14 +137,64 @@ class PhoneAdmin(admin.ModelAdmin):
             product.title = f"{obj.brand} {obj.model}"
             product.save()
 
+@admin.register(CulturalItem)
+class CulturalItemAdmin(admin.ModelAdmin):
+    list_display = ('get_title', 'author', 'isbn', 'date')
+    search_fields = ('product__title', 'author', 'isbn')
+    list_filter = ('date',)
+    
+    def get_title(self, obj):
+        return obj.product.title
+    get_title.short_description = 'Titre'
+    get_title.admin_order_field = 'product__title'
+
+    class Meta:
+        verbose_name = 'Livre et Culture'
+        verbose_name_plural = 'Livres et Culture'
+
+class ProductAdmin(admin.ModelAdmin):
+    form = ProductForm
+    list_display = ('title', 'category', 'brand', 'price', 'stock', 'sku', 'is_available', 'is_salam', 'created_at')
+    list_filter = ('is_available', 'is_salam', 'category', 'brand', 'created_at')
+    search_fields = ('title', 'sku', 'brand', 'description')
+    readonly_fields = ('created_at', 'updated_at')
+    
+    fieldsets = (
+        ('Informations de base', {
+            'fields': ('title', 'description', 'category', 'supplier', 'brand')
+        }),
+        ('Prix et stock', {
+            'fields': ('price', 'stock', 'sku', 'is_available', 'is_salam')
+        }),
+        ('Images', {
+            'fields': ('image', 'image_urls')
+        }),
+        ('Caractéristiques', {
+            'fields': ('specifications', 'weight', 'dimensions', 'shipping_methods')
+        }),
+        ('Dates', {
+            'fields': ('created_at', 'updated_at'),
+            'classes': ('collapse',)
+        }),
+    )
+
+    def get_queryset(self, request):
+        return super().get_queryset(request).select_related('category', 'supplier')
+
+    def save_model(self, request, obj, form, change):
+        if not obj.slug:
+            obj.slug = slugify(obj.title)
+        super().save_model(request, obj, form, change)
+
 # Enregistrement des modèles dans l'interface d'administration 2FA
 admin_site.register(Category, CategoryAdmin)
 admin_site.register(Size)
-admin_site.register(Product)
+admin_site.register(Product, ProductAdmin)
 admin_site.register(Color)
 admin_site.register(ShippingMethod)
 admin_site.register(ImageProduct)
 admin_site.register(Review)
 admin_site.register(Clothing)
-admin_site.register(CulturalItem)
 admin_site.register(Phone, PhoneAdmin)
+admin_site.register(Fabric)
+admin_site.register(CulturalItem)

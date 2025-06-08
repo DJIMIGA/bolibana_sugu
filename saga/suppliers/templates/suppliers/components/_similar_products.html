@@ -1,0 +1,209 @@
+{% comment %}
+Composant pour afficher les produits similaires
+Paramètres :
+- similar_products : la liste des produits similaires à afficher
+- title : le titre de la section (optionnel, par défaut "Produits similaires")
+- category_slug : le slug de la catégorie pour le lien "Voir plus"
+{% endcomment %}
+
+{% load static %}
+{% load product_badges %}
+
+<div class="mt-16">
+    <!-- Debug -->
+    <div class="hidden">
+        <p>Category slug: {{ category_slug }}</p>
+        <p>Similar products count: {{ similar_products|length }}</p>
+    </div>
+    <div class="relative px-2 sm:px-0 flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 sm:gap-0">
+        <div class="relative">
+            <h2 class="text-2xl sm:text-3xl font-bold bg-gradient-to-r from-gray-900 to-gray-700 bg-clip-text text-transparent mb-3 sm:mb-4">
+                {{ title|default:"Produits similaires" }}
+            </h2>
+            <div class="absolute -bottom-1 left-0 w-24 h-1 bg-gradient-to-r from-green-600 via-yellow-500 to-red-500 rounded-full"></div>
+        </div>
+        {% if category_slug and similar_products %}
+        <a href="{% url 'suppliers:category_detail' category_slug %}" class="inline-flex items-center px-4 sm:px-6 py-3.5 border border-gray-200 text-base font-medium rounded-lg shadow-sm text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-new transition-all duration-300 transform hover:scale-[1.02]">
+            <div class="flex items-center justify-center">
+                <svg class="h-5 w-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+                </svg>
+                <span class="font-semibold">Voir plus</span>
+            </div>
+        </a>
+        {% endif %}
+    </div>
+
+    <!-- Swiper sur mobile, grille sur desktop -->
+    <div class="mt-12 relative">
+        <!-- Swiper container -->
+        <div class="swiper similarProductsSwiper sm:hidden">
+            <div class="swiper-wrapper">
+                {% for product in similar_products %}
+                    <div class="swiper-slide">
+                        {% if product.category.slug == 'tissus' %}
+                            {% include 'suppliers/components/fabric_card.html' with product=product %}
+                        {% elif product.category.slug == 'vetements' %}
+                            {% include 'suppliers/components/clothing_card.html' with product=product %}
+                        {% elif product.category.slug == 'telephones' %}
+                            {% include 'suppliers/components/phone_card.html' with product=product %}
+                        {% elif product.category.slug == 'articles-culturels' %}
+                            {% include 'suppliers/components/cultural_card.html' with product=product %}
+                        {% else %}
+                            {% include 'suppliers/components/product_card.html' with product=product %}
+                        {% endif %}
+                    </div>
+                {% endfor %}
+            </div>
+            <!-- Add Pagination -->
+            <div class="swiper-pagination"></div>
+            <!-- Add Navigation -->
+            <div class="swiper-button-prev"></div>
+            <div class="swiper-button-next"></div>
+        </div>
+
+        <!-- Grille pour desktop -->
+        <div class="hidden sm:grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+            {% for product in similar_products %}
+                {% if product.category.slug == 'tissus' %}
+                    {% include 'suppliers/components/fabric_card.html' with product=product %}
+                {% elif product.category.slug == 'vetements' %}
+                    {% include 'suppliers/components/clothing_card.html' with product=product %}
+                {% elif product.category.slug == 'telephones' %}
+                    {% include 'suppliers/components/phone_card.html' with product=product %}
+                {% elif product.category.slug == 'articles-culturels' %}
+                    {% include 'suppliers/components/cultural_card.html' with product=product %}
+                {% else %}
+                    {% include 'suppliers/components/product_card.html' with product=product %}
+                {% endif %}
+            {% empty %}
+            <div class="col-span-full text-center py-12">
+                <p class="text-gray-500 text-xl">Aucun produit similaire disponible pour le moment.</p>
+                <a href="{% url 'suppliers:category_detail' 'tous-les-produits' %}" class="mt-4 inline-flex items-center px-6 py-3 text-sm text-green-700 bg-green-50 hover:bg-green-100 transition-colors duration-200 rounded-lg">
+                    <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                    </svg>
+                    Découvrir tous nos produits
+                </a>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+
+{% block extra_head %}
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.css" />
+<style>
+    .swiper-button-next,
+    .swiper-button-prev {
+        color: #059669 !important; /* green-600 */
+        background-color: white;
+        width: 40px !important;
+        height: 40px !important;
+        border-radius: 50%;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+
+    .swiper-button-next {
+        right: -5px !important;
+    }
+
+    .swiper-button-prev {
+        left: -5px !important;
+    }
+
+    .swiper-button-next:after,
+    .swiper-button-prev:after {
+        font-size: 20px !important;
+    }
+
+    .swiper-button-next:hover,
+    .swiper-button-prev:hover {
+        color: #047857 !important; /* green-700 */
+        background-color: #f3f4f6;
+    }
+
+    .swiper-button-disabled {
+        opacity: 0.35 !important;
+        cursor: auto !important;
+        pointer-events: none !important;
+    }
+
+    .swiper-pagination {
+        position: relative !important;
+        margin-top: 24px !important;
+        display: flex !important;
+        justify-content: center !important;
+        align-items: center !important;
+        gap: 8px !important;
+    }
+
+    .swiper-pagination-bullet {
+        width: 8px !important;
+        height: 8px !important;
+        background: #E5E7EB !important; /* gray-200 */
+        opacity: 1 !important;
+        transition: all 0.3s ease !important;
+        margin: 0 !important;
+    }
+    
+    .swiper-pagination-bullet-active {
+        background: #059669 !important; /* green-600 */
+        transform: scale(1.2) !important;
+        width: 10px !important;
+        height: 10px !important;
+    }
+    
+    .swiper-pagination-bullet:hover {
+        background: #059669 !important; /* green-600 */
+        opacity: 0.7 !important;
+    }
+
+    .swiper-slide {
+        height: auto !important;
+        display: flex !important;
+        align-items: stretch !important;
+    }
+
+    .swiper-slide > * {
+        width: 100% !important;
+        height: 100% !important;
+    }
+
+    .swiper {
+        padding: 0 5px !important;
+    }
+</style>
+{% endblock %}
+
+{% block extra_scripts %}
+<script src="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    new Swiper('.similarProductsSwiper', {
+        slidesPerView: 1,
+        spaceBetween: 24,
+        pagination: {
+            el: '.swiper-pagination',
+            clickable: true,
+        },
+        navigation: {
+            nextEl: '.swiper-button-next',
+            prevEl: '.swiper-button-prev',
+        },
+        breakpoints: {
+            640: {
+                slidesPerView: 2,
+            },
+            1024: {
+                slidesPerView: 3,
+            },
+            1280: {
+                slidesPerView: 4,
+            },
+        },
+    });
+});
+</script>
+{% endblock %} 

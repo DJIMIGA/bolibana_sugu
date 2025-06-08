@@ -1,3 +1,14 @@
+# TODO: Ajouter la validation du format du numéro de téléphone
+# FIXME: Optimiser la génération du numéro Fidelys pour éviter les doublons
+# BUG: Les superusers n'ont pas de numéro Fidelys par défaut
+# TODO: Ajouter un champ pour le type de compte (particulier/professionnel)
+# FIXME: Le champ is_verified est redondant avec la méthode is_verified()
+# BUG: Risque de collision pour la génération du numéro Fidelys
+# TODO: Ajouter la validation du format du code postal
+# FIXME: Ajouter un champ pour les instructions de livraison
+# TODO: Ajouter un système de rate limiting pour les tentatives de code
+# FIXME: Réduire la durée de validité du code à 3 minutes
+
 import random
 
 from django.contrib.auth.models import AbstractUser, BaseUserManager
@@ -14,6 +25,7 @@ from django.conf import settings
 from django.core.files.storage import default_storage
 from django.utils.translation import gettext_lazy as _
 from django_otp.plugins.otp_totp.models import TOTPDevice as BaseTOTPDevice
+from django.contrib.auth import get_user_model
 
 
 class CustomUserManager(BaseUserManager):
@@ -27,12 +39,9 @@ class CustomUserManager(BaseUserManager):
         return user
 
     def create_superuser(self, email, password, **kwargs):
-        # on set les valeur sur notre dictionnaire
         kwargs["is_staff"] = True
         kwargs["is_superuser"] = True
         kwargs["is_active"] = True
-
-        # on passe la dictionnaire a la fonction create_user
         return self.create_user(email=email, password=password, **kwargs)
 
 
@@ -60,13 +69,17 @@ class Shopper(AbstractUser):
     REQUIRED_FIELDS = []
     objects = CustomUserManager()
 
+    def get_email(self):
+        """Retourne l'email de l'utilisateur ou une chaîne vide pour l'utilisateur anonyme."""
+        return self.email if hasattr(self, 'email') else ''
+
     def save(self, *args, **kwargs):
         if not self.fidelys_number:
             self.fidelys_number = ''.join(str(random.randint(0, 9)) for _ in range(7))
         super().save(*args, **kwargs)
 
     def __str__(self):
-        return self.email
+        return self.email if hasattr(self, 'email') else ''
 
     def get_totp_device(self):
         """Récupère ou crée un appareil TOTP pour l'utilisateur."""
@@ -91,10 +104,6 @@ class Shopper(AbstractUser):
     def disable_2fa(self):
         """Désactive la 2FA pour l'utilisateur."""
         BaseTOTPDevice.objects.filter(user=self).delete()
-
-    def is_verified(self):
-        """Vérifie si l'utilisateur est vérifié."""
-        return self.is_verified
 
 
 class ShippingAddress(models.Model):
@@ -171,35 +180,52 @@ class TOTPDevice(BaseTOTPDevice):
 
 
 class AllowedIP(models.Model):
-    ip_address = models.GenericIPAddressField(verbose_name="Adresse IP")
-    description = models.CharField(max_length=200, verbose_name="Description")
-    is_active = models.BooleanField(default=True, verbose_name="Actif")
-    created_at = models.DateTimeField(auto_now_add=True, verbose_name="Créé le")
-    updated_at = models.DateTimeField(auto_now=True, verbose_name="Mis à jour le")
-    last_used = models.DateTimeField(null=True, blank=True, verbose_name="Dernière utilisation")
-    expires_at = models.DateTimeField(null=True, blank=True, verbose_name="Expire le")
+    ip_address = models.GenericIPAddressField(unique=True)
+    description = models.CharField(max_length=255, blank=True)
+    is_active = models.BooleanField(default=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    expires_at = models.DateTimeField(default=timezone.now)
     added_by = models.ForeignKey(
-        'Shopper',
+        settings.AUTH_USER_MODEL,
         on_delete=models.SET_NULL,
         null=True,
-        verbose_name="Ajouté par"
+        related_name='added_ips'
     )
 
     class Meta:
-        verbose_name = "IP Autorisée"
-        verbose_name_plural = "IPs Autorisées"
+        verbose_name = 'IP autorisée'
+        verbose_name_plural = 'IPs autorisées'
         ordering = ['-created_at']
 
     def __str__(self):
-        return f"{self.ip_address} - {self.description}"
+        return f"{self.ip_address} ({self.description})"
 
+    @property
     def is_expired(self):
-        if self.expires_at:
-            return timezone.now() > self.expires_at
-        return False
+        return timezone.now() > self.expires_at
 
-    def update_last_used(self):
-        self.last_used = timezone.now()
-        self.save(update_fields=['last_used'])
+    def save(self, *args, **kwargs):
+        if not self.expires_at:
+            self.expires_at = timezone.now() + timezone.timedelta(days=30)
+        super().save(*args, **kwargs)
+
+
+class LoginTwoFactorCode(models.Model):
+    user = models.ForeignKey(Shopper, on_delete=models.CASCADE)
+    code = models.CharField(max_length=6)
+    created_at = models.DateTimeField(auto_now_add=True)
+    is_used = models.BooleanField(default=False)
+
+    @classmethod
+    def generate_code(cls):
+        """Génère un code à 6 chiffres."""
+        return ''.join(str(random.randint(0, 9)) for _ in range(6))
+
+    def is_valid(self):
+        """Vérifie si le code est valide (moins de 5 minutes)."""
+        return (timezone.now() - self.created_at).total_seconds() < 300
+
+    def __str__(self):
+        return f"Code pour {self.user.email} - {self.code}"
 
 

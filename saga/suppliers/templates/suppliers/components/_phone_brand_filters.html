@@ -2,7 +2,7 @@
 <div class="mb-6 sm:mb-8">
     <div class="bg-white rounded-xl shadow-lg p-3 sm:p-4 mx-2 sm:mx-0">
         <form class="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-6 gap-2 sm:gap-3"
-              hx-get="{% if is_detail %}{% url 'suppliers:supplier_detail' slug %}{% else %}{% url 'suppliers:supplier_index' %}{% endif %}"
+              hx-get="{% if is_detail %}{% if brand %}{% url 'suppliers:brand_detail' brand|slugify %}{% else %}{% url 'suppliers:category_detail' slug %}{% endif %}{% else %}{% url 'suppliers:supplier_index' %}{% endif %}"
               hx-target="#phone-grid"
               hx-push-url="true"
               hx-trigger="change delay:500ms">
@@ -35,8 +35,8 @@
                 <select name="storage" class="w-full text-sm rounded-lg border border-gray-200 px-2 py-1.5 text-gray-700 focus:outline-none focus:ring-1 focus:ring-green-500">
                     <option value="">Stockage</option>
                     {% for storage in storages %}
-                    <option value="{{ storage.phone__storage }}" {% if storage.phone__storage|stringformat:"s" == selected_storage %}selected{% endif %}>
-                        {{ storage.phone__storage }} Go
+                    <option value="{{ storage.phone__storage }}" {% if storage.phone__storage == selected_storage %}selected{% endif %}>
+                        {{ storage.phone__storage }} GB
                     </option>
                     {% endfor %}
                 </select>
@@ -47,8 +47,8 @@
                 <select name="ram" class="w-full text-sm rounded-lg border border-gray-200 px-2 py-1.5 text-gray-700 focus:outline-none focus:ring-1 focus:ring-green-500">
                     <option value="">RAM</option>
                     {% for ram in rams %}
-                    <option value="{{ ram.phone__ram }}" {% if ram.phone__ram|stringformat:"s" == selected_ram %}selected{% endif %}>
-                        {{ ram.phone__ram }} Go
+                    <option value="{{ ram.phone__ram }}" {% if ram.phone__ram == selected_ram %}selected{% endif %}>
+                        {{ ram.phone__ram }} GB
                     </option>
                     {% endfor %}
                 </select>
@@ -56,24 +56,22 @@
 
             <!-- Filtre par prix minimum -->
             <div class="space-y-1">
-                <input type="number" name="price_min" 
+                <input type="number" name="price_min" placeholder="Prix min" 
                        value="{{ selected_price_min }}"
-                       class="w-full text-sm rounded-lg border border-gray-200 px-2 py-1.5 text-gray-700 focus:outline-none focus:ring-1 focus:ring-green-500"
-                       placeholder="Prix min">
+                       class="w-full text-sm rounded-lg border border-gray-200 px-2 py-1.5 text-gray-700 focus:outline-none focus:ring-1 focus:ring-green-500">
             </div>
 
             <!-- Filtre par prix maximum -->
             <div class="space-y-1">
-                <input type="number" name="price_max" 
+                <input type="number" name="price_max" placeholder="Prix max" 
                        value="{{ selected_price_max }}"
-                       class="w-full text-sm rounded-lg border border-gray-200 px-2 py-1.5 text-gray-700 focus:outline-none focus:ring-1 focus:ring-green-500"
-                       placeholder="Prix max">
+                       class="w-full text-sm rounded-lg border border-gray-200 px-2 py-1.5 text-gray-700 focus:outline-none focus:ring-1 focus:ring-green-500">
             </div>
 
             <!-- Bouton de réinitialisation -->
             <div class="col-span-full flex justify-end">
-                <a href="{% if is_detail %}{% url 'suppliers:supplier_detail' slug %}{% else %}{% url 'suppliers:supplier_index' %}{% endif %}" 
-                   hx-get="{% if is_detail %}{% url 'suppliers:supplier_detail' slug %}{% else %}{% url 'suppliers:supplier_index' %}{% endif %}"
+                <a href="{% if is_detail %}{% if brand %}{% url 'suppliers:brand_detail' brand|slugify %}{% else %}{% url 'suppliers:category_detail' slug %}{% endif %}{% else %}{% url 'suppliers:supplier_index' %}{% endif %}" 
+                   hx-get="{% if is_detail %}{% if brand %}{% url 'suppliers:brand_detail' brand|slugify %}{% else %}{% url 'suppliers:category_detail' slug %}{% endif %}{% else %}{% url 'suppliers:supplier_index' %}{% endif %}"
                    hx-target="#phone-grid"
                    hx-push-url="true"
                    class="text-sm text-gray-500 hover:text-gray-700">

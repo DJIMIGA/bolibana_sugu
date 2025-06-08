@@ -5,6 +5,7 @@ from django.contrib.contenttypes.models import ContentType
 from django.utils.text import slugify
 from django.db.models.signals import pre_save, post_delete
 from django.dispatch import receiver
+from django.urls import reverse
 from suppliers.models import Supplier
 from saga.utils.image_optimizer import ImageOptimizer
 from saga.utils.path_utils import get_product_image_path
@@ -22,6 +23,7 @@ from storages.backends.s3boto3 import S3Boto3Storage
 from saga.storage_backends import ProductImageStorage
 from PIL import Image
 from io import BytesIO
+from django.db.models import Avg, Count
 
 logger = logging.getLogger(__name__)
 
@@ -56,13 +58,127 @@ class Category(models.Model):
     parent = models.ForeignKey('self', null=True, blank=True, related_name='children', on_delete=models.CASCADE)
     image = models.ImageField(
         upload_to='categories/%Y/%m/%d/',
-        storage=default_storage,
+        storage=ProductImageStorage(),
+        blank=True,
+        null=True,
+        help_text="Image de la catégorie"
+    )
+    description = models.TextField(blank=True, null=True)
+    color = models.CharField(
+        max_length=20,
+        default='blue',
+        choices=[
+            ('blue', 'Bleu'),
+            ('purple', 'Violet'),
+            ('yellow', 'Jaune'),
+            ('red', 'Rouge'),
+            ('green', 'Vert'),
+            ('indigo', 'Indigo'),
+            ('pink', 'Rose'),
+        ]
+    )
+    is_main = models.BooleanField(
+        default=False,
+        help_text="Indique si c'est une catégorie principale"
+    )
+    order = models.PositiveIntegerField(default=0, help_text="Ordre d'affichage")
+    
+    # Nouveaux champs
+    category_type = models.CharField(
+        max_length=20,
+        choices=[
+            ('MODEL', 'Catégorie liée à un modèle'),
+            ('FILTER', 'Catégorie avec filtres'),
+            ('MARKETING', 'Catégorie marketing'),
+        ],
+        default='MODEL',
+        help_text="Type de catégorie",
         blank=True,
         null=True
+    )
+    content_type = models.ForeignKey(
+        ContentType,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        help_text="Modèle lié à cette catégorie",
+        limit_choices_to={
+            'app_label__in': ['product', 'suppliers'],
+            'model__in': ['phone', 'clothing', 'fabric', 'culturalitem', 'product']
+        }
+    )
+    filter_criteria = models.JSONField(
+        default=dict,
+        blank=True,
+        null=True,
+        help_text="Critères de filtrage pour les sous-catégories"
     )
 
     def __str__(self):
         return self.name
+
+    @classmethod
+    def get_all_products_category(cls):
+        """Retourne la catégorie 'Tous les produits' ou la crée si elle n'existe pas."""
+        category, created = cls.objects.get_or_create(
+            slug='tous-les-produits',
+            defaults={
+                'name': 'Tous les produits',
+                'is_main': True,
+                'category_type': 'MODEL',
+                'color': 'green',
+                'order': 0,
+                'description': 'Découvrez tous nos produits disponibles sur la plateforme.'
+            }
+        )
+        return category
+
+    def get_products(self):
+        """Retourne les produits de la catégorie."""
+        if self.slug == 'tous-les-produits':
+            return Product.objects.filter(
+                is_available=True,
+                is_salam=True
+            ).select_related(
+                'phone',
+                'phone__color',
+                'supplier',
+                'category',
+                'fabric_product',
+                'clothing_product',
+                'cultural_product'
+            )
+        else:
+            category_ids = self.get_all_children_ids()
+            return Product.objects.filter(
+                category_id__in=category_ids,
+                is_available=True,
+                is_salam=True
+            ).select_related(
+                'phone',
+                'phone__color',
+                'supplier',
+                'category',
+                'fabric_product',
+                'clothing_product',
+                'cultural_product'
+            )
+
+    def delete(self, *args, **kwargs):
+        """Supprime la catégorie et son image associée"""
+        # Sauvegarder une référence à l'image avant la suppression
+        image_to_delete = self.image
+        
+        # Supprimer l'instance
+        super().delete(*args, **kwargs)
+        
+        # Supprimer l'image du stockage après la suppression de l'instance
+        if image_to_delete:
+            try:
+                storage = ProductImageStorage()
+                storage.delete(image_to_delete.name)
+            except Exception as e:
+                logger.error(f"Erreur lors de la suppression de l'image de la catégorie: {str(e)}")
 
     def save(self, *args, **kwargs):
         # Nettoyage et normalisation du nom
@@ -71,8 +187,46 @@ class Category(models.Model):
         # Génération automatique du slug si vide
         if not self.slug:
             self.slug = slugify(self.name)
+        elif self.slug != slugify(self.name):
+            # Si le nom a changé, mettre à jour le slug
+            self.slug = slugify(self.name)
+
+        # Validation de la cohérence des champs uniquement pour les nouvelles catégories
+        if not self.pk:  # Nouvelle catégorie
+            if self.is_main and not self.content_type:
+                raise ValidationError("Une catégorie principale doit avoir un modèle lié")
+            
+            if self.category_type == 'FILTER' and not self.filter_criteria:
+                raise ValidationError("Une catégorie de type FILTER doit avoir des critères de filtrage")
+
+        # Gestion de l'image
+        if self.image and self.pk:
+            try:
+                old_instance = Category.objects.get(pk=self.pk)
+                if old_instance.image and old_instance.image != self.image:
+                    storage = ProductImageStorage()
+                    storage.delete(old_instance.image.name)
+            except Category.DoesNotExist:
+                pass
 
         super().save(*args, **kwargs)
+
+    def get_model_class(self):
+        """Retourne la classe du modèle lié"""
+        if self.content_type:
+            return self.content_type.model_class()
+        return None
+
+    def get_filtered_queryset(self):
+        """Retourne le queryset filtré selon les critères"""
+        if not self.is_main and self.parent and self.filter_criteria:
+            model_class = self.parent.get_model_class()
+            if model_class:
+                queryset = model_class.objects.all()
+                for field, value in self.filter_criteria.items():
+                    queryset = queryset.filter(**{field: value})
+                return queryset
+        return None
 
     def get_all_children_ids(self):
         """Récupère récursivement les IDs de toutes les sous-catégories"""
@@ -84,9 +238,10 @@ class Category(models.Model):
     def get_all_parent_ids(self):
         """Récupère récursivement tous les IDs des catégories parents"""
         ids = []
-        if self.parent:
-            ids.append(self.parent.id)
-            ids.extend(self.parent.get_all_parent_ids())
+        current = self
+        while current.parent:
+            ids.append(current.parent.id)
+            current = current.parent
         return ids
 
     def get_all_children(self):
@@ -99,20 +254,24 @@ class Category(models.Model):
     @property
     def product_count(self):
         """Retourne le nombre total de produits dans cette catégorie et ses sous-catégories"""
+        if self.slug == 'tous-les-produits':
+            return Product.objects.filter(is_available=True, is_salam=True).count()
         category_ids = self.get_all_children_ids()
         return Product.objects.filter(category_id__in=category_ids).count()
+
+    def get_full_path(self):
+        """Retourne le chemin complet de la catégorie"""
+        path = [self.name]
+        current = self.parent
+        while current:
+            path.insert(0, current.name)
+            current = current.parent
+        return ' > '.join(path)
 
     class Meta:
         verbose_name = 'Catégorie'
         verbose_name_plural = 'Catégories'
-
-    def get_full_path(self):
-        path = [self.name]
-        parent = self.parent
-        while parent:
-            path.append(parent.name)
-            parent = parent.parent
-        return ' > '.join(reversed(path))
+        ordering = ['order', 'name']
 
 
 def get_product_main_image_upload_path(instance, filename):
@@ -125,7 +284,7 @@ class Product(models.Model):
     title = models.CharField(max_length=200, verbose_name='Titre')
     slug = models.SlugField(max_length=200, unique=True, blank=True, null=True)
     description = models.TextField(verbose_name='Description', null=True, blank=True)
-    price = models.DecimalField(max_digits=10, decimal_places=2, verbose_name='Prix')
+    price = models.DecimalField(max_digits=10, decimal_places=0, verbose_name='Prix (FCFA)')
     category = models.ForeignKey('Category', on_delete=models.CASCADE, related_name='products', verbose_name='Catégorie')
     supplier = models.ForeignKey('suppliers.Supplier', on_delete=models.SET_NULL, null=True, blank=True, related_name='products', verbose_name='Fournisseur')
     brand = models.CharField(max_length=100, blank=True, null=True, verbose_name='Marque')
@@ -141,16 +300,43 @@ class Product(models.Model):
         verbose_name='Image principale'
     )
     image_urls = models.JSONField(default=dict, blank=True, null=True, verbose_name='URLs des images')
-    sku = models.CharField(max_length=50, unique=True, default='SKU-0000', verbose_name='SKU')
+    sku = models.CharField(max_length=50, unique=True, blank=True, null=True, verbose_name='SKU')
     stock = models.PositiveIntegerField(default=0, verbose_name='Stock')
     specifications = models.JSONField(default=dict, blank=True, null=True, verbose_name='Spécifications')
     weight = models.DecimalField(max_digits=6, decimal_places=2, null=True, blank=True, verbose_name='Poids (kg)')
     dimensions = models.CharField(max_length=50, blank=True, null=True, verbose_name='Dimensions')
+    shipping_methods = models.ManyToManyField(ShippingMethod, related_name='products', blank=True, verbose_name='Méthodes de livraison')
+
+    # Nouveaux champs pour les filtres
+    condition = models.CharField(max_length=20, choices=[
+        ('new', 'Neuf'),
+        ('used', 'Occasion'),
+        ('refurbished', 'Reconditionné')
+    ], null=True, blank=True, verbose_name='État du produit')
+    
+    has_warranty = models.BooleanField(default=False, verbose_name='Garantie')
+    discount_price = models.DecimalField(max_digits=10, decimal_places=0, null=True, blank=True, verbose_name='Prix promotionnel (FCFA)')
+    is_trending = models.BooleanField(default=False, verbose_name='Produit tendance')
+    sales_count = models.IntegerField(default=0, verbose_name='Nombre de ventes')
+
+    def get_average_rating(self):
+        """Calcule la moyenne des notes à partir des avis"""
+        return self.reviews.aggregate(Avg('rating'))['rating__avg'] or 0
+
+    def get_review_count(self):
+        """Retourne le nombre total d'avis"""
+        return self.reviews.count()
+
+    def get_ratings_distribution(self):
+        """Retourne la distribution des notes"""
+        return self.reviews.values('rating').annotate(
+            count=Count('id')
+        ).order_by('rating')
 
     class Meta:
-        ordering = ['-created_at']
         verbose_name = 'Produit'
         verbose_name_plural = 'Produits'
+        ordering = ['-created_at']
 
     def __str__(self):
         return self.title
@@ -216,19 +402,87 @@ class Product(models.Model):
             logger.error(f"Erreur lors de la génération du chemin relatif: {str(e)}")
             return None
 
+    def generate_sku(self):
+        """Génère un SKU unique pour le produit"""
+        # Si c'est un produit de type tissu, on utilise le format spécial
+        if hasattr(self, 'fabric_product'):
+            fabric = self.fabric_product
+            if fabric:
+                # Obtenir le préfixe basé sur le type de tissu
+                fabric_prefix = fabric.fabric_type[:3].upper()
+                
+                # Obtenir le préfixe de qualité
+                quality_prefix = fabric.quality[:3].upper() if fabric.quality else "DEF"
+                
+                # Obtenir le dernier numéro utilisé pour ce type de tissu
+                last_fabric = Fabric.objects.filter(
+                    fabric_type=fabric.fabric_type
+                ).order_by('-unique_id').first()
+                
+                if last_fabric and last_fabric.unique_id:
+                    try:
+                        last_number = int(last_fabric.unique_id.split('-')[-1])
+                        new_number = last_number + 1
+                    except (ValueError, IndexError):
+                        new_number = 1
+                else:
+                    new_number = 1
+                
+                # Formater le numéro avec des zéros devant
+                number_str = str(new_number).zfill(4)
+                
+                # Créer l'identifiant unique
+                return f"{fabric_prefix}-{quality_prefix}-{number_str}"
+        
+        # Pour les autres types de produits, on utilise un format générique
+        prefix = 'SKU'
+        last_product = Product.objects.filter(
+            sku__startswith=prefix
+        ).order_by('-sku').first()
+        
+        if last_product and last_product.sku:
+            try:
+                last_number = int(last_product.sku.split('-')[-1])
+                new_number = last_number + 1
+            except (ValueError, IndexError):
+                new_number = 1
+        else:
+            new_number = 1
+        
+        return f"{prefix}-{str(new_number).zfill(4)}"
+
     def save(self, *args, **kwargs):
         if not self.slug:
-            self.slug = generate_unique_slug(self.title, Product)
+            self.slug = slugify(self.title)
+            # Vérifier si le slug existe déjà
+            if Product.objects.filter(slug=self.slug).exists():
+                # Ajouter un suffixe numérique unique
+                counter = 1
+                while Product.objects.filter(slug=f"{self.slug}-{counter}").exists():
+                    counter += 1
+                self.slug = f"{self.slug}-{counter}"
         
+        # Générer le SKU si nécessaire
+        if not self.sku or self.sku == 'SKU-0000':
+            self.sku = self.generate_sku()
+        
+        # Gestion de l'image principale
+        if self.image and self.pk:
+            try:
+                old_instance = Product.objects.get(pk=self.pk)
+                if old_instance.image and old_instance.image != self.image:
+                    storage = ProductImageStorage()
+                    storage.delete(old_instance.image.name)
+            except Product.DoesNotExist:
+                pass
+
         # Mettre à jour image_urls si une image principale est définie
         if self.image:
             if not self.image_urls:
                 self.image_urls = {}
-            # Utilise le chemin final après l'ajout du numéro par le stockage
             storage = ProductImageStorage()
             path = get_product_main_image_upload_path(self, self.image.name)
             final_path = storage.get_available_name(path)
-            # Ajoute le préfixe media/products/
             self.image_urls['main'] = f"media/products/{final_path}"
         
         super().save(*args, **kwargs)
@@ -328,6 +582,16 @@ class Product(models.Model):
             except Exception as e:
                 logger.error(f"Erreur lors de la suppression de l'image principale: {str(e)}")
 
+    def format_price(self):
+        """Formate le prix en FCFA avec espace comme séparateur de milliers"""
+        return f"{int(self.price):,}".replace(',', ' ') + ' FCFA'
+
+    def format_discount_price(self):
+        """Formate le prix promotionnel en FCFA avec espace comme séparateur de milliers"""
+        if self.discount_price:
+            return f"{int(self.discount_price):,}".replace(',', ' ') + ' FCFA'
+        return None
+
 
 @receiver(post_delete, sender=Product)
 def handle_product_deletion(sender, instance, **kwargs):
@@ -395,13 +659,59 @@ class Clothing(models.Model):
     GENDER_CHOICES = [
         ('H', 'Homme'),
         ('F', 'Femme'),
+        ('U', 'Unisexe'),
     ]
+    TYPE_CHOICES = [
+        ('CLOTHING', 'Vêtement'),
+        ('FABRIC', 'Tissu'),
+    ]
+    FABRIC_TYPES = [
+        ('BAZIN', 'Bazin'),
+        ('WAX', 'Wax'),
+        ('KENTE', 'Kente'),
+        ('BOGOLAN', 'Bogolan'),
+        ('OTHER', 'Autre'),
+    ]
+    BAZIN_QUALITY_CHOICES = [
+        ('SUPER_RICHE', 'Super Riche'),
+        ('RICHE', 'Riche'),
+        ('MOYEN', 'Moyen'),
+        ('BASIQUE', 'Basique'),
+    ]
+    
+    type = models.CharField(max_length=20, choices=TYPE_CHOICES, default='CLOTHING')
     gender = models.CharField(max_length=1, choices=GENDER_CHOICES, blank=True, null=True)
     size = models.ManyToManyField(Size, related_name='clothing_size', blank=True)
     color = models.ManyToManyField(Color, related_name='clothing_color', blank=True)
+    
+    # Champs spécifiques aux tissus
+    fabric_type = models.CharField(max_length=20, choices=FABRIC_TYPES, blank=True, null=True)
+    fabric_quality = models.CharField(max_length=100, blank=True, null=True)
+    bazin_quality = models.CharField(max_length=20, choices=BAZIN_QUALITY_CHOICES, blank=True, null=True)
+    length = models.DecimalField(max_digits=5, decimal_places=2, help_text="Longueur en mètres", null=True, blank=True)
+    width = models.DecimalField(max_digits=4, decimal_places=2, help_text="Largeur en mètres", null=True, blank=True)
+    pattern = models.CharField(max_length=100, blank=True, null=True, help_text="Motif ou design du tissu")
+    origin = models.CharField(max_length=100, blank=True, null=True, help_text="Pays d'origine du tissu")
+    care_instructions = models.TextField(blank=True, null=True, help_text="Instructions d'entretien")
 
     def __str__(self):
+        if self.type == 'FABRIC':
+            quality_display = self.get_bazin_quality_display() if self.fabric_type == 'BAZIN' else self.fabric_quality
+            return f"{self.get_fabric_type_display()} {quality_display} - {self.product.title}"
         return self.product.title
+
+    def get_price_per_meter(self):
+        if self.length and self.product.discount_price:
+            price = self.product.discount_price
+        elif self.length and self.product.price:
+            price = self.product.price
+        else:
+            return None
+        return price / self.length
+
+    class Meta:
+        verbose_name = "Vêtement"
+        verbose_name_plural = "Vêtements"
 
 
 class CulturalItem(models.Model):  # Espace Culturel
@@ -418,6 +728,10 @@ class CulturalItem(models.Model):  # Espace Culturel
         if self.author:
             self.author = self.author.strip().title()
         super().save(*args, **kwargs)
+
+    class Meta:
+        verbose_name = 'Livre et Culture'
+        verbose_name_plural = 'Livres et Culture'
 
 
 class ImageProduct(models.Model):
@@ -441,17 +755,20 @@ class ImageProduct(models.Model):
         return f"Image {self.ordre} pour {self.product.title}"
 
     def save(self, *args, **kwargs):
+        # Gestion de l'image de la galerie
         if self.image and self.pk:
-            # Supprimer l'ancienne image si elle existe
-            old_instance = ImageProduct.objects.get(pk=self.pk)
-            if old_instance.image and old_instance.image != self.image:
-                storage = ProductImageStorage()
-                storage.delete(old_instance.image.name)
+            try:
+                old_instance = ImageProduct.objects.get(pk=self.pk)
+                if old_instance.image and old_instance.image != self.image:
+                    storage = ProductImageStorage()
+                    storage.delete(old_instance.image.name)
+            except ImageProduct.DoesNotExist:
+                pass
         
         super().save(*args, **kwargs)
         
-        # Mettre à jour image_urls du produit
-        if self.image:
+        # Mettre à jour image_urls du produit après la sauvegarde
+        if self.product:
             self.product.update_image_urls()
 
     def delete(self, *args, **kwargs):
@@ -460,15 +777,19 @@ class ImageProduct(models.Model):
         
         # Supprimer l'image du stockage
         if self.image:
-            storage = ProductImageStorage()
-            storage.delete(self.image.name)
+            try:
+                storage = ProductImageStorage()
+                storage.delete(self.image.name)
+            except Exception as e:
+                logger.error(f"Erreur lors de la suppression de l'image de la galerie: {str(e)}")
         
         # Supprimer l'instance
         super().delete(*args, **kwargs)
         
         # Mettre à jour image_urls du produit après la suppression
-        product.refresh_from_db()  # Rafraîchir pour avoir l'état actuel
-        product.update_image_urls()
+        if product:
+            product.refresh_from_db()
+            product.update_image_urls()
 
     def get_image_url(self):
         """Retourne l'URL de l'image"""
@@ -514,7 +835,6 @@ class Phone(models.Model):
     camera_main = models.CharField(max_length=100, verbose_name="Caméra principale", default='Inconnue')
     camera_front = models.CharField(max_length=100, verbose_name="Caméra frontale", default='Inconnue')
     network = models.CharField(max_length=100, default='4G')
-    warranty = models.CharField(max_length=100, default='12 mois')
     imei = models.CharField(max_length=15, unique=True, null=True, blank=True)
     is_new = models.BooleanField(default=True)
     box_included = models.BooleanField(default=True)
@@ -529,5 +849,98 @@ class Phone(models.Model):
 
     def __str__(self):
         return f"{self.brand} {self.model}"
+
+
+class Fabric(models.Model):
+    product = models.OneToOneField(Product, on_delete=models.CASCADE, related_name='fabric_product')
+    FABRIC_TYPES = [
+        ('BAZIN', 'Bazin'),
+        ('WAX', 'Wax'),
+        ('KENTE', 'Kente'),
+        ('BOGOLAN', 'Bogolan'),
+        ('OTHER', 'Autre'),
+    ]
+    fabric_type = models.CharField(max_length=20, choices=FABRIC_TYPES, default='BAZIN')
+    quality = models.CharField(max_length=100, default='Super Riche')
+    length = models.DecimalField(max_digits=5, decimal_places=2, help_text="Longueur en mètres", default=3.0)
+    width = models.DecimalField(max_digits=4, decimal_places=2, help_text="Largeur en mètres", default=1.5)
+    color = models.ForeignKey(Color, on_delete=models.CASCADE, null=True, blank=True)
+    pattern = models.CharField(max_length=100, blank=True, null=True, help_text="Motif ou design du tissu")
+    origin = models.CharField(max_length=100, blank=True, null=True, help_text="Pays d'origine du tissu")
+    care_instructions = models.TextField(blank=True, null=True, help_text="Instructions d'entretien")
+    unique_id = models.CharField(max_length=50, unique=True, blank=True, help_text="Identifiant unique du tissu")
+
+    class Meta:
+        verbose_name = "Tissu"
+        verbose_name_plural = "Tissus"
+
+    def __str__(self):
+        return f"{self.get_fabric_type_display()} {self.quality} - {self.product.title}"
+
+    def generate_unique_id(self):
+        """Génère un identifiant unique pour le tissu"""
+        # Obtenir le préfixe basé sur le type de tissu
+        fabric_prefix = self.fabric_type[:3].upper()
+        
+        # Obtenir le préfixe de qualité
+        quality_prefix = self.quality[:3].upper() if self.quality else "DEF"
+        
+        # Obtenir le dernier numéro utilisé pour ce type de tissu
+        last_fabric = Fabric.objects.filter(
+            fabric_type=self.fabric_type
+        ).order_by('-unique_id').first()
+        
+        if last_fabric and last_fabric.unique_id:
+            try:
+                last_number = int(last_fabric.unique_id.split('-')[-1])
+                new_number = last_number + 1
+            except (ValueError, IndexError):
+                new_number = 1
+        else:
+            new_number = 1
+        
+        # Formater le numéro avec des zéros devant
+        number_str = str(new_number).zfill(4)
+        
+        # Créer l'identifiant unique
+        return f"{fabric_prefix}-{quality_prefix}-{number_str}"
+
+    def save(self, *args, **kwargs):
+        # Générer l'identifiant unique si nécessaire
+        if not self.unique_id:
+            self.unique_id = self.generate_unique_id()
+        
+        # Mettre à jour le SKU du produit associé seulement si le produit n'a pas de SKU
+        if self.product and not self.product.sku:
+            self.product.sku = self.unique_id
+            self.product.save(update_fields=['sku'])
+        
+        super().save(*args, **kwargs)
+
+    def get_price_per_meter(self):
+        """Calcule le prix au mètre"""
+        if self.length and self.product.discount_price:
+            price = self.product.discount_price
+        elif self.length and self.product.price:
+            price = self.product.price
+        else:
+            return None
+        return price / self.length
+
+
+class Favorite(models.Model):
+    """Modèle pour gérer les favoris des utilisateurs"""
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='favorites')
+    product = models.ForeignKey(Product, on_delete=models.CASCADE, related_name='favorited_by')
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        unique_together = ('user', 'product')
+        ordering = ['-created_at']
+        verbose_name = 'Favori'
+        verbose_name_plural = 'Favoris'
+
+    def __str__(self):
+        return f"{self.user.username} - {self.product.title}"
 
 

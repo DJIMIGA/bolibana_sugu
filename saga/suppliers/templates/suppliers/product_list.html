@@ -1,0 +1,136 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load product_tags %}
+
+{% block title %}Nos Produits{% endblock %}
+
+{% block content %}
+<div class="container mx-auto px-4 py-8">
+    <!-- Filtres -->
+    <div class="mb-8">
+        <form method="get" class="flex flex-wrap gap-4 items-end">
+            <div class="flex-1 min-w-[200px]">
+                <label for="category" class="block text-sm font-medium text-gray-700 mb-1">Catégorie</label>
+                <select name="category" id="category" class="w-full rounded-lg border-gray-300 shadow-sm focus:border-green-500 focus:ring-green-500">
+                    <option value="">Toutes les catégories</option>
+                    <option value="phone" {% if request.GET.category == 'phone' %}selected{% endif %}>Téléphones</option>
+                    <option value="clothing" {% if request.GET.category == 'clothing' %}selected{% endif %}>Vêtements</option>
+                    <option value="fabric" {% if request.GET.category == 'fabric' %}selected{% endif %}>Tissus</option>
+                    <option value="cultural" {% if request.GET.category == 'cultural' %}selected{% endif %}>Articles culturels</option>
+                </select>
+            </div>
+            
+            <div class="flex-1 min-w-[200px]">
+                <label for="price_min" class="block text-sm font-medium text-gray-700 mb-1">Prix minimum</label>
+                <input type="number" name="price_min" id="price_min" value="{{ request.GET.price_min }}" 
+                       class="w-full rounded-lg border-gray-300 shadow-sm focus:border-green-500 focus:ring-green-500"
+                       placeholder="0">
+            </div>
+            
+            <div class="flex-1 min-w-[200px]">
+                <label for="price_max" class="block text-sm font-medium text-gray-700 mb-1">Prix maximum</label>
+                <input type="number" name="price_max" id="price_max" value="{{ request.GET.price_max }}"
+                       class="w-full rounded-lg border-gray-300 shadow-sm focus:border-green-500 focus:ring-green-500"
+                       placeholder="1000000">
+            </div>
+            
+            <div class="flex gap-2">
+                <button type="submit" class="bg-green-600 text-white px-6 py-2 rounded-lg hover:bg-green-700 transition-colors">
+                    Filtrer
+                </button>
+                <a href="{% url 'suppliers:product_list' %}" class="bg-gray-200 text-gray-700 px-6 py-2 rounded-lg hover:bg-gray-300 transition-colors">
+                    Réinitialiser
+                </a>
+            </div>
+        </form>
+    </div>
+
+    <!-- Grille de produits -->
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+        {% for product in products %}
+            {% render_product_card product %}
+        {% empty %}
+            <div class="col-span-full text-center py-12">
+                <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                </svg>
+                <h3 class="mt-2 text-sm font-medium text-gray-900">Aucun produit trouvé</h3>
+                <p class="mt-1 text-sm text-gray-500">Essayez de modifier vos critères de recherche.</p>
+            </div>
+        {% endfor %}
+    </div>
+
+    <!-- Pagination -->
+    {% if is_paginated %}
+    <div class="mt-8 flex justify-center">
+        <nav class="relative z-0 inline-flex rounded-md shadow-sm -space-x-px" aria-label="Pagination">
+            {% if page_obj.has_previous %}
+                <a href="?page=1{% if request.GET.category %}&category={{ request.GET.category }}{% endif %}{% if request.GET.price_min %}&price_min={{ request.GET.price_min }}{% endif %}{% if request.GET.price_max %}&price_max={{ request.GET.price_max }}{% endif %}" 
+                   class="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
+                    <span class="sr-only">Première page</span>
+                    <svg class="h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                        <path fill-rule="evenodd" d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z" clip-rule="evenodd" />
+                    </svg>
+                </a>
+            {% endif %}
+
+            {% for num in page_obj.paginator.page_range %}
+                {% if page_obj.number == num %}
+                    <span class="relative inline-flex items-center px-4 py-2 border border-green-500 bg-green-50 text-sm font-medium text-green-600">
+                        {{ num }}
+                    </span>
+                {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+                    <a href="?page={{ num }}{% if request.GET.category %}&category={{ request.GET.category }}{% endif %}{% if request.GET.price_min %}&price_min={{ request.GET.price_min }}{% endif %}{% if request.GET.price_max %}&price_max={{ request.GET.price_max }}{% endif %}" 
+                       class="relative inline-flex items-center px-4 py-2 border border-gray-300 bg-white text-sm font-medium text-gray-700 hover:bg-gray-50">
+                        {{ num }}
+                    </a>
+                {% endif %}
+            {% endfor %}
+
+            {% if page_obj.has_next %}
+                <a href="?page={{ page_obj.paginator.num_pages }}{% if request.GET.category %}&category={{ request.GET.category }}{% endif %}{% if request.GET.price_min %}&price_min={{ request.GET.price_min }}{% endif %}{% if request.GET.price_max %}&price_max={{ request.GET.price_max }}{% endif %}" 
+                   class="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
+                    <span class="sr-only">Dernière page</span>
+                    <svg class="h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                        <path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd" />
+                    </svg>
+                </a>
+            {% endif %}
+        </nav>
+    </div>
+    {% endif %}
+</div>
+
+<!-- Modal pour les options du produit -->
+<div id="product-options-modal" class="fixed inset-0 bg-gray-500 bg-opacity-75 hidden" aria-hidden="true">
+    <div class="fixed inset-0 z-10 overflow-y-auto">
+        <div class="flex min-h-full items-end justify-center p-4 text-center sm:items-center sm:p-0">
+            <div class="relative transform overflow-hidden rounded-lg bg-white px-4 pb-4 pt-5 text-left shadow-xl transition-all sm:my-8 sm:w-full sm:max-w-lg sm:p-6">
+                <div id="product-options-content">
+                    <!-- Le contenu sera chargé dynamiquement ici -->
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function openProductOptions(productId) {
+    const modal = document.getElementById('product-options-modal');
+    modal.classList.remove('hidden');
+    
+    // Empêcher le défilement du body
+    document.body.style.overflow = 'hidden';
+}
+
+// Fermer le modal en cliquant en dehors
+document.getElementById('product-options-modal').addEventListener('click', function(e) {
+    if (e.target === this) {
+        this.classList.add('hidden');
+        document.body.style.overflow = 'auto';
+    }
+});
+</script>
+{% endblock %} 

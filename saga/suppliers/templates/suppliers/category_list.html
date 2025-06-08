@@ -1,0 +1,221 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block extra_head %}
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.css" />
+<style>
+    .swiper-button-next,
+    .swiper-button-prev {
+        color: #059669 !important; /* green-600 */
+        background-color: white;
+        width: 40px !important;
+        height: 40px !important;
+        border-radius: 50%;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+
+    .swiper-button-next {
+        right: -5px !important;
+    }
+
+    .swiper-button-prev {
+        left: -5px !important;
+    }
+
+    .swiper-button-next:after,
+    .swiper-button-prev:after {
+        font-size: 20px !important;
+    }
+
+    .swiper-button-next:hover,
+    .swiper-button-prev:hover {
+        color: #047857 !important; /* green-700 */
+        background-color: #f3f4f6;
+    }
+
+    .swiper-button-disabled {
+        opacity: 0.35 !important;
+        cursor: auto !important;
+        pointer-events: none !important;
+    }
+
+    .swiper-pagination {
+        position: relative !important;
+        margin-top: 24px !important;
+        display: flex !important;
+        justify-content: center !important;
+        align-items: center !important;
+        gap: 8px !important;
+    }
+
+    .swiper-pagination-bullet {
+        width: 8px !important;
+        height: 8px !important;
+        background: #E5E7EB !important; /* gray-200 */
+        opacity: 1 !important;
+        transition: all 0.3s ease !important;
+        margin: 0 !important;
+    }
+    
+    .swiper-pagination-bullet-active {
+        background: #059669 !important; /* green-600 */
+        transform: scale(1.2) !important;
+        width: 10px !important;
+        height: 10px !important;
+    }
+    
+    .swiper-pagination-bullet:hover {
+        background: #059669 !important; /* green-600 */
+        opacity: 0.7 !important;
+    }
+
+    .swiper-slide {
+        height: auto !important;
+        display: flex !important;
+        align-items: stretch !important;
+    }
+
+    .swiper-slide > * {
+        width: 100% !important;
+        height: 100% !important;
+    }
+
+    .swiper {
+        padding: 0 5px !important;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="bg-gray-50">
+    <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-12">
+        <!-- En-tête -->
+        <div class="text-center mb-12">
+            <h1 class="text-3xl font-bold text-gray-900 sm:text-4xl">
+                {{ title }}
+            </h1>
+            <p class="mt-4 text-lg text-gray-600">
+                Découvrez notre sélection de produits par catégorie
+            </p>
+        </div>
+
+        <!-- Carousel des catégories principales -->
+        <div class="mb-16">
+            <div class="swiper categoriesSwiper">
+                <div class="swiper-wrapper">
+                    {% for category in main_categories %}
+                    <div class="swiper-slide">
+                        <a href="{% url 'suppliers:category_detail' category.slug %}" 
+                           class="group bg-white rounded-xl shadow-lg overflow-hidden transition-all duration-300 hover:shadow-xl hover:-translate-y-1 block h-full">
+                            <div class="aspect-w-1 aspect-h-1 w-full overflow-hidden bg-gray-200 xl:aspect-w-7 xl:aspect-h-8">
+                                {% if category.image %}
+                                    <img src="{{ category.image.url }}" alt="{{ category.name }}" class="w-full h-full object-cover">
+                                {% else %}
+                                    <div class="w-full h-full flex items-center justify-center bg-{{ category.color }}-100">
+                                        <svg class="w-24 h-24 text-{{ category.color }}-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            {% if category.slug == 'telephones' %}
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z" />
+                                            {% elif category.slug == 'vetements' %}
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
+                                            {% elif category.slug == 'tissus' %}
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                                            {% else %}
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                                            {% endif %}
+                                        </svg>
+                                    </div>
+                                {% endif %}
+                            </div>
+                            <div class="p-6">
+                                <h3 class="text-xl font-semibold text-gray-900 group-hover:text-{{ category.color }}-600 transition-colors duration-300">
+                                    {{ category.name }}
+                                </h3>
+                                <p class="mt-2 text-gray-600 line-clamp-2">{{ category.description }}</p>
+                                {% if category.available_products_count > 0 %}
+                                <p class="mt-4 text-sm text-{{ category.color }}-600">
+                                    {{ category.available_products_count }} produit{{ category.available_products_count|pluralize:"s" }} disponible{{ category.available_products_count|pluralize:"s" }}
+                                </p>
+                                {% endif %}
+                            </div>
+                        </a>
+                    </div>
+                    {% endfor %}
+                </div>
+                <div class="swiper-pagination"></div>
+                <div class="swiper-button-prev"></div>
+                <div class="swiper-button-next"></div>
+            </div>
+        </div>
+
+        <!-- Grille des sous-catégories -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
+            {% for category in sub_categories %}
+            <a href="{% url 'suppliers:category_detail' category.slug %}" 
+               class="group bg-white rounded-xl shadow-lg overflow-hidden transition-all duration-300 hover:shadow-xl hover:-translate-y-1">
+                <div class="aspect-w-1 aspect-h-1 w-full overflow-hidden bg-gray-200 xl:aspect-w-7 xl:aspect-h-8">
+                    {% if category.image %}
+                        <img src="{{ category.image.url }}" alt="{{ category.name }}" class="w-full h-full object-cover">
+                    {% else %}
+                        <div class="w-full h-full flex items-center justify-center bg-{{ category.color }}-100">
+                            <svg class="w-24 h-24 text-{{ category.color }}-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                {% if category.slug == 'telephones' %}
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z" />
+                                {% elif category.slug == 'vetements' %}
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
+                                {% elif category.slug == 'tissus' %}
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                                {% else %}
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                                {% endif %}
+                            </svg>
+                        </div>
+                    {% endif %}
+                </div>
+                <div class="p-6">
+                    <h3 class="text-xl font-semibold text-gray-900 group-hover:text-{{ category.color }}-600 transition-colors duration-300">
+                        {{ category.name }}
+                    </h3>
+                    <p class="mt-2 text-gray-600 line-clamp-2">{{ category.description }}</p>
+                    {% if category.available_products_count > 0 %}
+                    <p class="mt-4 text-sm text-{{ category.color }}-600">
+                        {{ category.available_products_count }} produit{{ category.available_products_count|pluralize:"s" }} disponible{{ category.available_products_count|pluralize:"s" }}
+                    </p>
+                    {% endif %}
+                </div>
+            </a>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script src="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    new Swiper('.categoriesSwiper', {
+        slidesPerView: 1,
+        spaceBetween: 24,
+        pagination: {
+            el: '.swiper-pagination',
+            clickable: true,
+        },
+        navigation: {
+            nextEl: '.swiper-button-next',
+            prevEl: '.swiper-button-prev',
+        },
+        breakpoints: {
+            640: {
+                slidesPerView: 2,
+            },
+            1024: {
+                slidesPerView: 3,
+            },
+            1280: {
+                slidesPerView: 4,
+            },
+        },
+    });
+});
+</script>
+{% endblock %} 

@@ -1,0 +1,10 @@
+<div class="absolute top-2 left-2 right-2 flex flex-wrap justify-between gap-2 z-10">
+    {% for badge in badges %}
+    <span class="{% if badge.color == 'new' %}bg-new{% elif badge.color == 'promo' %}bg-promo{% elif badge.color == 'popular' %}bg-popular{% elif badge.color == 'clothing' %}bg-clothing{% elif badge.color == 'stock' %}bg-stock{% elif badge.color == 'phone' %}bg-phone{% elif badge.color == 'fabric' %}bg-fabric{% elif badge.color == 'cultural' %}bg-cultural{% else %}bg-gray-500{% endif %} {% if badge.color == 'popular' %}text-gray-900{% else %}text-white{% endif %} text-xs font-bold px-2.5 py-1 rounded-full flex items-center gap-1.5 shadow-md hover:scale-105 transition-transform duration-200">
+        <svg class="h-3.5 w-3.5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="{{ badge.icon }}" />
+        </svg>
+        {{ badge.text }}
+    </span>
+    {% endfor %}
+</div> 

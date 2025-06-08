@@ -1,0 +1,248 @@
+{% load static %}
+<!-- Ajout des CDN de Notyf -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/notyf@3/notyf.min.css">
+<script src="https://cdn.jsdelivr.net/npm/notyf@3/notyf.min.js"></script>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Initialisation de Notyf avec des options modernes
+    window.notyf = new Notyf({
+        duration: 2500,
+        position: {x:'right',y:'bottom'},
+        types: [
+            {
+                type: 'success',
+                background: 'linear-gradient(135deg, #059669, #10b981)',
+                icon: false,
+                className: 'notyf__toast--success',
+                dismissible: true
+            },
+            {
+                type: 'error',
+                background: 'linear-gradient(135deg, #dc2626, #ef4444)',
+                icon: false,
+                className: 'notyf__toast--error',
+                dismissible: true
+            }
+        ],
+        ripple: false,
+        dismissible: true,
+        animation: {
+            duration: 300,
+            timing: 'cubic-bezier(0.4, 0, 0.2, 1)'
+        }
+    });
+
+    // Fonctions globales pour les notifications
+    window.showNotification = {
+        // Notification de succès pour l'ajout au panier
+        addToCart: (productName) => {
+            window.notyf.success({
+                message: `${productName} a été ajouté au panier`,
+                duration: 2500,
+                dismissible: true
+            });
+        },
+
+        // Notification d'erreur pour l'ajout au panier
+        addToCartError: (message = "Erreur lors de l'ajout au panier") => {
+            window.notyf.error({
+                message: message,
+                duration: 3000,
+                dismissible: true
+            });
+        },
+
+        // Notification d'erreur générique
+        error: (message) => {
+            window.notyf.error({
+                message: message,
+                duration: 3000,
+                dismissible: true
+            });
+        }
+    };
+
+    // Gestionnaire d'événements HTMX pour les notifications
+    document.body.addEventListener('htmx:afterRequest', function(evt) {
+        const target = evt.detail.elt;
+        const isFavoriteRequest = evt.detail.xhr.responseURL.includes('favorite');
+        
+        console.log('HTMX afterRequest:', {
+            target: target,
+            targetType: target.tagName,
+            targetClasses: target.className,
+            isFavoriteForm: target.matches('form[hx-post*="toggle_favorite"]'),
+            isAddToCartForm: target.matches('form[hx-post*="add_to_cart"]'),
+            successful: evt.detail.successful,
+            status: evt.detail.xhr.status,
+            url: evt.detail.xhr.responseURL,
+            isFavoriteRequest: isFavoriteRequest
+        });
+        
+        // Notification pour l'ajout au panier
+        if (target.matches('form[hx-post*="add_to_cart"]')) {
+            if (evt.detail.successful) {
+                const productName = target.closest('[data-product-name]')?.dataset.productName || 'Produit';
+                window.showNotification.addToCart(productName);
+            } else {
+                window.showNotification.addToCartError();
+            }
+        }
+        
+        // Notification pour les favoris
+        if (isFavoriteRequest && evt.detail.successful) {
+            try {
+                const parser = new DOMParser();
+                const doc = parser.parseFromString(evt.detail.xhr.responseText, 'text/html');
+                const button = doc.querySelector('button[hx-post*="favorite"]');
+                
+                if (button) {
+                    const isFavorite = button.querySelector('svg[fill="currentColor"]') !== null;
+                    window.notyf.success({
+                        message: isFavorite ? 'Produit ajouté aux favoris' : 'Produit retiré des favoris',
+                        duration: 2500,
+                        dismissible: true
+                    });
+                }
+            } catch (error) {
+                console.error('Erreur lors du traitement de la réponse:', error);
+            }
+        }
+    });
+});
+</script>
+
+<style>
+/* Styles personnalisés pour Notyf */
+.notyf__toast {
+    border-radius: 16px !important;
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04) !important;
+    padding: 16px !important;
+    margin: 12px !important;
+    backdrop-filter: blur(12px) !important;
+    min-width: 320px !important;
+    max-width: 380px !important;
+    border: 1px solid rgba(255, 255, 255, 0.2) !important;
+    height: auto !important;
+    min-height: auto !important;
+}
+
+@media (max-width: 640px) {
+    .notyf__toast {
+        min-width: calc(100vw - 32px) !important;
+        max-width: calc(100vw - 32px) !important;
+        margin: 8px 16px !important;
+        padding: 12px !important;
+    }
+
+    .notyf__message {
+        font-size: 14px !important;
+        gap: 12px !important;
+        margin: -8px 0 !important;
+    }
+
+    .notyf__message::before {
+        width: 40px !important;
+        height: 40px !important;
+        padding: 6px !important;
+        border-radius: 10px !important;
+        margin: -4px 0 !important;
+    }
+}
+
+.notyf__toast--success {
+    background: linear-gradient(135deg, #059669, #10b981) !important;
+    border-left: 6px solid #047857 !important;
+}
+
+.notyf__toast--error {
+    background: linear-gradient(135deg, #dc2626, #ef4444) !important;
+    border-left: 6px solid #b91c1c !important;
+}
+
+.notyf__message {
+    font-size: 16px !important;
+    font-weight: 600 !important;
+    line-height: 1.6 !important;
+    text-align: left !important;
+    color: white !important;
+    padding-left: 12px !important;
+    letter-spacing: 0.025em !important;
+    display: flex !important;
+    align-items: center !important;
+    gap: 20px !important;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1) !important;
+    margin: -12px 0 !important;
+}
+
+.notyf__message::before {
+    content: '';
+    display: inline-block;
+    width: 56px;
+    height: 56px;
+    background-image: url("{% static 'icons/bolibana.png' %}") !important;
+    background-size: contain !important;
+    background-repeat: no-repeat !important;
+    background-position: center !important;
+    animation: scaleIn 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+    filter: drop-shadow(0 4px 6px rgba(0, 0, 0, 0.1)) !important;
+    transform-origin: center !important;
+    transform: none !important;
+    background-color: white !important;
+    border-radius: 14px !important;
+    padding: 8px !important;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06) !important;
+    margin: -8px 0 !important;
+}
+
+.notyf__toast--error .notyf__message::before {
+    filter: drop-shadow(0 4px 6px rgba(0, 0, 0, 0.2)) !important;
+}
+
+/* Animation d'entrée et de sortie */
+@keyframes slideIn {
+    0% {
+        transform: translateX(100%);
+        opacity: 0;
+    }
+    100% {
+        transform: translateX(0);
+        opacity: 1;
+    }
+}
+
+@keyframes slideOut {
+    0% {
+        transform: translateX(0);
+        opacity: 1;
+    }
+    100% {
+        transform: translateX(100%);
+        opacity: 0;
+    }
+}
+
+@keyframes scaleIn {
+    0% {
+        transform: scale(0);
+    }
+    50% {
+        transform: scale(1.2);
+    }
+    100% {
+        transform: scale(1);
+    }
+}
+
+/* Animation du bouton */
+@keyframes pulse {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.05); }
+    100% { transform: scale(1); }
+}
+
+.animate-pulse {
+    animation: pulse 0.5s cubic-bezier(0.4, 0, 0.6, 1);
+}
+</style> 

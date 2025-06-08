@@ -1,4 +1,5 @@
 import { updateCartCount } from './cart-utils.js';
+import Swal from 'sweetalert2';
 
 class CartSidebar {
     constructor() {
@@ -116,6 +117,11 @@ window.openCart = () => {
         return;
     }
     cartSidebarInstance.open();
+};
+
+// Fonction pour afficher l'animation d'ajout au panier
+window.showAddToCartAnimation = (productName) => {
+    window.showNotification.addToCart(productName);
 };
 
 window.closeCart = () => {

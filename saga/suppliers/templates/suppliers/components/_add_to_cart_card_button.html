@@ -1,0 +1,176 @@
+{% load static %}
+
+<div class="add-to-cart-component" id="add-to-cart-{{ product.id }}" data-product-name="{{ product.title }}">
+    <form hx-post="{% url 'cart:add_to_cart' product.id %}" 
+          hx-target="#cart-content"
+          hx-swap="innerHTML"
+          hx-indicator="#loading-indicator-{{ product.id }}"
+          class="w-full">
+        {% csrf_token %}
+        <button type="submit" 
+                class="relative inline-flex items-center justify-center w-10 h-10 rounded-full bg-gradient-to-r from-yellow-400 via-yellow-500 to-yellow-600 text-green-700 font-semibold hover:from-green-600 hover:via-green-500 hover:to-green-400 hover:text-white transition-all duration-300 group"
+                data-motion="button"
+                aria-label="Ajouter au panier"
+                role="button"
+                tabindex="0"
+                {% if not product.is_available or product.stock == 0 %}disabled{% endif %}>
+            <svg class="w-6 h-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"/>
+            </svg>
+            <span class="absolute inset-0 rounded-full bg-white opacity-0 group-hover:opacity-10 transition-opacity duration-300"></span>
+        </button>
+        <!-- Indicateur de chargement -->
+        <div id="loading-indicator-{{ product.id }}" class="htmx-indicator" aria-hidden="true">
+            <div class="loading-spinner" role="status">
+                <span class="sr-only">Chargement...</span>
+            </div>
+        </div>
+    </form>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const addToCartForm = document.querySelector('#add-to-cart-{{ product.id }} form');
+    
+    if (addToCartForm) {
+        const button = addToCartForm.querySelector('button');
+        
+        // Animation au survol
+        button.addEventListener('mouseenter', () => {
+            gsap.to(button, {
+                scale: 1.05,
+                duration: 0.2,
+                ease: "power2.out"
+            });
+        });
+
+        button.addEventListener('mouseleave', () => {
+            gsap.to(button, {
+                scale: 1,
+                duration: 0.2,
+                ease: "power2.out"
+            });
+        });
+
+        // Animation au clic
+        button.addEventListener('mousedown', () => {
+            gsap.to(button, {
+                scale: 0.95,
+                duration: 0.1,
+                ease: "power2.in"
+            });
+        });
+
+        button.addEventListener('mouseup', () => {
+            gsap.to(button, {
+                scale: 1,
+                duration: 0.1,
+                ease: "power2.out"
+            });
+        });
+
+        // Gestion du focus au clavier
+        button.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                button.click();
+            }
+        });
+
+        addToCartForm.addEventListener('htmx:afterRequest', function(evt) {
+            if (evt.detail.successful) {
+                // Animation de succès
+                gsap.timeline()
+                    .to(button, {
+                        scale: 1.1,
+                        duration: 0.15,
+                        ease: "power2.out"
+                    })
+                    .to(button, {
+                        scale: 1,
+                        duration: 0.15,
+                        ease: "power2.in"
+                    });
+
+                // Mise à jour du compteur du panier avec la valeur du serveur
+                const response = JSON.parse(evt.detail.xhr.response);
+                if (response.cart_count !== undefined) {
+                    const cartCount = document.querySelector('#cart-count');
+                    if (cartCount) {
+                        cartCount.textContent = response.cart_count;
+                    }
+                }
+            }
+        });
+    }
+});
+</script>
+
+<style>
+.add-to-cart-component button {
+    @apply transition-all duration-300 ease-in-out;
+}
+
+.add-to-cart-component button:hover:not(:disabled) {
+    @apply shadow-lg;
+}
+
+.add-to-cart-component button:active:not(:disabled) {
+    @apply shadow-inner;
+}
+
+/* Animation du gradient */
+.add-to-cart-component button:not(:disabled) {
+    background-size: 200% 200%;
+    animation: gradient 3s ease infinite;
+}
+
+@keyframes gradient {
+    0% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+    100% { background-position: 0% 50%; }
+}
+
+/* Style pour le bouton désactivé */
+.add-to-cart-component button:disabled {
+    @apply opacity-75 cursor-not-allowed;
+    animation: none;
+}
+
+/* Style pour l'indicateur de chargement */
+.htmx-indicator {
+    display: none;
+}
+
+.htmx-request .htmx-indicator {
+    display: block;
+}
+
+.htmx-request.htmx-indicator {
+    display: block;
+}
+
+.loading-spinner {
+    @apply w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin;
+}
+
+/* Styles pour le focus */
+.add-to-cart-component button:focus-visible {
+    @apply outline-none ring-2 ring-offset-2 ring-new ring-opacity-50 shadow-lg;
+}
+
+/* Style pour le focus au clavier */
+.add-to-cart-component button:focus-visible:not(:active) {
+    @apply scale-[1.02];
+}
+
+/* Masquer le focus pour la souris */
+.add-to-cart-component button:focus:not(:focus-visible) {
+    @apply outline-none ring-0;
+}
+
+/* Style pour le focus sur le formulaire */
+.add-to-cart-component form:focus-within {
+    @apply outline-none;
+}
+</style> 

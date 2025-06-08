@@ -1,0 +1,99 @@
+{% load static %}
+{% load product_tags %}
+{% load product_badges %}
+
+<div class="w-full bg-white rounded-xl shadow-md overflow-hidden flex flex-col hover:shadow-xl transition-all duration-300 hover:-translate-y-1 h-full relative">
+    <!-- Badges -->
+    <div class="absolute top-2 left-2 right-2 flex flex-wrap justify-between gap-2 z-10">
+        {% product_badges product %}
+    </div>
+
+    <!-- Image principale avec lien -->
+    <a href="{% url 'suppliers:phone_detail' product.slug %}" class="block h-64 w-full overflow-hidden bg-gray-100" aria-label="Voir les détails de {{ product.title }}">
+        {% if product.image %}
+            <img src="{{ product.image.url }}" 
+                 alt="Photo de {{ product.title }}" 
+                 class="h-full w-full object-cover transition-transform duration-300 hover:scale-105"
+                 loading="lazy">
+        {% else %}
+            <div class="h-full w-full flex items-center justify-center">
+                <svg class="h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                </svg>
+            </div>
+        {% endif %}
+    </a>
+
+    <!-- Contenu -->
+    <div class="p-4 flex flex-col flex-1">
+        <!-- Titre et type avec lien -->
+        <a href="{% url 'suppliers:phone_detail' product.slug %}" class="flex-grow" aria-label="Voir les détails de {{ product.title }}">
+            <div class="flex items-center gap-2 mb-1">
+                <h3 class="text-lg font-semibold text-green-600 flex-1">
+                    {{ product.title }}
+                </h3>
+                {% if product.phone and product.phone.color %}
+                <div class="w-5 h-5 rounded-full border border-gray-200 flex-shrink-0" 
+                     style="background-color: {{ product.phone.color.code }}" 
+                     title="{{ product.phone.color.name }}" 
+                     aria-label="Couleur: {{ product.phone.color.name }}">
+                </div>
+                {% endif %}
+            </div>
+            {% if product.phone %}
+                <p class="text-sm text-gray-500">
+                    {{ product.phone.get_brand_display }} {{ product.phone.model }}
+                </p>
+            {% endif %}
+        </a>
+
+        <!-- Spécifications -->
+        <div class="flex flex-wrap gap-2 my-3">
+            {% if product.phone %}
+                <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium {% if product.phone.is_new %}bg-green-100 text-green-800{% else %}bg-yellow-100 text-yellow-800{% endif %} shadow-sm">
+                    {% if product.phone.is_new %}Neuf{% else %}Occasion{% endif %}
+                </span>
+                <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-purple-100 text-purple-800 shadow-sm">
+                    {{ product.phone.storage }} GB
+                </span>
+                <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800 shadow-sm">
+                    {{ product.phone.ram }} GB RAM
+                </span>
+                {% if product.phone.warranty_period %}
+                <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800 shadow-sm">
+                    Garantie {{ product.phone.warranty_period }} mois
+                </span>
+                {% endif %}
+            {% endif %}
+        </div>
+
+        <!-- Prix et boutons d'action -->
+        <div class="mt-auto">
+            <div class="flex items-center justify-between">
+                <div class="flex flex-col gap-1">
+                    {% if product.discount_price %}
+                        <p class="text-gray-400 line-through text-sm" aria-label="Prix original: {{ product.format_price }}">
+                            {{ product.format_price }}
+                        </p>
+                        <p class="text-red-500 font-bold text-lg" aria-label="Prix promotionnel: {{ product.format_discount_price }}">
+                            {{ product.format_discount_price }}
+                        </p>
+                    {% else %}
+                        <p class="text-red-500 font-bold text-lg" aria-label="Prix: {{ product.format_price }}">
+                            {{ product.format_price }}
+                        </p>
+                    {% endif %}
+                </div>
+                
+                <!-- Boutons d'action -->
+                <div class="flex items-center gap-3">
+                    <!-- Bouton favoris -->
+                    {% include 'suppliers/components/_favorite_card_button.html' with product=product %}
+                    
+                    <!-- Bouton panier -->
+                    {% include 'suppliers/components/_add_to_cart_card_button.html' with product=product %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div> 

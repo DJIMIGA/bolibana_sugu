@@ -1,0 +1,152 @@
+[
+    {
+        "model": "product.product",
+        "pk": 1,
+        "fields": {
+            "title": "T-shirt Basique",
+            "slug": "t-shirt-basique",
+            "description": "T-shirt basique en coton de haute qualité, confortable et durable.",
+            "price": "19.99",
+            "category": 1,
+            "is_available": true,
+            "is_salam": true,
+            "brand": "Saga",
+            "stock": 100,
+            "sku": "TSH-001",
+            "created_at": "2024-03-20T10:00:00Z",
+            "updated_at": "2024-03-20T10:00:00Z"
+        }
+    },
+    {
+        "model": "product.clothing",
+        "pk": 1,
+        "fields": {
+            "product": 1,
+            "type": "CLOTHING",
+            "gender": "U",
+            "size": [1, 2, 3, 4, 5],
+            "color": [1, 2, 3, 4, 5],
+            "care_instructions": "Lavage en machine à 30°C. Ne pas repasser sur le motif."
+        }
+    },
+    {
+        "model": "product.product",
+        "pk": 2,
+        "fields": {
+            "title": "Pantalon Chino",
+            "slug": "pantalon-chino",
+            "description": "Pantalon chino élégant et polyvalent, parfait pour toutes les occasions.",
+            "price": "39.99",
+            "category": 1,
+            "is_available": true,
+            "is_salam": true,
+            "brand": "Saga",
+            "stock": 50,
+            "sku": "PAN-001",
+            "created_at": "2024-03-20T10:00:00Z",
+            "updated_at": "2024-03-20T10:00:00Z"
+        }
+    },
+    {
+        "model": "product.clothing",
+        "pk": 2,
+        "fields": {
+            "product": 2,
+            "type": "CLOTHING",
+            "gender": "H",
+            "size": [2, 3, 4, 5],
+            "color": [1, 2, 4],
+            "care_instructions": "Lavage en machine à 40°C. Repasser à température moyenne."
+        }
+    },
+    {
+        "model": "product.product",
+        "pk": 3,
+        "fields": {
+            "title": "Robe d'Été",
+            "slug": "robe-ete",
+            "description": "Robe légère et fluide, idéale pour les journées chaudes d'été.",
+            "price": "49.99",
+            "category": 1,
+            "is_available": true,
+            "is_salam": true,
+            "brand": "Saga",
+            "stock": 30,
+            "sku": "ROB-001",
+            "created_at": "2024-03-20T10:00:00Z",
+            "updated_at": "2024-03-20T10:00:00Z"
+        }
+    },
+    {
+        "model": "product.clothing",
+        "pk": 3,
+        "fields": {
+            "product": 3,
+            "type": "CLOTHING",
+            "gender": "F",
+            "size": [1, 2, 3, 4],
+            "color": [2, 3, 5],
+            "care_instructions": "Lavage à la main à l'eau froide. Ne pas essorer. Sécher à plat."
+        }
+    },
+    {
+        "model": "product.product",
+        "pk": 4,
+        "fields": {
+            "title": "Veste en Jean",
+            "slug": "veste-jean",
+            "description": "Veste en jean classique et intemporelle, parfaite pour toutes les saisons.",
+            "price": "59.99",
+            "category": 1,
+            "is_available": true,
+            "is_salam": true,
+            "brand": "Saga",
+            "stock": 25,
+            "sku": "VES-001",
+            "created_at": "2024-03-20T10:00:00Z",
+            "updated_at": "2024-03-20T10:00:00Z"
+        }
+    },
+    {
+        "model": "product.clothing",
+        "pk": 4,
+        "fields": {
+            "product": 4,
+            "type": "CLOTHING",
+            "gender": "U",
+            "size": [2, 3, 4, 5, 6],
+            "color": [1, 4],
+            "care_instructions": "Lavage en machine à 30°C. Retourner avant le lavage. Ne pas repasser."
+        }
+    },
+    {
+        "model": "product.product",
+        "pk": 5,
+        "fields": {
+            "title": "Jupe Plissée",
+            "slug": "jupe-plissee",
+            "description": "Jupe plissée élégante et féminine, parfaite pour les occasions spéciales.",
+            "price": "34.99",
+            "category": 1,
+            "is_available": true,
+            "is_salam": true,
+            "brand": "Saga",
+            "stock": 40,
+            "sku": "JUP-001",
+            "created_at": "2024-03-20T10:00:00Z",
+            "updated_at": "2024-03-20T10:00:00Z"
+        }
+    },
+    {
+        "model": "product.clothing",
+        "pk": 5,
+        "fields": {
+            "product": 5,
+            "type": "CLOTHING",
+            "gender": "F",
+            "size": [1, 2, 3, 4],
+            "color": [1, 2, 3],
+            "care_instructions": "Lavage à la main à l'eau froide. Ne pas essorer. Repasser à l'envers."
+        }
+    }
+] 

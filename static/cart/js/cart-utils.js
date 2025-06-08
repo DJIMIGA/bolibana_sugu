@@ -11,5 +11,5 @@ export const updateCartCount = () => {
 };
 
 export const formatPrice = (price) => {
-    return `${price.toLocaleString()} FCFA`;
+    return `${price.toLocaleString('fr-FR').replace(/,/g, ' ')} FCFA`;
 }; 

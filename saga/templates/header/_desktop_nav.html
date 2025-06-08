@@ -14,6 +14,49 @@
 .arrow-rotate-reverse {
     animation: rotateArrow 0.3s ease-in-out reverse;
 }
+
+@keyframes bounce {
+    0%, 100% {
+        transform: translateY(0);
+    }
+    50% {
+        transform: translateY(-3px);
+    }
+}
+
+.animate-bounce {
+    animation: bounce 0.5s cubic-bezier(0.4, 0, 0.6, 1);
+}
+
+@keyframes countChange {
+    0% {
+        transform: scale(1);
+    }
+    50% {
+        transform: scale(1.2);
+    }
+    100% {
+        transform: scale(1);
+    }
+}
+
+.favorite-count-change {
+    animation: countChange 0.3s ease;
+}
+
+/* Style du badge */
+.min-w-[20px] {
+    min-width: 20px;
+}
+
+/* Animation de transition */
+.favorite-badge {
+    transition: all 0.3s ease;
+}
+
+.favorite-badge-update {
+    animation: countChange 0.3s ease;
+}
 </style>
 
 <div class="bg-white hidden lg:block">
@@ -59,9 +102,67 @@
             <div class="flex items-center space-x-6">
                 {% include 'accounts/components/_profile_button.html' %}
                 {% include 'components/_cart_button.html' %}
+                {% if user.is_authenticated %}
+                    <a href="{% url 'suppliers:favorite_list' %}" 
+                       class="relative inline-flex items-center justify-center w-10 h-10 rounded-full bg-gray-50 hover:bg-gray-100 transition-all duration-300 group">
+                        <svg class="w-5 h-5 text-gray-600 group-hover:text-red-500 transition-colors duration-300" 
+                             xmlns="http://www.w3.org/2000/svg" 
+                             fill="none" 
+                             viewBox="0 0 24 24" 
+                             stroke="currentColor">
+                            <path stroke-linecap="round" 
+                                  stroke-linejoin="round" 
+                                  stroke-width="2" 
+                                  d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
+                        </svg>
+                        <!-- Badge avec compteur toujours visible -->
+                        <span class="absolute -top-1 -right-1 bg-red-500 text-white text-xs font-bold rounded-full min-w-[20px] h-5 flex items-center justify-center px-1 transform scale-100 transition-transform duration-300">
+                            <span id="favorite-count" class="text-[10px]">{{ user.favorites.count }}</span>
+                        </span>
+                        <!-- Effet de pulsation au survol -->
+                        <span class="absolute inset-0 rounded-full bg-red-500 opacity-0 group-hover:opacity-10 transition-opacity duration-300"></span>
+                    </a>
+                {% endif %}
             </div>
         </div>
     </div>
 </div>
 
-<script src="{% static 'js/menu-category.js' %}"></script> 
+<script src="{% static 'js/menu-category.js' %}"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const favoriteCount = document.getElementById('favorite-count');
+    if (favoriteCount) {
+        // Écoute des événements HTMX
+        document.body.addEventListener('htmx:afterSwap', function(evt) {
+            if (evt.detail.target.id === 'favorite-count') {
+                const badge = favoriteCount.parentElement;
+                
+                // Animation de transition
+                favoriteCount.classList.add('favorite-count-change');
+                badge.classList.add('favorite-badge-update');
+                
+                // Gestion de la visibilité
+                const count = parseInt(favoriteCount.textContent);
+                if (count === 0) {
+                    badge.style.display = 'none';
+                } else {
+                    badge.style.display = 'flex';
+                }
+                
+                // Retirer les classes d'animation après la transition
+                setTimeout(() => {
+                    favoriteCount.classList.remove('favorite-count-change');
+                    badge.classList.remove('favorite-badge-update');
+                }, 300);
+            }
+        });
+
+        // Mise à jour initiale
+        const initialCount = parseInt(favoriteCount.textContent);
+        if (initialCount === 0) {
+            favoriteCount.parentElement.style.display = 'none';
+        }
+    }
+});
+</script> 

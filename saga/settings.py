@@ -126,30 +126,22 @@ except Exception as e:
 # CONFIGURATION DES FICHIERS STATIQUES ET MÉDIAS
 # ==================================================
 # Configuration AWS S3
-AWS_ACCESS_KEY_ID = config('AWS_ACCESS_KEY_ID')
-AWS_SECRET_ACCESS_KEY = config('AWS_SECRET_ACCESS_KEY')
-AWS_STORAGE_BUCKET_NAME = config('AWS_STORAGE_BUCKET_NAME')
-AWS_S3_REGION_NAME = config('AWS_S3_REGION_NAME', default='eu-north-1')
-
-print("\n=== CONFIGURATION AWS S3 ===")
-print(f"AWS_ACCESS_KEY_ID: {'✓ Configuré' if AWS_ACCESS_KEY_ID else '✗ Non configuré'}")
-print(f"AWS_SECRET_ACCESS_KEY: {'✓ Configuré' if AWS_SECRET_ACCESS_KEY else '✗ Non configuré'}")
-print(f"AWS_STORAGE_BUCKET_NAME: {'✓ Configuré' if AWS_STORAGE_BUCKET_NAME else '✗ Non configuré'}")
-print(f"AWS_S3_REGION_NAME: {AWS_S3_REGION_NAME}")
-print("===========================\n")
-
-# Vérification des paramètres AWS
-if not all([AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY, AWS_STORAGE_BUCKET_NAME]):
-    raise ValueError("Les variables AWS sont requises. Veuillez configurer AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY et AWS_STORAGE_BUCKET_NAME dans votre fichier .env")
-
-# Configuration S3
-AWS_S3_CUSTOM_DOMAIN = f'{AWS_STORAGE_BUCKET_NAME}.s3.{AWS_S3_REGION_NAME}.amazonaws.com'
+AWS_ACCESS_KEY_ID = os.environ.get('AWS_ACCESS_KEY_ID')
+AWS_SECRET_ACCESS_KEY = os.environ.get('AWS_SECRET_ACCESS_KEY')
+AWS_STORAGE_BUCKET_NAME = os.environ.get('AWS_STORAGE_BUCKET_NAME')
+AWS_S3_REGION_NAME = os.environ.get('AWS_S3_REGION_NAME', 'eu-west-3')
+AWS_S3_CUSTOM_DOMAIN = f'{AWS_STORAGE_BUCKET_NAME}.s3.amazonaws.com'
 AWS_S3_OBJECT_PARAMETERS = {
     'CacheControl': 'max-age=86400',
 }
 AWS_DEFAULT_ACL = None
 AWS_QUERYSTRING_AUTH = True
-AWS_S3_FILE_OVERWRITE = False
+
+# Storage backends
+DEFAULT_FILE_STORAGE = 'saga.storage_backends.MediaStorage'
+STATICFILES_STORAGE = 'saga.storage_backends.StaticStorage'
+PRODUCT_IMAGE_STORAGE = 'saga.storage_backends.ProductImageStorage'
+HERO_IMAGE_STORAGE = 'saga.storage_backends.HeroImageStorage'
 
 # Configuration des fichiers statiques
 STATIC_URL = '/static/'
@@ -426,7 +418,7 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'phonenumber_field',
     'product',
-    'accounts',
+    'accounts.apps.AccountsConfig',
     'suppliers',
     'django_htmx',
     'widget_tweaks',
@@ -479,12 +471,9 @@ TEMPLATES = [
                 'django.template.context_processors.request',
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
-                'product.context_processors.categories_processor',
-                'product.context_processors.categories_processor_high_tech',
-                'product.context_processors.category_processor_maison',
-                'product.context_processors.categories_processor_quincaillerie',
-                'product.context_processors.categrpies_processor_espace_culturel',
+                'product.context_processors.dropdown_categories_processor',
                 'cart.context_processors.cart_context',
+                'suppliers.context_processors.user_context',
             ],
         },
     },

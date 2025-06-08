@@ -1,0 +1,79 @@
+{% load static %}
+{% load product_tags %}
+{% if user.is_authenticated %}
+<button hx-post="{% url 'suppliers:toggle_favorite' product.id %}?template=card"
+        hx-target="this"
+        hx-swap="outerHTML"
+        class="relative inline-flex items-center justify-center w-10 h-10 rounded-full border border-gray-300 bg-white text-gray-700 hover:bg-gray-50 hover:border-gray-400 transition-all duration-300 group"
+        title="{% if is_favorite %}Retirer des favoris{% else %}Ajouter aux favoris{% endif %}">
+    <svg class="w-6 h-6 {% if user|is_favorite:product %}text-red-500{% else %}text-gray-400 group-hover:text-gray-500{% endif %}" 
+         xmlns="http://www.w3.org/2000/svg" 
+         fill="{% if user|is_favorite:product %}currentColor{% else %}none{% endif %}" 
+         viewBox="0 0 24 24" 
+         stroke="currentColor">
+        <path stroke-linecap="round" 
+              stroke-linejoin="round" 
+              stroke-width="2" 
+              d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"/>
+    </svg>
+    <span class="absolute inset-0 rounded-full bg-white opacity-0 group-hover:opacity-10 transition-opacity duration-300"></span>
+</button>
+{% else %}
+    <a href="{% url 'accounts:login' %}?next={{ request.path }}" 
+           class="relative inline-flex items-center justify-center w-10 h-10 rounded-full border border-gray-300 bg-white text-gray-700 hover:bg-gray-50 hover:border-gray-400 transition-all duration-300 group"
+           role="button"
+           tabindex="0">
+            <svg class="h-5 w-5 text-gray-500 group-hover:text-red-500" 
+                 xmlns="http://www.w3.org/2000/svg" 
+                 fill="none" 
+                 viewBox="0 0 24 24" 
+                 stroke="currentColor">
+                <path stroke-linecap="round" 
+                      stroke-linejoin="round" 
+                      stroke-width="2" 
+                      d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"/>
+        </svg>
+    </a>
+{% endif %} 
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const button = document.querySelector('[hx-post*="toggle_favorite"]');
+    
+    if (button) {
+        // Animation au survol
+        button.addEventListener('mouseenter', () => {
+            gsap.to(button, {
+                scale: 1.05,
+                duration: 0.2,
+                ease: "power2.out"
+            });
+        });
+
+        button.addEventListener('mouseleave', () => {
+            gsap.to(button, {
+                scale: 1,
+                duration: 0.2,
+                ease: "power2.out"
+            });
+        });
+
+        // Animation au clic
+        button.addEventListener('mousedown', () => {
+            gsap.to(button, {
+                scale: 0.95,
+                duration: 0.1,
+                ease: "power2.in"
+            });
+        });
+
+        button.addEventListener('mouseup', () => {
+            gsap.to(button, {
+                scale: 1,
+                duration: 0.1,
+                ease: "power2.out"
+            });
+        });
+    }
+});
+</script> 

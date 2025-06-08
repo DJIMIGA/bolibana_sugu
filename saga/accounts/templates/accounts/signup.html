@@ -26,19 +26,71 @@
 
         <form class="mt-8 space-y-6" action="{% url 'accounts:signup' %}" method="POST">
             {% csrf_token %}
-            <div class="rounded-md shadow-sm -space-y-px">
-                {% for field in form %}
-                    <div>
-                        {{ field }}
+            <div class="rounded-md shadow-sm space-y-4">
+                <!-- Nom et Prénom sur la même ligne -->
+                <div class="flex space-x-4">
+                    <div class="w-1/2">
+                        <label for="{{ form.first_name.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-1">Prénom</label>
+                        {{ form.first_name }}
+                        {% if form.first_name.errors %}
+                            <p class="mt-1 text-sm text-red-600">{{ form.first_name.errors.0 }}</p>
+                        {% endif %}
                     </div>
-                {% endfor %}
+                    <div class="w-1/2">
+                        <label for="{{ form.last_name.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-1">Nom</label>
+                        {{ form.last_name }}
+                        {% if form.last_name.errors %}
+                            <p class="mt-1 text-sm text-red-600">{{ form.last_name.errors.0 }}</p>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <!-- Email -->
+                <div>
+                    <label for="{{ form.email.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-1">Email</label>
+                    {{ form.email }}
+                    {% if form.email.errors %}
+                        <p class="mt-1 text-sm text-red-600">{{ form.email.errors.0 }}</p>
+                    {% endif %}
+                </div>
+
+                <!-- Téléphone -->
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Téléphone</label>
+                    <div class="flex">
+                        {{ form.phone_country }}
+                        {{ form.phone_number }}
+                    </div>
+                    {% if form.phone_number.errors %}
+                        <p class="mt-1 text-sm text-red-600">{{ form.phone_number.errors.0 }}</p>
+                    {% endif %}
+                </div>
+
+                <!-- Mot de passe -->
+                <div>
+                    <label for="{{ form.password.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-1">Mot de passe</label>
+                    {{ form.password }}
+                    {% if form.password.errors %}
+                        <p class="mt-1 text-sm text-red-600">{{ form.password.errors.0 }}</p>
+                    {% endif %}
+                    <div class="mt-2 text-xs text-gray-500">
+                        <p>Le mot de passe doit contenir :</p>
+                        <ul class="list-disc list-inside space-y-1">
+                            <li>Au moins 8 caractères</li>
+                            <li>Au moins une lettre majuscule</li>
+                            <li>Au moins une lettre minuscule</li>
+                            <li>Au moins un chiffre</li>
+                            <li>Au moins un caractère spécial (!@#$%^&*(),.?":{}|<>)</li>
+                        </ul>
+                    </div>
+                </div>
             </div>
 
             <div>
                 <button type="submit"
-                        class="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-colors duration-300 ease-in-out transform hover:scale-105">
+                        class="group relative w-full flex justify-center py-3 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-gradient-to-r from-green-600 to-yellow-500 hover:from-green-700 hover:to-yellow-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-all duration-300 ease-in-out transform hover:scale-105">
                     <span class="absolute left-0 inset-y-0 flex items-center pl-3">
-                        <svg class="h-5 w-5 text-green-500 group-hover:text-green-400 transition-colors duration-300 ease-in-out" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                        <svg class="h-5 w-5 text-white group-hover:text-white transition-colors duration-300 ease-in-out" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
                             <path fill-rule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clip-rule="evenodd" />
                         </svg>
                     </span>

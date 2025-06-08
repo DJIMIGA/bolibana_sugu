@@ -20,9 +20,9 @@ from django_otp import devices_for_user
 from django_otp.decorators import otp_required
 User = get_user_model()
 
-from .models import Shopper, ShippingAddress, TwoFactorCode
+from .models import Shopper, ShippingAddress, TwoFactorCode, LoginTwoFactorCode
 from .forms import UserForm, ShippingAddressForm, PasswordChangeForm, CustomPasswordResetForm, \
-    CustomSetPasswordForm, LoginForm
+    CustomSetPasswordForm, LoginForm, TwoFactorVerificationForm
 from django.core.mail import send_mail
 from django.contrib.auth.views import PasswordResetView, PasswordResetConfirmView
 
@@ -155,22 +155,29 @@ def signup(request):
 class LoginView(AuthLoginView):
     template_name = 'accounts/login.html'
     redirect_authenticated_user = True
-    success_url = reverse_lazy('suppliers:supplier_index')
-
-    def form_valid(self, form):
-        """Surcharge pour préserver l'ancienne session key."""
-        # Sauvegarder l'ancienne session key
-        self.request.session['_old_session_key'] = self.request.session.session_key
-        
-        # Appeler la méthode parente qui déclenche le signal
-        return super().form_valid(form)
 
     def get_success_url(self):
-        """Gère la redirection après connexion."""
-        next_url = self.request.GET.get('next')
-        if next_url:
-            return next_url
-        return super().get_success_url()
+        return reverse_lazy('suppliers:supplier_index')
+
+    def form_valid(self, form):
+        user = form.get_user()
+        if user.phone:  # Vérifier si l'utilisateur a un numéro de téléphone
+            # Générer et envoyer le code 2FA
+            code = LoginTwoFactorCode.generate_code()
+            LoginTwoFactorCode.objects.filter(user=user).delete()  # Supprimer les anciens codes
+            LoginTwoFactorCode.objects.create(user=user, code=code)
+            
+            # Envoyer le code par SMS (à implémenter avec votre service SMS)
+            # send_sms(user.phone, f"Votre code de vérification est : {code}")
+            
+            # Stocker l'utilisateur en session
+            self.request.session['2fa_user_id'] = user.id
+            
+            # Rediriger vers la page de vérification 2FA
+            return redirect('accounts:verify_2fa')
+        
+        # Si pas de numéro de téléphone, connexion normale
+        return super().form_valid(form)
 
 
 def logout_user(request):
@@ -364,3 +371,54 @@ def admin_2fa_required(request):
         return render(request, 'admin/2fa_verify.html')
     
     return redirect('admin:index')
+
+def verify_2fa(request):
+    if '2fa_user_id' not in request.session:
+        return redirect('accounts:login')
+    
+    user = get_object_or_404(Shopper, id=request.session['2fa_user_id'])
+    
+    if request.method == 'POST':
+        form = TwoFactorVerificationForm(request.POST)
+        if form.is_valid():
+            code = form.cleaned_data['code']
+            two_factor_code = LoginTwoFactorCode.objects.filter(
+                user=user,
+                code=code,
+                is_used=False
+            ).first()
+            
+            if two_factor_code and two_factor_code.is_valid():
+                two_factor_code.is_used = True
+                two_factor_code.save()
+                
+                # Connecter l'utilisateur
+                login(request, user)
+                
+                # Nettoyer la session
+                del request.session['2fa_user_id']
+                
+                return redirect('suppliers:supplier_index')
+            else:
+                messages.error(request, "Code invalide ou expiré.")
+    else:
+        form = TwoFactorVerificationForm()
+    
+    return render(request, 'accounts/2fa_verify.html', {'form': form})
+
+def resend_2fa_code(request):
+    if '2fa_user_id' not in request.session:
+        return redirect('accounts:login')
+    
+    user = get_object_or_404(Shopper, id=request.session['2fa_user_id'])
+    
+    # Générer et envoyer un nouveau code
+    code = LoginTwoFactorCode.generate_code()
+    LoginTwoFactorCode.objects.filter(user=user).delete()
+    LoginTwoFactorCode.objects.create(user=user, code=code)
+    
+    # Envoyer le code par SMS (à implémenter avec votre service SMS)
+    # send_sms(user.phone, f"Votre nouveau code de vérification est : {code}")
+    
+    messages.success(request, "Un nouveau code a été envoyé à votre téléphone.")
+    return redirect('accounts:verify_2fa')

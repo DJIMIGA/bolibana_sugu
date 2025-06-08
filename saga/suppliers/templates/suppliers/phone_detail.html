@@ -1,0 +1,569 @@
+{% extends "base.html" %}
+{% load static %}
+{% load product_badges %}
+
+{% block title %}{{ product.title }} - BoliBana{% endblock %}
+
+{% block extra_head %}
+{{ block.super }}
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.css" />
+<style>
+    .swiper-button-next,
+    .swiper-button-prev {
+        color: #059669 !important; /* green-600 */
+        background-color: white;
+        width: 40px !important;
+        height: 40px !important;
+        border-radius: 50%;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+
+    .swiper-button-next {
+        right: -5px !important;
+    }
+
+    .swiper-button-prev {
+        left: -5px !important;
+    }
+
+    .swiper-button-next:after,
+    .swiper-button-prev:after {
+        font-size: 20px !important;
+    }
+
+    .swiper-button-next:hover,
+    .swiper-button-prev:hover {
+        color: #047857 !important; /* green-700 */
+        background-color: #f3f4f6;
+    }
+
+    .swiper-button-disabled {
+        opacity: 0.35 !important;
+        cursor: auto !important;
+        pointer-events: none !important;
+    }
+
+    .swiper-pagination {
+        position: relative !important;
+        margin-top: 24px !important;
+        display: flex !important;
+        justify-content: center !important;
+        align-items: center !important;
+        gap: 8px !important;
+    }
+
+    .swiper-pagination-bullet {
+        width: 8px !important;
+        height: 8px !important;
+        background: #E5E7EB !important; /* gray-200 */
+        opacity: 1 !important;
+        transition: all 0.3s ease !important;
+        margin: 0 !important;
+    }
+    
+    .swiper-pagination-bullet-active {
+        background: #059669 !important; /* green-600 */
+        transform: scale(1.2) !important;
+        width: 10px !important;
+        height: 10px !important;
+    }
+    
+    .swiper-pagination-bullet:hover {
+        background: #059669 !important; /* green-600 */
+        opacity: 0.7 !important;
+    }
+
+    .swiper-slide {
+        height: auto !important;
+        display: flex !important;
+        align-items: stretch !important;
+    }
+
+    .swiper-slide > * {
+        width: 100% !important;
+        height: 100% !important;
+    }
+
+    .swiper {
+        padding: 0 5px !important;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <!-- Fil d'Ariane -->
+    <div class="mb-8">
+        {% include "suppliers/components/breadcrumb.html" with category=product.category product=product %}
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+        <!-- Galerie d'images -->
+        <div class="space-y-4">
+            <div class="bg-white rounded-lg shadow-md overflow-hidden">
+                {% if images %}
+                    <img id="main-image" src="{{ images.0.image.url }}" alt="{{ product.title }}" class="w-full h-auto object-cover">
+                {% else %}
+                    <img id="main-image" src="{% static 'images/no-image.png' %}" alt="Image non disponible" class="w-full h-auto object-cover">
+                {% endif %}
+            </div>
+            {% if images %}
+                <div class="grid grid-cols-4 gap-2">
+                    {% for image in images %}
+                        <button onclick="changeMainImage('{{ image.image.url }}', this)" class="w-full h-24 rounded overflow-hidden focus:outline-none focus:ring-2 focus:ring-new">
+                            <img src="{{ image.image.url }}" alt="{{ product.title }}" class="w-full h-full object-cover">
+                        </button>
+                    {% endfor %}
+                </div>
+            {% endif %}
+        </div>
+
+        <!-- Informations produit -->
+        <div class="space-y-6">
+            <!-- Titre et badges -->
+            <div class="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
+                <h1 class="text-2xl md:text-3xl font-bold text-gray-900">{{ phone.brand }} {{ phone.model }}</h1>
+                <div class="flex space-x-2">
+                    {% product_badges product %}
+                </div>
+            </div>
+
+            <!-- Catégorie et SKU -->
+            <div class="flex flex-col sm:flex-row sm:items-center sm:space-x-4 text-sm text-gray-500 space-y-2 sm:space-y-0">
+                <span>Catégorie: <a href="{% url 'suppliers:category_detail' product.category.slug %}" class="text-new hover:underline">{{ product.category.name }}</a></span>
+                {% if product.sku %}
+                    <span>Réf: {{ product.sku }}</span>
+                {% endif %}
+            </div>
+
+            <!-- Prix -->
+            <div class="bg-white p-4 rounded-xl shadow-sm border border-gray-200">
+                <div class="space-y-4">
+                    <div>
+                        <p class="text-2xl sm:text-3xl font-bold bg-gradient-to-r from-green-600 via-yellow-500 to-red-500 bg-clip-text text-transparent">
+                            {{ phone.product.price|floatformat:0 }} FCFA
+                        </p>
+                    </div>
+                    
+                    <div class="mt-6 flex flex-col sm:grid sm:grid-cols-2 gap-4">
+                        {% include "suppliers/components/_add_to_cart_button.html" with product=phone.product is_detail=True %}
+                        {% include "suppliers/components/_favorite_button.html" with product=phone.product is_detail=True %}
+                    </div>
+                </div>
+            </div>
+
+            <!-- Disponibilité -->
+            <div class="flex items-center text-sm {% if product.is_available %}text-new{% else %}text-red-500{% endif %}">
+                <svg class="h-5 w-5 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                    <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
+                </svg>
+                {% if product.is_available %}En stock{% else %}Rupture de stock{% endif %}
+            </div>
+
+            <!-- Note moyenne -->
+            <div class="mt-8 border-t border-gray-200 pt-6">
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center space-x-4">
+                        <div class="text-4xl font-bold text-gray-900">{{ average_rating|default:"0.0"|floatformat:1 }}</div>
+                        <div class="flex items-center text-yellow-400">
+                            {% for i in "12345" %}
+                                {% if forloop.counter <= average_rating|default:"0"|floatformat:"0"|add:"0" %}
+                                    <svg class="h-5 w-5" fill="currentColor" viewBox="0 0 20 20">
+                                        <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/>
+                                    </svg>
+                                {% else %}
+                                    <svg class="h-5 w-5 text-gray-300" fill="currentColor" viewBox="0 0 20 20">
+                                        <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/>
+                                    </svg>
+                                {% endif %}
+                            {% endfor %}
+                        </div>
+                        <div class="text-sm text-gray-500">
+                            {% if review_count == 1 %}
+                                1 avis
+                            {% else %}
+                                {{ review_count|default:"0" }} avis
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Description -->
+            {% if product.description %}
+                <div class="pt-6 border-t border-gray-200">
+                    <h2 class="text-lg font-medium text-gray-900 mb-2">Description</h2>
+                    <div class="prose prose-sm text-gray-600">
+                        {{ product.description|linebreaks|safe }}
+                    </div>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Caractéristiques techniques -->
+    <div class="mt-8 border-t border-gray-200 pt-8">
+        <h2 class="text-2xl font-bold text-gray-900 mb-6">Caractéristiques techniques</h2>
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            <!-- Informations générales -->
+            <div class="p-4 bg-white rounded-xl shadow-sm border border-gray-200 hover:shadow-md hover:border-green-500 transition-all duration-300">
+                <div class="flex items-center gap-3">
+                    <svg class="w-5 h-5 sm:w-6 sm:h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                    </svg>
+                    <div class="space-y-1">
+                        <p class="text-sm text-gray-600">Marque</p>
+                        <p class="font-medium">{{ phone.brand }}</p>
+                    </div>
+                </div>
+            </div>
+            <div class="p-4 bg-white rounded-xl shadow-sm border border-gray-200 hover:shadow-md hover:border-green-500 transition-all duration-300">
+                <div class="flex items-center gap-3">
+                    <svg class="w-5 h-5 sm:w-6 sm:h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                    </svg>
+                    <div class="space-y-1">
+                        <p class="text-sm text-gray-600">Modèle</p>
+                        <p class="font-medium">{{ phone.model }}</p>
+                    </div>
+                </div>
+            </div>
+            <div class="p-4 bg-white rounded-xl shadow-sm border border-gray-200 hover:shadow-md hover:border-green-500 transition-all duration-300">
+                <div class="flex items-center gap-3">
+                    <svg class="w-5 h-5 sm:w-6 sm:h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21a4 4 0 01-4-4V5a2 2 0 012-2h4a2 2 0 012 2v12a4 4 0 01-4 4zm0 0h12a2 2 0 002-2v-4a2 2 0 00-2-2h-2.343M11 7.343l1.657-1.657a2 2 0 012.828 0l2.829 2.829a2 2 0 010 2.828l-8.486 8.485M7 17h.01" />
+                    </svg>
+                    <div class="space-y-1">
+                        <p class="text-sm text-gray-600">Couleur</p>
+                        <p class="font-medium">{{ phone.color.name }}</p>
+                    </div>
+                </div>
+            </div>
+            <div class="p-4 bg-white rounded-xl shadow-sm border border-gray-200 hover:shadow-md hover:border-green-500 transition-all duration-300">
+                <div class="flex items-center gap-3">
+                    <svg class="w-5 h-5 sm:w-6 sm:h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    <div class="space-y-1">
+                        <p class="text-sm text-gray-600">État</p>
+                        <p class="font-medium">{% if phone.is_new %}Neuf{% else %}Occasion{% endif %}</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Mémoire et stockage -->
+            <div class="p-4 bg-white rounded-xl shadow-sm border border-gray-200 hover:shadow-md hover:border-green-500 transition-all duration-300">
+                <div class="flex items-center gap-3">
+                    <svg class="w-5 h-5 sm:w-6 sm:h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 5a1 1 0 011-1h14a1 1 0 011 1v2a1 1 0 01-1 1H5a1 1 0 01-1-1V5zM4 13a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H5a1 1 0 01-1-1v-6zM16 13a1 1 0 011-1h2a1 1 0 011 1v6a1 1 0 01-1 1h-2a1 1 0 01-1-1v-6z" />
+                    </svg>
+                    <div class="space-y-1">
+                        <p class="text-sm text-gray-600">Stockage</p>
+                        <p class="font-medium">{{ phone.storage }} GB</p>
+                    </div>
+                </div>
+            </div>
+            <div class="p-4 bg-white rounded-xl shadow-sm border border-gray-200 hover:shadow-md hover:border-green-500 transition-all duration-300">
+                <div class="flex items-center gap-3">
+                    <svg class="w-5 h-5 sm:w-6 sm:h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 5a1 1 0 011-1h14a1 1 0 011 1v2a1 1 0 01-1 1H5a1 1 0 01-1-1V5zM4 13a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H5a1 1 0 01-1-1v-6zM16 13a1 1 0 011-1h2a1 1 0 011 1v6a1 1 0 01-1 1h-2a1 1 0 01-1-1v-6z" />
+                    </svg>
+                    <div class="space-y-1">
+                        <p class="text-sm text-gray-600">RAM</p>
+                        <p class="font-medium">{{ phone.ram }} GB</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Écran -->
+            <div class="p-4 bg-white rounded-xl shadow-sm border border-gray-200 hover:shadow-md hover:border-green-500 transition-all duration-300">
+                <div class="flex items-center gap-3">
+                    <svg class="w-5 h-5 sm:w-6 sm:h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 12l3-3 3 3 4-4M8 21l4-4 4 4M3 4h18M4 4h16v12a1 1 0 01-1 1H5a1 1 0 01-1-1V4z" />
+                    </svg>
+                    <div class="space-y-1">
+                        <p class="text-sm text-gray-600">Taille d'écran</p>
+                        <p class="font-medium">{{ phone.screen_size }}"</p>
+                    </div>
+                </div>
+            </div>
+            <div class="p-4 bg-white rounded-xl shadow-sm border border-gray-200 hover:shadow-md hover:border-green-500 transition-all duration-300">
+                <div class="flex items-center gap-3">
+                    <svg class="w-5 h-5 sm:w-6 sm:h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                    </svg>
+                    <div class="space-y-1">
+                        <p class="text-sm text-gray-600">Résolution</p>
+                        <p class="font-medium">{{ phone.resolution }}</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Performances -->
+            <div class="p-4 bg-white rounded-xl shadow-sm border border-gray-200 hover:shadow-md hover:border-green-500 transition-all duration-300">
+                <div class="flex items-center gap-3">
+                    <svg class="w-5 h-5 sm:w-6 sm:h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                    </svg>
+                    <div class="space-y-1">
+                        <p class="text-sm text-gray-600">Système d'exploitation</p>
+                        <p class="font-medium">{{ phone.operating_system }}</p>
+                    </div>
+                </div>
+            </div>
+            <div class="p-4 bg-white rounded-xl shadow-sm border border-gray-200 hover:shadow-md hover:border-green-500 transition-all duration-300">
+                <div class="flex items-center gap-3">
+                    <svg class="w-5 h-5 sm:w-6 sm:h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 3v2m6-2v2M9 19v2m6-2v2M5 9H3m2 6H3m18-6h-2m2 6h-2M7 19h10a2 2 0 002-2V7a2 2 0 00-2-2H7a2 2 0 00-2 2v10a2 2 0 002 2zM9 9h6v6H9V9z" />
+                    </svg>
+                    <div class="space-y-1">
+                        <p class="text-sm text-gray-600">Processeur</p>
+                        <p class="font-medium">{{ phone.processor }}</p>
+                    </div>
+                </div>
+            </div>
+            <div class="p-4 bg-white rounded-xl shadow-sm border border-gray-200 hover:shadow-md hover:border-green-500 transition-all duration-300">
+                <div class="flex items-center gap-3">
+                    <svg class="w-5 h-5 sm:w-6 sm:h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
+                    </svg>
+                    <div class="space-y-1">
+                        <p class="text-sm text-gray-600">Batterie</p>
+                        <p class="font-medium">{{ phone.battery_capacity }} mAh</p>
+                    </div>
+                </div>
+            </div>
+            <div class="p-4 bg-white rounded-xl shadow-sm border border-gray-200 hover:shadow-md hover:border-green-500 transition-all duration-300">
+                <div class="flex items-center gap-3">
+                    <svg class="w-5 h-5 sm:w-6 sm:h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
+                    </svg>
+                    <div class="space-y-1">
+                        <p class="text-sm text-gray-600">Réseau</p>
+                        <p class="font-medium">{{ phone.network }}</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Appareil photo -->
+            <div class="p-4 bg-white rounded-xl shadow-sm border border-gray-200 hover:shadow-md hover:border-green-500 transition-all duration-300">
+                <div class="flex items-center gap-3">
+                    <svg class="w-5 h-5 sm:w-6 sm:h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
+                    </svg>
+                    <div class="space-y-1">
+                        <p class="text-sm text-gray-600">Caméra principale</p>
+                        <p class="font-medium">{{ phone.camera_main }}</p>
+                    </div>
+                </div>
+            </div>
+            <div class="p-4 bg-white rounded-xl shadow-sm border border-gray-200 hover:shadow-md hover:border-green-500 transition-all duration-300">
+                <div class="flex items-center gap-3">
+                    <svg class="w-5 h-5 sm:w-6 sm:h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
+                    </svg>
+                    <div class="space-y-1">
+                        <p class="text-sm text-gray-600">Caméra frontale</p>
+                        <p class="font-medium">{{ phone.camera_front }}</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Avis -->
+    <div class="mt-8 border-t border-gray-200 pt-8">
+        {% include "suppliers/components/_reviews.html" with reviews=reviews average_rating=average_rating review_count=review_count product=product %}
+    </div>
+
+    <!-- Produits similaires -->
+    {% include "suppliers/components/_similar_products.html" with similar_products=similar_products category_slug=category_slug %}
+
+    <!-- Modal pour ajouter un avis -->
+    <div id="reviewModal" class="fixed inset-0 bg-gray-500 bg-opacity-75 hidden z-50" aria-labelledby="modal-title" role="dialog" aria-modal="true">
+        <div class="fixed inset-0 z-50 overflow-y-auto">
+            <div class="flex min-h-full items-end justify-center p-4 text-center sm:items-center sm:p-0">
+                <div class="relative transform overflow-hidden rounded-lg bg-white w-full max-w-lg mx-auto z-50">
+                    <!-- En-tête du modal -->
+                    <div class="px-4 sm:px-6 pt-4 sm:pt-6 pb-4 border-b border-gray-200">
+                        <div class="flex items-center justify-between">
+                            <h3 class="text-lg sm:text-xl font-semibold text-gray-900">Ajouter un avis</h3>
+                            <button type="button" onclick="closeReviewModal()" class="rounded-md bg-white text-gray-400 hover:text-gray-500 focus:outline-none focus:ring-2 focus:ring-new focus:ring-offset-2">
+                                <span class="sr-only">Fermer</span>
+                                <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+                                </svg>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Contenu du formulaire -->
+                    <div class="px-4 sm:px-6 py-4 sm:py-6">
+                        <form method="post" action="{% url 'suppliers:add_review' product.slug %}" class="space-y-4 sm:space-y-6">
+                            {% csrf_token %}
+                            <!-- Système de notation -->
+                            <div>
+                                <label class="block text-base font-medium text-gray-900 mb-3">Note</label>
+                                <div class="flex items-center justify-center space-x-2 sm:space-x-3" id="rating-container">
+                                    {% for i in "12345" %}
+                                    <div class="relative">
+                                        <input type="radio" id="rating-{{ i }}" name="rating" value="{{ i }}" class="peer sr-only" required>
+                                        <label for="rating-{{ i }}" class="block cursor-pointer">
+                                            <svg class="w-8 h-8 sm:w-10 sm:h-10 text-gray-300 peer-checked:text-yellow-400 hover:text-yellow-400 transition-colors" fill="currentColor" viewBox="0 0 20 20">
+                                                <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/>
+                                            </svg>
+                                        </label>
+                                    </div>
+                                    {% endfor %}
+                                </div>
+                            </div>
+
+                            <!-- Zone de commentaire -->
+                            <div>
+                                <label for="comment" class="block text-base font-medium text-gray-900 mb-2">Commentaire</label>
+                                <textarea 
+                                    id="comment" 
+                                    name="comment" 
+                                    rows="4" 
+                                    required 
+                                    class="block w-full rounded-lg border-gray-300 shadow-sm focus:border-new focus:ring-new text-base resize-none"
+                                    placeholder="Partagez votre expérience avec ce produit..."
+                                ></textarea>
+                            </div>
+
+                            <!-- Boutons d'action -->
+                            <div class="flex flex-col gap-3 pt-4">
+                                <button 
+                                    type="submit" 
+                                    class="w-full inline-flex justify-center items-center px-4 py-2.5 border border-transparent text-sm font-medium rounded-lg text-white bg-gradient-to-r from-new via-new/90 to-new-dark hover:from-new-dark hover:via-new/90 hover:to-new focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-new transition-all duration-300"
+                                >
+                                    <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+                                    </svg>
+                                    Publier mon avis
+                                </button>
+                                <button 
+                                    type="button" 
+                                    onclick="closeReviewModal()" 
+                                    class="w-full inline-flex justify-center items-center px-4 py-2.5 border border-gray-200 text-sm font-medium rounded-lg text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-new transition-all duration-300"
+                                >
+                                    <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                                    </svg>
+                                    Annuler
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+  
+</div>
+
+<script>
+function openReviewModal() {
+    document.getElementById('reviewModal').classList.remove('hidden');
+    document.body.style.overflow = 'hidden';
+}
+
+function closeReviewModal() {
+    document.getElementById('reviewModal').classList.add('hidden');
+    document.body.style.overflow = 'auto';
+}
+
+// Gestion des étoiles
+document.addEventListener('DOMContentLoaded', function() {
+    const ratingContainer = document.getElementById('rating-container');
+    const ratingInputs = ratingContainer.querySelectorAll('input[type="radio"]');
+    const ratingLabels = ratingContainer.querySelectorAll('label');
+
+    // Fonction pour mettre à jour les étoiles
+    function updateStars(index) {
+        ratingLabels.forEach((label, i) => {
+            const svg = label.querySelector('svg');
+            if (i <= index) {
+                svg.classList.remove('text-gray-300');
+                svg.classList.add('text-yellow-400');
+            } else {
+                svg.classList.remove('text-yellow-400');
+                svg.classList.add('text-gray-300');
+            }
+        });
+    }
+
+    // Gestion des événements pour chaque étoile
+    ratingLabels.forEach((label, index) => {
+        // Au survol
+        label.addEventListener('mouseenter', () => {
+            updateStars(index);
+        });
+
+        // Au clic
+        label.addEventListener('click', () => {
+            const input = label.previousElementSibling;
+            input.checked = true;
+            updateStars(index);
+        });
+    });
+
+    // Au survol du conteneur
+    ratingContainer.addEventListener('mouseleave', () => {
+        const checkedInput = ratingContainer.querySelector('input[type="radio"]:checked');
+        if (checkedInput) {
+            const index = Array.from(ratingInputs).indexOf(checkedInput);
+            updateStars(index);
+        } else {
+            updateStars(-1); // Réinitialiser toutes les étoiles
+        }
+    });
+});
+</script>
+
+<!-- Script pour la galerie d'images -->
+<script>
+function changeMainImage(url, button) {
+    document.getElementById('main-image').src = url;
+    // Mettre à jour la classe active
+    const buttons = document.querySelectorAll('.thumbnail-button');
+    buttons.forEach(btn => btn.classList.remove('ring-2', 'ring-new'));
+    button.classList.add('ring-2', 'ring-new');
+}
+</script>
+{% endblock %}
+
+{% block extra_scripts %}
+{{ block.super }}
+<script src="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    new Swiper('.similarProductsSwiper', {
+        slidesPerView: 1,
+        spaceBetween: 24,
+        pagination: {
+            el: '.swiper-pagination',
+            clickable: true,
+        },
+        navigation: {
+            nextEl: '.swiper-button-next',
+            prevEl: '.swiper-button-prev',
+        },
+        breakpoints: {
+            640: {
+                slidesPerView: 2,
+            },
+            1024: {
+                slidesPerView: 3,
+            },
+            1280: {
+                slidesPerView: 4,
+            },
+        },
+    });
+});
+</script>
+{% endblock %}

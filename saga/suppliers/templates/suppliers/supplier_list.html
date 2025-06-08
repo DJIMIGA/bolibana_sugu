@@ -1,66 +1,660 @@
 {% extends "base.html" %}
 {% load static %}
-{% block scripts %}
-    <script src="{% static 'suppliers/script.js' %}"></script>
+{% load product_tags %}
+
+{% block extra_head %}
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.css" />
+<style>
+    .swiper-button-next,
+    .swiper-button-prev {
+        color: #059669 !important; /* green-600 */
+        background-color: white;
+        width: 40px !important;
+        height: 40px !important;
+        border-radius: 50%;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+
+    .swiper-button-next {
+        right: -5px !important;
+    }
+
+    .swiper-button-prev {
+        left: -5px !important;
+    }
+
+    .swiper-button-next:after,
+    .swiper-button-prev:after {
+        font-size: 20px !important;
+    }
+
+    .swiper-button-next:hover,
+    .swiper-button-prev:hover {
+        color: #047857 !important; /* green-700 */
+        background-color: #f3f4f6;
+    }
+
+    .swiper-button-disabled {
+        opacity: 0.35 !important;
+        cursor: auto !important;
+        pointer-events: none !important;
+    }
+
+    /* Style des indicateurs */
+    .swiper-pagination {
+        position: relative !important;
+        margin-top: 24px !important;
+        display: flex !important;
+        justify-content: center !important;
+        align-items: center !important;
+        gap: 8px !important;
+    }
+
+    .swiper-pagination-bullet {
+        width: 8px !important;
+        height: 8px !important;
+        background: #E5E7EB !important; /* gray-200 */
+        opacity: 1 !important;
+        transition: all 0.3s ease !important;
+        margin: 0 !important;
+    }
+    
+    .swiper-pagination-bullet-active {
+        background: #059669 !important; /* green-600 */
+        transform: scale(1.2) !important;
+        width: 10px !important;
+        height: 10px !important;
+    }
+    
+    .swiper-pagination-bullet:hover {
+        background: #059669 !important; /* green-600 */
+        opacity: 0.7 !important;
+    }
+
+    /* Ajustement de l'espacement pour les slides */
+    .swiper-slide {
+        height: auto !important;
+        display: flex !important;
+        align-items: stretch !important;
+    }
+
+    .swiper-slide > * {
+        width: 100% !important;
+        height: 100% !important;
+    }
+
+    /* Ajustement du conteneur pour les flèches */
+    .swiper {
+        padding: 0 5px !important;
+    }
+</style>
 {% endblock %}
+
+{% block extra_scripts %}
+<script src="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.js"></script>
+    <script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Configuration commune pour tous les Swipers
+        const defaultSwiperConfig = {
+            slidesPerView: 1,
+            spaceBetween: 32,
+            centeredSlides: true,
+            loop: true,
+            effect: 'slide',
+            speed: 400,
+            pagination: {
+                clickable: true,
+            },
+            navigation: {
+                disabledClass: 'swiper-button-disabled',
+            }
+        };
+
+        // Configuration spécifique pour chaque Swiper
+        const swiperConfigs = {
+            categories: {
+                ...defaultSwiperConfig,
+                navigation: {
+                    ...defaultSwiperConfig.navigation,
+                    nextEl: '.categoriesSwiper .swiper-button-next',
+                    prevEl: '.categoriesSwiper .swiper-button-prev',
+            },
+                pagination: {
+                    ...defaultSwiperConfig.pagination,
+                    el: '.categoriesSwiper .swiper-pagination',
+                },
+                breakpoints: {
+                    640: {
+                        slidesPerView: 2,
+                        centeredSlides: false,
+                    },
+                    1024: {
+                        slidesPerView: 3,
+                        centeredSlides: false,
+                    }
+                }
+            },
+            phones: {
+                ...defaultSwiperConfig,
+                navigation: {
+                    ...defaultSwiperConfig.navigation,
+                    nextEl: '.phonesSwiper .swiper-button-next',
+                    prevEl: '.phonesSwiper .swiper-button-prev',
+                },
+                pagination: {
+                    ...defaultSwiperConfig.pagination,
+                    el: '.phonesSwiper .swiper-pagination',
+                },
+                breakpoints: {
+                    640: {
+                        slidesPerView: 2,
+                        centeredSlides: false,
+                    }
+                }
+            },
+            clothing: {
+                ...defaultSwiperConfig,
+                navigation: {
+                    ...defaultSwiperConfig.navigation,
+                    nextEl: '.clothingSwiper .swiper-button-next',
+                    prevEl: '.clothingSwiper .swiper-button-prev',
+                },
+                pagination: {
+                    ...defaultSwiperConfig.pagination,
+                    el: '.clothingSwiper .swiper-pagination',
+                },
+                breakpoints: {
+                    640: {
+                        slidesPerView: 2,
+                        centeredSlides: false,
+                    }
+                }
+            },
+            fabric: {
+                ...defaultSwiperConfig,
+                navigation: {
+                    ...defaultSwiperConfig.navigation,
+                    nextEl: '.fabricSwiper .swiper-button-next',
+                    prevEl: '.fabricSwiper .swiper-button-prev',
+                },
+                pagination: {
+                    ...defaultSwiperConfig.pagination,
+                    el: '.fabricSwiper .swiper-pagination',
+                },
+                breakpoints: {
+                    640: {
+                        slidesPerView: 2,
+                        centeredSlides: false,
+                    }
+                }
+            },
+            cultural: {
+                ...defaultSwiperConfig,
+                navigation: {
+                    ...defaultSwiperConfig.navigation,
+                    nextEl: '.culturalSwiper .swiper-button-next',
+                    prevEl: '.culturalSwiper .swiper-button-prev',
+                },
+                pagination: {
+                    ...defaultSwiperConfig.pagination,
+                    el: '.culturalSwiper .swiper-pagination',
+                },
+                breakpoints: {
+                    640: {
+                        slidesPerView: 2,
+                        centeredSlides: false,
+                    }
+                }
+            }
+        };
+
+        // Fonction pour initialiser un Swiper
+        function initSwiper(containerClass, config) {
+            const container = document.querySelector(containerClass);
+            if (container) {
+                console.log(`Initializing ${containerClass}`);
+                return new Swiper(containerClass, config);
+            }
+            console.error(`${containerClass} not found`);
+            return null;
+        }
+
+        // Initialisation de tous les Swipers
+        const swipers = {
+            categories: initSwiper('.categoriesSwiper', swiperConfigs.categories),
+            phones: initSwiper('.phonesSwiper', swiperConfigs.phones),
+            clothing: initSwiper('.clothingSwiper', swiperConfigs.clothing),
+            fabric: initSwiper('.fabricSwiper', swiperConfigs.fabric),
+            cultural: initSwiper('.culturalSwiper', swiperConfigs.cultural)
+        };
+
+        // Fonction pour ajouter des écouteurs d'événements aux boutons
+        function addButtonListeners(swiper, containerClass) {
+            const container = document.querySelector(containerClass);
+            if (!container) return;
+
+            const nextButton = container.querySelector('.swiper-button-next');
+            const prevButton = container.querySelector('.swiper-button-prev');
+
+            if (nextButton) {
+                nextButton.addEventListener('click', () => {
+                    console.log(`${containerClass} next button clicked`);
+                    swiper.slideNext();
+                });
+            }
+
+            if (prevButton) {
+                prevButton.addEventListener('click', () => {
+                    console.log(`${containerClass} prev button clicked`);
+                    swiper.slidePrev();
+                });
+            }
+        }
+
+        // Ajout des écouteurs d'événements pour chaque Swiper
+        Object.entries(swipers).forEach(([name, swiper]) => {
+            if (swiper) {
+                addButtonListeners(swiper, `.${name}Swiper`);
+            }
+        });
+        });
+    </script>
+{% endblock %}
+
 {% block content %}
 <div class="bg-gray-50">
+    {% if hero %}
+    <section class="relative h-[500px] md:h-[600px] overflow-hidden">
+        <!-- Overlay pour la lisibilité -->
+        <div class="absolute inset-0 bg-gradient-to-r from-black/80 via-black/60 to-transparent md:to-transparent z-10"></div>
+
+        <!-- Grille d'images (3 colonnes sur desktop, 1 sur mobile) -->
+        <div class="grid h-full md:grid-cols-{{ hero_images|length }} grid-cols-1">
+            {% for image in hero_images %}
+            <div class="relative h-full group {% if not forloop.first %}hidden md:block{% endif %}">
+                <div class="relative bg-cover bg-center h-full transition-transform duration-500 group-hover:scale-105"
+                     style="background-image: url('{{ image.image.url }}');">
+                    <div class="absolute inset-0 bg-black/30 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+
+        <!-- Section Texte (positionnée à droite sur desktop, centrée sur mobile) -->
+        <div class="absolute inset-0 z-20 flex items-center justify-end">
+            <div class="container mx-auto px-4 h-full flex items-center">
+                <div class="max-w-xl lg:max-w-2xl transform transition-all duration-500 md:ml-auto md:mr-0 md:pr-0 lg:pr-8 xl:pr-16">
+                    <h1 class="text-4xl sm:text-5xl md:text-6xl font-bold mb-4 text-white drop-shadow-lg leading-tight">
+                        {{ hero.title }}
+                    </h1>
+                    <p class="text-lg sm:text-xl text-white mb-8 font-medium leading-relaxed drop-shadow-md">
+                        {{ hero.subtitle }}
+                    </p>
+                    <div class="flex flex-wrap gap-4">
+                        <a href="{{ hero.primary_button_url }}" 
+                           class="inline-flex items-center px-6 sm:px-8 py-3 sm:py-4 border border-transparent text-base sm:text-lg font-medium rounded-md shadow-lg text-white bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-all duration-300 transform hover:scale-105">
+                            {{ hero.primary_button_text }}
+                        </a>
+                        <a href="{{ hero.secondary_button_url }}" 
+                           class="inline-flex items-center px-6 py-3 border border-transparent text-base font-medium rounded-md text-white bg-green-600 hover:bg-green-700">
+                            {{ hero.secondary_button_text|default:"Découvrir" }}
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+    {% endif %}
+</div>
+
+
     <div class="mx-auto max-w-4xl px-4 sm:px-6 py-8 sm:py-16 lg:max-w-7xl lg:px-8">
-        <!-- Bouton Price Checker -->
-        <div class="mb-12 text-center">
-            <a href="{% url 'price_checker:check_price' %}" 
-               class="inline-flex items-center px-6 py-3 border border-transparent text-base font-medium rounded-md shadow-sm text-white bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-all duration-300">
-                <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" />
-                </svg>
-                Vérifier les prix des téléphones
-            </a>
+       
+
+        <!-- Section Nos Catégories -->
+        <div class="mb-24">
+            <div class="relative px-2 sm:px-0 flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 sm:gap-0">
+                <div class="relative">
+                    <h1 class="text-2xl sm:text-3xl font-bold bg-gradient-to-r from-gray-900 to-gray-700 bg-clip-text text-transparent mb-3 sm:mb-4">
+                        Nos Catégories
+                    </h1>
+                    <div class="absolute -bottom-1 left-0 w-24 h-1 bg-gradient-to-r from-green-600 via-yellow-500 to-red-500 rounded-full"></div>
+                </div>
+                {% if main_categories|length > 4 %}
+                <a href="{% url 'suppliers:category_list' %}" 
+                   class="inline-flex items-center justify-center w-full sm:w-auto px-4 py-2 border border-transparent text-sm font-medium rounded-md text-green-700 bg-green-100 hover:bg-green-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-all duration-300">
+                    Voir toutes les catégories
+                    <svg class="ml-2 w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8l4 4m0 0l-4 4m4-4H3" />
+                    </svg>
+                </a>
+                {% endif %}
+            </div>
+
+            <!-- Swiper sur mobile, grille sur desktop -->
+            <div class="mt-12 relative">
+                <!-- Swiper container -->
+                <div class="swiper categoriesSwiper sm:hidden">
+                    <div class="swiper-wrapper">
+                        {% if main_categories %}
+                            {% for category in main_categories|slice:":4" %}
+                            <div class="swiper-slide">
+                                <a href="{% url 'suppliers:category_detail' category.slug %}" 
+                                   class="group bg-white rounded-xl shadow-lg overflow-hidden transition-all duration-300 hover:shadow-xl hover:-translate-y-1 block">
+                                    <div class="aspect-w-1 aspect-h-1 w-full overflow-hidden bg-gray-200 xl:aspect-w-7 xl:aspect-h-8">
+                                        {% if category.image %}
+                                            <img src="{{ category.image.url }}" alt="{{ category.name }}" class="w-full h-full object-cover">
+                                        {% else %}
+                                            <div class="w-full h-full flex items-center justify-center bg-{{ category.color }}-100">
+                                                <svg class="w-24 h-24 text-{{ category.color }}-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    {% if category.slug == 'telephones' %}
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z" />
+                                                    {% elif category.slug == 'vetements' %}
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
+                                                    {% elif category.slug == 'tissus' %}
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                                                    {% else %}
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                                                    {% endif %}
+                                                </svg>
+                                            </div>
+                                        {% endif %}
+                                    </div>
+                                    <div class="p-6">
+                                        <h3 class="text-xl font-semibold text-gray-900 group-hover:text-{{ category.color }}-600 transition-colors duration-300">
+                                            {{ category.name }}
+                                        </h3>
+                                        <p class="mt-2 text-gray-600 line-clamp-2">{{ category.description }}</p>
+                                    </div>
+                                </a>
+                            </div>
+                            {% endfor %}
+                        {% else %}
+                        <div class="swiper-slide">
+                            <div class="text-center py-12">
+                                <p class="text-gray-500 text-xl">Aucune catégorie disponible pour le moment.</p>
+                            </div>
+                        </div>
+                        {% endif %}
+                    </div>
+                    <!-- Add Pagination -->
+                    <div class="swiper-pagination"></div>
+                    <!-- Add Navigation -->
+                    <div class="swiper-button-prev"></div>
+                    <div class="swiper-button-next"></div>
+                </div>
+
+                <!-- Grille pour desktop -->
+                <div class="hidden sm:grid sm:grid-cols-2 lg:grid-cols-4 gap-8">
+                {% if main_categories %}
+                    {% for category in main_categories|slice:":4" %}
+                        <div>
+                    <a href="{% url 'suppliers:category_detail' category.slug %}" 
+                               class="group bg-white rounded-xl shadow-lg overflow-hidden transition-all duration-300 hover:shadow-xl hover:-translate-y-1 block">
+                        <div class="aspect-w-1 aspect-h-1 w-full overflow-hidden bg-gray-200 xl:aspect-w-7 xl:aspect-h-8">
+                            {% if category.image %}
+                                <img src="{{ category.image.url }}" alt="{{ category.name }}" class="w-full h-full object-cover">
+                            {% else %}
+                                <div class="w-full h-full flex items-center justify-center bg-{{ category.color }}-100">
+                                    <svg class="w-24 h-24 text-{{ category.color }}-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        {% if category.slug == 'telephones' %}
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z" />
+                                        {% elif category.slug == 'vetements' %}
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
+                                        {% elif category.slug == 'tissus' %}
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                                        {% else %}
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                                        {% endif %}
+                                    </svg>
+                                </div>
+                            {% endif %}
+                        </div>
+                        <div class="p-6">
+                            <h3 class="text-xl font-semibold text-gray-900 group-hover:text-{{ category.color }}-600 transition-colors duration-300">
+                                {{ category.name }}
+                            </h3>
+                            <p class="mt-2 text-gray-600 line-clamp-2">{{ category.description }}</p>
+                        </div>
+                    </a>
+                        </div>
+                    {% endfor %}
+                {% else %}
+                <div class="col-span-full text-center py-12">
+                    <p class="text-gray-500 text-xl">Aucune catégorie disponible pour le moment.</p>
+                </div>
+                {% endif %}
+                </div>
+            </div>
         </div>
 
         <!-- Section Téléphones -->
-        <div class="mb-12">
-            <div class="relative px-2 sm:px-0">
-                <h1 class="text-2xl sm:text-3xl font-bold bg-gradient-to-r from-gray-900 to-gray-700 bg-clip-text text-transparent mb-3 sm:mb-4">
-                    Nos marques de téléphones
-                </h1>
-                <div class="absolute -bottom-1 left-2 sm:left-0 w-24 h-1 bg-gradient-to-r from-green-600 via-yellow-500 to-red-500 rounded-full"></div>
+        <div id="telephones" class="mb-24">
+            <div class="relative px-2 sm:px-0 flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 sm:gap-0">
+                <div class="relative">
+                    <h1 class="text-2xl sm:text-3xl font-bold bg-gradient-to-r from-gray-900 to-gray-700 bg-clip-text text-transparent mb-3 sm:mb-4">
+                        Nos téléphones
+                    </h1>
+                    <div class="absolute -bottom-1 left-0 w-24 h-1 bg-gradient-to-r from-green-600 via-yellow-500 to-red-500 rounded-full"></div>
+                </div>
+                <a href="{% url 'suppliers:category_detail' 'telephones' %}" 
+                   class="inline-flex items-center justify-center w-full sm:w-auto px-4 py-2 border border-transparent text-sm font-medium rounded-md text-green-700 bg-green-100 hover:bg-green-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-all duration-300">
+                    Voir tous les téléphones
+                    <svg class="ml-2 w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8l4 4m0 0l-4 4m4-4H3" />
+                    </svg>
+                </a>
             </div>
 
-            <!-- Sous-catégories -->
-            <div class="mt-6 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
-                {% for brand in phone_categories %}
-                <a href="{% url 'suppliers:supplier_detail' brand.brand|slugify %}" 
-                   class="group bg-white rounded-xl shadow-lg p-4 text-center transition-all duration-300 hover:shadow-xl hover:-translate-y-1">
-                    <div class="w-16 h-16 mx-auto mb-3 rounded-full overflow-hidden bg-gray-100 flex items-center justify-center">
-                        <span class="text-2xl font-bold text-gray-600">{{ brand.brand|first }}</span>
+            <!-- Swiper sur mobile, grille sur desktop -->
+            <div class="mt-12 relative">
+                <!-- Swiper container -->
+                <div class="swiper phonesSwiper sm:hidden">
+                    <div class="swiper-wrapper">
+                        {% for product in products %}
+                            {% if product.phone %}
+                                <div class="swiper-slide">
+                                    {% render_product_card product %}
+                                </div>
+                            {% endif %}
+                        {% endfor %}
                     </div>
-                    <h3 class="font-medium text-gray-900 group-hover:text-green-600 transition-colors duration-300">
-                        {{ brand.brand }}
-                    </h3>
-                </a>
+                    <!-- Add Pagination -->
+                    <div class="swiper-pagination"></div>
+                    <!-- Add Navigation -->
+                    <div class="swiper-button-prev"></div>
+                    <div class="swiper-button-next"></div>
+                </div>
+
+                <!-- Grille pour desktop -->
+                <div class="hidden sm:grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                {% for product in products %}
+                    {% if product.phone %}
+                        {% render_product_card product %}
+                    {% endif %}
                 {% empty %}
                 <div class="col-span-full text-center py-12">
-                    <p class="text-gray-500 text-xl">Aucune marque disponible pour le moment.</p>
+                    <p class="text-gray-500 text-xl">Aucun téléphone disponible pour le moment.</p>
+                    <a href="{% url 'suppliers:category_detail' 'tous-les-produits' %}" class="mt-4 inline-flex items-center px-6 py-3 text-sm text-green-700 bg-green-50 hover:bg-green-100 transition-colors duration-200 rounded-lg">
+                        <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                        </svg>
+                        Découvrir tous nos produits
+                    </a>
                 </div>
                 {% endfor %}
+                </div>
             </div>
         </div>
 
-        <!-- Section Nos Téléphones -->
-        <div class="mb-12">
-            <div class="relative px-2 sm:px-0">
-                <h1 class="text-2xl sm:text-3xl font-bold bg-gradient-to-r from-gray-900 to-gray-700 bg-clip-text text-transparent mb-3 sm:mb-4">
-                    Nos téléphones
-                </h1>
-                <div class="absolute -bottom-1 left-2 sm:left-0 w-24 h-1 bg-gradient-to-r from-green-600 via-yellow-500 to-red-500 rounded-full"></div>
+        <!-- Section Vêtements -->
+        <div id="vetements" class="mb-24">
+            <div class="relative px-2 sm:px-0 flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 sm:gap-0">
+                <div class="relative">
+                    <h1 class="text-2xl sm:text-3xl font-bold bg-gradient-to-r from-gray-900 to-gray-700 bg-clip-text text-transparent mb-3 sm:mb-4">
+                        Nos vêtements
+                    </h1>
+                    <div class="absolute -bottom-1 left-0 w-24 h-1 bg-gradient-to-r from-green-600 via-yellow-500 to-red-500 rounded-full"></div>
+                </div>
+                <a href="{% url 'suppliers:category_detail' 'vetements' %}" 
+                   class="inline-flex items-center justify-center w-full sm:w-auto px-4 py-2 border border-transparent text-sm font-medium rounded-md text-green-700 bg-green-100 hover:bg-green-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-all duration-300">
+                    Voir tous les vêtements
+                    <svg class="ml-2 w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8l4 4m0 0l-4 4m4-4H3" />
+                    </svg>
+                </a>
+            </div>
+
+            <!-- Swiper sur mobile, grille sur desktop -->
+            <div class="mt-12 relative">
+                <!-- Swiper container -->
+                <div class="swiper clothingSwiper sm:hidden">
+                    <div class="swiper-wrapper">
+                        {% for product in clothing_products %}
+                            <div class="swiper-slide">
+                                {% render_product_card product %}
+                            </div>
+                        {% endfor %}
+                    </div>
+                    <!-- Add Pagination -->
+                    <div class="swiper-pagination"></div>
+                    <!-- Add Navigation -->
+                    <div class="swiper-button-prev"></div>
+                    <div class="swiper-button-next"></div>
+                </div>
+
+                <!-- Grille pour desktop -->
+                <div class="hidden sm:grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                {% for product in clothing_products %}
+                    {% render_product_card product %}
+                {% empty %}
+                <div class="col-span-full text-center py-12">
+                    <p class="text-gray-500 text-xl">Aucun vêtement disponible pour le moment.</p>
+                    <a href="{% url 'suppliers:category_detail' 'tous-les-produits' %}" class="mt-4 inline-flex items-center px-6 py-3 text-sm text-green-700 bg-green-50 hover:bg-green-100 transition-colors duration-200 rounded-lg">
+                        <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                        </svg>
+                        Découvrir tous nos produits
+                    </a>
+                </div>
+                {% endfor %}
+                </div>
             </div>
         </div>
 
-        <!-- Filtres -->
-        {% include "suppliers/components/_filters.html" with is_detail=False %}
+        <!-- Section Tissus -->
+        <div id="tissus" class="mb-24">
+            <div class="relative px-2 sm:px-0 flex justify-between items-center">
+                <div>
+                    <h1 class="text-2xl sm:text-3xl font-bold bg-gradient-to-r from-gray-900 to-gray-700 bg-clip-text text-transparent mb-3 sm:mb-4">
+                        Nos tissus
+                    </h1>
+                    <div class="absolute -bottom-1 left-2 sm:left-0 w-24 h-1 bg-gradient-to-r from-green-600 via-yellow-500 to-red-500 rounded-full"></div>
+                </div>
+                <a href="{% url 'suppliers:category_detail' 'tissus' %}" 
+                   class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-purple-700 bg-purple-100 hover:bg-purple-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500 transition-all duration-300">
+                    Voir tous les tissus
+                    <svg class="ml-2 -mr-1 w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8l4 4m0 0l-4 4m4-4H3" />
+                    </svg>
+                </a>
+            </div>
 
-        <!-- Grille des produits -->
-        {% include "suppliers/components/_product_grid.html" %}
+            <!-- Swiper sur mobile, grille sur desktop -->
+            <div class="mt-12 relative">
+                <!-- Swiper container -->
+                <div class="swiper fabricSwiper sm:hidden">
+                    <div class="swiper-wrapper">
+                        {% for product in fabric_products %}
+                            <div class="swiper-slide">
+                                {% render_product_card product %}
+                            </div>
+                        {% endfor %}
+                    </div>
+                    <!-- Add Pagination -->
+                    <div class="swiper-pagination"></div>
+                    <!-- Add Navigation -->
+                    <div class="swiper-button-prev"></div>
+                    <div class="swiper-button-next"></div>
+                </div>
+
+                <!-- Grille pour desktop -->
+                <div class="hidden sm:grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                {% for product in fabric_products %}
+                    {% render_product_card product %}
+                {% empty %}
+                <div class="col-span-full text-center py-12">
+                    <p class="text-gray-500 text-xl">Aucun tissu disponible pour le moment.</p>
+                    <a href="{% url 'suppliers:category_detail' 'tous-les-produits' %}" class="mt-4 inline-flex items-center px-6 py-3 text-sm text-green-700 bg-green-50 hover:bg-green-100 transition-colors duration-200 rounded-lg">
+                        <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                        </svg>
+                        Découvrir tous nos produits
+                    </a>
+                </div>
+                {% endfor %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Section Articles Culturels -->
+        <div id="articles-culturels" class="mb-24">
+            <div class="relative px-2 sm:px-0 flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 sm:gap-0">
+                <div class="relative">
+                    <h1 class="text-2xl sm:text-3xl font-bold bg-gradient-to-r from-gray-900 to-gray-700 bg-clip-text text-transparent mb-3 sm:mb-4">
+                        Livres et Culture
+                    </h1>
+                    <div class="absolute -bottom-1 left-0 w-24 h-1 bg-gradient-to-r from-green-600 via-yellow-500 to-red-500 rounded-full"></div>
+                </div>
+                <a href="{% url 'suppliers:category_detail' 'articles-culturels' %}" 
+                   class="inline-flex items-center justify-center w-full sm:w-auto px-4 py-2 border border-transparent text-sm font-medium rounded-md text-yellow-700 bg-yellow-100 hover:bg-yellow-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-yellow-500 transition-all duration-300">
+                    Voir tous les livres
+                    <svg class="ml-2 w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8l4 4m0 0l-4 4m4-4H3" />
+                    </svg>
+                </a>
+            </div>
+
+            <!-- Swiper sur mobile, grille sur desktop -->
+            <div class="mt-12 relative">
+                <!-- Swiper container -->
+                <div class="swiper culturalSwiper sm:hidden">
+                    <div class="swiper-wrapper">
+                        {% for product in cultural_products %}
+                            <div class="swiper-slide">
+                                {% render_product_card product %}
+                            </div>
+                        {% endfor %}
+                    </div>
+                    <!-- Add Pagination -->
+                    <div class="swiper-pagination"></div>
+                    <!-- Add Navigation -->
+                    <div class="swiper-button-prev"></div>
+                    <div class="swiper-button-next"></div>
+                </div>
+
+                <!-- Grille pour desktop -->
+                <div class="hidden sm:grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                {% for product in cultural_products %}
+                    {% render_product_card product %}
+                {% empty %}
+                <div class="col-span-full text-center py-12">
+                    <p class="text-gray-500 text-xl">Aucun article culturel disponible pour le moment.</p>
+                    <a href="{% url 'suppliers:category_detail' 'tous-les-produits' %}" class="mt-4 inline-flex items-center px-6 py-3 text-sm text-green-700 bg-green-50 hover:bg-green-100 transition-colors duration-200 rounded-lg">
+                        <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                        </svg>
+                        Découvrir tous nos produits
+                    </a>
+                </div>
+                {% endfor %}
+                </div>
+            </div>
+        </div>
     </div>
 </div>
 {% endblock %}

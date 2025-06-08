@@ -3,18 +3,47 @@
         "model": "product.category",
         "pk": 1,
         "fields": {
-            "name": "Téléphones",
+            "name": "Tous les produits",
             "parent": null,
-            "image": null
+            "image": null,
+            "slug": "tous-les-produits",
+            "is_main": true,
+            "category_type": "MODEL",
+            "content_type": 1,
+            "color": "green",
+            "order": 0,
+            "description": "Découvrez tous nos produits disponibles sur la plateforme."
         }
     },
     {
         "model": "product.category",
         "pk": 2,
         "fields": {
-            "name": "Accessoires",
-            "parent": null,
-            "image": null
+            "name": "Téléphones",
+            "parent": 1,
+            "image": null,
+            "slug": "telephones",
+            "is_main": true,
+            "category_type": "MODEL",
+            "content_type": 1,
+            "color": "blue",
+            "order": 1
+        }
+    },
+    {
+        "model": "product.category",
+        "pk": 3,
+        "fields": {
+            "name": "Culture",
+            "parent": 1,
+            "image": null,
+            "slug": "culture",
+            "is_main": true,
+            "category_type": "MODEL",
+            "content_type": 1,
+            "color": "yellow",
+            "order": 3,
+            "description": "Découvrez notre collection d'articles culturels, comprenant des livres de développement personnel, des guides pratiques, des ressources éducatives et des ouvrages sur l'entrepreneuriat. Chaque article est soigneusement sélectionné pour enrichir votre parcours personnel et professionnel."
         }
     }
 ] 

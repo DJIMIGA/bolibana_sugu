@@ -82,17 +82,13 @@
     "category": 1,
     "price": "75000",
     "description": "Le Tecno POP 2F en Or Champagne est un smartphone économique avec un design élégant et des fonctionnalités essentielles.\n\nCaractéristiques principales :\n- Écran tactile de 5.5 pouces (960x480px)\n- 16GB de stockage interne\n- 1GB de RAM\n- Processeur Quad-Core 1.3 GHz\n- Batterie 2400mAh\n- Caméra avant 8MP avec Flash\n- Caméra arrière 5MP avec Flash\n- Déverrouillage facial\n- Capteur d'empreintes digitales\n- Système d'exploitation HiOS basé sur Android 8.1 (Go edition)\n\nDimensions :\n- Hauteur : 149.76 mm\n- Largeur : 72.8 mm\n- Épaisseur : 9.35 mm\n\nConnectivité :\n- WiFi\n- 4G LTE\n- Capteurs : G-Sensor, Capteur d'empreintes digitales\n\nContenu de la boîte :\n- Téléphone\n- Câble de chargeur\n- Chargeur",
-    "highlight": null,
     "image": null,
     "supplier": 1,
-    "stripe_product_id": null,
-    "is_active": true,
     "created_at": "2025-05-06T14:24:56.611Z",
     "updated_at": "2025-05-06T14:24:56.611Z",
-    "disponible_salam": false,
+    "is_salam": false,
     "stock": 20,
-    "sku": "TEC-P2F-16-1-OC",
-    "color": 1
+    "sku": "TEC-P2F-16-1-OC"
   }
 },
 {
@@ -103,17 +99,13 @@
     "category": 1,
     "price": "75000",
     "description": "Le Tecno POP 2F en Noir Minuit est un smartphone économique avec un design élégant et des fonctionnalités essentielles.\n\nCaractéristiques principales :\n- Écran tactile de 5.5 pouces (960x480px)\n- 16GB de stockage interne\n- 1GB de RAM\n- Processeur Quad-Core 1.3 GHz\n- Batterie 2400mAh\n- Caméra avant 8MP avec Flash\n- Caméra arrière 5MP avec Flash\n- Déverrouillage facial\n- Capteur d'empreintes digitales\n- Système d'exploitation HiOS basé sur Android 8.1 (Go edition)\n\nDimensions :\n- Hauteur : 149.76 mm\n- Largeur : 72.8 mm\n- Épaisseur : 9.35 mm\n\nConnectivité :\n- WiFi\n- 4G LTE\n- Capteurs : G-Sensor, Capteur d'empreintes digitales\n\nContenu de la boîte :\n- Téléphone\n- Câble de chargeur\n- Chargeur",
-    "highlight": null,
     "image": null,
     "supplier": 1,
-    "stripe_product_id": null,
-    "is_active": true,
     "created_at": "2025-05-06T14:24:56.654Z",
     "updated_at": "2025-05-06T14:24:56.654Z",
-    "disponible_salam": false,
+    "is_salam": false,
     "stock": 20,
-    "sku": "TEC-P2F-16-1-NM",
-    "color": 2
+    "sku": "TEC-P2F-16-1-NM"
   }
 },
 {
@@ -124,17 +116,13 @@
     "category": 1,
     "price": "75000",
     "description": "Le Tecno POP 2F en Bleu Ville est un smartphone économique avec un design élégant et des fonctionnalités essentielles.\n\nCaractéristiques principales :\n- Écran tactile de 5.5 pouces (960x480px)\n- 16GB de stockage interne\n- 1GB de RAM\n- Processeur Quad-Core 1.3 GHz\n- Batterie 2400mAh\n- Caméra avant 8MP avec Flash\n- Caméra arrière 5MP avec Flash\n- Déverrouillage facial\n- Capteur d'empreintes digitales\n- Système d'exploitation HiOS basé sur Android 8.1 (Go edition)\n\nDimensions :\n- Hauteur : 149.76 mm\n- Largeur : 72.8 mm\n- Épaisseur : 9.35 mm\n\nConnectivité :\n- WiFi\n- 4G LTE\n- Capteurs : G-Sensor, Capteur d'empreintes digitales\n\nContenu de la boîte :\n- Téléphone\n- Câble de chargeur\n- Chargeur",
-    "highlight": null,
     "image": null,
     "supplier": 1,
-    "stripe_product_id": null,
-    "is_active": true,
     "created_at": "2025-05-06T14:24:56.674Z",
     "updated_at": "2025-05-06T14:24:56.674Z",
-    "disponible_salam": false,
+    "is_salam": false,
     "stock": 20,
-    "sku": "TEC-P2F-16-1-BV",
-    "color": 3
+    "sku": "TEC-P2F-16-1-BV"
   }
 },
 {
@@ -244,17 +232,13 @@
     "category": 1,
     "price": "85000",
     "description": "Le Tecno POP 5 en Vert Ice Lake est un smartphone économique avec un design moderne et des fonctionnalités essentielles.\n\nCaractéristiques principales :\n- Écran tactile de 6.1 pouces (1560x720px)\n- 16GB de stockage interne\n- 1GB de RAM\n- Processeur Quad-Core 1.3 GHz\n- Batterie 4000mAh\n- Caméra avant 5MP avec Flash\n- Caméra arrière 5MP Dual avec Flash\n- Déverrouillage facial\n- Capteur d'empreintes digitales\n- Système d'exploitation HiOS basé sur Android 10 (Go edition)\n\nDimensions :\n- Hauteur : 157.7 mm\n- Largeur : 75.7 mm\n- Épaisseur : 9.55 mm\n\nConnectivité :\n- GSM\n- WCDMA\n- GPS\n- WiFi\n- FM\n\nCapteurs :\n- G-Sensor\n- Capteur d'empreintes digitales\n\nContenu de la boîte :\n- Téléphone\n- Câble de chargeur\n- Chargeur",
-    "highlight": "6.1\" Dot Notch Screen\n4000mAh Battery\n16GB ROM + 1GB RAM\nFace Unlock\n5MP Front Camera with Flash\n5MP Dual Rear Camera with Flash\nFingerprint Sensor",
     "image": null,
     "supplier": 1,
-    "stripe_product_id": null,
-    "is_active": true,
     "created_at": "2025-05-06T14:24:56.694Z",
     "updated_at": "2025-05-06T14:24:56.694Z",
-    "disponible_salam": false,
+    "is_salam": false,
     "stock": 20,
-    "sku": "TEC-P5-16-1-ILG",
-    "color": 4
+    "sku": "TEC-P5-16-1-ILG"
   }
 },
 {
@@ -265,17 +249,13 @@
     "category": 1,
     "price": "85000",
     "description": "Le Tecno POP 5 en Noir Obsidien est un smartphone économique avec un design moderne et des fonctionnalités essentielles.\n\nCaractéristiques principales :\n- Écran tactile de 6.1 pouces (1560x720px)\n- 16GB de stockage interne\n- 1GB de RAM\n- Processeur Quad-Core 1.3 GHz\n- Batterie 4000mAh\n- Caméra avant 5MP avec Flash\n- Caméra arrière 5MP Dual avec Flash\n- Déverrouillage facial\n- Capteur d'empreintes digitales\n- Système d'exploitation HiOS basé sur Android 10 (Go edition)\n\nDimensions :\n- Hauteur : 157.7 mm\n- Largeur : 75.7 mm\n- Épaisseur : 9.55 mm\n\nConnectivité :\n- GSM\n- WCDMA\n- GPS\n- WiFi\n- FM\n\nCapteurs :\n- G-Sensor\n- Capteur d'empreintes digitales\n\nContenu de la boîte :\n- Téléphone\n- Câble de chargeur\n- Chargeur",
-    "highlight": "6.1\" Dot Notch Screen\n4000mAh Battery\n16GB ROM + 1GB RAM\nFace Unlock\n5MP Front Camera with Flash\n5MP Dual Rear Camera with Flash\nFingerprint Sensor",
     "image": null,
     "supplier": 1,
-    "stripe_product_id": null,
-    "is_active": true,
     "created_at": "2025-05-06T14:24:56.714Z",
     "updated_at": "2025-05-06T14:24:56.714Z",
-    "disponible_salam": false,
+    "is_salam": false,
     "stock": 20,
-    "sku": "TEC-P5-16-1-OB",
-    "color": 5
+    "sku": "TEC-P5-16-1-OB"
   }
 },
 {
@@ -286,17 +266,13 @@
     "category": 1,
     "price": "85000",
     "description": "Le Tecno POP 5 en Bleu Ice est un smartphone économique avec un design moderne et des fonctionnalités essentielles.\n\nCaractéristiques principales :\n- Écran tactile de 6.1 pouces (1560x720px)\n- 16GB de stockage interne\n- 1GB de RAM\n- Processeur Quad-Core 1.3 GHz\n- Batterie 4000mAh\n- Caméra avant 5MP avec Flash\n- Caméra arrière 5MP Dual avec Flash\n- Déverrouillage facial\n- Capteur d'empreintes digitales\n- Système d'exploitation HiOS basé sur Android 10 (Go edition)\n\nDimensions :\n- Hauteur : 157.7 mm\n- Largeur : 75.7 mm\n- Épaisseur : 9.55 mm\n\nConnectivité :\n- GSM\n- WCDMA\n- GPS\n- WiFi\n- FM\n\nCapteurs :\n- G-Sensor\n- Capteur d'empreintes digitales\n\nContenu de la boîte :\n- Téléphone\n- Câble de chargeur\n- Chargeur",
-    "highlight": "6.1\" Dot Notch Screen\n4000mAh Battery\n16GB ROM + 1GB RAM\nFace Unlock\n5MP Front Camera with Flash\n5MP Dual Rear Camera with Flash\nFingerprint Sensor",
     "image": null,
     "supplier": 1,
-    "stripe_product_id": null,
-    "is_active": true,
     "created_at": "2025-05-06T14:24:56.734Z",
     "updated_at": "2025-05-06T14:24:56.734Z",
-    "disponible_salam": false,
+    "is_salam": false,
     "stock": 20,
-    "sku": "TEC-P5-16-1-IB",
-    "color": 6
+    "sku": "TEC-P5-16-1-IB"
   }
 },
 {
@@ -339,17 +315,13 @@
     "category": 1,
     "price": "53500",
     "description": "Le Samsung Galaxy A05 en Argent est un smartphone performant avec un design moderne et des fonctionnalités avancées.\n\nCaractéristiques principales :\n- Écran Super AMOLED de 6.5 pouces (1080 x 2340 pixels)\n- 64GB de stockage interne\n- 4GB de RAM\n- Processeur Octa-Core (2.2 GHz + 2 GHz)\n- Batterie 5000mAh\n- Triple caméra arrière : 50MP (F1.8) + 5MP (F2.2) + 2MP (F2.4)\n- Caméra frontale 13MP (F2.0)\n- Déverrouillage facial\n- Capteur d'empreintes digitales\n- Système d'exploitation Android 13\n\nCaractéristiques de la caméra :\n- Zoom numérique jusqu'à 10x\n- Mise au point automatique\n- Enregistrement vidéo FHD à 30 ips\n- Ralenti à 120 ips en HD\n\nConnectivité :\n- 4G LTE\n- WiFi\n- Bluetooth\n- GPS\n\nVersion américaine 🇺🇸\n\nContenu de la boîte :\n- Téléphone\n- Câble USB-C\n- Guide d'utilisation",
-    "highlight": "Écran Super AMOLED 6.5\" FHD+\nTriple caméra 50MP + 5MP + 2MP\nCaméra frontale 13MP\nProcesseur Octa-Core\n4GB RAM + 64GB stockage\nBatterie 5000mAh\nVersion américaine 🇺🇸",
     "image": null,
     "supplier": 1,
-    "stripe_product_id": null,
-    "is_active": true,
     "created_at": "2024-03-19T12:00:00.000Z",
     "updated_at": "2024-03-19T12:00:00.000Z",
-    "disponible_salam": false,
+    "is_salam": false,
     "stock": 15,
-    "sku": "SAM-A05-64-4-AR",
-    "color": 7
+    "sku": "SAM-A05-64-4-AR"
   }
 },
 {

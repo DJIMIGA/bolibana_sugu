@@ -54,4 +54,21 @@ class ProductImageStorage(S3Boto3Storage):
             while self.exists(f"{base_name}_{counter}.{extension}"):
                 counter += 1
             return f"{base_name}_{counter}.{extension}"
-        return name 
+        return name
+
+class HeroImageStorage(S3Boto3Storage):
+    """Stockage spécifique pour les images du hero"""
+    location = 'media/hero'  # Dossier spécifique pour les images du hero
+    file_overwrite = True  # On autorise l'écrasement pour le hero
+    default_acl = None  # On utilise les paramètres de bucket par défaut
+    bucket_name = settings.AWS_STORAGE_BUCKET_NAME
+    region_name = settings.AWS_S3_REGION_NAME
+    custom_domain = settings.AWS_S3_CUSTOM_DOMAIN
+    querystring_auth = False  # Pas besoin d'authentification pour le hero
+    object_parameters = {
+        'CacheControl': 'max-age=86400',  # Cache d'un jour
+    }
+    access_key = settings.AWS_ACCESS_KEY_ID
+    secret_key = settings.AWS_SECRET_ACCESS_KEY
+    auto_create_bucket = True
+    auto_create_acl = False  # On désactive la création automatique des ACLs 

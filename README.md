@@ -176,3 +176,169 @@ else:
     MEDIA_URL = '/media/'
     MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 ``` 
+
+# Système de Gestion de Catégories et Produits
+
+## Architecture du Système
+
+### 1. Structure des Catégories
+- Hiérarchie à 3 niveaux :
+  * Catégorie principale
+  * Sous-catégorie
+  * Sous-sous-catégorie
+- Modèle Category auto-référencé (ForeignKey vers lui-même)
+- Limitation de la profondeur à 3 niveaux
+
+### 2. Modélisation des Données
+
+#### Modèle de Base (Product)
+```python
+class Product(models.Model):
+    title = models.CharField(max_length=200)
+    slug = models.SlugField(unique=True)
+    description = models.TextField()
+    price = models.DecimalField(max_digits=10, decimal_places=2)
+    stock = models.PositiveIntegerField()
+    sku = models.CharField(max_length=50, unique=True)
+    is_available = models.BooleanField(default=True)
+    is_salam = models.BooleanField(default=False)
+    
+    # Relations
+    category = models.ForeignKey('Category', ...)
+    supplier = models.ForeignKey('Supplier', ...)
+    status = models.OneToOneField('ProductStatus', ...)
+```
+
+#### Modèles Spécialisés
+```python
+# Vêtements
+class Clothing(models.Model):
+    product = models.OneToOneField(Product, ...)
+    type = models.CharField(choices=[('CLOTHING', 'Vêtement'), ('FABRIC', 'Tissu')])
+    gender = models.CharField(choices=[('H', 'Homme'), ('F', 'Femme'), ('U', 'Unisexe')])
+    size = models.ManyToManyField(Size)
+    color = models.ManyToManyField(Color)
+
+# Téléphones
+class Phone(models.Model):
+    product = models.OneToOneField(Product, ...)
+    brand = models.CharField(max_length=100)
+    model = models.CharField(max_length=100)
+    color = models.ForeignKey(Color)
+
+# Tissus
+class Fabric(models.Model):
+    product = models.OneToOneField(Product, ...)
+    fabric_type = models.CharField(choices=[('BAZIN', 'Bazin'), ('WAX', 'Wax'), ...])
+    quality = models.CharField(max_length=100)
+    color = models.ForeignKey(Color)
+```
+
+### 3. Optimisation des Requêtes
+
+#### Relations et Requêtes Optimisées
+```python
+# Requête optimisée pour les produits
+Product.objects.select_related(
+    'category',
+    'supplier',
+    'status',
+    'clothing',
+    'phone',
+    'fabric'
+).prefetch_related(
+    'clothing__sizes',
+    'clothing__colors'
+)
+```
+
+### 4. Gestion des Filtres
+
+#### Filtres Dynamiques par Type
+- Vêtements : genre, taille, couleur
+- Téléphones : marque, modèle, spécifications
+- Tissus : type, qualité, dimensions
+
+### 5. Stratégie de Cache
+
+#### Éléments à Mettre en Cache
+- Arborescence des catégories
+- Menus de navigation
+- Breadcrumbs
+- Filtres fréquemment utilisés
+
+### 6. Bonnes Pratiques
+
+#### Performance
+- Utilisation systématique de `select_related()` et `prefetch_related()`
+- Mise en cache des données fréquemment accédées
+- Pagination des résultats volumineux
+
+#### Code
+- Utilisation des vues génériques Django
+- Factorisation via mixins
+- Managers personnalisés pour la logique métier
+
+#### SEO
+- URLs basées sur les slugs
+- Breadcrumbs dynamiques
+- Structure de navigation claire
+
+### 7. Points d'Attention
+
+#### Maintenance
+- Documentation à jour
+- Tests unitaires
+- Gestion des cas particuliers
+
+#### Sécurité
+- Validation des données
+- Protection CSRF
+- Gestion des permissions
+
+### 8. Exemples d'Utilisation
+
+#### Navigation
+```
+Vêtements > Homme > Chemises
+Téléphones > Samsung > Galaxy S21
+Tissus > Coton > Imprimé
+```
+
+#### Filtrage
+```python
+# Exemple de filtrage pour les vêtements
+Clothing.objects.filter(
+    gender='H',
+    type='CLOTHING'
+).select_related(
+    'product'
+).prefetch_related(
+    'size',
+    'color'
+)
+```
+
+## Installation et Configuration
+
+1. Cloner le repository
+2. Créer un environnement virtuel
+3. Installer les dépendances
+4. Configurer la base de données
+5. Appliquer les migrations
+6. Lancer le serveur de développement
+
+## Dépendances
+
+- Django >= 4.2
+- PostgreSQL
+- Redis (pour le cache)
+- Pillow (pour les images)
+
+## Contribution
+
+1. Fork le projet
+2. Créer une branche pour votre fonctionnalité
+3. Commiter vos changements
+4. Pousser vers la branche
+5. Créer une Pull Request 

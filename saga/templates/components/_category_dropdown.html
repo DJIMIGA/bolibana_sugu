@@ -8,78 +8,250 @@
 }
 
 .arrow-rotate {
-    animation: rotateArrow 0.3s ease-in-out forwards;
+    animation: rotateArrow 0.2s ease-in-out forwards;
 }
 
 .arrow-rotate-reverse {
-    animation: rotateArrow 0.3s ease-in-out reverse;
+    animation: rotateArrow 0.2s ease-in-out reverse;
+}
+
+.category-dropdown {
+    transition: all 0.2s ease;
+}
+
+.category-dropdown:hover {
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+}
+
+.subcategory-section {
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.2s ease;
+}
+
+.subcategory-section.active {
+    opacity: 1;
+    visibility: visible;
+}
+
+.category-column {
+    min-height: 300px;
+    max-height: 500px;
+    overflow-y: auto;
+}
+
+.category-column::-webkit-scrollbar {
+    width: 3px;
+}
+
+.category-column::-webkit-scrollbar-track {
+    background: #f1f1f1;
+}
+
+.category-column::-webkit-scrollbar-thumb {
+    background: #e5e7eb;
+    border-radius: 2px;
+}
+
+.category-column::-webkit-scrollbar-thumb:hover {
+    background: #d1d5db;
+}
+
+.category-item {
+    position: relative;
+}
+
+.category-item:hover {
+    background-color: #f9fafb;
+}
+
+.category-item.active {
+    background-color: #f3f4f6;
+    border-left: 2px solid #059669;
+}
+
+.subcategory-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 0.75rem;
+    padding: 0.75rem;
+}
+
+.subcategory-column {
+    background-color: #ffffff;
+}
+
+.subcategory-title {
+    font-weight: 600;
+    color: #1f2937;
+    padding: 0.75rem 1rem;
+    border-bottom: 1px solid #f3f4f6;
+    background-color: #ffffff;
+}
+
+.subcategory-title a {
+    display: flex;
+    align-items: center;
+    color: #374151;
+    transition: color 0.2s ease;
+}
+
+.subcategory-title a:hover {
+    color: #059669;
+}
+
+.subcategory-count {
+    font-size: 0.75rem;
+    color: #6b7280;
+    background-color: #f3f4f6;
+    padding: 0.25rem 0.5rem;
+    border-radius: 9999px;
+}
+
+.subcategory-links {
+    padding: 0.5rem;
+}
+
+.subcategory-link {
+    display: flex;
+    align-items: center;
+    padding: 0.5rem 0.75rem;
+    color: #4b5563;
+    transition: all 0.2s ease;
+    margin-bottom: 0.125rem;
+}
+
+.subcategory-link:hover {
+    color: #059669;
+    background-color: #f9fafb;
+}
+
+.subcategory-link::before {
+    content: '•';
+    color: #9ca3af;
+    margin-right: 0.5rem;
+    font-size: 1.25em;
+}
+
+.subcategory-link:hover::before {
+    color: #059669;
 }
 </style>
 
 <!-- Menu déroulant principal -->
 <div class="relative group">
-    <button type="button" class="group flex items-center space-x-2 py-2 px-4 text-sm font-medium text-gray-800 hover:text-green-800 focus:outline-none border border-green-300 rounded-lg shadow-md transition-all duration-300">
+    <button type="button" 
+            class="group flex items-center space-x-2 py-2 px-4 text-sm font-medium text-gray-800 hover:text-green-800 focus:outline-none border border-gray-100 rounded-lg transition-all duration-200 category-dropdown">
         <!-- Icône menu -->
-        <svg class="w-5 h-5 text-gray-600 group-hover:text-green-600 transition-colors duration-300" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <svg class="w-5 h-5 text-gray-600 group-hover:text-green-600 transition-colors duration-200" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/>
         </svg>
         <!-- Texte du bouton -->
         <span>Toutes les catégories</span>
         <!-- Flèche dynamique -->
-        <svg id="arrow-icon" class="w-5 h-5 text-gray-600 group-hover:text-green-600 transition-colors duration-300" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <svg id="arrow-icon" class="w-5 h-5 text-gray-600 group-hover:text-green-600 transition-colors duration-200" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
         </svg>
     </button>
+    
     <!-- Menu déroulant multi-colonnes -->
-    <div class="absolute left-0 w-[900px] bg-white rounded-md shadow-lg py-1 z-50 hidden group-hover:block">
+    <div class="absolute left-0 w-[900px] bg-white rounded-md shadow-sm py-1 z-50 hidden group-hover:block">
         <div class="grid grid-cols-4">
             <!-- Première colonne - Catégories principales -->
-            <div class="col-span-1 border-r border-gray-100">
+            <div class="col-span-1 border-r border-gray-50 category-column">
                 <div class="py-2">
-                    {% for category in categories %}
+                    {% for category in dropdown_categories %}
+                    {% if category.slug %}
                     <a href="{% url 'suppliers:category_detail' category.slug %}" 
-                       class="block w-full px-4 py-2 text-sm text-gray-700 hover:bg-green-50 hover:text-green-700"
-                            data-category="{{ category.id }}">
-                        {{ category.name }}
+                       class="category-item block w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors duration-200"
+                       data-category="{{ category.id }}"
+                       onmouseover="showSubcategories('{{ category.id }}')">
+                        <div class="flex items-center justify-between">
+                            <span>{{ category.name }}</span>
+                            {% if category.children.exists %}
+                            <svg class="w-4 h-4 text-gray-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                                <path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd"/>
+                            </svg>
+                            {% endif %}
+                        </div>
                     </a>
+                    {% endif %}
                     {% endfor %}
                 </div>
             </div>
 
             <!-- Deuxième section - Sous-catégories en colonnes -->
-            <div class="col-span-3 border-r border-gray-100">
+            <div class="col-span-3 category-column">
                 <div class="py-2">
-                    {% for category in categories %}
+                    {% for category in dropdown_categories %}
+                    {% if category.slug %}
                     <!-- Sous-catégories pour {{ category.name }} -->
-                    <div id="category-{{ category.id }}-sub" class="hidden">
-                        <div class="flex flex-row flex-wrap">
-                            {% for subcategory_data in categories_hierarchy|get_item:category.id|get_item:'subcategories'|get_values %}
-                                <div class="w-1/3 min-w-[200px] border-r border-gray-100 last:border-r-0">
+                    <div id="category-{{ category.id }}-sub" class="subcategory-section">
+                        <div class="subcategory-grid">
+                            {% for subcategory_data in dropdown_categories_hierarchy|get_item:category.id|get_item:'subcategories' %}
+                                {% if subcategory_data.subcategory.slug %}
+                                <div class="subcategory-column">
                                     <!-- Titre de la sous-catégorie -->
-                                    <h3 class="px-4 py-2 text-sm font-medium text-gray-900 border-b border-gray-100">
-                                        <a href="{% url 'suppliers:category_detail' subcategory_data.subcategory.slug %}" 
-                                           class="block w-full -mx-4 px-4 py-2 hover:bg-green-50 hover:text-green-700">
-                                        {{ subcategory_data.subcategory.name }}
+                                    <h3 class="subcategory-title">
+                                        <a href="{% url 'suppliers:category_detail' subcategory_data.subcategory.slug %}">
+                                            {{ subcategory_data.subcategory.name }}
                                         </a>
                                     </h3>
                                     <!-- Sous-sous-catégories -->
-                                    <div class="px-4">
+                                    <div class="subcategory-links">
                                         {% for subsubcategory in subcategory_data.subsubcategories %}
-                                            <a href="{% url 'suppliers:category_detail' subsubcategory.slug %}" 
-                                               class="block w-full -mx-4 px-4 py-2 text-sm text-gray-700 hover:bg-green-50 hover:text-green-700 transition-colors duration-200">
-                                                {{ subsubcategory.name }}
-                                            </a>
+                                        {% if subsubcategory.slug %}
+                                        <a href="{% url 'suppliers:category_detail' subsubcategory.slug %}" 
+                                           class="subcategory-link">
+                                            {{ subsubcategory.name }}
+                                        </a>
+                                        {% endif %}
                                         {% endfor %}
                                     </div>
                                 </div>
+                                {% endif %}
                             {% endfor %}
                         </div>
                     </div>
+                    {% endif %}
                     {% endfor %}
                 </div>
             </div>
         </div>
     </div>
 </div>
+
+<script>
+function showSubcategories(categoryId) {
+    // Cacher toutes les sections de sous-catégories
+    document.querySelectorAll('.subcategory-section').forEach(section => {
+        section.classList.remove('active');
+    });
+    
+    // Retirer la classe active de tous les éléments de catégorie
+    document.querySelectorAll('.category-item').forEach(item => {
+        item.classList.remove('active');
+    });
+    
+    // Afficher la section correspondante
+    const targetSection = document.getElementById(`category-${categoryId}-sub`);
+    if (targetSection) {
+        targetSection.classList.add('active');
+        // Ajouter la classe active à l'élément de catégorie correspondant
+        const categoryItem = document.querySelector(`[data-category="${categoryId}"]`);
+        if (categoryItem) {
+            categoryItem.classList.add('active');
+        }
+    }
+}
+
+// Afficher la première catégorie par défaut
+document.addEventListener('DOMContentLoaded', function() {
+    const firstCategory = document.querySelector('[data-category]');
+    if (firstCategory) {
+        showSubcategories(firstCategory.dataset.category);
+    }
+});
+</script>
 
 <script src="{% static 'js/menu-category.js' %}"></script> 

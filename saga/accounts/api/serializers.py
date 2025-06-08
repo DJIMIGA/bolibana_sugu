@@ -4,7 +4,7 @@ from ..models import Shopper, ShippingAddress
 class UserSerializer(serializers.ModelSerializer):
     class Meta:
         model = Shopper
-        fields = ['id', 'email', 'first_name', 'last_name', 'phone_number', 'date_of_birth', 'fidelys_number']
+        fields = ['id', 'email', 'first_name', 'last_name', 'phone', 'date_of_birth', 'fidelys_number']
         read_only_fields = ['id', 'fidelys_number']
         extra_kwargs = {'password': {'write_only': True}}
 
