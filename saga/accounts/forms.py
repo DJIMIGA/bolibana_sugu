@@ -1,5 +1,5 @@
 from django import forms
-from django.contrib.auth.forms import PasswordResetForm, SetPasswordForm
+from django.contrib.auth.forms import PasswordResetForm, SetPasswordForm, AuthenticationForm
 from django.contrib.auth.hashers import make_password
 from django.forms import widgets
 from phonenumber_field.widgets import PhoneNumberPrefixWidget
@@ -12,14 +12,44 @@ from .utils.validators import validate_password
 
 
 class PasswordChangeForm(forms.Form):
-    current_password = forms.CharField(widget=forms.PasswordInput, label="Mot de passe actuel")
-    new_password = forms.CharField(widget=forms.PasswordInput, label="Nouveau mot de passe")
-    confirm_new_password = forms.CharField(widget=forms.PasswordInput, label="Confirmer le nouveau mot de passe")
+    current_password = forms.CharField(
+        widget=forms.PasswordInput(attrs={
+            'class': 'w-full px-4 py-3 rounded-xl border-gray-200 focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500 transition-colors duration-200',
+            'placeholder': 'Mot de passe actuel',
+            'autocomplete': 'off',
+            'autocorrect': 'off',
+            'autocapitalize': 'off',
+            'spellcheck': 'false'
+        }),
+        label="Mot de passe actuel"
+    )
+    new_password = forms.CharField(
+        widget=forms.PasswordInput(attrs={
+            'class': 'w-full px-4 py-3 rounded-xl border-gray-200 focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500 transition-colors duration-200',
+            'placeholder': 'Nouveau mot de passe',
+            'autocomplete': 'new-password'
+        }),
+        label="Nouveau mot de passe"
+    )
+    confirm_new_password = forms.CharField(
+        widget=forms.PasswordInput(attrs={
+            'class': 'w-full px-4 py-3 rounded-xl border-gray-200 focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500 transition-colors duration-200',
+            'placeholder': 'Confirmer le nouveau mot de passe',
+            'autocomplete': 'new-password'
+        }),
+        label="Confirmer le nouveau mot de passe"
+    )
 
     def __init__(self, user, *args, **kwargs):
-        """ Associe l'utilisateur à l'instance du formulaire """
         self.user = user
         super().__init__(*args, **kwargs)
+        # Ne pas pré-remplir le mot de passe actuel
+        self.fields['current_password'].initial = None
+        # Ajouter les classes CSS pour le style
+        for field in self.fields.values():
+            field.widget.attrs.update({
+                'class': 'w-full px-4 py-3 rounded-xl border-gray-200 focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500 transition-colors duration-200'
+            })
 
     def clean_current_password(self):
         """ Vérifie si le mot de passe actuel est correct """
@@ -121,8 +151,8 @@ class UserForm(forms.ModelForm):
         return user
 
 
-class LoginForm(forms.Form):
-    email = forms.EmailField(widget=forms.EmailInput(attrs={
+class LoginForm(AuthenticationForm):
+    username = forms.EmailField(widget=forms.EmailInput(attrs={
         'class': 'appearance-none rounded-none relative block w-full px-3 py-2 border border-yellow-300 placeholder-gray-500 text-gray-900 rounded-t-md focus:outline-none focus:ring-green-500 focus:border-green-500 focus:z-10 sm:text-sm',
         'placeholder': 'Adresse E-mail'
     }))
@@ -130,6 +160,10 @@ class LoginForm(forms.Form):
         'class': 'appearance-none rounded-none relative block w-full px-3 py-2 border border-yellow-300 placeholder-gray-500 text-gray-900 rounded-b-md focus:outline-none focus:ring-green-500 focus:border-green-500 focus:z-10 sm:text-sm',
         'placeholder': 'Mot de passe'
     }))
+
+    def __init__(self, request=None, *args, **kwargs):
+        super().__init__(request=request, *args, **kwargs)
+        self.fields['username'].label = 'Email'
 
 
 class ShippingAddressForm(forms.ModelForm):
@@ -167,12 +201,22 @@ class CustomSetPasswordForm(SetPasswordForm):
 
 
 class UpdateProfileForm(forms.ModelForm):
-    phone = PhoneNumberField(
-        widget=PhoneNumberPrefixWidget(
-            initial='ML',
+    password = forms.CharField(
+        widget=forms.PasswordInput(
             attrs={
-                'class': 'w-full pl-10 px-4 py-3 rounded-xl border-gray-200 focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-colors duration-200',
-                'placeholder': 'Numéro de téléphone'
+                'class': 'w-full px-4 py-3 rounded-xl border-gray-200 focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-colors duration-200',
+                'placeholder': 'Mot de passe actuel',
+                'autocomplete': 'new-password'
+            }
+        ),
+        required=True,
+        help_text="Entrez votre mot de passe actuel pour confirmer les modifications"
+    )
+    phone = forms.CharField(
+        widget=forms.TextInput(
+            attrs={
+                'class': 'w-full px-4 py-3 rounded-xl border-gray-200 focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-colors duration-200',
+                'placeholder': 'ex: 72464294'
             }
         ),
         required=False
@@ -181,6 +225,7 @@ class UpdateProfileForm(forms.ModelForm):
     class Meta:
         model = Shopper
         fields = ['first_name', 'last_name', 'email', 'phone', 'date_of_birth']
+        exclude = ['country']
         widgets = {
             'date_of_birth': forms.DateInput(
                 attrs={
@@ -192,8 +237,10 @@ class UpdateProfileForm(forms.ModelForm):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        if self.instance.date_of_birth:
-            # Formatage de la date pour l'affichage
+        # Ne pas pré-remplir le mot de passe
+        self.fields['password'].initial = None
+        # Gérer la date de naissance
+        if self.instance and self.instance.date_of_birth:
             self.initial['date_of_birth'] = self.instance.date_of_birth.strftime('%Y-%m-%d')
 
 

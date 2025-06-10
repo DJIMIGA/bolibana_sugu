@@ -44,10 +44,18 @@
 - [ ] Gestion des stocks
 
 ### Authentification & Profil
-- [ ] Inscription/connexion utilisateur (email + mot de passe)
-- [ ] Gestion du profil client (adresse, historique commandes)
-- [ ] Récupération de mot de passe
-- [ ] Validation email
+- [x] Inscription/connexion utilisateur (email + mot de passe)
+- [x] Gestion du profil client (adresse, historique commandes)
+- [x] Récupération de mot de passe
+- [x] Validation email
+- [x] Implémentation de la 2FA pour les utilisateurs
+- [x] Ajout des messages d'invitation à la 2FA
+- [x] Amélioration de l'affichage des messages sur mobile
+- [x] Renforcement de la politique des mots de passe
+- [x] Protection contre les attaques par force brute
+- [x] Gestion des adresses de livraison
+- [x] Interface de gestion du profil utilisateur
+- [x] Système de notification par email
 
 ### Paiement
 - [ ] Intégration d'un paiement en ligne (Stripe/PayPal sandbox)
@@ -56,19 +64,19 @@
 - [ ] Envoi d'emails de confirmation
 
 ### Administration
-- [ ] Accès admin sécurisé (URL custom, 2FA)
+- [x] Accès admin sécurisé (URL custom, 2FA)
 - [ ] Gestion CRUD des produits
 - [ ] Visualisation des commandes
 - [ ] Tableau de bord des ventes
 
 ## Sécurité
-- [ ] Changer l'URL admin par défaut
-- [ ] Mettre en place la restriction d'accès admin par IP
-- [ ] Implémenter l'authentification 2FA pour les administrateurs
+- [x] Changer l'URL admin par défaut
+- [x] Mettre en place la restriction d'accès admin par IP
+- [x] Implémenter l'authentification 2FA pour les administrateurs
 - [ ] Forcer l'utilisation de HTTPS
-- [ ] Configurer les middlewares de sécurité (CSRF, HSTS, X-Frame-Options)
-- [ ] Mettre en place la protection contre les attaques par force brute
-- [ ] Renforcer la politique des mots de passe
+- [x] Configurer les middlewares de sécurité (CSRF, HSTS, X-Frame-Options)
+- [x] Mettre en place la protection contre les attaques par force brute
+- [x] Renforcer la politique des mots de passe
 - [ ] Mettre en place un système d'audit et de logs
 
 ## Expérience Utilisateur
@@ -78,7 +86,7 @@
 - [x] Design mobile-first
 
 ## Tests
-- [ ] Tests unitaires pour les modèles d'authentification
+- [x] Tests unitaires pour les modèles d'authentification
 - [ ] Tests d'intégration pour les vues
 - [ ] Tests de sécurité
 - [ ] Tests manuels du parcours client
@@ -115,6 +123,9 @@
 - [x] Configuration de l'administration Django
 - [x] Mise en place de l'authentification de base
 - [x] Configuration de la base de données
+- [x] Implémentation de la 2FA pour les utilisateurs
+- [x] Ajout des messages d'invitation à la 2FA
+- [x] Amélioration de l'affichage des messages sur mobile
 
 ## Suivi & Amélioration
 - [ ] Recueillir les retours des premiers utilisateurs

@@ -1,92 +1,120 @@
 from django.test import TestCase, Client
 from django.urls import reverse
-from accounts.models import Shopper, LoginTwoFactorCode
+from accounts.models import Shopper, TOTPDevice
 from django.contrib import messages
 from django.utils import timezone
 from datetime import timedelta
+from django_otp.oath import totp
+import time
 
 class Test2FAFlow(TestCase):
     def setUp(self):
+        """Configuration initiale pour les tests."""
         self.client = Client()
         self.user = Shopper.objects.create_user(
             email='test@example.com',
-            password='testpassword123',
+            password='testpass123',
             phone='+33612345678'
         )
-        self.login_url = reverse('accounts:login')
-        self.verify_2fa_url = reverse('accounts:verify_2fa')
+        self.device = self.user.enable_2fa()
+        # Vérifier que la 2FA est bien activée
+        self.assertTrue(self.user.has_2fa_enabled())
 
-    def test_complete_2fa_flow(self):
-        """Test le flux complet de connexion avec 2FA."""
-        # 1. Tentative de connexion
-        response = self.client.post(self.login_url, {
-            'username': 'test@example.com',
-            'password': 'testpassword123'
+    def test_login_with_2fa(self):
+        """Test le processus de connexion complet avec 2FA."""
+        # Étape 1: Connexion avec email/mot de passe
+        response = self.client.post(reverse('accounts:login'), {
+            'username': self.user.email,
+            'password': 'testpass123'
         })
-        
-        # Vérifier la redirection vers la page 2FA
         self.assertEqual(response.status_code, 302)
-        self.assertIn('verify-2fa', response.url)
-        
-        # Vérifier que le code 2FA a été généré
-        two_factor_code = LoginTwoFactorCode.objects.filter(user=self.user).first()
-        self.assertIsNotNone(two_factor_code)
-        
-        # 2. Vérification du code 2FA
-        response = self.client.post(self.verify_2fa_url, {
-            'code': two_factor_code.code
+        self.assertIn('2fa', response.url)
+        # Vérifier que l'ID de l'utilisateur est bien en session
+        self.assertIn('2fa_user_id', self.client.session)
+
+        # Étape 2: Vérification 2FA
+        bin_key = self.device.bin_key if hasattr(self.device, 'bin_key') else self.device.key
+        token = str(totp(bin_key)).zfill(6)
+        response = self.client.post(reverse('accounts:verify_2fa'), {
+            'token': token
         })
-        
-        # Vérifier la redirection vers la page d'accueil
         self.assertEqual(response.status_code, 302)
-        self.assertIn('supplier_index', response.url)
+        self.assertEqual(response.url, '/')  # Redirection vers la page d'accueil
+        # Vérifier que l'utilisateur est bien authentifié
+        self.assertTrue(self.client.session.get('_auth_user_id'))
+
+    def test_login_without_2fa(self):
+        """Test le processus de connexion sans 2FA."""
+        # Désactiver 2FA
+        self.device.delete()
+        # Vérifier que la 2FA est bien désactivée
+        self.assertFalse(self.user.has_2fa_enabled())
         
-        # Vérifier que l'utilisateur est connecté
-        self.assertTrue(response.wsgi_request.user.is_authenticated)
+        response = self.client.post(reverse('accounts:login'), {
+            'username': self.user.email,
+            'password': 'testpass123'
+        })
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(response.url, '/')  # Redirection vers la page d'accueil
+        # Vérifier que l'utilisateur est bien authentifié
+        self.assertTrue(self.client.session.get('_auth_user_id'))
 
     def test_invalid_2fa_code(self):
-        """Test le rejet d'un code 2FA invalide."""
-        # 1. Connexion initiale
-        self.client.post(self.login_url, {
-            'username': 'test@example.com',
-            'password': 'testpassword123'
+        """Test la connexion avec un code 2FA invalide."""
+        # Étape 1: Connexion avec email/mot de passe
+        response = self.client.post(reverse('accounts:login'), {
+            'username': self.user.email,
+            'password': 'testpass123'
         })
-        
-        # 2. Tentative avec un code invalide
-        response = self.client.post(self.verify_2fa_url, {
-            'code': '000000'
+        self.assertEqual(response.status_code, 302)
+        self.assertIn('2fa', response.url)
+
+        # Étape 2: Tentative avec un code invalide
+        response = self.client.post(response.url, {
+            'token': '000000'
         })
-        
-        # Vérifier que l'utilisateur n'est pas connecté
-        self.assertFalse(response.wsgi_request.user.is_authenticated)
-        
-        # Vérifier le message d'erreur
-        messages_list = list(messages.get_messages(response.wsgi_request))
-        self.assertTrue(any('invalide' in str(msg) for msg in messages_list))
+        # La vue redirige vers la même page avec un message d'erreur
+        self.assertEqual(response.status_code, 302)
+        self.assertIn('2fa', response.url)
+        self.assertFalse(self.client.session.get('_auth_user_id'))
 
     def test_expired_2fa_code(self):
         """Test le rejet d'un code 2FA expiré."""
-        # 1. Connexion initiale
-        self.client.post(self.login_url, {
-            'username': 'test@example.com',
-            'password': 'testpassword123'
+        # Étape 1: Connexion avec email/mot de passe
+        response = self.client.post(reverse('accounts:login'), {
+            'username': self.user.email,
+            'password': 'testpass123'
         })
+        self.assertEqual(response.status_code, 302)
+        self.assertIn('2fa', response.url)
+
+        # Étape 2: Attendre l'expiration du token
+        time.sleep(31)
         
-        # 2. Récupérer le code
-        two_factor_code = LoginTwoFactorCode.objects.filter(user=self.user).first()
-        
-        # 3. Simuler l'expiration
-        two_factor_code.created_at = timezone.now() - timedelta(minutes=6)
-        two_factor_code.save()
-        
-        # 4. Tentative avec le code expiré
-        response = self.client.post(self.verify_2fa_url, {
-            'code': two_factor_code.code
+        # Étape 3: Tentative avec le token expiré
+        bin_key = self.device.bin_key if hasattr(self.device, 'bin_key') else self.device.key
+        token = str(totp(bin_key)).zfill(6)
+        response = self.client.post(response.url, {
+            'token': token
         })
+        self.assertEqual(response.status_code, 302)
+        self.assertIn('2fa', response.url)
+        self.assertFalse(self.client.session.get('_auth_user_id'))
+
+    def test_multiple_devices(self):
+        """Test qu'un utilisateur peut avoir plusieurs appareils 2FA."""
+        # Créer un deuxième appareil
+        second_device = self.user.enable_2fa()
         
-        # Vérifier que l'utilisateur n'est pas connecté
-        self.assertFalse(response.wsgi_request.user.is_authenticated)
+        # Vérifier que les deux appareils sont actifs
+        active_devices = TOTPDevice.objects.filter(user=self.user, confirmed=True)
+        self.assertEqual(active_devices.count(), 2)
         
-        # Vérifier le message d'erreur
-        messages_list = list(messages.get_messages(response.wsgi_request))
-        self.assertTrue(any('expiré' in str(msg) for msg in messages_list)) 
+        # Vérifier que les deux appareils fonctionnent
+        bin_key1 = self.device.bin_key if hasattr(self.device, 'bin_key') else self.device.key
+        bin_key2 = second_device.bin_key if hasattr(second_device, 'bin_key') else second_device.key
+        token1 = str(totp(bin_key1)).zfill(6)
+        token2 = str(totp(bin_key2)).zfill(6)
+        
+        self.assertTrue(self.user.verify_2fa_code(token1))
+        self.assertTrue(self.user.verify_2fa_code(token2)) 

@@ -5,7 +5,7 @@ from django.contrib.auth import get_user_model, login, logout, authenticate, upd
 from django_ratelimit.decorators import ratelimit
 from django.contrib.auth.forms import AuthenticationForm
 from django.contrib.auth import login as auth_login
-from django.urls import reverse_lazy
+from django.urls import reverse_lazy, reverse
 from django.views.generic import FormView
 from django.template.loader import render_to_string
 from django.utils.http import urlsafe_base64_encode
@@ -18,11 +18,15 @@ from django.contrib.admin.views.decorators import staff_member_required
 from django_otp.plugins.otp_totp.models import TOTPDevice
 from django_otp import devices_for_user
 from django_otp.decorators import otp_required
+from django.utils.safestring import mark_safe
+import qrcode
+import base64
+from io import BytesIO
 User = get_user_model()
 
-from .models import Shopper, ShippingAddress, TwoFactorCode, LoginTwoFactorCode
+from .models import Shopper, ShippingAddress, TwoFactorCode, TOTPDevice
 from .forms import UserForm, ShippingAddressForm, PasswordChangeForm, CustomPasswordResetForm, \
-    CustomSetPasswordForm, LoginForm, TwoFactorVerificationForm
+    CustomSetPasswordForm, LoginForm, TwoFactorVerificationForm, UpdateProfileForm
 from django.core.mail import send_mail
 from django.contrib.auth.views import PasswordResetView, PasswordResetConfirmView
 
@@ -140,11 +144,21 @@ class CustomPasswordResetConfirmView(PasswordResetConfirmView):
 
 
 def signup(request):
-    if request.method == "POST":
+    if request.method == 'POST':
         form = UserForm(request.POST)
         if form.is_valid():
             user = form.save()
             login(request, user)
+            # Ajouter un message informatif sur la 2FA
+            messages.info(
+                request,
+                mark_safe(
+                    "Bienvenue sur BoliBana! Pour renforcer la sécurité de votre compte, "
+                    "nous vous recommandons d'activer l'authentification à deux facteurs (2FA). "
+                    "<a href='{}' class='font-semibold underline hover:text-yellow-800'>Cliquez ici pour l'activer</a>."
+                    .format(reverse('accounts:setup_2fa'))
+                )
+            )
             return redirect('suppliers:supplier_index')
     else:
         form = UserForm()
@@ -153,31 +167,52 @@ def signup(request):
 
 
 class LoginView(AuthLoginView):
+    """
+    Vue de connexion avec support 2FA.
+    
+    Cette vue étend AuthLoginView pour gérer l'authentification à deux facteurs.
+    
+    Flux:
+    1. Vérifie les identifiants via le formulaire
+    2. Si 2FA activée:
+       - Stocke l'ID utilisateur en session
+       - Redirige vers la vérification 2FA
+    3. Sinon:
+       - Connecte directement l'utilisateur
+       - Suggère l'activation de la 2FA
+       - Redirige vers le profil
+    """
     template_name = 'accounts/login.html'
-    redirect_authenticated_user = True
-
-    def get_success_url(self):
-        return reverse_lazy('suppliers:supplier_index')
+    form_class = LoginForm
 
     def form_valid(self, form):
-        user = form.get_user()
-        if user.phone:  # Vérifier si l'utilisateur a un numéro de téléphone
-            # Générer et envoyer le code 2FA
-            code = LoginTwoFactorCode.generate_code()
-            LoginTwoFactorCode.objects.filter(user=user).delete()  # Supprimer les anciens codes
-            LoginTwoFactorCode.objects.create(user=user, code=code)
-            
-            # Envoyer le code par SMS (à implémenter avec votre service SMS)
-            # send_sms(user.phone, f"Votre code de vérification est : {code}")
-            
-            # Stocker l'utilisateur en session
-            self.request.session['2fa_user_id'] = user.id
-            
-            # Rediriger vers la page de vérification 2FA
-            return redirect('accounts:verify_2fa')
+        """
+        Gère la validation du formulaire de connexion.
         
-        # Si pas de numéro de téléphone, connexion normale
-        return super().form_valid(form)
+        Args:
+            form: Le formulaire de connexion validé
+            
+        Returns:
+            HttpResponse: Redirection vers la vérification 2FA ou le profil
+        """
+        user = form.get_user()
+        if user.has_2fa_enabled():
+            # Stocker l'ID utilisateur en session pour la vérification 2FA
+            self.request.session['2fa_user_id'] = user.id
+            return redirect('accounts:verify_2fa')
+        else:
+            # Connexion directe si pas de 2FA
+            auth_login(self.request, user)
+            # Suggérer l'activation de la 2FA
+            messages.info(
+                self.request,
+                mark_safe(
+                "Pour renforcer la sécurité de votre compte, nous vous recommandons d'activer l'authentification à deux facteurs (2FA)."
+                "<a href='{}' class='font-semibold underline hover:text-yellow-800'>Cliquez ici pour l'activer</a>."
+                .format(reverse('accounts:setup_2fa'))
+                )
+            )
+            return redirect('suppliers:supplier_index')
 
 
 def logout_user(request):
@@ -202,7 +237,7 @@ def profile(request):
 def update_profile(request):
     old_email = request.user.email
     if request.method == "POST":
-        form = UserForm(request.POST, instance=request.user)
+        form = UpdateProfileForm(request.POST, instance=request.user)
         if form.is_valid():
             password = form.cleaned_data.get('password')
             user = authenticate(email=old_email, password=password)
@@ -221,14 +256,14 @@ def update_profile(request):
                 updated_user.save()
 
                 messages.success(request, 'Les modifications ont été apportées avec succès.')
-                return redirect("profile")
+                return redirect("accounts:profile")
             else:
                 form.add_error('password', "Mot de passe invalide")
                 messages.error(request, "Mot de passe invalide")
         else:
             messages.error(request, "Veuillez corriger les erreurs dans le formulaire")
     else:
-        form = UserForm(instance=request.user)
+        form = UpdateProfileForm(instance=request.user)
 
     return render(request, 'update_profile.html', {'form': form})
 
@@ -245,7 +280,7 @@ def edit_password(request):
             update_session_auth_hash(request, request.user)  # ✅ Garde l'utilisateur connecté après le changement
 
             messages.success(request, "Votre mot de passe a été mis à jour avec succès !")
-            return redirect("profile")  # 🔄 Redirection vers la page du profil
+            return redirect("accounts:profile")  # 🔄 Redirection vers la page du profil
         else:
             messages.error(request, "Veuillez corriger les erreurs ci-dessous.")
     else:
@@ -256,9 +291,8 @@ def edit_password(request):
 
 @login_required
 def manage_addresses(request):
-    addresses = ShippingAddress.objects.filter(user=request.user, is_default=False)
-    addresses_with_default = ShippingAddress.objects.filter(user=request.user)
-    default_address = addresses_with_default.filter(is_default=True).first()
+    addresses = ShippingAddress.objects.filter(user=request.user)
+    default_address = addresses.filter(is_default=True).first()
 
     if request.method == "POST":
         form = ShippingAddressForm(request.POST)
@@ -268,7 +302,7 @@ def manage_addresses(request):
             address.user = request.user
             address.save()
             messages.success(request, "Adresse ajoutée avec succès ! ✅")  # ✅ Succès
-            return redirect('manage_addresses')
+            return redirect('accounts:manage_addresses')
         else:
             messages.error(request,
                            "Erreur lors de l'ajout de l'adresse. Veuillez vérifier le formulaire. ❌")  # ❌ Erreur
@@ -290,7 +324,7 @@ def edit_address(request, address_id):
         if form.is_valid():
             form.save()
             messages.success(request, "Adresse modifiée avec succès ! ✅")  # ✅ Succès
-            return redirect('manage_addresses')
+            return redirect('accounts:manage_addresses')
         else:
             messages.error(request,
                            "Erreur lors de la modification de l'adresse. Veuillez vérifier le formulaire. ❌")  # ❌ Erreur
@@ -303,45 +337,99 @@ def delete_address(request, address_id):
     address = get_object_or_404(ShippingAddress, id=address_id, user=request.user)
     address.delete()
     messages.success(request, "Adresse supprimée avec succès ! ✅")  # ✅ Succès
-    return redirect("manage_addresses")
+    return redirect('accounts:manage_addresses')
 
 
 @login_required
 def set_default_address(request, address_id):
     address = get_object_or_404(ShippingAddress, id=address_id, user=request.user)
+    # Mettre à jour toutes les autres adresses comme non par défaut
+    ShippingAddress.objects.filter(user=request.user).update(is_default=False)
+    # Définir la nouvelle adresse par défaut
     address.is_default = True
     address.save()
-    return redirect("manage_addresses")
+    return redirect('accounts:manage_addresses')
 
 
-@staff_member_required
 def setup_2fa(request):
     """Vue pour configurer la 2FA."""
-    user = request.user
-    device = user.get_totp_device()
+    if not request.user.is_authenticated:
+        if '2fa_user_id' not in request.session:
+            return redirect('accounts:login')
+        user = get_object_or_404(Shopper, id=request.session['2fa_user_id'])
+    else:
+        user = request.user
+    
+    # Récupérer l'appareil TOTP existant
+    device = TOTPDevice.objects.filter(user=user).first()
     
     if request.method == 'POST':
-        if 'enable' in request.POST:
-            if device.verify_token(request.POST.get('token')):
+        if 'disable' in request.POST and device and device.confirmed:
+            # Désactivation de la 2FA
+            token = request.POST.get('token', '').strip()
+            if not token:
+                messages.error(request, 'Veuillez entrer un code de vérification.')
+                return redirect('accounts:setup_2fa')
+            
+            if device.verify_token(token):
+                device.delete()
+                messages.success(request, 'La 2FA a été désactivée avec succès.')
+                return redirect('suppliers:supplier_index')
+            else:
+                messages.error(request, 'Code invalide. Veuillez réessayer.')
+                return redirect('accounts:setup_2fa')
+        
+        elif 'enable' in request.POST:
+            # Activation de la 2FA
+            if not device:
+                device = TOTPDevice.objects.create(user=user, name='default', confirmed=False)
+            
+            token = request.POST.get('token', '').strip()
+            if not token:
+                messages.error(request, 'Veuillez entrer un code de vérification.')
+                return redirect('accounts:setup_2fa')
+            
+            if device.verify_token(token):
                 device.confirmed = True
                 device.save()
                 messages.success(request, 'La 2FA a été activée avec succès.')
-                return redirect('admin:index')
+                if not request.user.is_authenticated:
+                    auth_login(request, user)
+                return redirect('suppliers:supplier_index')
             else:
                 messages.error(request, 'Code invalide. Veuillez réessayer.')
-        elif 'disable' in request.POST:
-            user.disable_2fa()
-            messages.success(request, 'La 2FA a été désactivée.')
-            return redirect('admin:index')
+                return redirect('accounts:setup_2fa')
     
-    # Générer le QR code si l'appareil n'est pas confirmé
-    if not device.confirmed:
-        device = TOTPDevice.objects.create(user=user, name='default')
+    # Si pas d'appareil non confirmé, on en crée un nouveau
+    if not device:
+        device = TOTPDevice.objects.create(user=user, name='default', confirmed=False)
     
-    return render(request, 'admin/2fa_setup.html', {
+    # Générer le QR code
+    qr = qrcode.QRCode(
+        version=1,
+        error_correction=qrcode.constants.ERROR_CORRECT_L,
+        box_size=10,
+        border=4,
+    )
+    qr.add_data(device.config_url)
+    qr.make(fit=True)
+    
+    # Créer l'image du QR code
+    img = qr.make_image(fill_color="black", back_color="white")
+    
+    # Convertir l'image en base64
+    buffer = BytesIO()
+    img.save(buffer, format='PNG')
+    qr_code = base64.b64encode(buffer.getvalue()).decode()
+    
+    # Préparation du contexte pour le template
+    context = {
         'device': device,
-        'qr_code': device.config_url,
-    })
+        'qr_code': f'data:image/png;base64,{qr_code}',  # QR code en base64
+        'is_2fa_enabled': device.confirmed if device else False,
+    }
+    
+    return render(request, 'accounts/2fa_setup.html', context)
 
 @staff_member_required
 def admin_2fa_required(request):
@@ -350,11 +438,15 @@ def admin_2fa_required(request):
         return redirect('admin_login')
         
     if not request.user.is_staff:
-        return redirect('home')
+        return redirect('suppliers:supplier_index')
         
     # Vérifier si l'utilisateur a la 2FA activée
     if not request.user.has_2fa_enabled():
-        messages.warning(request, "Vous devez activer l'authentification à deux facteurs pour accéder à l'administration.")
+        messages.warning(request, mark_safe(
+            "Vous devez activer l'authentification à deux facteurs pour accéder à l'administration. "
+            "<a href='{}' class='font-semibold underline hover:text-yellow-800'>Cliquez ici pour l'activer</a>."
+            .format(reverse('accounts:setup_2fa'))
+        ))
         return redirect('setup_2fa')
     
     # Si l'utilisateur n'est pas vérifié, afficher la page de vérification
@@ -367,44 +459,43 @@ def admin_2fa_required(request):
                 request.user.save()
                 return redirect('admin:index')
             else:
-                messages.error(request, "Code invalide. Veuillez réessayer.")
+                messages.error(request, mark_safe(
+                    "Code invalide. Veuillez réessayer ou "
+                    "<a href='{}' class='font-semibold underline hover:text-yellow-800'>demander un nouveau code</a>."
+                    .format(reverse('accounts:resend_2fa_code'))
+                ))
         return render(request, 'admin/2fa_verify.html')
     
     return redirect('admin:index')
 
 def verify_2fa(request):
+    """Vue pour la vérification 2FA."""
     if '2fa_user_id' not in request.session:
         return redirect('accounts:login')
     
     user = get_object_or_404(Shopper, id=request.session['2fa_user_id'])
+    device = user.get_totp_device()
+    
+    if device and not device.confirmed:
+            return redirect('accounts:setup_2fa')
     
     if request.method == 'POST':
-        form = TwoFactorVerificationForm(request.POST)
-        if form.is_valid():
-            code = form.cleaned_data['code']
-            two_factor_code = LoginTwoFactorCode.objects.filter(
-                user=user,
-                code=code,
-                is_used=False
-            ).first()
-            
-            if two_factor_code and two_factor_code.is_valid():
-                two_factor_code.is_used = True
-                two_factor_code.save()
-                
-                # Connecter l'utilisateur
-                login(request, user)
-                
-                # Nettoyer la session
+        token = request.POST.get('token')
+        
+        if user.verify_2fa_code(token):
+            auth_login(request, user)
+            user.set_verified(True)
+            if '2fa_user_id' in request.session:
                 del request.session['2fa_user_id']
-                
-                return redirect('suppliers:supplier_index')
-            else:
-                messages.error(request, "Code invalide ou expiré.")
-    else:
-        form = TwoFactorVerificationForm()
+            return redirect('suppliers:supplier_index')
+        else:
+            messages.error(request, mark_safe(
+                "Code invalide. Veuillez réessayer ou "
+                "<a href='{}' class='font-semibold underline hover:text-yellow-800'>demander un nouveau code</a>."
+                .format(reverse('accounts:resend_2fa_code'))
+            ))
     
-    return render(request, 'accounts/2fa_verify.html', {'form': form})
+    return render(request, 'accounts/2fa_verify.html')
 
 def resend_2fa_code(request):
     if '2fa_user_id' not in request.session:
@@ -413,9 +504,9 @@ def resend_2fa_code(request):
     user = get_object_or_404(Shopper, id=request.session['2fa_user_id'])
     
     # Générer et envoyer un nouveau code
-    code = LoginTwoFactorCode.generate_code()
-    LoginTwoFactorCode.objects.filter(user=user).delete()
-    LoginTwoFactorCode.objects.create(user=user, code=code)
+    code = TwoFactorCode.generate_code()
+    TwoFactorCode.objects.filter(user=user).delete()
+    TwoFactorCode.objects.create(user=user, code=code)
     
     # Envoyer le code par SMS (à implémenter avec votre service SMS)
     # send_sms(user.phone, f"Votre nouveau code de vérification est : {code}")

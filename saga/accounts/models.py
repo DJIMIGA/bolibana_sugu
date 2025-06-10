@@ -53,7 +53,6 @@ class Shopper(AbstractUser):
     city = models.CharField(max_length=100, verbose_name=_("Ville"), null=True, blank=True)
     country = models.CharField(max_length=100, verbose_name=_("Pays"), null=True, blank=True)
     postal_code = models.CharField(max_length=20, verbose_name=_("Code postal"), null=True, blank=True)
-    is_verified = models.BooleanField(default=False, verbose_name=_("Vérifié"))
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     fidelys_number = models.CharField(max_length=240, null=True, blank=True, unique=True, verbose_name="Numéro Fidelys")
@@ -82,28 +81,71 @@ class Shopper(AbstractUser):
         return self.email if hasattr(self, 'email') else ''
 
     def get_totp_device(self):
-        """Récupère ou crée un appareil TOTP pour l'utilisateur."""
-        device, created = BaseTOTPDevice.objects.get_or_create(
+        """Récupère un appareil TOTP actif de l'utilisateur."""
+        return TOTPDevice.objects.filter(
             user=self,
-            defaults={'name': 'default'}
-        )
-        return device
+            confirmed=True
+        ).first()
 
     def has_2fa_enabled(self):
         """Vérifie si l'utilisateur a activé la 2FA."""
-        return BaseTOTPDevice.objects.filter(user=self, confirmed=True).exists()
+        return TOTPDevice.objects.filter(user=self, confirmed=True).exists()
 
     def enable_2fa(self):
         """Active la 2FA pour l'utilisateur."""
-        device = self.get_totp_device()
-        if not device.confirmed:
-            device.confirmed = True
-            device.save()
+        # Créer un nouvel appareil
+        device = TOTPDevice.objects.create(
+            user=self,
+            name=f'Device {TOTPDevice.objects.filter(user=self).count() + 1}',
+            confirmed=False  # L'appareil doit être confirmé après vérification
+        )
         return device
 
-    def disable_2fa(self):
-        """Désactive la 2FA pour l'utilisateur."""
-        BaseTOTPDevice.objects.filter(user=self).delete()
+    def disable_2fa(self, token):
+        """Désactive la 2FA pour l'utilisateur après vérification du token."""
+        device = self.get_totp_device()
+        if device and device.verify_token(token):
+            device.delete()
+            return True
+        return False
+
+    def verify_2fa_code(self, code):
+        """Vérifie un code 2FA sur n'importe quel appareil actif."""
+        devices = TOTPDevice.objects.filter(user=self, confirmed=True)
+        for device in devices:
+            if device.verify_token(code):
+                return True
+        return False
+
+    def is_verified(self):
+        """Vérifie si l'utilisateur est vérifié via 2FA."""
+        return getattr(self, '_otp_verified', False)
+
+    def set_verified(self, verified=True):
+        """Définit l'état de vérification 2FA de l'utilisateur."""
+        self._otp_verified = verified
+
+    def sync_admin_totp(self):
+        """Synchronise l'appareil TOTP avec celui de l'admin si l'utilisateur est admin."""
+        if self.is_staff:
+            from django.contrib.admin.models import LogEntry
+            admin_device = LogEntry.objects.filter(
+                user_id=self.id,
+                action_flag=1  # Action de connexion réussie
+            ).exists()
+            if admin_device:
+                device = self.get_totp_device()
+                if not device or not device.confirmed:
+                    if device:
+                        device.delete()
+                    device = TOTPDevice.objects.create(
+                        user=self,
+                        name='default',
+                        confirmed=True,
+                        key=self.get_totp_device().key if hasattr(self, 'get_totp_device') else None
+                    )
+                return device
+        return None
 
 
 class ShippingAddress(models.Model):
@@ -144,9 +186,14 @@ class ShippingAddress(models.Model):
         verbose_name_plural = "Adresses de livraison"
 
     def save(self, *args, **kwargs):
-        if self.is_default:
-            # Désactiver toutes les autres adresses par défaut pour cet utilisateur
-            ShippingAddress.objects.filter(user=self.user, is_default=True).update(is_default=False)
+        # Si c'est une nouvelle adresse (pas encore enregistrée)
+        if not self.pk:
+            # Si c'est la première adresse de l'utilisateur ou si l'utilisateur a choisi de la définir par défaut
+            if not ShippingAddress.objects.filter(user=self.user).exists() or self.is_default:
+                # Mettre à False toutes les autres adresses de l'utilisateur
+                ShippingAddress.objects.filter(user=self.user).update(is_default=False)
+                # Définir cette adresse comme adresse par défaut
+                self.is_default = True
         super().save(*args, **kwargs)
 
     def __str__(self):
@@ -175,7 +222,6 @@ class TwoFactorCode(models.Model):
 class TOTPDevice(BaseTOTPDevice):
     # Ce modèle étend le modèle TOTPDevice de django_otp.plugins.otp_totp
     # pour gérer la liaison entre un utilisateur Django et son appareil OTP
-    # sans utiliser un modèle Django local.
     pass
 
 
@@ -208,24 +254,5 @@ class AllowedIP(models.Model):
         if not self.expires_at:
             self.expires_at = timezone.now() + timezone.timedelta(days=30)
         super().save(*args, **kwargs)
-
-
-class LoginTwoFactorCode(models.Model):
-    user = models.ForeignKey(Shopper, on_delete=models.CASCADE)
-    code = models.CharField(max_length=6)
-    created_at = models.DateTimeField(auto_now_add=True)
-    is_used = models.BooleanField(default=False)
-
-    @classmethod
-    def generate_code(cls):
-        """Génère un code à 6 chiffres."""
-        return ''.join(str(random.randint(0, 9)) for _ in range(6))
-
-    def is_valid(self):
-        """Vérifie si le code est valide (moins de 5 minutes)."""
-        return (timezone.now() - self.created_at).total_seconds() < 300
-
-    def __str__(self):
-        return f"Code pour {self.user.email} - {self.code}"
 
 

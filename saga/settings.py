@@ -195,7 +195,7 @@ ADMIN_ALLOWED_IPS = os.getenv('ADMIN_ALLOWED_IPS', '127.0.0.1').split(',')
 
 # Configuration de la 2FA
 OTP_TOTP_ISSUER = 'SagaKore'
-OTP_LOGIN_URL = f'/{ADMIN_URL}login/'
+OTP_LOGIN_URL = 'accounts:login'
 OTP_ADMIN_ENABLED = True
 OTP_ENFORCE_ADMIN = True
 OTP_ENFORCE_GLOBAL = True
@@ -203,9 +203,10 @@ OTP_REQUIRED = True
 OTP_ADMIN_REQUIRED = True
 
 # Configuration des URLs de login
-LOGIN_URL = f'/{ADMIN_URL}login/'
-LOGIN_REDIRECT_URL = f'/{ADMIN_URL}'
+LOGIN_URL = 'accounts:login'
+LOGIN_REDIRECT_URL = 'suppliers:supplier_index'
 LOGOUT_REDIRECT_URL = 'suppliers:supplier_index'
+OTP_REDIRECT_URL = 'suppliers:supplier_index'
 
 # ==================================================
 # CONFIGURATION DES SERVICES EXTERNES

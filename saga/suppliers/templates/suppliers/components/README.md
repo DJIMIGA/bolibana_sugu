@@ -119,3 +119,42 @@ Limiter le nombre de renvois de code (3 par exemple)
 Stocker les données de manière sécurisée en session
 Nettoyer les données temporaires après utilisation
 Voulez-vous que je commence à implémenter cette logique ?
+
+Oui, l'implémentation de la 2FA pour l'inscription et la connexion se fait séparément car les processus sont différents. Voici comment nous pouvons procéder :
+Pour l'inscription :
+L'utilisateur remplit le formulaire d'inscription
+On génère un code de vérification
+On envoie le code par SMS au numéro fourni
+On stocke temporairement les données en session
+On affiche une page de vérification
+Une fois le code validé, on crée le compte
+Pour la connexion :
+L'utilisateur entre son email/mot de passe
+On vérifie les identifiants
+Si correct, on génère un code de vérification
+On envoie le code par SMS au numéro enregistré
+On affiche une page de vérification
+Une fois le code validé, on connecte l'utilisateur
+
+
+nous avons déjà un système de 2FA bien implémenté pour l'admin qui utilise django-otp avec TOTP (Time-based One-Time Password). Voici les éléments transposables pour notre système de connexion utilisateur :
+Modèle TwoFactorCode :
+Déjà implémenté avec un système de génération de code à 6 chiffres
+Gestion de l'expiration (5 minutes)
+Stockage sécurisé des codes
+Vues de vérification :
+Nous avons déjà les templates 2fa_verify.html et 2fa_setup.html
+La logique de vérification est en place
+Formulaires :
+Le TwoFactorForm est déjà défini pour la saisie du code
+Pour adapter ce système à la connexion utilisateur, nous devrons :
+Pour l'inscription :
+Générer un code lors de l'inscription
+Envoyer le code par SMS (comme déjà fait pour la réinitialisation de mot de passe)
+Stocker temporairement les données en session
+Créer une vue de vérification similaire à admin_2fa_required
+Pour la connexion :
+Vérifier les identifiants
+Générer et envoyer un code par SMS
+Rediriger vers une page de vérification
+Connecter l'utilisateur après vérification

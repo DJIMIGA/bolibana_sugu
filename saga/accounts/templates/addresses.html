@@ -6,102 +6,89 @@
 <div class="bg-gray-50 min-h-screen py-6 sm:py-12">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-8">
         <!-- En-tête -->
-        <div class="bg-white p-6 rounded-xl shadow-sm border border-green-100">
-            <h1 class="text-xl sm:text-2xl font-bold text-gray-900 flex items-center gap-3">
-                <span class="flex items-center justify-center h-10 w-10 rounded-full bg-green-100">
+        <div class="bg-white p-6 rounded-xl shadow-sm border border-green-100 transform transition-all duration-300 hover:shadow-md">
+            <div class="flex items-center gap-4">
+                <span class="flex items-center justify-center h-12 w-12 rounded-xl bg-gradient-to-br from-green-100 to-green-200 shadow-inner">
                     <svg class="h-6 w-6 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/>
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/>
                     </svg>
                 </span>
-                Gérer vos adresses
-            </h1>
-        </div>
-
-        <!-- Adresse par défaut -->
-        {% if default_address %}
-        <div class="bg-white p-6 rounded-xl shadow-sm border border-green-100">
-            <div class="bg-gradient-to-br from-green-50 to-green-100 p-6 rounded-xl border border-green-200">
-                <div class="flex items-center justify-between mb-4">
-                    <h3 class="text-lg font-medium text-gray-900 flex items-center gap-3">
-                        <span class="flex items-center justify-center h-8 w-8 rounded-full bg-green-100">
-                            <svg class="h-5 w-5 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
-                            </svg>
-                        </span>
-                        Adresse par défaut
-                    </h3>
-                    <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                        Par défaut
-                    </span>
-                </div>
-
-                <div class="space-y-4 text-gray-600">
-                    <div class="flex items-center gap-3 bg-white p-3 rounded-xl border border-green-100">
-                        <span class="text-lg font-medium">{{ default_address.full_name }}</span>
-                    </div>
-                    <div class="flex items-center gap-3 bg-white p-3 rounded-xl border border-green-100">
-                        <span>{{ default_address.street_address }}, {{ default_address.quarter }}</span>
-                    </div>
-                    <div class="flex items-center gap-3 bg-white p-3 rounded-xl border border-green-100">
-                        <span>{{ default_address.get_city_display }}</span>
-                    </div>
-                </div>
+                <h1 class="text-xl sm:text-2xl font-bold text-gray-900">Gérer vos adresses</h1>
             </div>
         </div>
-        {% endif %}
 
-        <!-- Liste des autres adresses -->
-        <div class="bg-white p-6 rounded-xl shadow-sm border border-green-100">
+        <!-- Liste des adresses -->
+        <div class="bg-white p-6 rounded-xl shadow-sm border border-green-100 transform transition-all duration-300 hover:shadow-md">
             <div class="flex items-center justify-between mb-6">
                 <h3 class="text-lg font-medium text-gray-900 flex items-center gap-3">
-                    <span class="flex items-center justify-center h-8 w-8 rounded-full bg-yellow-100">
+                    <span class="flex items-center justify-center h-10 w-10 rounded-xl bg-gradient-to-br from-yellow-100 to-yellow-200 shadow-inner">
                         <svg class="h-5 w-5 text-yellow-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16"/>
                         </svg>
                     </span>
-                    Mes autres adresses
+                    Mes adresses
                 </h3>
                 <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
                     {{ addresses|length }} adresse{% if addresses|length > 1 %}s{% endif %}
                 </span>
             </div>
 
-            <div class="space-y-6">
+            <div class="space-y-4">
                 {% for address in addresses %}
-                <div class="p-6 rounded-xl border {% if address.is_default %}bg-green-50 border-green-200{% else %}bg-gray-50 border-gray-200{% endif %}">
-                    <div class="flex items-center justify-between mb-4">
-                        <span class="text-lg font-medium text-gray-900">{{ address.full_name }}</span>
-                        {% if address.is_default %}
-                        <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                            Par défaut
-                        </span>
+                <div class="p-4 sm:p-6 rounded-xl border {% if address.is_default %}bg-green-50 border-green-200{% else %}bg-gray-50 border-gray-200{% endif %} transform transition-all duration-300 hover:shadow-md">
+                    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">
+                        <div class="flex flex-col sm:flex-row sm:items-center gap-3">
+                            <span class="text-base sm:text-lg font-medium text-gray-900">{{ address.full_name }}</span>
+                            {% if address.is_default %}
+                            <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                                <svg class="h-3.5 w-3.5 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+                                </svg>
+                                Adresse par défaut
+                            </span>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <div class="space-y-2 text-sm sm:text-base text-gray-600 mb-4">
+                        <p>{{ address.street_address }}, {{ address.quarter }}</p>
+                        <p>{{ address.get_city_display }}</p>
+                        {% if address.additional_info %}
+                            <p class="text-xs sm:text-sm text-gray-500">{{ address.additional_info }}</p>
                         {% endif %}
                     </div>
 
-                    <div class="space-y-3 text-gray-600 mb-6">
-                        <p>{{ address.street_address }}, {{ address.quarter }}</p>
-                        <p>{{ address.get_city_display }}</p>
-                    </div>
-
-                    <div class="flex flex-wrap gap-3">
-                        <form method="post" action="{% url 'set_default_address' address.id %}">
+                    <div class="flex flex-col sm:flex-row gap-2 sm:gap-3">
+                        {% if not address.is_default %}
+                        <form method="post" action="{% url 'accounts:set_default_address' address.id %}" class="w-full sm:w-auto">
                             {% csrf_token %}
-                            <button type="submit" class="inline-flex items-center px-4 py-2 bg-green-600 text-white text-sm font-medium rounded-lg hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500">
+                            <button type="submit" 
+                                    class="w-full sm:w-auto inline-flex items-center justify-center px-4 py-2 bg-green-600 text-white text-sm font-medium rounded-xl hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-all duration-300 transform hover:scale-105">
+                                <svg class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+                                </svg>
                                 Définir par défaut
                             </button>
                         </form>
+                        {% endif %}
 
-                        <a href="{% url 'edit_address' address.id %}" 
-                           class="inline-flex items-center px-4 py-2 bg-yellow-600 text-white text-sm font-medium rounded-lg hover:bg-yellow-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-yellow-500">
+                        <a href="{% url 'accounts:edit_address' address.id %}" 
+                           class="w-full sm:w-auto inline-flex items-center justify-center px-4 py-2 bg-yellow-600 text-white text-sm font-medium rounded-xl hover:bg-yellow-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-yellow-500 transition-all duration-300 transform hover:scale-105">
+                            <svg class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"/>
+                            </svg>
                             Modifier
                         </a>
 
-                        <form method="post" action="{% url 'delete_address' address.id %}" class="inline" 
+                        <form method="post" action="{% url 'accounts:delete_address' address.id %}" class="w-full sm:w-auto" 
                               onsubmit="return confirm('Êtes-vous sûr de vouloir supprimer cette adresse ?');">
                             {% csrf_token %}
                             <button type="submit" 
-                                    class="inline-flex items-center px-4 py-2 bg-red-600 text-white text-sm font-medium rounded-lg hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500">
+                                    class="w-full sm:w-auto inline-flex items-center justify-center px-4 py-2 bg-red-600 text-white text-sm font-medium rounded-xl hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 transition-all duration-300 transform hover:scale-105">
+                                <svg class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+                                </svg>
                                 Supprimer
                             </button>
                         </form>
@@ -112,9 +99,9 @@
         </div>
 
         <!-- Formulaire d'ajout d'adresse -->
-        <div class="bg-white p-6 rounded-xl shadow-sm border border-green-100">
+        <div class="bg-white p-6 rounded-xl shadow-sm border border-green-100 transform transition-all duration-300 hover:shadow-md">
             <h3 class="text-lg font-medium text-gray-900 flex items-center gap-3 mb-6">
-                <span class="flex items-center justify-center h-8 w-8 rounded-full bg-green-100">
+                <span class="flex items-center justify-center h-10 w-10 rounded-xl bg-gradient-to-br from-green-100 to-green-200 shadow-inner">
                     <svg class="h-5 w-5 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/>
                     </svg>
@@ -127,32 +114,32 @@
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div class="md:col-span-2">
                         <label class="block text-sm font-medium text-gray-700">Nom complet</label>
-                        {{ form.full_name|add_class:"mt-1 block w-full rounded-lg border-gray-300 shadow-sm focus:ring-2 focus:ring-green-400 focus:border-green-400" }}
+                        {{ form.full_name|add_class:"mt-1 block w-full rounded-xl border-gray-300 shadow-sm focus:ring-2 focus:ring-green-400 focus:border-green-400" }}
                     </div>
 
                     <div class="md:col-span-2">
                         <label class="block text-sm font-medium text-gray-700">Adresse</label>
-                        {{ form.street_address|add_class:"mt-1 block w-full rounded-lg border-gray-300 shadow-sm focus:ring-2 focus:ring-green-400 focus:border-green-400" }}
+                        {{ form.street_address|add_class:"mt-1 block w-full rounded-xl border-gray-300 shadow-sm focus:ring-2 focus:ring-green-400 focus:border-green-400" }}
                     </div>
 
                     <div>
                         <label class="block text-sm font-medium text-gray-700">Type d'adresse</label>
-                        {{ form.address_type|add_class:"mt-1 block w-full rounded-lg border-gray-300 shadow-sm focus:ring-2 focus:ring-green-400 focus:border-green-400" }}
+                        {{ form.address_type|add_class:"mt-1 block w-full rounded-xl border-gray-300 shadow-sm focus:ring-2 focus:ring-green-400 focus:border-green-400" }}
                     </div>
 
                     <div>
                         <label class="block text-sm font-medium text-gray-700">Quartier</label>
-                        {{ form.quarter|add_class:"mt-1 block w-full rounded-lg border-gray-300 shadow-sm focus:ring-2 focus:ring-green-400 focus:border-green-400" }}
+                        {{ form.quarter|add_class:"mt-1 block w-full rounded-xl border-gray-300 shadow-sm focus:ring-2 focus:ring-green-400 focus:border-green-400" }}
                     </div>
 
                     <div>
                         <label class="block text-sm font-medium text-gray-700">Ville</label>
-                        {{ form.city|add_class:"mt-1 block w-full rounded-lg border-gray-300 shadow-sm focus:ring-2 focus:ring-green-400 focus:border-green-400" }}
+                        {{ form.city|add_class:"mt-1 block w-full rounded-xl border-gray-300 shadow-sm focus:ring-2 focus:ring-green-400 focus:border-green-400" }}
                     </div>
 
                     <div>
                         <label class="block text-sm font-medium text-gray-700">Informations complémentaires</label>
-                        {{ form.additional_info|add_class:"mt-1 block w-full rounded-lg border-gray-300 shadow-sm focus:ring-2 focus:ring-green-400 focus:border-green-400" }}
+                        {{ form.additional_info|add_class:"mt-1 block w-full rounded-xl border-gray-300 shadow-sm focus:ring-2 focus:ring-green-400 focus:border-green-400" }}
                     </div>
 
                     <div class="md:col-span-2">
@@ -163,13 +150,19 @@
                     </div>
                 </div>
 
-                <div class="flex justify-end space-x-4 pt-6">
+                <div class="flex flex-col sm:flex-row justify-end gap-4 pt-6">
                     <button type="button" onclick="history.back()"
-                            class="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500">
+                            class="w-full sm:w-auto inline-flex items-center justify-center px-4 py-2.5 bg-gray-100 text-gray-700 rounded-xl hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 transition-all duration-300 transform hover:scale-105">
+                        <svg class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/>
+                        </svg>
                         Retour
                     </button>
                     <button type="submit"
-                            class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500">
+                            class="w-full sm:w-auto inline-flex items-center justify-center px-4 py-2.5 bg-green-600 text-white rounded-xl hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-all duration-300 transform hover:scale-105">
+                        <svg class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/>
+                        </svg>
                         Ajouter cette adresse
                     </button>
                 </div>
