@@ -147,7 +147,7 @@ HERO_IMAGE_STORAGE = 'saga.storage_backends.HeroImageStorage'
 STATIC_URL = '/static/'
 STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
 STATICFILES_DIRS = [
-    os.path.join(BASE_DIR, 'static'),  # Dossier static à la racine
+    os.path.join(BASE_DIR, 'static'),
 ]
 
 # Configuration du stockage des fichiers statiques
@@ -545,59 +545,27 @@ LOGGING = {
     'version': 1,
     'disable_existing_loggers': False,
     'formatters': {
-        'verbose': {
-            'format': '{levelname} {asctime} {module} {process:d} {thread:d} {message}',
-            'style': '{',
-        },
         'simple': {
             'format': '{levelname} {message}',
-            'style': '{',
-        },
-        'django.server': {
-            'format': '[{server_time}] {message}',
             'style': '{',
         },
     },
     'handlers': {
         'console': {
             'class': 'logging.StreamHandler',
-            'formatter': 'verbose',
-        },
-        'file': {
-            'class': 'logging.FileHandler',
-            'filename': 'debug.log',
-            'formatter': 'verbose',
-        },
-        'otp_file': {
-            'class': 'logging.FileHandler',
-            'filename': 'otp_debug.log',
-            'formatter': 'verbose',
-        },
-        'django.server': {
-            'class': 'logging.StreamHandler',
-            'formatter': 'django.server',
+            'formatter': 'simple',
         },
     },
     'loggers': {
         'django': {
-            'handlers': ['console', 'file'],
+            'handlers': ['console'],
             'level': 'INFO',
             'propagate': True,
-        },
-        'django.server': {
-            'handlers': ['django.server'],
-            'level': 'INFO',
-            'propagate': False,
         },
         'saga': {
-            'handlers': ['console', 'file'],
+            'handlers': ['console'],
             'level': 'DEBUG',
             'propagate': True,
-        },
-        'accounts.admin': {
-            'handlers': ['console', 'otp_file'],
-            'level': 'DEBUG',
-            'propagate': False,
         },
     },
 }
