@@ -9,50 +9,13 @@
     <div class="mx-auto max-w-2xl px-4 py-16 sm:px-6 sm:py-24 lg:max-w-7xl lg:px-8">
         <h1 class="text-3xl font-bold tracking-tight text-gray-900 mb-8">Mes favoris</h1>
 
-        {% if favorites %}
-            <div class="grid grid-cols-1 gap-x-6 gap-y-10 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 xl:gap-x-8">
-                {% for favorite in favorites %}
-                    {% with product=favorite.product %}
-                        {% if product.phone %}
-                            {% render_phone_card product %}
-                        {% elif product.clothing_product %}
-                            {% render_clothing_card product %}
-                        {% elif product.fabric_product %}
-                            {% render_fabric_card product %}
-                        {% elif product.cultural_product %}
-                            {% render_cultural_card product %}
-                        {% else %}
-                            {% render_product_card product %}
-                        {% endif %}
-                    {% endwith %}
-                {% endfor %}
-            </div>
+        {% include "suppliers/components/_favorites_list.html" %}
 
-            <!-- Pagination -->
-            {% if is_paginated %}
-            <div class="mt-8">
-                {% include "suppliers/components/pagination.html" %}
-            </div>
-            {% endif %}
-        {% else %}
-            <div class="text-center py-12">
-                <div class="mb-4">
-                    <svg class="mx-auto h-16 w-16 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"/>
-                    </svg>
-                </div>
-                <h3 class="text-lg font-medium text-gray-900">Vous n'avez pas encore de favoris</h3>
-                <p class="mt-1 text-sm text-gray-500">Découvrez nos produits et ajoutez vos favoris pour les retrouver facilement.</p>
-                <div class="mt-6">
-                    <a href="{% url 'suppliers:category_detail' 'tous-les-produits' %}" class="inline-flex items-center px-6 py-3 text-sm text-green-700 bg-green-50 hover:bg-green-100 transition-colors duration-200 rounded-lg">
-                        <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                        </svg>
-                        Découvrir tous nos produits
-                    </a>
-                </div>
-            </div>
+        <!-- Pagination -->
+        {% if is_paginated %}
+        <div class="mt-8">
+            {% include "suppliers/components/pagination.html" %}
+        </div>
         {% endif %}
     </div>
 </div>

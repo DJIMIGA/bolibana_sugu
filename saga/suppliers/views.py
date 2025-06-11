@@ -1074,8 +1074,33 @@ def toggle_favorite(request, product_id):
     # Rendre le compteur de favoris
     favorite_count_html = render_to_string('suppliers/components/_favorite_count.html', context, request=request)
     
-    # Combiner les deux réponses
-    response = favorite_button_html + favorite_count_html
+    # Si l'action est "removed", mettre à jour la liste des favoris
+    if action == "removed":
+        # Récupérer la liste mise à jour des favoris
+        favorites = Favorite.objects.filter(
+            user=request.user
+        ).select_related(
+            'product',
+            'product__category',
+            'product__phone',
+            'product__clothing_product',
+            'product__fabric_product',
+            'product__cultural_product'
+        ).prefetch_related(
+            'product__images'
+        ).order_by('-created_at')
+        
+        # Rendre le template de la liste des favoris
+        favorites_list_html = render_to_string('suppliers/components/_favorites_list.html', {
+            'favorites': favorites,
+            'user': request.user
+        }, request=request)
+        
+        # Combiner toutes les réponses
+        response = favorite_button_html + favorite_count_html + favorites_list_html
+    else:
+        # Combiner les réponses sans la liste des favoris
+        response = favorite_button_html + favorite_count_html
     
     return HttpResponse(response)
 
