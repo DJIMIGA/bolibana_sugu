@@ -52,10 +52,8 @@
 - [x] Ajout des messages d'invitation à la 2FA
 - [x] Amélioration de l'affichage des messages sur mobile
 - [x] Renforcement de la politique des mots de passe
-- [x] Protection contre les attaques par force brute
 - [x] Gestion des adresses de livraison
 - [x] Interface de gestion du profil utilisateur
-- [x] Système de notification par email
 
 ### Paiement
 - [ ] Intégration d'un paiement en ligne (Stripe/PayPal sandbox)

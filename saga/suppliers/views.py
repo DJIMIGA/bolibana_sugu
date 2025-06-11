@@ -1048,10 +1048,8 @@ def toggle_favorite(request, product_id):
     
     if not created:
         favorite.delete()
-        is_favorite = False
         action = "removed"
     else:
-        is_favorite = True
         action = "added"
     
     # Invalider le cache
@@ -1062,7 +1060,6 @@ def toggle_favorite(request, product_id):
     context = {
         'product': product,
         'user': request.user,
-        'is_favorite': is_favorite,
         'action': action,
         'is_detail': request.GET.get('template') == 'button'
     }

@@ -2,14 +2,15 @@
 {% load product_tags %}
 
 {% if request.user.is_authenticated %}
-<button hx-post="{% url 'suppliers:toggle_favorite' product.id %}?template=card"
-        hx-target="this"
+<button id="favorite-card-{{ product.id }}"
+        hx-post="{% url 'suppliers:toggle_favorite' product.id %}?template=card"
+        hx-target="#favorite-card-{{ product.id }}, #favorite-{{ product.id }}"
         hx-swap="outerHTML"
         class="relative inline-flex items-center justify-center w-10 h-10 rounded-full border border-gray-300 bg-white text-gray-700 hover:bg-gray-50 hover:border-gray-400 transition-all duration-300 group"
-        title="{% if request.user|is_favorite:product %}Retirer des favoris{% else %}Ajouter aux favoris{% endif %}">
-    <svg class="w-6 h-6 {% if request.user|is_favorite:product %}text-red-500{% else %}text-gray-400 group-hover:text-gray-500{% endif %}" 
+        title="{% if user|is_favorite:product %}Retirer des favoris{% else %}Ajouter aux favoris{% endif %}">
+    <svg class="w-6 h-6 {% if user|is_favorite:product %}text-red-500{% else %}text-gray-400 group-hover:text-gray-500{% endif %}" 
          xmlns="http://www.w3.org/2000/svg" 
-         fill="{% if request.user|is_favorite:product %}currentColor{% else %}none{% endif %}" 
+         fill="{% if user|is_favorite:product %}currentColor{% else %}none{% endif %}" 
          viewBox="0 0 24 24" 
          stroke="currentColor">
         <path stroke-linecap="round" 

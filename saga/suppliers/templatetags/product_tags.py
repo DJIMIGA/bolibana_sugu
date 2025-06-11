@@ -71,8 +71,8 @@ def split_path(value, separator=' > '):
         return []
     return value.split(separator)
 
-@register.inclusion_tag('suppliers/components/phone_card.html')
-def render_phone_card(product):
+@register.inclusion_tag('suppliers/components/phone_card.html', takes_context=True)
+def render_phone_card(context, product):
     """
     Affiche une carte pour un téléphone.
     """
@@ -83,11 +83,12 @@ def render_phone_card(product):
     
     return {
         'product': product,
-        'phone': product.phone
+        'phone': product.phone,
+        'request': context['request']
     }
 
-@register.inclusion_tag('suppliers/components/clothing_card.html')
-def render_clothing_card(product):
+@register.inclusion_tag('suppliers/components/clothing_card.html', takes_context=True)
+def render_clothing_card(context, product):
     """
     Affiche une carte pour un vêtement.
     """
@@ -98,11 +99,12 @@ def render_clothing_card(product):
     
     return {
         'product': product,
-        'clothing': product.clothing_product
+        'clothing': product.clothing_product,
+        'request': context['request']
     }
 
-@register.inclusion_tag('suppliers/components/cultural_card.html')
-def render_cultural_card(product):
+@register.inclusion_tag('suppliers/components/cultural_card.html', takes_context=True)
+def render_cultural_card(context, product):
     """
     Affiche une carte pour un article culturel.
     """
@@ -113,11 +115,12 @@ def render_cultural_card(product):
     
     return {
         'product': product,
-        'cultural': product.cultural_product
+        'cultural': product.cultural_product,
+        'request': context['request']
     }
 
-@register.inclusion_tag('suppliers/components/fabric_card.html')
-def render_fabric_card(product):
+@register.inclusion_tag('suppliers/components/fabric_card.html', takes_context=True)
+def render_fabric_card(context, product):
     """
     Affiche une carte pour un tissu.
     """
@@ -128,11 +131,12 @@ def render_fabric_card(product):
     
     return {
         'product': product,
-        'fabric': product.fabric_product
+        'fabric': product.fabric_product,
+        'request': context['request']
     }
 
-@register.inclusion_tag('suppliers/components/product_card.html')
-def render_product_card(product):
+@register.inclusion_tag('suppliers/components/product_card.html', takes_context=True)
+def render_product_card(context, product):
     """
     Template tag pour afficher une carte produit avec le bon template selon le type
     """
@@ -145,30 +149,35 @@ def render_product_card(product):
         return {
             'product': product,
             'phone': product.phone,
-            'template_name': 'suppliers/components/phone_card.html'
+            'template_name': 'suppliers/components/phone_card.html',
+            'request': context['request']
         }
     elif hasattr(product, 'fabric_product'):
         return {
             'product': product,
             'fabric': product.fabric_product,
-            'template_name': 'suppliers/components/fabric_card.html'
+            'template_name': 'suppliers/components/fabric_card.html',
+            'request': context['request']
         }
     elif hasattr(product, 'clothing_product'):
         return {
             'product': product,
             'clothing': product.clothing_product,
-            'template_name': 'suppliers/components/clothing_card.html'
+            'template_name': 'suppliers/components/clothing_card.html',
+            'request': context['request']
         }
     elif hasattr(product, 'cultural_product'):
         return {
             'product': product,
             'cultural': product.cultural_product,
-            'template_name': 'suppliers/components/cultural_card.html'
+            'template_name': 'suppliers/components/cultural_card.html',
+            'request': context['request']
         }
     else:
         return {
             'product': product,
-            'template_name': 'suppliers/components/product_card.html'
+            'template_name': 'suppliers/components/product_card.html',
+            'request': context['request']
         }
 
 @register.simple_tag
@@ -204,7 +213,7 @@ def filter_by_category(products, category_id):
 
 @register.filter
 def is_favorite(user, product):
-    if not user.is_authenticated:
+    if not user or not user.is_authenticated:
         return False
     cache_key = f"favorite_{user.id}_{product.id}"
     cached = cache.get(cache_key)

@@ -1,3 +1,116 @@
+# Composants de l'Application Suppliers
+
+Ce dossier contient les composants réutilisables pour l'application Suppliers.
+
+## Structure des Composants
+
+### Boutons d'Action
+
+#### `_favorite_card_button.html`
+Bouton pour ajouter/retirer un produit des favoris dans les cartes produits.
+
+**Utilisation :**
+```html
+{% include 'suppliers/components/_favorite_card_button.html' with product=product %}
+```
+
+**Fonctionnalités :**
+- Vérifie l'authentification de l'utilisateur
+- Affiche un cœur plein si le produit est en favoris
+- Affiche un cœur vide si le produit n'est pas en favoris
+- Animation au survol et au clic
+- Redirection vers la page de connexion si l'utilisateur n'est pas connecté
+
+**Note importante :**
+Le composant nécessite que le contexte `request` soit disponible. Assurez-vous que les template tags qui incluent ce composant passent le contexte :
+
+```python
+@register.inclusion_tag('suppliers/components/phone_card.html', takes_context=True)
+def render_phone_card(context, product):
+    return {
+        'product': product,
+        'phone': product.phone,
+        'request': context['request']  # Important pour l'authentification
+    }
+```
+
+#### `_add_to_cart_card_button.html`
+Bouton pour ajouter un produit au panier dans les cartes produits.
+
+**Utilisation :**
+```html
+{% include 'suppliers/components/_add_to_cart_card_button.html' with product=product %}
+```
+
+### Cartes Produits
+
+#### `phone_card.html`
+Carte pour afficher un téléphone.
+
+**Utilisation :**
+```html
+{% render_phone_card product %}
+```
+
+#### `clothing_card.html`
+Carte pour afficher un vêtement.
+
+**Utilisation :**
+```html
+{% render_clothing_card product %}
+```
+
+#### `fabric_card.html`
+Carte pour afficher un tissu.
+
+**Utilisation :**
+```html
+{% render_fabric_card product %}
+```
+
+#### `cultural_card.html`
+Carte pour afficher un article culturel.
+
+**Utilisation :**
+```html
+{% render_cultural_card product %}
+```
+
+## Bonnes Pratiques
+
+1. **Contexte Request :**
+   - Toujours passer le contexte `request` dans les template tags
+   - Utiliser `takes_context=True` dans les décorateurs de template tags
+   - Inclure `request` dans le dictionnaire de contexte retourné
+
+2. **Authentification :**
+   - Vérifier l'authentification avec `request.user.is_authenticated`
+   - Utiliser `request.user` au lieu de `user` pour la cohérence
+
+3. **Animations :**
+   - Utiliser GSAP pour les animations fluides
+   - Ajouter des transitions pour une meilleure expérience utilisateur
+
+4. **Accessibilité :**
+   - Inclure des attributs `aria-label` pour les boutons
+   - Utiliser des icônes SVG avec des descriptions appropriées
+
+## Dépendances
+
+- Django
+- HTMX pour les interactions dynamiques
+- GSAP pour les animations
+- Tailwind CSS pour le style
+
+## Maintenance
+
+Pour ajouter un nouveau composant :
+
+1. Créer le fichier dans le dossier `components/`
+2. Documenter son utilisation dans ce README
+3. S'assurer que le contexte `request` est correctement passé
+4. Ajouter des tests si nécessaire
+
 # Composants de l'application Suppliers
 
 Ce dossier contient les composants réutilisables pour l'affichage des fournisseurs et des produits.
