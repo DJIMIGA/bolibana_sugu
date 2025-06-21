@@ -72,7 +72,21 @@
                                     <svg class="w-4 h-4 mr-1.5 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
                                     </svg>
-                                    Prix unitaire: {{ item.variant.price|default:item.product.price|floatformat:0 }} FCFA
+                                    {% if item.variant %}
+                                        {% if item.variant.discount_price %}
+                                            <span class="text-gray-400 line-through">PU: {{ item.variant.price|floatformat:0 }} FCFA</span><br>
+                                            <span class="text-red-500">PU: {{ item.variant.discount_price|floatformat:0 }} FCFA</span>
+                                        {% else %}
+                                            Prix unitaire: {{ item.variant.price|floatformat:0 }} FCFA
+                                        {% endif %}
+                                    {% else %}
+                                        {% if item.product.discount_price %}
+                                            <span class="text-gray-400 line-through">PU: {{ item.product.price|floatformat:0 }} FCFA</span><br>
+                                            <span class="text-red-500">PU: {{ item.product.discount_price|floatformat:0 }} FCFA</span>
+                                        {% else %}
+                                            Prix unitaire: {{ item.product.price|floatformat:0 }} FCFA
+                                        {% endif %}
+                                    {% endif %}
                                 </span>
                                 {% if item.variant.stock or item.product.stock %}
                                 <span class="inline-flex items-center text-green-600">
@@ -93,7 +107,7 @@
     </ul>
     
 {% else %}
-    <div class="text-center py-12">
+    <div class="text-center py-12 px-4">
         <div class="mb-4">
             <svg class="mx-auto h-16 w-16 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"/>

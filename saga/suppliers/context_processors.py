@@ -3,6 +3,29 @@ from product.models import Category, Product, ShippingMethod, Fabric
 from django.utils import timezone
 from datetime import timedelta
 
+def format_dimension(value):
+    """
+    Formate une dimension en supprimant les zéros inutiles.
+    Ex: 3.00 devient 3, 1.50 devient 1.5
+    """
+    if value is None:
+        return ""
+    
+    # Convertir en string et remplacer le point par une virgule
+    str_value = str(value).replace('.', ',')
+    
+    # Supprimer les zéros inutiles à la fin
+    if ',' in str_value:
+        # Supprimer les zéros à la fin après la virgule
+        while str_value.endswith('0') and ',' in str_value:
+            str_value = str_value[:-1]
+        
+        # Si on se retrouve avec juste une virgule, la supprimer
+        if str_value.endswith(','):
+            str_value = str_value[:-1]
+    
+    return str_value
+
 def global_supplier_context(request):
     """
     Context processor qui fournit les données communes pour toutes les vues liées aux fournisseurs.
@@ -89,7 +112,7 @@ def global_supplier_context(request):
                 'fabric_type': fabric.get_fabric_type_display(),
                 'quality': fabric.quality,
                 'unique_id': fabric.unique_id,
-                'dimensions': f"{fabric.length}m x {fabric.width}m" if fabric.length and fabric.width else None,
+                'dimensions': f"{format_dimension(fabric.length)}m x {format_dimension(fabric.width)}m" if fabric.length and fabric.width else None,
                 'color': fabric.color.name if fabric.color else None,
                 'pattern': fabric.pattern,
                 'origin': fabric.origin,

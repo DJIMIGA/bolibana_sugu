@@ -41,13 +41,13 @@ Paramètres :
             <div class="swiper-wrapper">
                 {% for product in similar_products %}
                     <div class="swiper-slide">
-                        {% if product.category.slug == 'tissus' %}
+                        {% if product.fabric_product %}
                             {% include 'suppliers/components/fabric_card.html' with product=product %}
-                        {% elif product.category.slug == 'vetements' %}
-                            {% include 'suppliers/components/clothing_card.html' with product=product %}
-                        {% elif product.category.slug == 'telephones' %}
+                        {% elif product.clothing_product %}
+                            {% include 'suppliers/components/clothing_card.html' with product=product clothing_product=product.clothing_product %}
+                        {% elif product.phone %}
                             {% include 'suppliers/components/phone_card.html' with product=product %}
-                        {% elif product.category.slug == 'articles-culturels' %}
+                        {% elif product.cultural_product %}
                             {% include 'suppliers/components/cultural_card.html' with product=product %}
                         {% else %}
                             {% include 'suppliers/components/product_card.html' with product=product %}
@@ -65,13 +65,13 @@ Paramètres :
         <!-- Grille pour desktop -->
         <div class="hidden sm:grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
             {% for product in similar_products %}
-                {% if product.category.slug == 'tissus' %}
+                {% if product.fabric_product %}
                     {% include 'suppliers/components/fabric_card.html' with product=product %}
-                {% elif product.category.slug == 'vetements' %}
-                    {% include 'suppliers/components/clothing_card.html' with product=product %}
-                {% elif product.category.slug == 'telephones' %}
+                {% elif product.clothing_product %}
+                    {% include 'suppliers/components/clothing_card.html' with product=product clothing_product=product.clothing_product %}
+                {% elif product.phone %}
                     {% include 'suppliers/components/phone_card.html' with product=product %}
-                {% elif product.category.slug == 'articles-culturels' %}
+                {% elif product.cultural_product %}
                     {% include 'suppliers/components/cultural_card.html' with product=product %}
                 {% else %}
                     {% include 'suppliers/components/product_card.html' with product=product %}
@@ -103,25 +103,21 @@ Paramètres :
         height: 40px !important;
         border-radius: 50%;
         box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-    }
-
-    .swiper-button-next {
-        right: -5px !important;
-    }
-
-    .swiper-button-prev {
-        left: -5px !important;
-    }
-
-    .swiper-button-next:after,
-    .swiper-button-prev:after {
-        font-size: 20px !important;
+        top: 10.5rem !important;
+        opacity: 0.6 !important;
+        transition: opacity 0.2s;
     }
 
     .swiper-button-next:hover,
     .swiper-button-prev:hover {
         color: #047857 !important; /* green-700 */
         background-color: #f3f4f6;
+        opacity: 0.9 !important;
+    }
+
+    .swiper-button-next:after,
+    .swiper-button-prev:after {
+        font-size: 20px !important;
     }
 
     .swiper-button-disabled {

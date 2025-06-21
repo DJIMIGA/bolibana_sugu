@@ -661,53 +661,19 @@ class Clothing(models.Model):
         ('F', 'Femme'),
         ('U', 'Unisexe'),
     ]
-    TYPE_CHOICES = [
-        ('CLOTHING', 'Vêtement'),
-        ('FABRIC', 'Tissu'),
-    ]
-    FABRIC_TYPES = [
-        ('BAZIN', 'Bazin'),
-        ('WAX', 'Wax'),
-        ('KENTE', 'Kente'),
-        ('BOGOLAN', 'Bogolan'),
-        ('OTHER', 'Autre'),
-    ]
-    BAZIN_QUALITY_CHOICES = [
-        ('SUPER_RICHE', 'Super Riche'),
-        ('RICHE', 'Riche'),
-        ('MOYEN', 'Moyen'),
-        ('BASIQUE', 'Basique'),
-    ]
     
-    type = models.CharField(max_length=20, choices=TYPE_CHOICES, default='CLOTHING')
     gender = models.CharField(max_length=1, choices=GENDER_CHOICES, blank=True, null=True)
     size = models.ManyToManyField(Size, related_name='clothing_size', blank=True)
     color = models.ManyToManyField(Color, related_name='clothing_color', blank=True)
     
-    # Champs spécifiques aux tissus
-    fabric_type = models.CharField(max_length=20, choices=FABRIC_TYPES, blank=True, null=True)
-    fabric_quality = models.CharField(max_length=100, blank=True, null=True)
-    bazin_quality = models.CharField(max_length=20, choices=BAZIN_QUALITY_CHOICES, blank=True, null=True)
-    length = models.DecimalField(max_digits=5, decimal_places=2, help_text="Longueur en mètres", null=True, blank=True)
-    width = models.DecimalField(max_digits=4, decimal_places=2, help_text="Largeur en mètres", null=True, blank=True)
-    pattern = models.CharField(max_length=100, blank=True, null=True, help_text="Motif ou design du tissu")
-    origin = models.CharField(max_length=100, blank=True, null=True, help_text="Pays d'origine du tissu")
+    # Champs spécifiques aux vêtements industriels
+    material = models.CharField(max_length=100, blank=True, null=True, help_text="Matériau du vêtement (coton, polyester, etc.)")
+    style = models.CharField(max_length=100, blank=True, null=True, help_text="Style du vêtement (casual, formel, sport, etc.)")
+    season = models.CharField(max_length=50, blank=True, null=True, help_text="Saison d'utilisation")
     care_instructions = models.TextField(blank=True, null=True, help_text="Instructions d'entretien")
 
     def __str__(self):
-        if self.type == 'FABRIC':
-            quality_display = self.get_bazin_quality_display() if self.fabric_type == 'BAZIN' else self.fabric_quality
-            return f"{self.get_fabric_type_display()} {quality_display} - {self.product.title}"
         return self.product.title
-
-    def get_price_per_meter(self):
-        if self.length and self.product.discount_price:
-            price = self.product.discount_price
-        elif self.length and self.product.price:
-            price = self.product.price
-        else:
-            return None
-        return price / self.length
 
     class Meta:
         verbose_name = "Vêtement"

@@ -82,15 +82,17 @@ class UserForm(forms.ModelForm):
         initial='+223',
         label="Pays",
         widget=forms.TextInput(attrs={
-            'class': 'block w-1/4 pl-3 pr-2 py-2 text-base border-gray-300 bg-gray-50 focus:outline-none focus:ring-green-500 focus:border-green-500 sm:text-sm rounded-l-md',
-            'readonly': 'readonly'
+            'class': 'block w-24 pl-3 pr-2 py-2 border border-gray-300 bg-gray-50 rounded-l-md focus:outline-none focus:ring-green-500 focus:border-green-500 sm:text-sm',
+            'readonly': 'readonly',
+            'aria-label': 'Préfixe pays'
         })
     )
     phone_number = forms.CharField(
         label="Numéro",
         widget=forms.TextInput(attrs={
-            'class': 'appearance-none rounded-r-md relative block w-3/4 px-3 py-2 border border-yellow-300 placeholder-yellow-400 text-gray-900 focus:outline-none focus:ring-green-500 focus:border-green-500 focus:z-10 sm:text-sm',
-            'placeholder': 'Ex: 72464294'
+            'class': 'block w-full px-3 py-2 border border-gray-300 border-l-0 rounded-r-md placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-green-500 focus:border-green-500 focus:z-10 sm:text-sm',
+            'placeholder': 'Ex: 72464294',
+            'aria-label': 'Numéro de téléphone'
         }),
         required=False
     )
@@ -134,7 +136,7 @@ class UserForm(forms.ModelForm):
         self.fields['password'].label = "Mot de passe"
         self.fields['password'].widget = forms.PasswordInput(attrs={
             'type': 'password',
-            'class': 'appearance-none rounded-none relative block w-full px-3 py-2 border border-yellow-300 placeholder-gray-500 text-gray-900 rounded-b-md focus:outline-none focus:ring-green-500 focus:border-green-500 focus:z-10 sm:text-sm',
+            'class': 'appearance-none rounded-md relative block w-full px-3 py-2 border border-yellow-300 placeholder-yellow-400 text-gray-900 focus:outline-none focus:ring-green-500 focus:border-green-500 focus:z-10 sm:text-sm',
             'placeholder': 'Mot de passe'
         })
 

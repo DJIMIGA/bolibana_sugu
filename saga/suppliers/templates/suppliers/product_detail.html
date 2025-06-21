@@ -122,7 +122,7 @@
     <div class="space-y-6">
       <!-- Titre et badges -->
       <div class="flex items-start justify-between">
-        <h1 class="text-2xl md:text-3xl font-bold text-gray-900">{{ product.title }}</h1>
+        <h1 class="text-2xl md:text-3xl font-bold font-bitter text-gray-900">{{ product.title }}</h1>
         <div class="flex space-x-2">
           {% product_badges product %}
         </div>
@@ -158,9 +158,16 @@
       <div class="bg-white p-4 rounded-xl shadow-sm border border-gray-200">
         <div class="space-y-4">
           <div>
-            <p class="text-2xl sm:text-3xl font-bold bg-gradient-to-r from-green-600 via-yellow-500 to-red-500 bg-clip-text text-transparent">
-              {{ product.price|floatformat:0 }} FCFA
-            </p>
+            {% if product.discount_price %}
+              <p class="text-lg text-gray-400 line-through">{{ product.format_price }}</p>
+              <p class="text-2xl sm:text-3xl font-bold bg-gradient-to-r from-green-600 via-yellow-500 to-red-500 bg-clip-text text-transparent">
+                {{ product.format_discount_price }}
+              </p>
+            {% else %}
+              <p class="text-2xl sm:text-3xl font-bold bg-gradient-to-r from-green-600 via-yellow-500 to-red-500 bg-clip-text text-transparent">
+                {{ product.format_price }}
+              </p>
+            {% endif %}
             <p class="text-sm text-gray-600">Prix TTC, livraison incluse</p>
           </div>
           
@@ -287,7 +294,7 @@
   {% include "suppliers/components/_reviews.html" %}
 
   <!-- Produits similaires -->
-  {% include "suppliers/components/_similar_products.html" with similar_products=similar_products %}
+  {% include "suppliers/components/_similar_products.html" with similar_products=similar_products category_slug=category_slug %}
 
   <!-- Modal pour ajouter un avis -->
   <div id="reviewModal" class="fixed inset-0 bg-gray-500 bg-opacity-75 hidden z-50" aria-labelledby="modal-title" role="dialog" aria-modal="true">

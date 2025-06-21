@@ -170,7 +170,9 @@ def search(request):
             Q(description__icontains=query) |
             Q(phone__brand__icontains=query) |
             Q(phone__model__icontains=query) |
-            Q(clothing_product__type__icontains=query) |
+            Q(clothing_product__material__icontains=query) |
+            Q(clothing_product__style__icontains=query) |
+            Q(clothing_product__season__icontains=query) |
             Q(fabric_product__fabric_type__icontains=query) |
             Q(cultural_product__author__icontains=query)
         ).select_related(

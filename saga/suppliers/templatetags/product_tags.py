@@ -84,7 +84,8 @@ def render_phone_card(context, product):
     return {
         'product': product,
         'phone': product.phone,
-        'request': context['request']
+        'request': context['request'],
+        'user': context['request'].user
     }
 
 @register.inclusion_tag('suppliers/components/clothing_card.html', takes_context=True)
@@ -95,12 +96,22 @@ def render_clothing_card(context, product):
     # Si c'est un dictionnaire
     if isinstance(product, dict):
         if 'product' in product:
-            product = product['product']
+            product_obj = product['product']
+            clothing_product = product.get('clothing_product', product_obj.clothing_product)
+        else:
+            # Si c'est un dictionnaire sans clé 'product', on suppose que c'est l'objet Product
+            product_obj = product
+            clothing_product = product_obj.clothing_product
+    else:
+        # Si c'est un objet Product
+        product_obj = product
+        clothing_product = product_obj.clothing_product
     
     return {
-        'product': product,
-        'clothing': product.clothing_product,
-        'request': context['request']
+        'product': product_obj,
+        'clothing_product': clothing_product,
+        'request': context['request'],
+        'user': context['request'].user
     }
 
 @register.inclusion_tag('suppliers/components/cultural_card.html', takes_context=True)
@@ -115,8 +126,9 @@ def render_cultural_card(context, product):
     
     return {
         'product': product,
-        'cultural': product.cultural_product,
-        'request': context['request']
+        'cultural_product': product.cultural_product,
+        'request': context['request'],
+        'user': context['request'].user
     }
 
 @register.inclusion_tag('suppliers/components/fabric_card.html', takes_context=True)
@@ -131,8 +143,9 @@ def render_fabric_card(context, product):
     
     return {
         'product': product,
-        'fabric': product.fabric_product,
-        'request': context['request']
+        'fabric_product': product.fabric_product,
+        'request': context['request'],
+        'user': context['request'].user
     }
 
 @register.inclusion_tag('suppliers/components/product_card.html', takes_context=True)
@@ -143,41 +156,61 @@ def render_product_card(context, product):
     # Si c'est un dictionnaire
     if isinstance(product, dict):
         if 'product' in product:
-            product = product['product']
+            product_obj = product['product']
+            # Récupérer les objets spécifiques du dictionnaire
+            phone = product.get('phone', getattr(product_obj, 'phone', None))
+            clothing_product = product.get('clothing_product', getattr(product_obj, 'clothing_product', None))
+            fabric_product = product.get('fabric_product', getattr(product_obj, 'fabric_product', None))
+            cultural_product = product.get('cultural_product', getattr(product_obj, 'cultural_product', None))
+        else:
+            # Si c'est un dictionnaire sans clé 'product', on suppose que c'est l'objet Product
+            product_obj = product
+            phone = getattr(product_obj, 'phone', None)
+            clothing_product = getattr(product_obj, 'clothing_product', None)
+            fabric_product = getattr(product_obj, 'fabric_product', None)
+            cultural_product = getattr(product_obj, 'cultural_product', None)
+    else:
+        # Si c'est un objet Product
+        product_obj = product
+        phone = getattr(product_obj, 'phone', None)
+        clothing_product = getattr(product_obj, 'clothing_product', None)
+        fabric_product = getattr(product_obj, 'fabric_product', None)
+        cultural_product = getattr(product_obj, 'cultural_product', None)
     
-    if hasattr(product, 'phone'):
+    # Déterminer le type de produit et retourner les bonnes variables
+    if phone:
         return {
-            'product': product,
-            'phone': product.phone,
-            'template_name': 'suppliers/components/phone_card.html',
-            'request': context['request']
+            'product': product_obj,
+            'phone': phone,
+            'request': context['request'],
+            'user': context['request'].user
         }
-    elif hasattr(product, 'fabric_product'):
+    elif clothing_product:
         return {
-            'product': product,
-            'fabric': product.fabric_product,
-            'template_name': 'suppliers/components/fabric_card.html',
-            'request': context['request']
+            'product': product_obj,
+            'clothing_product': clothing_product,
+            'request': context['request'],
+            'user': context['request'].user
         }
-    elif hasattr(product, 'clothing_product'):
+    elif fabric_product:
         return {
-            'product': product,
-            'clothing': product.clothing_product,
-            'template_name': 'suppliers/components/clothing_card.html',
-            'request': context['request']
+            'product': product_obj,
+            'fabric_product': fabric_product,
+            'request': context['request'],
+            'user': context['request'].user
         }
-    elif hasattr(product, 'cultural_product'):
+    elif cultural_product:
         return {
-            'product': product,
-            'cultural': product.cultural_product,
-            'template_name': 'suppliers/components/cultural_card.html',
-            'request': context['request']
+            'product': product_obj,
+            'cultural_product': cultural_product,
+            'request': context['request'],
+            'user': context['request'].user
         }
     else:
         return {
-            'product': product,
-            'template_name': 'suppliers/components/product_card.html',
-            'request': context['request']
+            'product': product_obj,
+            'request': context['request'],
+            'user': context['request'].user
         }
 
 @register.simple_tag
@@ -213,14 +246,42 @@ def filter_by_category(products, category_id):
 
 @register.filter
 def is_favorite(user, product):
+    logger.debug(f"Checking favorite for user {user} and product {product}")
     if not user or not user.is_authenticated:
+        logger.debug("User not authenticated")
         return False
     cache_key = f"favorite_{user.id}_{product.id}"
     cached = cache.get(cache_key)
     if cached is not None:
+        logger.debug(f"Cache hit: {cached}")
         return cached
     result = Favorite.objects.filter(user=user, product=product).exists()
-    cache.set(cache_key, result, 60*15)  # Cache pour 15 minutes
+    logger.debug(f"Database check result: {result}")
+    cache.set(cache_key, result, 60*15)
     return result
+
+@register.filter
+def format_dimension(value):
+    """
+    Formate une dimension en supprimant les zéros inutiles.
+    Ex: 3.00 devient 3, 1.50 devient 1.5
+    """
+    if value is None:
+        return ""
+    
+    # Convertir en string et remplacer le point par une virgule
+    str_value = str(value).replace('.', ',')
+    
+    # Supprimer les zéros inutiles à la fin
+    if ',' in str_value:
+        # Supprimer les zéros à la fin après la virgule
+        while str_value.endswith('0') and ',' in str_value:
+            str_value = str_value[:-1]
+        
+        # Si on se retrouve avec juste une virgule, la supprimer
+        if str_value.endswith(','):
+            str_value = str_value[:-1]
+    
+    return str_value
 
 

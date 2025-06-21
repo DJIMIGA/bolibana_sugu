@@ -1,10 +1,10 @@
 {% load static %}
 {% load product_tags %}
 
-{% if request.user.is_authenticated %}
+{% if user.is_authenticated %}
 <button id="favorite-card-{{ product.id }}"
         hx-post="{% url 'suppliers:toggle_favorite' product.id %}?template=card"
-        hx-target="#favorite-card-{{ product.id }}, #favorite-{{ product.id }}"
+        hx-target="this"
         hx-swap="outerHTML"
         class="relative inline-flex items-center justify-center w-10 h-10 rounded-full border border-gray-300 bg-white text-gray-700 hover:bg-gray-50 hover:border-gray-400 transition-all duration-300 group"
         title="{% if user|is_favorite:product %}Retirer des favoris{% else %}Ajouter aux favoris{% endif %}">

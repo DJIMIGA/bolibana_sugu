@@ -1,31 +1,31 @@
-<div id="cart-total" class="border-t border-gray-100 px-3 py-4 sm:px-4 bg-gradient-to-b from-white to-gray-50">
+<div id="cart-total" class="border-t border-gray-100 px-3 py-2 sm:px-4 bg-gradient-to-b from-white to-gray-50">
     {% if cart and cart.cart_items.exists %}
-        <!-- Section Prix -->
-        <div class="space-y-3 mb-4">
+        <!-- Section Prix compacte -->
+        <div class="space-y-2 mb-3">
             <!-- Sous-total -->
             <div class="flex justify-between items-center">
-                <p class="text-sm text-gray-600">Sous-total</p>
-                <p class="text-lg font-bold bg-gradient-to-r from-green-600 to-yellow-500 bg-clip-text text-transparent">
+                <p class="text-sm text-gray-600 font-sans">Sous-total</p>
+                <p class="text-lg font-bold bg-gradient-to-r from-green-600 to-yellow-500 bg-clip-text text-transparent font-bitter">
                     {{ cart.get_total_price|floatformat:0 }} FCFA
                 </p>
             </div>
             
-            <!-- Information livraison -->
-            <div class="flex items-center p-2 bg-gradient-to-r from-yellow-50 to-yellow-100 rounded-lg border border-yellow-200">
-                <svg class="w-4 h-4 text-yellow-600 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <!-- Information livraison compacte -->
+            <div class="flex items-center p-1.5 bg-gradient-to-r from-yellow-50 to-yellow-100 rounded-md border border-yellow-200">
+                <svg class="w-3 h-3 text-yellow-600 mr-1.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
                 </svg>
-                <p class="text-xs text-yellow-700">Frais de livraison calculés à la commande</p>
+                <p class="text-xs text-yellow-700 font-sans">Frais de livraison calculés à la commande</p>
             </div>
         </div>
 
         {% if not is_checkout %}
-        <!-- Section Boutons (masquée pendant le checkout) -->
-        <div class="space-y-2">
+        <!-- Section Boutons compacte -->
+        <div class="space-y-1.5">
             <!-- Bouton Commander -->
             {% if user.is_authenticated %}
                 <a href="{% url 'cart:checkout' %}" 
-                   class="w-full flex justify-center items-center px-4 py-3 rounded-xl shadow-lg text-sm font-medium text-white bg-gradient-to-r from-green-600 to-yellow-500 hover:from-green-700 hover:to-yellow-600 transform hover:scale-[1.02] transition-all duration-300">
+                   class="w-full flex justify-center items-center px-3 py-2 rounded-lg shadow-md text-sm font-medium text-white bg-gradient-to-r from-green-600 to-yellow-500 hover:from-green-700 hover:to-yellow-600 transform hover:scale-[1.02] transition-all duration-300 font-sans">
                     <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
                     </svg>
@@ -33,7 +33,7 @@
                 </a>
             {% else %}
                 <a href="{% url 'accounts:login' %}?next={% url 'cart:checkout' %}" 
-                   class="w-full flex justify-center items-center px-4 py-3 rounded-xl shadow-lg text-sm font-medium text-white bg-gradient-to-r from-green-600 to-yellow-500 hover:from-green-700 hover:to-yellow-600 transform hover:scale-[1.02] transition-all duration-300">
+                   class="w-full flex justify-center items-center px-3 py-2 rounded-lg shadow-md text-sm font-medium text-white bg-gradient-to-r from-green-600 to-yellow-500 hover:from-green-700 hover:to-yellow-600 transform hover:scale-[1.02] transition-all duration-300 font-sans">
                     <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
                     </svg>
@@ -45,22 +45,22 @@
             <button hx-delete="{% url 'cart:delete_cart' %}"
                     hx-target="#cart-content"
                     hx-swap="innerHTML"
-                    class="w-full flex justify-center items-center px-3 py-2 rounded-xl border-2 border-red-200 text-red-600 hover:bg-red-50 hover:border-red-300 transition-all duration-300">
-                <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    class="w-full flex justify-center items-center px-2 py-1.5 rounded-lg border border-red-200 text-red-600 hover:bg-red-50 hover:border-red-300 transition-all duration-300 text-xs font-sans">
+                <svg class="w-3 h-3 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
                 </svg>
                 Vider le panier
             </button>
         </div>
         {% endif %}
+    {% else %}
+        <!-- Bouton Continuer vos achats (seulement si panier vide) -->
+        <a href="{% url 'suppliers:category_detail' 'tous-les-produits' %}" 
+           class="w-full flex justify-center items-center px-3 py-2 rounded-lg border-2 border-yellow-200 text-yellow-700 hover:bg-yellow-50 hover:border-yellow-300 transition-all duration-300 text-sm font-sans">
+            <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/>
+            </svg>
+            Continuer vos achats
+        </a>
     {% endif %}
-
-    <!-- Bouton Continuer vos achats -->
-    <a href="{% url 'product:product_list' %}" 
-       class="w-full flex justify-center items-center px-3 py-2 mt-3 rounded-xl border-2 border-yellow-200 text-yellow-700 hover:bg-yellow-50 hover:border-yellow-300 transition-all duration-300">
-        <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/>
-        </svg>
-        Continuer vos achats
-    </a>
 </div> 

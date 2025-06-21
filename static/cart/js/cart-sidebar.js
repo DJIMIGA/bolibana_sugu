@@ -22,6 +22,10 @@ class CartSidebar {
             return;
         }
 
+        // Initialiser l'overlay
+        this.overlay.style.pointerEvents = 'none';
+        this.overlay.classList.add('opacity-0');
+
         this.isMobile = window.innerWidth < 1024; // lg breakpoint
         this.bindEvents();
         this.bindResize();
@@ -71,6 +75,7 @@ class CartSidebar {
             // Overlay uniquement sur desktop
             this.overlay.classList.remove('opacity-0');
             this.overlay.classList.add('opacity-100');
+            this.overlay.style.pointerEvents = 'auto';
         }
         
         // Animation du container
@@ -88,6 +93,7 @@ class CartSidebar {
         if (!this.isMobile) {
             this.overlay.classList.remove('opacity-100');
             this.overlay.classList.add('opacity-0');
+            this.overlay.style.pointerEvents = 'none';
         }
         
         this.container.classList.remove('translate-x-0');

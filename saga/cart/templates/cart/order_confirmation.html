@@ -66,7 +66,12 @@
                     <div class="ml-4 flex-1">
                         <h3 class="text-sm font-medium text-gray-900">{{ item.product.title }}</h3>
                         <p class="text-sm text-gray-600">Quantité : {{ item.quantity }}</p>
-                        <p class="text-sm text-gray-600">Prix unitaire: {{ item.product.price|floatformat:0 }} FCFA</p>
+                        {% if item.product.discount_price %}
+                            <p class="text-sm text-gray-400 line-through">Prix unitaire: {{ item.product.price|floatformat:0 }} FCFA</p>
+                            <p class="text-sm text-red-500">Prix unitaire: {{ item.product.discount_price|floatformat:0 }} FCFA</p>
+                        {% else %}
+                            <p class="text-sm text-gray-600">Prix unitaire: {{ item.product.price|floatformat:0 }} FCFA</p>
+                        {% endif %}
                         {% if item.colors.exists or item.sizes.exists %}
                         <div class="mt-1 flex gap-2">
                             {% for color in item.colors.all %}

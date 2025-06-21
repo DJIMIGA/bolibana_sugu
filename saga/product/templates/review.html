@@ -31,7 +31,12 @@
         </div>
       {% endif %}
         <h3 class="mt-4 text-sm text-gray-700">{{ product.title }}</h3>
-        <p class="mt-1 text-lg font-medium text-gray-900">{{ product.price|floatformat:0 }} Fcfa</p>
+        {% if product.discount_price %}
+            <p class="mt-1 text-sm text-gray-400 line-through">{{ product.price|floatformat:0 }} Fcfa</p>
+            <p class="mt-1 text-lg font-medium text-red-500">{{ product.discount_price|floatformat:0 }} Fcfa</p>
+        {% else %}
+            <p class="mt-1 text-lg font-medium text-gray-900">{{ product.price|floatformat:0 }} Fcfa</p>
+        {% endif %}
 
       </div>
     <form action="" method="POST" class="space-y-4 mx-auto">

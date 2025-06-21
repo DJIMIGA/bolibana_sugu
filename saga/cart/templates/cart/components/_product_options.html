@@ -9,9 +9,16 @@
         </div>
         <div>
             <h3 class="text-lg font-medium text-gray-900">{{ product.title }}</h3>
-            <p class="text-lg font-bold bg-gradient-to-r from-green-600 to-yellow-500 bg-clip-text text-transparent">
-                {{ product.price|floatformat:0 }} FCFA
-            </p>
+            {% if product.discount_price %}
+                <p class="text-sm text-gray-400 line-through">{{ product.price|floatformat:0 }} FCFA</p>
+                <p class="text-lg font-bold bg-gradient-to-r from-green-600 to-yellow-500 bg-clip-text text-transparent">
+                    {{ product.discount_price|floatformat:0 }} FCFA
+                </p>
+            {% else %}
+                <p class="text-lg font-bold bg-gradient-to-r from-green-600 to-yellow-500 bg-clip-text text-transparent">
+                    {{ product.price|floatformat:0 }} FCFA
+                </p>
+            {% endif %}
         </div>
     </div>
     {% endif %}

@@ -22,7 +22,12 @@
                             <p class="ml-4 text-sm font-medium text-gray-900">{{ item.get_total_price|floatformat:0 }} FCFA</p>
                         </div>
                         <p class="mt-1 text-sm text-gray-500">Quantité: {{ item.quantity }}</p>
-                        <p class="mt-1 text-sm text-gray-500">Prix unitaire: {{ item.product.price|floatformat:0 }} FCFA</p>
+                        {% if item.product.discount_price %}
+                            <p class="mt-1 text-sm text-gray-400 line-through">Prix unitaire: {{ item.product.price|floatformat:0 }} FCFA</p>
+                            <p class="mt-1 text-sm text-red-500">Prix unitaire: {{ item.product.discount_price|floatformat:0 }} FCFA</p>
+                        {% else %}
+                            <p class="mt-1 text-sm text-gray-500">Prix unitaire: {{ item.product.price|floatformat:0 }} FCFA</p>
+                        {% endif %}
                     </div>
 
                     <!-- Options (couleur, taille) -->

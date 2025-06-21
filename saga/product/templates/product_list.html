@@ -30,9 +30,12 @@
                   <h3 class="font-medium text-lg text-gray-900 truncate">
                       {{ product.title }}
                   </h3>
-                  <p class="mt-1 text-lg font-bold text-yellow-500">
-                      {{ product.price|floatformat:0 }} Fcfa
-                  </p>
+                  {% if product.discount_price %}
+                      <p class="mt-1 text-sm text-gray-400 line-through">{{ product.price|floatformat:0 }} Fcfa</p>
+                      <p class="mt-1 text-lg font-bold text-red-500">{{ product.discount_price|floatformat:0 }} Fcfa</p>
+                  {% else %}
+                      <p class="mt-1 text-lg font-bold text-yellow-500">{{ product.price|floatformat:0 }} Fcfa</p>
+                  {% endif %}
               </div>
 
               <!-- Image du produit -->

@@ -20,4 +20,9 @@
             console.error('Erreur d\'initialisation:', error);
         }
     });
-</script> 
+</script>
+
+<!-- Script de debug (uniquement en développement) -->
+{% if debug %}
+<script type="module" src="{% static 'cart/js/cart-debug.js' %}"></script>
+{% endif %} 

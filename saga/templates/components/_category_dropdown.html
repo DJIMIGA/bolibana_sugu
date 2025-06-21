@@ -147,7 +147,7 @@
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/>
         </svg>
         <!-- Texte du bouton -->
-        <span>Toutes les catégories</span>
+        <span class="font-bitter">Toutes les catégories</span>
         <!-- Flèche dynamique -->
         <svg id="arrow-icon" class="w-5 h-5 text-gray-600 group-hover:text-green-600 transition-colors duration-200" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
@@ -167,7 +167,7 @@
                        data-category="{{ category.id }}"
                        onmouseover="showSubcategories('{{ category.id }}')">
                         <div class="flex items-center justify-between">
-                            <span>{{ category.name }}</span>
+                            <span class="font-bitter">{{ category.name }}</span>
                             {% if category.children.exists %}
                             <svg class="w-4 h-4 text-gray-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
                                 <path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd"/>
@@ -192,7 +192,7 @@
                                 {% if subcategory_data.subcategory.slug %}
                                 <div class="subcategory-column">
                                     <!-- Titre de la sous-catégorie -->
-                                    <h3 class="subcategory-title">
+                                    <h3 class="subcategory-title font-bitter">
                                         <a href="{% url 'suppliers:category_detail' subcategory_data.subcategory.slug %}">
                                             {{ subcategory_data.subcategory.name }}
                                         </a>
@@ -202,7 +202,7 @@
                                         {% for subsubcategory in subcategory_data.subsubcategories %}
                                         {% if subsubcategory.slug %}
                                         <a href="{% url 'suppliers:category_detail' subsubcategory.slug %}" 
-                                           class="subcategory-link">
+                                           class="subcategory-link font-bitter">
                                             {{ subsubcategory.name }}
                                         </a>
                                         {% endif %}

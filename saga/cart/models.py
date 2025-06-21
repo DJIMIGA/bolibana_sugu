@@ -58,8 +58,12 @@ class CartItem(models.Model):
     
     def get_total_price(self):
         if self.variant:
-            return self.variant.price * self.quantity
-        return self.product.price * self.quantity
+            # Utiliser le prix promotionnel si disponible, sinon le prix normal
+            price = self.variant.discount_price if hasattr(self.variant, 'discount_price') and self.variant.discount_price else self.variant.price
+            return price * self.quantity
+        # Utiliser le prix promotionnel si disponible, sinon le prix normal
+        price = self.product.discount_price if hasattr(self.product, 'discount_price') and self.product.discount_price else self.product.price
+        return price * self.quantity
     
 
 

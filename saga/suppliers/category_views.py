@@ -58,7 +58,7 @@ class BaseCategoryView(TemplateView):
             queryset = queryset.filter(
                 Q(brand__icontains=brand) |  # Pour les produits génériques
                 Q(phone__brand__icontains=brand) |  # Pour les téléphones
-                Q(clothing_product__fabric_type__icontains=brand)  # Pour les tissus
+                Q(fabric_product__fabric_type__icontains=brand)  # Pour les tissus
             )
             print(f"Filtre marque: {brand} - Produits restants: {queryset.count()}")
 
@@ -163,8 +163,6 @@ class BaseCategoryView(TemplateView):
         quality = self.request.GET.get('quality')
         if quality:
             queryset = queryset.filter(
-                Q(clothing_product__fabric_quality__icontains=quality) |
-                Q(clothing_product__bazin_quality__icontains=quality) |
                 Q(fabric_product__quality__icontains=quality)
             )
             print(f"Filtre qualité: {quality} - Produits restants: {queryset.count()}")
@@ -172,10 +170,7 @@ class BaseCategoryView(TemplateView):
         # Filtre par type de tissu
         fabric_type = self.request.GET.get('fabric_type')
         if fabric_type:
-            queryset = queryset.filter(
-                Q(clothing_product__fabric_type__icontains=fabric_type) |
-                Q(fabric_product__fabric_type__icontains=fabric_type)
-            )
+            queryset = queryset.filter(fabric_product__fabric_type__icontains=fabric_type)
             print(f"Filtre type tissu: {fabric_type} - Produits restants: {queryset.count()}")
 
         # Filtre par auteur (pour les articles culturels)
@@ -265,9 +260,17 @@ class BaseCategoryView(TemplateView):
             if color:
                 queryset = queryset.filter(clothing_product__color__name=color)
 
-            type = self.request.GET.get('type')
-            if type:
-                queryset = queryset.filter(clothing_product__type=type)
+            material = self.request.GET.get('material')
+            if material:
+                queryset = queryset.filter(clothing_product__material=material)
+
+            style = self.request.GET.get('style')
+            if style:
+                queryset = queryset.filter(clothing_product__style=style)
+
+            season = self.request.GET.get('season')
+            if season:
+                queryset = queryset.filter(clothing_product__season=season)
 
         # Si c'est "Tissus" ou une de ses sous-catégories (jusqu'au niveau 3)
         elif (category.slug == 'tissus' or 
@@ -421,10 +424,10 @@ class ClothingCategoryView(BaseCategoryView):
         print(f"Grand-parent: {category.parent.parent.name if category.parent and category.parent.parent else 'None'}")
         
         # Debug des types existants
-        existing_types = Product.objects.filter(
+        existing_materials = Product.objects.filter(
             clothing_product__isnull=False
-        ).values_list('clothing_product__type', flat=True).distinct()
-        print(f"Types existants dans la base: {list(existing_types)}")
+        ).values_list('clothing_product__material', flat=True).distinct()
+        print(f"Matériaux existants dans la base: {list(existing_materials)}")
         
         # Récupérer les IDs des catégories enfants
         child_ids = list(category.get_all_children_ids())
@@ -459,7 +462,6 @@ class ClothingCategoryView(BaseCategoryView):
                 print(f"IDs des catégories concernées: {category_ids}")
                 queryset = queryset.filter(
                     clothing_product__isnull=False,
-                    clothing_product__type='CLOTHING',
                     category_id__in=category_ids
                 )
                 print(f"Requête SQL: {queryset.query}")
@@ -470,7 +472,6 @@ class ClothingCategoryView(BaseCategoryView):
             print(f"IDs des catégories concernées: {category_ids}")
             queryset = queryset.filter(
                 clothing_product__isnull=False,
-                clothing_product__type='CLOTHING',
                 category_id__in=category_ids
             )
         
@@ -486,14 +487,18 @@ class ClothingCategoryView(BaseCategoryView):
         gender = self.request.GET.get('gender')
         size = self.request.GET.get('size')
         color = self.request.GET.get('color')
-        type_clothing = self.request.GET.get('type')
+        material = self.request.GET.get('material')
+        style = self.request.GET.get('style')
+        season = self.request.GET.get('season')
         
         print("\n=== DEBUG CLOTHING FILTERS ===")
         print(f"Filtres appliqués:")
         print(f"- Genre: {gender}")
         print(f"- Taille: {size}")
         print(f"- Couleur: {color}")
-        print(f"- Type: {type_clothing}")
+        print(f"- Matériau: {material}")
+        print(f"- Style: {style}")
+        print(f"- Saison: {season}")
         
         if gender:
             queryset = queryset.filter(clothing_product__gender=gender)
@@ -501,8 +506,12 @@ class ClothingCategoryView(BaseCategoryView):
             queryset = queryset.filter(clothing_product__size__name=size)
         if color:
             queryset = queryset.filter(clothing_product__color__name=color)
-        if type_clothing:
-            queryset = queryset.filter(clothing_product__type=type_clothing)
+        if material:
+            queryset = queryset.filter(clothing_product__material=material)
+        if style:
+            queryset = queryset.filter(clothing_product__style=style)
+        if season:
+            queryset = queryset.filter(clothing_product__season=season)
             
         print(f"Nombre de produits après filtres: {queryset.count()}")
         print("=== FIN DEBUG FILTERS ===\n")
@@ -565,15 +574,25 @@ class ClothingCategoryView(BaseCategoryView):
         print(f"Couleurs disponibles: {context['colors']}")
         
         # Récupérer les types disponibles
-        type_list = list(active_products.values_list('clothing_product__type', flat=True).distinct())
-        context['types'] = [{'type': t} for t in sorted(set(filter(None, type_list)))]
-        print(f"Types disponibles: {context['types']}")
+        material_list = list(active_products.values_list('clothing_product__material', flat=True).distinct())
+        context['materials'] = [{'material': m} for m in sorted(set(filter(None, material_list)))]
+        print(f"Matériaux disponibles: {context['materials']}")
+        
+        style_list = list(active_products.values_list('clothing_product__style', flat=True).distinct())
+        context['styles'] = [{'style': s} for s in sorted(set(filter(None, style_list)))]
+        print(f"Styles disponibles: {context['styles']}")
+        
+        season_list = list(active_products.values_list('clothing_product__season', flat=True).distinct())
+        context['seasons'] = [{'season': s} for s in sorted(set(filter(None, season_list)))]
+        print(f"Saisons disponibles: {context['seasons']}")
         
         # Filtres sélectionnés
         context['selected_gender'] = self.request.GET.get('gender', '')
         context['selected_size'] = self.request.GET.get('size', '')
         context['selected_color'] = self.request.GET.get('color', '')
-        context['selected_type'] = self.request.GET.get('type', '')
+        context['selected_material'] = self.request.GET.get('material', '')
+        context['selected_style'] = self.request.GET.get('style', '')
+        context['selected_season'] = self.request.GET.get('season', '')
         
         # Ajouter les informations sur les sous-catégories
         category = self.get_category()
@@ -590,7 +609,7 @@ class ClothingCategoryView(BaseCategoryView):
             if hasattr(product, 'clothing_product'):
                 formatted_products.append({
                     'product': product,
-                    'clothing': product.clothing_product
+                    'clothing_product': product.clothing_product
                 })
             else:
                 formatted_products.append({

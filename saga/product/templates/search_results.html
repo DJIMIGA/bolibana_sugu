@@ -44,7 +44,12 @@
                                             {{ product.cultural_product.author }}
                                         {% endif %}
                                     </p>
-                                    <p class="text-sm font-bold text-green-600">{{ product.price|floatformat:0 }} FCFA</p>
+                                    {% if product.discount_price %}
+                                        <p class="text-sm text-gray-400 line-through">{{ product.price|floatformat:0 }} FCFA</p>
+                                        <p class="text-sm font-bold text-red-500">{{ product.discount_price|floatformat:0 }} FCFA</p>
+                                    {% else %}
+                                        <p class="text-sm font-bold text-green-600">{{ product.price|floatformat:0 }} FCFA</p>
+                                    {% endif %}
                                 </div>
                             </div>
                         </a>

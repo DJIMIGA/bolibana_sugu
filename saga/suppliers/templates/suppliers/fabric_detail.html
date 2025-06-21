@@ -123,7 +123,7 @@
                 <div class="space-y-6">
             <!-- Titre et badges -->
             <div class="flex items-start justify-between">
-                <h1 class="text-2xl md:text-3xl font-bold text-gray-900">{{ product.title }}</h1>
+                <h1 class="text-2xl md:text-3xl font-bold font-bitter text-gray-900">{{ product.title }}</h1>
                 <div class="flex space-x-2">
                     {% product_badges product %}
                 </div>
@@ -138,13 +138,27 @@
             </div>
 
             <!-- Prix -->
-            <div class="space-y-1">
-                {% if product.discount_price %}
-                    <p class="text-gray-400 line-through text-sm">{{ product.format_price }}</p>
-                    <p class="text-red-500 font-bold text-2xl">{{ product.format_discount_price }}</p>
-                {% else %}
-                    <p class="text-gray-900 font-bold text-2xl">{{ product.format_price }}</p>
-                {% endif %}
+            <div class="bg-white p-4 rounded-xl shadow-sm border border-gray-200">
+                <div class="space-y-4">
+                    <div>
+                        {% if product.discount_price %}
+                            <p class="text-lg text-gray-400 line-through">{{ product.format_price }}</p>
+                            <p class="text-2xl sm:text-3xl font-bold bg-gradient-to-r from-green-600 via-yellow-500 to-red-500 bg-clip-text text-transparent">
+                                {{ product.format_discount_price }}
+                            </p>
+                        {% else %}
+                            <p class="text-2xl sm:text-3xl font-bold bg-gradient-to-r from-green-600 via-yellow-500 to-red-500 bg-clip-text text-transparent">
+                                {{ product.format_price }}
+                            </p>
+                        {% endif %}
+                        <p class="text-sm text-gray-600">Prix TTC, livraison incluse</p>
+                    </div>
+                    
+                    <div class="mt-6 flex flex-col sm:grid sm:grid-cols-2 gap-4">
+                        {% include "suppliers/components/_add_to_cart_button.html" with product=product is_detail=True %}
+                        {% include "suppliers/components/_favorite_button.html" with product=product is_detail=True %}
+                    </div>
+                </div>
             </div>
 
             <!-- Disponibilité -->
@@ -155,53 +169,36 @@
                 {% if product.is_available %}En stock{% else %}Rupture de stock{% endif %}
             </div>
 
-           <!-- Prix -->
-           <div class="bg-white p-4 rounded-xl shadow-sm border border-gray-200">
-            <div class="space-y-4">
-                <div>
-                    <p class="text-2xl sm:text-3xl font-bold bg-gradient-to-r from-green-600 via-yellow-500 to-red-500 bg-clip-text text-transparent">
-                        {{ product.price|floatformat:0 }} FCFA
-                    </p>
-                    <p class="text-sm text-gray-600">Prix TTC, livraison incluse</p>
-                </div>
-                
-                <div class="mt-6 flex flex-col sm:grid sm:grid-cols-2 gap-4">
-                    {% include "suppliers/components/_add_to_cart_button.html" with product=product is_detail=True %}
-                    {% include "suppliers/components/_favorite_button.html" with product=product is_detail=True %}
-                </div>
-            </div>
-        </div>
-
-            <!-- Note moyenne -->
-            {% if average_rating %}
-                <div class="mt-8 border-t border-gray-200 pt-6">
-                    <div class="flex items-center justify-between">
-                        <div class="flex items-center space-x-4">
-                            <div class="text-4xl font-bold text-gray-900">{{ average_rating|floatformat:1 }}</div>
-                            <div class="flex items-center text-yellow-400">
-                                {% for i in "12345" %}
-                                    {% if forloop.counter <= average_rating|floatformat:"0"|add:"0" %}
-                                        <svg class="h-5 w-5" fill="currentColor" viewBox="0 0 20 20">
-                                            <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/>
-                                        </svg>
-                                    {% else %}
-                                        <svg class="h-5 w-5 text-gray-300" fill="currentColor" viewBox="0 0 20 20">
-                                            <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/>
-                                        </svg>
-                                    {% endif %}
-                                {% endfor %}
-                            </div>
-                            <div class="text-sm text-gray-500">
-                                {% if review_count == 1 %}
-                                    1 avis
-                                {% else %}
-                                    {{ review_count }} avis
-                                {% endif %}
-                            </div>
-                            </div>
-                    </div>
-                </div>
-            {% endif %}
+           <!-- Note moyenne -->
+           {% if average_rating %}
+               <div class="mt-8 border-t border-gray-200 pt-6">
+                   <div class="flex items-center justify-between">
+                       <div class="flex items-center space-x-4">
+                           <div class="text-4xl font-bold text-gray-900">{{ average_rating|floatformat:1 }}</div>
+                           <div class="flex items-center text-yellow-400">
+                               {% for i in "12345" %}
+                                   {% if forloop.counter <= average_rating|floatformat:"0"|add:"0" %}
+                                       <svg class="h-5 w-5" fill="currentColor" viewBox="0 0 20 20">
+                                           <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/>
+                                       </svg>
+                                   {% else %}
+                                       <svg class="h-5 w-5 text-gray-300" fill="currentColor" viewBox="0 0 20 20">
+                                           <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/>
+                                       </svg>
+                                   {% endif %}
+                               {% endfor %}
+                           </div>
+                           <div class="text-sm text-gray-500">
+                               {% if review_count == 1 %}
+                                   1 avis
+                               {% else %}
+                                   {{ review_count }} avis
+                               {% endif %}
+                           </div>
+                           </div>
+                   </div>
+               </div>
+           {% endif %}
 
                     <!-- Description -->
                     {% if product.description %}
@@ -249,7 +246,7 @@
                     </svg>
                     <div class="space-y-1">
                         <p class="text-sm text-gray-600">Dimensions</p>
-                        <p class="font-medium">{{ product.fabric_product.length }}m x {{ product.fabric_product.width }}m</p>
+                        <p class="font-medium">{{ product.fabric_product.length|format_dimension }}m x {{ product.fabric_product.width|format_dimension }}m</p>
                     </div>
                 </div>
                         </div>

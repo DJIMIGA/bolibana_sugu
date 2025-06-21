@@ -11,7 +11,7 @@
                         </svg>
             {% endif %}
                     {% if item.url %}
-                        <a href="{{ item.url }}" class="{% if forloop.first %}text-gray-400 hover:text-gray-500{% else %}ml-4 text-sm font-medium text-gray-500 hover:text-gray-700{% endif %}">
+                        <a href="{{ item.url }}" class="font-bitter {% if forloop.first %}text-gray-400 hover:text-gray-500{% else %}ml-4 text-sm font-medium text-gray-500 hover:text-gray-700{% endif %}">
                             {% if forloop.first %}
                                 <svg class="h-5 w-5 flex-shrink-0" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
                                     <path d="M10.707 2.293a1 1 0 00-1.414 0l-7 7a1 1 0 001.414 1.414L4 10.414V17a1 1 0 001 1h2a1 1 0 001-1v-2a1 1 0 011-1h2a1 1 0 011 1v2a1 1 0 001 1h2a1 1 0 001-1v-6.586l.293.293a1 1 0 001.414-1.414l-7-7z" />
@@ -22,7 +22,7 @@
                             {% endif %}
                         </a>
                     {% else %}
-                        <span class="ml-4 text-sm font-medium text-gray-500" aria-current="page">{{ item.name }}</span>
+                        <span class="ml-4 text-sm font-medium text-gray-500 font-bitter" aria-current="page">{{ item.name }}</span>
         {% endif %}
                 </div>
             </li>

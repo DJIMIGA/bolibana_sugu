@@ -79,16 +79,22 @@ class SupplierListView(ListView):
             gender = self.request.GET.get('gender')
             size = self.request.GET.get('size')
             color = self.request.GET.get('color')
-            type_clothing = self.request.GET.get('type')
+            material = self.request.GET.get('material')
+            style = self.request.GET.get('style')
+            season = self.request.GET.get('season')
 
             if gender:
                 queryset = queryset.filter(clothing_product__gender=gender)
             if size:
-                queryset = queryset.filter(clothing_product__size=size)
+                queryset = queryset.filter(clothing_product__size__name=size)
             if color:
                 queryset = queryset.filter(clothing_product__color__name=color)
-            if type_clothing:
-                queryset = queryset.filter(clothing_product__type=type_clothing)
+            if material:
+                queryset = queryset.filter(clothing_product__material=material)
+            if style:
+                queryset = queryset.filter(clothing_product__style=style)
+            if season:
+                queryset = queryset.filter(clothing_product__season=season)
 
         # Filtres spécifiques aux tissus
         if not product_type or product_type == 'fabric':
@@ -179,6 +185,17 @@ class SupplierListView(ListView):
             'fabric_product__color'
         )
 
+        # Log détaillé des vêtements
+        clothing_products = active_products.filter(clothing_product__isnull=False)
+        logger.info("\n=== VÊTEMENTS ===")
+        logger.info(f"Nombre total de vêtements: {clothing_products.count()}")
+        for product in clothing_products:
+            logger.info(f"Vêtement: {product.title} (ID: {product.id})")
+            logger.info(f"Catégorie: {product.category.name if product.category else 'Pas de catégorie'}")
+            logger.info(f"Disponible: {product.is_available}")
+            logger.info(f"Salam: {product.is_salam}")
+            logger.info("---")
+
         # Filtres pour les téléphones
         context['phone_categories'] = [{'brand': b} for b in sorted(filter(None, active_products.filter(phone__isnull=False).values_list('phone__brand', flat=True).distinct()))]
         context['brands'] = [{'phone__brand': b} for b in sorted(filter(None, active_products.filter(phone__isnull=False).values_list('phone__brand', flat=True).distinct()))]
@@ -190,7 +207,9 @@ class SupplierListView(ListView):
         context['genders'] = [{'clothing_product__gender': g} for g in sorted(filter(None, active_products.filter(clothing_product__isnull=False).values_list('clothing_product__gender', flat=True).distinct()))]
         context['sizes'] = [{'clothing_product__size': s} for s in sorted(filter(None, active_products.filter(clothing_product__isnull=False).values_list('clothing_product__size', flat=True).distinct()))]
         context['clothing_colors'] = [{'clothing_product__color__name': c} for c in sorted(filter(None, active_products.filter(clothing_product__isnull=False).values_list('clothing_product__color__name', flat=True).distinct()))]
-        context['clothing_types'] = [{'clothing_product__type': t} for t in sorted(filter(None, active_products.filter(clothing_product__isnull=False).values_list('clothing_product__type', flat=True).distinct()))]
+        context['materials'] = [{'clothing_product__material': m} for m in sorted(filter(None, active_products.filter(clothing_product__isnull=False).values_list('clothing_product__material', flat=True).distinct()))]
+        context['styles'] = [{'clothing_product__style': s} for s in sorted(filter(None, active_products.filter(clothing_product__isnull=False).values_list('clothing_product__style', flat=True).distinct()))]
+        context['seasons'] = [{'clothing_product__season': s} for s in sorted(filter(None, active_products.filter(clothing_product__isnull=False).values_list('clothing_product__season', flat=True).distinct()))]
 
         # Filtres pour les tissus
         context['fabric_types'] = [{'fabric_product__fabric_type': t} for t in sorted(filter(None, active_products.filter(fabric_product__isnull=False).values_list('fabric_product__fabric_type', flat=True).distinct()))]
@@ -210,7 +229,9 @@ class SupplierListView(ListView):
         context['selected_gender'] = self.request.GET.get('gender', '')
         context['selected_size'] = self.request.GET.get('size', '')
         context['selected_color'] = self.request.GET.get('color', '')
-        context['selected_type'] = self.request.GET.get('type', '')
+        context['selected_material'] = self.request.GET.get('material', '')
+        context['selected_style'] = self.request.GET.get('style', '')
+        context['selected_season'] = self.request.GET.get('season', '')
         context['selected_fabric_type'] = self.request.GET.get('fabric_type', '')
         context['selected_fabric_color'] = self.request.GET.get('fabric_color', '')
         context['selected_quality'] = self.request.GET.get('quality', '')
@@ -237,10 +258,18 @@ class SupplierListView(ListView):
         logger.info(f"Nombre de produits culturels: {cultural_count}")
 
         # Ajouter les produits par type au contexte
-        context['products'] = products.filter(phone__isnull=False)[:4]
+        context['products'] = products  # Tous les produits
+        context['phone_products'] = products.filter(phone__isnull=False)[:4]
         context['clothing_products'] = products.filter(clothing_product__isnull=False)[:4]
         context['fabric_products'] = products.filter(fabric_product__isnull=False)[:4]
         context['cultural_products'] = products.filter(cultural_product__isnull=False)[:4]
+        
+        # Log des produits ajoutés au contexte
+        logger.info("\n=== PRODUITS DANS LE CONTEXTE ===")
+        logger.info(f"Nombre de produits totaux: {len(context['products'])}")
+        logger.info(f"Nombre de vêtements: {len(context['clothing_products'])}")
+        for product in context['clothing_products']:
+            logger.info(f"Vêtement dans le contexte: {product.title}")
         
         return context
 
@@ -388,9 +417,13 @@ class CategoryDetailView(TemplateView):
                 queryset = queryset.filter(fabric_product__isnull=False)
             elif category.slug == 'vetements' or category.parent and category.parent.slug == 'vetements':
                 queryset = queryset.filter(clothing_product__isnull=False)
-                # Si c'est une sous-catégorie de vêtements, filtrer par type
+                # Si c'est une sous-catégorie de vêtements, filtrer par style ou matériau
                 if category.parent and category.parent.slug == 'vetements':
-                    queryset = queryset.filter(clothing_product__type__iexact=category.name)
+                    # Essayer de filtrer par style d'abord, puis par matériau
+                    queryset = queryset.filter(
+                        Q(clothing_product__style__iexact=category.name) |
+                        Q(clothing_product__material__iexact=category.name)
+                    )
             elif category.slug == 'telephones' or category.name == 'Téléphones':
                 queryset = queryset.filter(phone__isnull=False)
             elif category.slug == 'culture' or category.slug == 'articles-culturels':
@@ -426,16 +459,22 @@ class CategoryDetailView(TemplateView):
             gender = self.request.GET.get('gender')
             size = self.request.GET.get('size')
             color = self.request.GET.get('color')
-            type_clothing = self.request.GET.get('type')
+            material = self.request.GET.get('material')
+            style = self.request.GET.get('style')
+            season = self.request.GET.get('season')
             
             if gender:
                 queryset = queryset.filter(clothing_product__gender=gender)
             if size:
-                queryset = queryset.filter(clothing_product__size=size)
+                queryset = queryset.filter(clothing_product__size__name=size)
             if color:
                 queryset = queryset.filter(clothing_product__color__name=color)
-            if type_clothing:
-                queryset = queryset.filter(clothing_product__type=type_clothing)
+            if material:
+                queryset = queryset.filter(clothing_product__material=material)
+            if style:
+                queryset = queryset.filter(clothing_product__style=style)
+            if season:
+                queryset = queryset.filter(clothing_product__season=season)
                 
         # Appliquer les filtres spécifiques aux tissus
         elif category.slug == 'tissus':
@@ -631,16 +670,68 @@ class PhoneDetailView(DetailView):
             context['average_rating'] = sum(review.rating for review in reviews) / len(reviews)
             context['review_count'] = len(reviews)
         
-        # Ajouter les produits similaires avec optimisation
+        # Ajouter les produits similaires avec optimisation et priorité
+        # Récupérer toutes les catégories liées (catégorie actuelle + sous-catégories)
+        category_ids = [product.category.id]
+        
+        # Ajouter les sous-catégories directes
+        direct_children = product.category.children.all()
+        category_ids.extend(direct_children.values_list('id', flat=True))
+        
+        # Ajouter les sous-sous-catégories
+        for child in direct_children:
+            grand_children = child.children.all()
+            category_ids.extend(grand_children.values_list('id', flat=True))
+        
+        # Construire les conditions de base
+        similar_conditions = Q(phone__isnull=False)
+        
+        # Ajouter les conditions de caractéristiques seulement si les champs ne sont pas None ou vides
+        characteristic_conditions = Q()
+        if phone.brand:
+            characteristic_conditions |= Q(phone__brand=phone.brand)
+        if phone.model:
+            characteristic_conditions |= Q(phone__model=phone.model)
+        if phone.storage:
+            characteristic_conditions |= Q(phone__storage=phone.storage)
+        if phone.ram:
+            characteristic_conditions |= Q(phone__ram=phone.ram)
+        
+        # Construire la requête avec priorité
+        # Priorité 1: Même catégorie exacte + caractéristiques similaires
+        priority_1 = Q(category=product.category)
+        if characteristic_conditions:
+            priority_1 &= characteristic_conditions
+        
+        # Priorité 2: Même catégorie exacte
+        priority_2 = Q(category=product.category)
+        
+        # Priorité 3: Sous-catégories + caractéristiques similaires
+        priority_3 = Q(category__in=direct_children)
+        if characteristic_conditions:
+            priority_3 &= characteristic_conditions
+        
+        # Priorité 4: Sous-catégories
+        priority_4 = Q(category__in=direct_children)
+        
+        # Priorité 5: Sous-sous-catégories + caractéristiques similaires
+        grand_children_ids = []
+        for child in direct_children:
+            grand_children_ids.extend(child.children.values_list('id', flat=True))
+        priority_5 = Q(category__id__in=grand_children_ids)
+        if characteristic_conditions:
+            priority_5 &= characteristic_conditions
+        
+        # Priorité 6: Sous-sous-catégories
+        priority_6 = Q(category__id__in=grand_children_ids)
+        
+        # Combiner toutes les priorités
+        similar_conditions = (
+            priority_1 | priority_2 | priority_3 | priority_4 | priority_5 | priority_6
+        )
+        
         similar_products = Product.objects.filter(
-            Q(phone__isnull=False) &  # S'assurer que ce sont des téléphones
-            (
-                Q(phone__brand=phone.brand) |  # Même marque
-                Q(phone__model=phone.model) |  # Même modèle
-                Q(category=product.category) |  # Même catégorie
-                Q(phone__storage=phone.storage) |  # Même capacité de stockage
-                Q(phone__ram=phone.ram)  # Même RAM
-            ),
+            similar_conditions,
             is_available=True,  # Uniquement les produits disponibles
             is_salam=True  # Uniquement les produits Salam
         ).exclude(
@@ -652,8 +743,10 @@ class PhoneDetailView(DetailView):
         ).prefetch_related(
             'images'
         ).order_by(
-            '-created_at'  # Les plus récents en premier
-        )[:4]
+            # Ordre par priorité : même catégorie d'abord, puis sous-catégories
+            'category__id',  # Même catégorie en premier
+            '-created_at'    # Puis par date de création
+        )[:8]  # Augmenter le nombre pour avoir plus de choix
         
         # Ajouter les catégories principales pour la navigation
         main_categories = Category.objects.filter(
@@ -734,21 +827,73 @@ class ClothingDetailView(DetailView):
         # Ajouter les images
         context['images'] = product.images.all()
         
-        # Ajouter les avis avec optimisation
-        reviews = product.reviews.select_related('user').all()
+        # Ajouter les avis
+        reviews = product.reviews.all()
         context['reviews'] = reviews
         if reviews:
             context['average_rating'] = sum(review.rating for review in reviews) / len(reviews)
             context['review_count'] = len(reviews)
         
-        # Ajouter les produits similaires avec optimisation
+        # Ajouter les produits similaires avec optimisation et priorité
+        # Récupérer toutes les catégories liées (catégorie actuelle + sous-catégories)
+        category_ids = [product.category.id]
+        
+        # Ajouter les sous-catégories directes
+        direct_children = product.category.children.all()
+        category_ids.extend(direct_children.values_list('id', flat=True))
+        
+        # Ajouter les sous-sous-catégories
+        for child in direct_children:
+            grand_children = child.children.all()
+            category_ids.extend(grand_children.values_list('id', flat=True))
+        
+        # Construire les conditions de base
+        similar_conditions = Q(clothing_product__isnull=False)
+        
+        # Ajouter les conditions de caractéristiques seulement si les champs ne sont pas None ou vides
+        characteristic_conditions = Q()
+        if clothing.material:
+            characteristic_conditions |= Q(clothing_product__material=clothing.material)
+        if clothing.style:
+            characteristic_conditions |= Q(clothing_product__style=clothing.style)
+        if clothing.gender:
+            characteristic_conditions |= Q(clothing_product__gender=clothing.gender)
+        
+        # Construire la requête avec priorité
+        # Priorité 1: Même catégorie exacte + caractéristiques similaires
+        priority_1 = Q(category=product.category)
+        if characteristic_conditions:
+            priority_1 &= characteristic_conditions
+        
+        # Priorité 2: Même catégorie exacte
+        priority_2 = Q(category=product.category)
+        
+        # Priorité 3: Sous-catégories + caractéristiques similaires
+        priority_3 = Q(category__in=direct_children)
+        if characteristic_conditions:
+            priority_3 &= characteristic_conditions
+        
+        # Priorité 4: Sous-catégories
+        priority_4 = Q(category__in=direct_children)
+        
+        # Priorité 5: Sous-sous-catégories + caractéristiques similaires
+        grand_children_ids = []
+        for child in direct_children:
+            grand_children_ids.extend(child.children.values_list('id', flat=True))
+        priority_5 = Q(category__id__in=grand_children_ids)
+        if characteristic_conditions:
+            priority_5 &= characteristic_conditions
+        
+        # Priorité 6: Sous-sous-catégories
+        priority_6 = Q(category__id__in=grand_children_ids)
+        
+        # Combiner toutes les priorités
+        similar_conditions = (
+            priority_1 | priority_2 | priority_3 | priority_4 | priority_5 | priority_6
+        )
+        
         similar_products = Product.objects.filter(
-            Q(clothing_product__isnull=False) &
-            (
-                Q(clothing_product__type=clothing.type) |  # Même type
-                Q(clothing_product__gender=clothing.gender) |  # Même genre
-                Q(category=product.category)  # Même catégorie
-            ),
+            similar_conditions,
             is_available=True,  # Uniquement les produits disponibles
             is_salam=True  # Uniquement les produits Salam
         ).exclude(
@@ -761,8 +906,10 @@ class ClothingDetailView(DetailView):
             'clothing_product__size',
             'clothing_product__color'
         ).order_by(
-            '-created_at'
-        )[:4]
+            # Ordre par priorité : même catégorie d'abord, puis sous-catégories
+            'category__id',  # Même catégorie en premier
+            '-created_at'    # Puis par date de création
+        )[:8]  # Augmenter le nombre pour avoir plus de choix
         
         # Ajouter les catégories principales pour la navigation
         main_categories = Category.objects.filter(
@@ -820,12 +967,68 @@ class CulturalItemDetailView(DetailView):
             context['average_rating'] = sum(review.rating for review in reviews) / len(reviews)
             context['review_count'] = len(reviews)
         
-        # Ajouter les produits similaires
+        # Ajouter les produits similaires avec conditions robustes et priorité
+        # Récupérer toutes les catégories liées (catégorie actuelle + sous-catégories)
+        category_ids = [product.category.id]
+        
+        # Ajouter les sous-catégories directes
+        direct_children = product.category.children.all()
+        category_ids.extend(direct_children.values_list('id', flat=True))
+        
+        # Ajouter les sous-sous-catégories
+        for child in direct_children:
+            grand_children = child.children.all()
+            category_ids.extend(grand_children.values_list('id', flat=True))
+        
+        # Construire les conditions de base
+        similar_conditions = Q(cultural_product__isnull=False)
+        
+        # Ajouter les conditions de caractéristiques seulement si les champs ne sont pas None ou vides
+        characteristic_conditions = Q()
+        if cultural_item.author:
+            characteristic_conditions |= Q(cultural_product__author=cultural_item.author)
+        
+        # Ajouter une condition sur le titre si possible
+        if product.title and len(product.title.split()) > 0:
+            first_word = product.title.split()[0]
+            if len(first_word) > 2:  # Éviter les mots trop courts
+                characteristic_conditions |= Q(title__icontains=first_word)
+        
+        # Construire la requête avec priorité
+        # Priorité 1: Même catégorie exacte + caractéristiques similaires
+        priority_1 = Q(category=product.category)
+        if characteristic_conditions:
+            priority_1 &= characteristic_conditions
+        
+        # Priorité 2: Même catégorie exacte
+        priority_2 = Q(category=product.category)
+        
+        # Priorité 3: Sous-catégories + caractéristiques similaires
+        priority_3 = Q(category__in=direct_children)
+        if characteristic_conditions:
+            priority_3 &= characteristic_conditions
+        
+        # Priorité 4: Sous-catégories
+        priority_4 = Q(category__in=direct_children)
+        
+        # Priorité 5: Sous-sous-catégories + caractéristiques similaires
+        grand_children_ids = []
+        for child in direct_children:
+            grand_children_ids.extend(child.children.values_list('id', flat=True))
+        priority_5 = Q(category__id__in=grand_children_ids)
+        if characteristic_conditions:
+            priority_5 &= characteristic_conditions
+        
+        # Priorité 6: Sous-sous-catégories
+        priority_6 = Q(category__id__in=grand_children_ids)
+        
+        # Combiner toutes les priorités
+        similar_conditions = (
+            priority_1 | priority_2 | priority_3 | priority_4 | priority_5 | priority_6
+        )
+        
         similar_products = Product.objects.filter(
-            Q(category=product.category) |  # Même catégorie
-            Q(cultural_product__author=cultural_item.author) |  # Même auteur
-            Q(title__icontains=product.title.split()[0]),  # Titre similaire
-            cultural_product__isnull=False,
+            similar_conditions,
             is_available=True,  # Uniquement les produits disponibles
             is_salam=True  # Uniquement les produits Salam
         ).exclude(
@@ -836,8 +1039,10 @@ class CulturalItemDetailView(DetailView):
         ).prefetch_related(
             'images'
         ).order_by(
-            '-created_at'  # Les plus récents en premier
-        )[:4]
+            # Ordre par priorité : même catégorie d'abord, puis sous-catégories
+            'category__id',  # Même catégorie en premier
+            '-created_at'    # Puis par date de création
+        )[:8]  # Augmenter le nombre pour avoir plus de choix
         
         context['similar_products'] = similar_products
         context['cultural_item'] = cultural_item
@@ -863,14 +1068,64 @@ class FabricDetailView(DetailView):
         context = super().get_context_data(**kwargs)
         product = self.get_object()
         
-        # Récupérer les produits similaires
+        # Récupérer les produits similaires avec conditions robustes et priorité
+        # Récupérer toutes les catégories liées (catégorie actuelle + sous-catégories)
+        category_ids = [product.category.id]
+        
+        # Ajouter les sous-catégories directes
+        direct_children = product.category.children.all()
+        category_ids.extend(direct_children.values_list('id', flat=True))
+        
+        # Ajouter les sous-sous-catégories
+        for child in direct_children:
+            grand_children = child.children.all()
+            category_ids.extend(grand_children.values_list('id', flat=True))
+        
+        # Construire les conditions de base
+        similar_conditions = Q(fabric_product__isnull=False)
+        
+        # Ajouter les conditions de caractéristiques seulement si les champs ne sont pas None ou vides
+        characteristic_conditions = Q()
+        if product.fabric_product.fabric_type:
+            characteristic_conditions |= Q(fabric_product__fabric_type=product.fabric_product.fabric_type)
+        if product.fabric_product.quality:
+            characteristic_conditions |= Q(fabric_product__quality=product.fabric_product.quality)
+        
+        # Construire la requête avec priorité
+        # Priorité 1: Même catégorie exacte + caractéristiques similaires
+        priority_1 = Q(category=product.category)
+        if characteristic_conditions:
+            priority_1 &= characteristic_conditions
+        
+        # Priorité 2: Même catégorie exacte
+        priority_2 = Q(category=product.category)
+        
+        # Priorité 3: Sous-catégories + caractéristiques similaires
+        priority_3 = Q(category__in=direct_children)
+        if characteristic_conditions:
+            priority_3 &= characteristic_conditions
+        
+        # Priorité 4: Sous-catégories
+        priority_4 = Q(category__in=direct_children)
+        
+        # Priorité 5: Sous-sous-catégories + caractéristiques similaires
+        grand_children_ids = []
+        for child in direct_children:
+            grand_children_ids.extend(child.children.values_list('id', flat=True))
+        priority_5 = Q(category__id__in=grand_children_ids)
+        if characteristic_conditions:
+            priority_5 &= characteristic_conditions
+        
+        # Priorité 6: Sous-sous-catégories
+        priority_6 = Q(category__id__in=grand_children_ids)
+        
+        # Combiner toutes les priorités
+        similar_conditions = (
+            priority_1 | priority_2 | priority_3 | priority_4 | priority_5 | priority_6
+        )
+        
         similar_products = Product.objects.filter(
-            Q(fabric_product__isnull=False) &
-            (
-                Q(fabric_product__fabric_type=product.fabric_product.fabric_type) |  # Même type de tissu
-                Q(category=product.category) |  # Même catégorie
-                Q(fabric_product__quality=product.fabric_product.quality)  # Même qualité
-            )
+            similar_conditions
         ).exclude(
             id=product.id
         ).select_related(
@@ -879,8 +1134,10 @@ class FabricDetailView(DetailView):
         ).prefetch_related(
             'images'
         ).order_by(
-            '-created_at'  # Les plus récents en premier
-        )[:4]
+            # Ordre par priorité : même catégorie d'abord, puis sous-catégories
+            'category__id',  # Même catégorie en premier
+            '-created_at'    # Puis par date de création
+        )[:8]  # Augmenter le nombre pour avoir plus de choix
         
         # Ajouter les avis et la note moyenne
         reviews = product.reviews.all()
@@ -954,13 +1211,41 @@ class ProductDetailView(DetailView):
         average_rating = reviews.aggregate(Avg('rating'))['rating__avg'] or 0
         average_rating = round(average_rating, 1)
         
-        # Récupérer les produits similaires avec cache
+        # Récupérer les produits similaires avec cache et priorité
         cache_key = f'similar_products_{product.id}'
         similar_products = cache.get(cache_key)
         
         if similar_products is None:
+            # Récupérer toutes les catégories liées (catégorie actuelle + sous-catégories)
+            category_ids = [product.category.id]
+            
+            # Ajouter les sous-catégories directes
+            direct_children = product.category.children.all()
+            category_ids.extend(direct_children.values_list('id', flat=True))
+            
+            # Ajouter les sous-sous-catégories
+            for child in direct_children:
+                grand_children = child.children.all()
+                category_ids.extend(grand_children.values_list('id', flat=True))
+            
+            # Construire la requête avec priorité
+            # Priorité 1: Même catégorie exacte
+            priority_1 = Q(category=product.category)
+            
+            # Priorité 2: Sous-catégories
+            priority_2 = Q(category__in=direct_children)
+            
+            # Priorité 3: Sous-sous-catégories
+            grand_children_ids = []
+            for child in direct_children:
+                grand_children_ids.extend(child.children.values_list('id', flat=True))
+            priority_3 = Q(category__id__in=grand_children_ids)
+            
+            # Combiner toutes les priorités
+            similar_conditions = priority_1 | priority_2 | priority_3
+            
             similar_products = Product.objects.filter(
-                category=product.category,
+                similar_conditions,
                 is_available=True,
                 is_salam=True
             ).exclude(id=product.id).select_related(
@@ -976,7 +1261,11 @@ class ProductDetailView(DetailView):
                 'clothing_product__color',
                 'fabric_product__color',
                 'images'
-            )[:4]
+            ).order_by(
+                # Ordre par priorité : même catégorie d'abord, puis sous-catégories
+                'category__id',  # Même catégorie en premier
+                '-created_at'    # Puis par date de création
+            )[:8]  # Augmenter le nombre pour avoir plus de choix
             
             # Mettre en cache pour 1 heure
             cache.set(cache_key, similar_products, 3600)
@@ -1076,7 +1365,7 @@ def toggle_favorite(request, product_id):
     
     # Si l'action est "removed", mettre à jour la liste des favoris
     if action == "removed":
-        # Récupérer la liste mise à jour des favoris
+        # Récupérer la liste mise à jour des favoris (non paginée pour HTMX)
         favorites = Favorite.objects.filter(
             user=request.user
         ).select_related(
@@ -1090,10 +1379,11 @@ def toggle_favorite(request, product_id):
             'product__images'
         ).order_by('-created_at')
         
-        # Rendre le template de la liste des favoris
+        # Rendre le template de la liste des favoris (sans pagination pour HTMX)
         favorites_list_html = render_to_string('suppliers/components/_favorites_list.html', {
             'favorites': favorites,
-            'user': request.user
+            'user': request.user,
+            # Ne pas passer page_obj pour éviter la pagination dans HTMX
         }, request=request)
         
         # Combiner toutes les réponses

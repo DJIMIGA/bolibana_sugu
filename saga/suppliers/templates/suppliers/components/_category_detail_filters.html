@@ -8,17 +8,17 @@
             <div class="space-y-1">
                 <input type="number" name="price_min" placeholder="Prix min" 
                        value="{{ selected_price_min }}"
-                       class="w-full text-sm rounded-lg border border-gray-200 px-2 py-1.5 text-gray-700 focus:outline-none focus:ring-1 focus:ring-green-500">
+                       class="w-full text-sm rounded-lg border border-gray-200 px-2 py-1.5 text-gray-700 focus:outline-none focus:ring-1 focus:ring-green-500 font-bitter">
                         </div>
             <div class="space-y-1">
                 <input type="number" name="price_max" placeholder="Prix max" 
                        value="{{ selected_price_max }}"
-                       class="w-full text-sm rounded-lg border border-gray-200 px-2 py-1.5 text-gray-700 focus:outline-none focus:ring-1 focus:ring-green-500">
+                       class="w-full text-sm rounded-lg border border-gray-200 px-2 py-1.5 text-gray-700 focus:outline-none focus:ring-1 focus:ring-green-500 font-bitter">
                     </div>
 
             <!-- Filtres de livraison -->
             <div class="space-y-1">
-                <select name="shipping" class="w-full text-sm rounded-lg border border-gray-200 px-2 py-1.5 text-gray-700 focus:outline-none focus:ring-1 focus:ring-green-500">
+                <select name="shipping" class="w-full text-sm rounded-lg border border-gray-200 px-2 py-1.5 text-gray-700 focus:outline-none focus:ring-1 focus:ring-green-500 font-bitter">
                     <option value="">Livraison</option>
                     {% for method in shipping_methods %}
                     <option value="{{ method.name }}" {% if method.name == selected_shipping %}selected{% endif %}>
@@ -30,7 +30,7 @@
 
             <!-- Filtres communs à toutes les catégories -->
             <div class="space-y-1">
-                <select name="condition" class="w-full text-sm rounded-lg border border-gray-200 px-2 py-1.5 text-gray-700 focus:outline-none focus:ring-1 focus:ring-green-500">
+                <select name="condition" class="w-full text-sm rounded-lg border border-gray-200 px-2 py-1.5 text-gray-700 focus:outline-none focus:ring-1 focus:ring-green-500 font-bitter">
                     <option value="">État</option>
                     <option value="new" {% if selected_condition == 'new' %}selected{% endif %}>Neuf</option>
                     <option value="used" {% if selected_condition == 'used' %}selected{% endif %}>Occasion</option>
@@ -39,7 +39,7 @@
             </div>
 
             <div class="space-y-1">
-                <select name="warranty" class="w-full text-sm rounded-lg border border-gray-200 px-2 py-1.5 text-gray-700 focus:outline-none focus:ring-1 focus:ring-green-500">
+                <select name="warranty" class="w-full text-sm rounded-lg border border-gray-200 px-2 py-1.5 text-gray-700 focus:outline-none focus:ring-1 focus:ring-green-500 font-bitter">
                     <option value="">Garantie</option>
                     <option value="yes" {% if selected_warranty == 'yes' %}selected{% endif %}>Avec garantie</option>
                     <option value="no" {% if selected_warranty == 'no' %}selected{% endif %}>Sans garantie</option>
@@ -47,7 +47,7 @@
             </div>
 
             <div class="space-y-1">
-                <select name="promotion" class="w-full text-sm rounded-lg border border-gray-200 px-2 py-1.5 text-gray-700 focus:outline-none focus:ring-1 focus:ring-green-500">
+                <select name="promotion" class="w-full text-sm rounded-lg border border-gray-200 px-2 py-1.5 text-gray-700 focus:outline-none focus:ring-1 focus:ring-green-500 font-bitter">
                     <option value="">Promo</option>
                     <option value="yes" {% if selected_promotion == 'yes' %}selected{% endif %}>En promo</option>
                     <option value="no" {% if selected_promotion == 'no' %}selected{% endif %}>Sans promo</option>
@@ -55,7 +55,7 @@
             </div>
 
             <div class="space-y-1">
-                <select name="popularity" class="w-full text-sm rounded-lg border border-gray-200 px-2 py-1.5 text-gray-700 focus:outline-none focus:ring-1 focus:ring-green-500">
+                <select name="popularity" class="w-full text-sm rounded-lg border border-gray-200 px-2 py-1.5 text-gray-700 focus:outline-none focus:ring-1 focus:ring-green-500 font-bitter">
                     <option value="">Tendance</option>
                     <option value="trending" {% if selected_popularity == 'trending' %}selected{% endif %}>Tendance</option>
                     <option value="best_selling" {% if selected_popularity == 'best_selling' %}selected{% endif %}>Meilleures ventes</option>
@@ -66,7 +66,7 @@
         {% if category.slug == 'tous-les-produits' or category.parent.slug == 'tous-les-produits' or category.parent.parent.slug == 'tous-les-produits' %}
         <!-- Filtres pour tous les produits -->
             <div class="space-y-1">
-                <select name="main_category" class="w-full text-sm rounded-lg border border-gray-200 px-2 py-1.5 text-gray-700 focus:outline-none focus:ring-1 focus:ring-green-500">
+                <select name="main_category" class="w-full text-sm rounded-lg border border-gray-200 px-2 py-1.5 text-gray-700 focus:outline-none focus:ring-1 focus:ring-green-500 font-bitter">
                     <option value="">Catégorie</option>
                     {% for cat in main_categories %}
                     <option value="{{ cat.slug }}" {% if cat.slug == selected_main_category %}selected{% endif %}>
@@ -81,7 +81,7 @@
         <!-- Filtres génériques pour les produits sans modèle spécifique -->
             {% if brands %}
             <div class="space-y-1">
-                <select name="brand" class="w-full text-sm rounded-lg border border-gray-200 px-2 py-1.5 text-gray-700 focus:outline-none focus:ring-1 focus:ring-green-500">
+                <select name="brand" class="w-full text-sm rounded-lg border border-gray-200 px-2 py-1.5 text-gray-700 focus:outline-none focus:ring-1 focus:ring-green-500 font-bitter">
                     <option value="">Marque</option>
                     {% for brand in brands %}
                     <option value="{{ brand.brand }}" {% if brand.brand == selected_brand %}selected{% endif %}>
@@ -94,7 +94,7 @@
 
             {% if categories %}
             <div class="space-y-1">
-                <select name="category" class="w-full text-sm rounded-lg border border-gray-200 px-2 py-1.5 text-gray-700 focus:outline-none focus:ring-1 focus:ring-green-500">
+                <select name="category" class="w-full text-sm rounded-lg border border-gray-200 px-2 py-1.5 text-gray-700 focus:outline-none focus:ring-1 focus:ring-green-500 font-bitter">
                     <option value="">Sous-catégorie</option>
                     {% for cat in categories %}
                     <option value="{{ cat.name }}" {% if cat.name == selected_category %}selected{% endif %}>
@@ -110,7 +110,7 @@
         <!-- Filtres spécifiques aux téléphones -->
             {% if models %}
             <div class="space-y-1">
-                <select name="model" class="w-full text-sm rounded-lg border border-gray-200 px-2 py-1.5 text-gray-700 focus:outline-none focus:ring-1 focus:ring-green-500">
+                <select name="model" class="w-full text-sm rounded-lg border border-gray-200 px-2 py-1.5 text-gray-700 focus:outline-none focus:ring-1 focus:ring-green-500 font-bitter">
                     <option value="">Modèle</option>
                     {% for model in models %}
                     <option value="{{ model.phone__model }}" {% if model.phone__model == selected_model %}selected{% endif %}>
@@ -123,7 +123,7 @@
 
             {% if storages %}
             <div class="space-y-1">
-                <select name="storage" class="w-full text-sm rounded-lg border border-gray-200 px-2 py-1.5 text-gray-700 focus:outline-none focus:ring-1 focus:ring-green-500">
+                <select name="storage" class="w-full text-sm rounded-lg border border-gray-200 px-2 py-1.5 text-gray-700 focus:outline-none focus:ring-1 focus:ring-green-500 font-bitter">
                     <option value="">Stockage</option>
                     {% for storage in storages %}
                     <option value="{{ storage.phone__storage }}" {% if storage.phone__storage == selected_storage %}selected{% endif %}>
@@ -136,7 +136,7 @@
 
             {% if rams %}
             <div class="space-y-1">
-                <select name="ram" class="w-full text-sm rounded-lg border border-gray-200 px-2 py-1.5 text-gray-700 focus:outline-none focus:ring-1 focus:ring-green-500">
+                <select name="ram" class="w-full text-sm rounded-lg border border-gray-200 px-2 py-1.5 text-gray-700 focus:outline-none focus:ring-1 focus:ring-green-500 font-bitter">
                     <option value="">RAM</option>
                     {% for ram in rams %}
                     <option value="{{ ram.phone__ram }}" {% if ram.phone__ram == selected_ram %}selected{% endif %}>
@@ -152,7 +152,7 @@
         <!-- Filtres spécifiques aux vêtements -->
             {% if genders %}
             <div class="space-y-1">
-                <select name="gender" class="w-full text-sm rounded-lg border border-gray-200 px-2 py-1.5 text-gray-700 focus:outline-none focus:ring-1 focus:ring-green-500">
+                <select name="gender" class="w-full text-sm rounded-lg border border-gray-200 px-2 py-1.5 text-gray-700 focus:outline-none focus:ring-1 focus:ring-green-500 font-bitter">
                     <option value="">Genre</option>
                     {% for gender in genders %}
                     <option value="{{ gender.gender }}" {% if gender.gender == selected_gender %}selected{% endif %}>
@@ -165,7 +165,7 @@
 
             {% if sizes %}
             <div class="space-y-1">
-                <select name="size" class="w-full text-sm rounded-lg border border-gray-200 px-2 py-1.5 text-gray-700 focus:outline-none focus:ring-1 focus:ring-green-500">
+                <select name="size" class="w-full text-sm rounded-lg border border-gray-200 px-2 py-1.5 text-gray-700 focus:outline-none focus:ring-1 focus:ring-green-500 font-bitter">
                     <option value="">Taille</option>
                     {% for size in sizes %}
                     <option value="{{ size.size }}" {% if size.size == selected_size %}selected{% endif %}>
@@ -180,18 +180,18 @@
             <!-- Bouton de soumission -->
             <div class="col-span-2 sm:col-span-4 md:col-span-6 flex flex-col sm:flex-row justify-end gap-2 sm:gap-3">
                 <button type="submit" 
-                        class="w-full sm:w-auto inline-flex items-center justify-center px-3 sm:px-4 py-2 sm:py-2.5 bg-green-600 text-white text-xs sm:text-sm font-medium rounded-lg hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 transition-all duration-200 shadow-sm hover:shadow-md">
+                        class="w-full sm:w-auto inline-flex items-center justify-center px-3 sm:px-4 py-2 sm:py-2.5 bg-green-600 text-white text-xs sm:text-sm font-medium rounded-lg hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 transition-all duration-200 shadow-sm hover:shadow-md font-bitter">
                     <svg class="w-3.5 h-3.5 sm:w-4 sm:h-4 mr-1.5 sm:mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"/>
                     </svg>
-                    <span class="whitespace-nowrap">Filtrer</span>
+                    <span class="whitespace-nowrap font-bitter">Filtrer</span>
                 </button>
             <a href="{% url 'suppliers:category_detail' category.slug %}" 
-                   class="w-full sm:w-auto inline-flex items-center justify-center px-3 sm:px-4 py-2 sm:py-2.5 bg-gray-100 text-gray-700 text-xs sm:text-sm font-medium rounded-lg hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 transition-all duration-200 shadow-sm hover:shadow-md">
+                   class="w-full sm:w-auto inline-flex items-center justify-center px-3 sm:px-4 py-2 sm:py-2.5 bg-gray-100 text-gray-700 text-xs sm:text-sm font-medium rounded-lg hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 transition-all duration-200 shadow-sm hover:shadow-md font-bitter">
                     <svg class="w-3.5 h-3.5 sm:w-4 sm:h-4 mr-1.5 sm:mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
                     </svg>
-                    <span class="whitespace-nowrap">Reset</span>
+                    <span class="whitespace-nowrap font-bitter">Reset</span>
             </a>
         </div>
     </form>
@@ -210,7 +210,7 @@
 <div id="filtersPanel" class="fixed inset-0 z-40 bg-black bg-opacity-40 flex items-end md:items-center justify-center transition-all duration-300 hidden">
     <div class="bg-white w-full md:w-80 rounded-t-2xl md:rounded-xl p-3 max-h-[80vh] overflow-y-auto shadow-xl">
         <div class="flex items-center justify-between mb-2">
-            <h2 class="text-base font-bold text-gray-900">Filtres</h2>
+            <h2 class="text-base font-bold text-gray-900 font-bitter">Filtres</h2>
             <button onclick="toggleFilters()" class="text-gray-400 hover:text-gray-700 transition-colors duration-200">
                 <span class="sr-only">Fermer</span>
                 <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -222,7 +222,7 @@
         <form method="get" class="space-y-1.5">
             <!-- Prix -->
             <div class="bg-gray-50 rounded-lg p-2 sm:p-3">
-                <button type="button" class="w-full px-2 sm:px-3 py-1 sm:py-1.5 flex items-center justify-between text-sm font-medium text-gray-900" onclick="toggleSection('priceSection')">
+                <button type="button" class="w-full px-2 sm:px-3 py-1 sm:py-1.5 flex items-center justify-between text-sm font-medium text-gray-900 font-bitter" onclick="toggleSection('priceSection')">
                     <span class="flex-1 text-left">Prix</span>
                     <svg class="h-4 w-4 flex-shrink-0 ml-2 transform transition-transform duration-200" id="priceSectionIcon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
@@ -231,13 +231,13 @@
                 <div id="priceSection" class="mt-2 space-y-2 sm:space-y-3">
                     <div class="grid grid-cols-2 gap-2 sm:gap-3">
                         <div>
-                            <label for="price_min" class="block text-xs sm:text-sm text-gray-600 mb-1">Min</label>
+                            <label for="price_min" class="block text-xs sm:text-sm text-gray-600 mb-1 font-bitter">Min</label>
                             <input type="number" name="price_min" id="price_min" value="{{ selected_price_min }}" 
                                    class="w-full px-2 sm:px-3 py-1 sm:py-1.5 text-sm border border-gray-300 rounded-md focus:ring-green-500 focus:border-green-500"
                                    placeholder="Min">
                         </div>
                         <div>
-                            <label for="price_max" class="block text-xs sm:text-sm text-gray-600 mb-1">Max</label>
+                            <label for="price_max" class="block text-xs sm:text-sm text-gray-600 mb-1 font-bitter">Max</label>
                             <input type="number" name="price_max" id="price_max" value="{{ selected_price_max }}" 
                                    class="w-full px-2 sm:px-3 py-1 sm:py-1.5 text-sm border border-gray-300 rounded-md focus:ring-green-500 focus:border-green-500"
                                    placeholder="Max">
@@ -248,7 +248,7 @@
 
             <!-- État du produit -->
             <div class="bg-gray-50 rounded-lg p-2 sm:p-3">
-                <button type="button" class="w-full px-2 sm:px-3 py-1 sm:py-1.5 flex items-center justify-between text-sm font-medium text-gray-900" onclick="toggleSection('conditionSection')">
+                <button type="button" class="w-full px-2 sm:px-3 py-1 sm:py-1.5 flex items-center justify-between text-sm font-medium text-gray-900 font-bitter" onclick="toggleSection('conditionSection')">
                     <span class="flex-1 text-left">État</span>
                     <svg class="h-4 w-4 flex-shrink-0 ml-2 transform transition-transform duration-200" id="conditionSectionIcon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
@@ -284,7 +284,7 @@
 
             <!-- Garantie -->
             <div class="bg-gray-50 rounded-lg p-2 sm:p-3">
-                <button type="button" class="w-full px-2 sm:px-3 py-1 sm:py-1.5 flex items-center justify-between text-sm font-medium text-gray-900" onclick="toggleSection('warrantySection')">
+                <button type="button" class="w-full px-2 sm:px-3 py-1 sm:py-1.5 flex items-center justify-between text-sm font-medium text-gray-900 font-bitter" onclick="toggleSection('warrantySection')">
                     <span class="flex-1 text-left">Garantie</span>
                     <svg class="h-4 w-4 flex-shrink-0 ml-2 transform transition-transform duration-200" id="warrantySectionIcon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
@@ -314,7 +314,7 @@
 
             <!-- Promotion -->
             <div class="bg-gray-50 rounded-lg p-2 sm:p-3">
-                <button type="button" class="w-full px-2 sm:px-3 py-1 sm:py-1.5 flex items-center justify-between text-sm font-medium text-gray-900" onclick="toggleSection('promotionSection')">
+                <button type="button" class="w-full px-2 sm:px-3 py-1 sm:py-1.5 flex items-center justify-between text-sm font-medium text-gray-900 font-bitter" onclick="toggleSection('promotionSection')">
                     <span class="flex-1 text-left">Promo</span>
                     <svg class="h-4 w-4 flex-shrink-0 ml-2 transform transition-transform duration-200" id="promotionSectionIcon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
@@ -344,7 +344,7 @@
 
             <!-- Popularité -->
             <div class="bg-gray-50 rounded-lg p-2 sm:p-3">
-                <button type="button" class="w-full px-2 sm:px-3 py-1 sm:py-1.5 flex items-center justify-between text-sm font-medium text-gray-900" onclick="toggleSection('popularitySection')">
+                <button type="button" class="w-full px-2 sm:px-3 py-1 sm:py-1.5 flex items-center justify-between text-sm font-medium text-gray-900 font-bitter" onclick="toggleSection('popularitySection')">
                     <span class="flex-1 text-left">Tendance</span>
                     <svg class="h-4 w-4 flex-shrink-0 ml-2 transform transition-transform duration-200" id="popularitySectionIcon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
@@ -375,18 +375,18 @@
             <!-- Boutons d'action -->
             <div class="flex flex-col sm:flex-row gap-2 sm:gap-3 pt-3">
                 <button type="submit" 
-                        class="w-full sm:w-auto inline-flex items-center justify-center px-3 sm:px-4 py-2 sm:py-2.5 bg-green-600 text-white text-xs sm:text-sm font-medium rounded-lg hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 transition-all duration-200 shadow-sm hover:shadow-md">
+                        class="w-full sm:w-auto inline-flex items-center justify-center px-3 sm:px-4 py-2 sm:py-2.5 bg-green-600 text-white text-xs sm:text-sm font-medium rounded-lg hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 transition-all duration-200 shadow-sm hover:shadow-md font-bitter">
                     <svg class="w-3.5 h-3.5 sm:w-4 sm:h-4 mr-1.5 sm:mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"/>
                     </svg>
-                    <span class="whitespace-nowrap">Filtrer</span>
+                    <span class="whitespace-nowrap font-bitter">Filtrer</span>
                 </button>
                 <a href="{% url 'suppliers:category_detail' category.slug %}" 
-                   class="w-full sm:w-auto inline-flex items-center justify-center px-3 sm:px-4 py-2 sm:py-2.5 bg-gray-100 text-gray-700 text-xs sm:text-sm font-medium rounded-lg hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 transition-all duration-200 shadow-sm hover:shadow-md">
+                   class="w-full sm:w-auto inline-flex items-center justify-center px-3 sm:px-4 py-2 sm:py-2.5 bg-gray-100 text-gray-700 text-xs sm:text-sm font-medium rounded-lg hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 transition-all duration-200 shadow-sm hover:shadow-md font-bitter">
                     <svg class="w-3.5 h-3.5 sm:w-4 sm:h-4 mr-1.5 sm:mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
                     </svg>
-                    <span class="whitespace-nowrap">Reset</span>
+                    <span class="whitespace-nowrap font-bitter">Reset</span>
                 </a>
             </div>
         </form>

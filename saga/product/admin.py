@@ -154,7 +154,7 @@ class CulturalItemAdmin(admin.ModelAdmin):
 
 class ProductAdmin(admin.ModelAdmin):
     form = ProductForm
-    list_display = ('title', 'category', 'brand', 'price', 'stock', 'sku', 'is_available', 'is_salam', 'created_at')
+    list_display = ('title', 'category', 'brand', 'price', 'stock', 'sku', 'is_available', 'is_salam', 'created_at', 'discount_price')
     list_filter = ('is_available', 'is_salam', 'category', 'brand', 'created_at')
     search_fields = ('title', 'sku', 'brand', 'description')
     readonly_fields = ('created_at', 'updated_at')
@@ -164,7 +164,7 @@ class ProductAdmin(admin.ModelAdmin):
             'fields': ('title', 'description', 'category', 'supplier', 'brand')
         }),
         ('Prix et stock', {
-            'fields': ('price', 'stock', 'sku', 'is_available', 'is_salam')
+            'fields': ('price', 'stock', 'sku', 'is_available', 'is_salam', 'discount_price')
         }),
         ('Images', {
             'fields': ('image', 'image_urls')
