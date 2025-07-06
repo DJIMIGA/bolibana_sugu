@@ -30,6 +30,14 @@ from .forms import UserForm, ShippingAddressForm, PasswordChangeForm, CustomPass
 from django.core.mail import send_mail
 from django.contrib.auth.views import PasswordResetView, PasswordResetConfirmView
 
+# Import de la fonction de migration du panier
+try:
+    from cart.utils import migrate_anonymous_cart
+except ImportError:
+    # Fallback si l'import échoue
+    def migrate_anonymous_cart(sender, request, user, **kwargs):
+        pass
+
 class CustomPasswordResetView(PasswordResetView):
     form_class = CustomPasswordResetForm
     template_name = 'password_reset.html'
@@ -147,8 +155,18 @@ def signup(request):
     if request.method == 'POST':
         form = UserForm(request.POST)
         if form.is_valid():
+            # Sauvegarder la clé de session anonyme avant login
+            old_session_key = request.session.session_key
+            if not old_session_key:
+                request.session.save()
+                old_session_key = request.session.session_key
             user = form.save()
             login(request, user)
+            # Migrer le panier anonyme vers le compte utilisateur
+            try:
+                migrate_anonymous_cart(None, request, user, old_session_key=old_session_key)
+            except Exception as e:
+                print(f"⚠️ Erreur lors de la migration du panier: {str(e)}")
             # Ajouter un message informatif sur la 2FA
             messages.info(
                 request,
@@ -201,8 +219,19 @@ class LoginView(AuthLoginView):
             self.request.session['2fa_user_id'] = user.id
             return redirect('accounts:verify_2fa')
         else:
-            # Connexion directe si pas de 2FA
+            # Sauvegarder la clé de session anonyme avant login
+            old_session_key = self.request.session.session_key
+            if not old_session_key:
+                self.request.session.save()
+                old_session_key = self.request.session.session_key
             auth_login(self.request, user)
+            
+            # Migrer le panier anonyme vers le compte utilisateur
+            try:
+                migrate_anonymous_cart(None, self.request, user, old_session_key=old_session_key)
+            except Exception as e:
+                print(f"⚠️ Erreur lors de la migration du panier: {str(e)}")
+            
             # Suggérer l'activation de la 2FA
             messages.info(
                 self.request,
@@ -483,8 +512,20 @@ def verify_2fa(request):
         token = request.POST.get('token')
         
         if user.verify_2fa_code(token):
+            # Sauvegarder la clé de session anonyme avant login
+            old_session_key = request.session.session_key
+            if not old_session_key:
+                request.session.save()
+                old_session_key = request.session.session_key
             auth_login(request, user)
             user.set_verified(True)
+            
+            # Migrer le panier anonyme vers le compte utilisateur
+            try:
+                migrate_anonymous_cart(None, request, user, old_session_key=old_session_key)
+            except Exception as e:
+                print(f"⚠️ Erreur lors de la migration du panier: {str(e)}")
+            
             if '2fa_user_id' in request.session:
                 del request.session['2fa_user_id']
             return redirect('suppliers:supplier_index')

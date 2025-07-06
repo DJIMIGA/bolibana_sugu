@@ -119,12 +119,13 @@ def migrate_anonymous_cart(sender, request, user, **kwargs):
     Migre le panier d'un utilisateur anonyme vers son compte lors de la connexion.
     """
     try:
-        # Récupérer la session key actuelle avant qu'elle ne soit modifiée
-        current_session_key = request.session.session_key
+        # Utiliser la clé de session anonyme passée si disponible
+        old_session_key = kwargs.get('old_session_key')
+        session_key = old_session_key or request.session.session_key
         
-        if current_session_key:
-            # Récupérer le panier anonyme avec la session key actuelle
-            anonymous_cart = Cart.objects.filter(session_key=current_session_key).first()
+        if session_key:
+            # Récupérer le panier anonyme avec la bonne session key
+            anonymous_cart = Cart.objects.filter(session_key=session_key).first()
             
             if anonymous_cart and anonymous_cart.cart_items.exists():
                 print(f"🔄 Migration du panier anonyme vers le compte utilisateur {user.email}")
