@@ -793,6 +793,20 @@ def payment_delivery(request):
                 messages.success(request, "✅ **Commande créée** : Votre commande a été enregistrée avec succès. Vous paierez à la livraison.")
                 
                 # Créer la commande
+                # Pour les commandes simples, ne pas ajouter de métadonnées de processus en 2 étapes
+                if is_mixed_cart:
+                    # Panier mixte : ajouter les métadonnées pour le processus en 2 étapes
+                    metadata = {
+                        'order_type': 'classic',
+                        'is_classic_step': True,
+                        'step_number': 1,
+                        'total_steps': 2,
+                        'next_step': 'salam_products'
+                    }
+                else:
+                    # Commande simple : pas de métadonnées de processus
+                    metadata = {}
+                
                 order = Order.objects.create(
                     user=request.user,
                     shipping_address=address,
@@ -801,13 +815,7 @@ def payment_delivery(request):
                     subtotal=classic_total,
                     shipping_cost=shipping_method.price,
                     total=classic_total + shipping_method.price,
-                    metadata={
-                        'order_type': 'classic',
-                        'is_classic_step': True,
-                        'step_number': 1,
-                        'total_steps': 2,
-                        'next_step': 'salam_products'
-                    }
+                    metadata=metadata
                 )
                 print(f"Commande créée avec ID: {order.id}")
                 

@@ -119,18 +119,22 @@ def migrate_anonymous_cart(sender, request, user, **kwargs):
     Migre le panier d'un utilisateur anonyme vers son compte lors de la connexion.
     """
     try:
-        # Récupérer l'ancienne session key depuis la requête
-        old_session_key = request.session.get('_old_session_key')
+        # Récupérer la session key actuelle avant qu'elle ne soit modifiée
+        current_session_key = request.session.session_key
         
-        if old_session_key:
-            # Récupérer le panier anonyme avec l'ancienne session key
-            anonymous_cart = Cart.objects.filter(session_key=old_session_key).first()
+        if current_session_key:
+            # Récupérer le panier anonyme avec la session key actuelle
+            anonymous_cart = Cart.objects.filter(session_key=current_session_key).first()
             
-            if anonymous_cart:
+            if anonymous_cart and anonymous_cart.cart_items.exists():
+                print(f"🔄 Migration du panier anonyme vers le compte utilisateur {user.email}")
+                print(f"📦 {anonymous_cart.cart_items.count()} articles à migrer")
+                
                 # Récupérer ou créer le panier de l'utilisateur
                 user_cart, created = Cart.objects.get_or_create(user=user)
                 
                 # Copier tous les items du panier anonyme vers le panier utilisateur
+                migrated_items = 0
                 for anonymous_item in anonymous_cart.cart_items.all():
                     # Vérifier si l'item existe déjà dans le panier utilisateur
                     existing_item = None
@@ -154,8 +158,10 @@ def migrate_anonymous_cart(sender, request, user, **kwargs):
                     
                     if existing_item:
                         # Mettre à jour la quantité
+                        old_quantity = existing_item.quantity
                         existing_item.quantity += anonymous_item.quantity
                         existing_item.save()
+                        print(f"  ✅ Quantité mise à jour pour {anonymous_item.product.title}: {old_quantity} + {anonymous_item.quantity} = {existing_item.quantity}")
                     else:
                         # Créer un nouvel item
                         new_item = CartItem.objects.create(
@@ -168,12 +174,21 @@ def migrate_anonymous_cart(sender, request, user, **kwargs):
                             new_item.colors.set(anonymous_item.colors.all())
                         if anonymous_item.sizes.exists():
                             new_item.sizes.set(anonymous_item.sizes.all())
+                        print(f"  ✅ Nouvel article ajouté: {anonymous_item.product.title} x{anonymous_item.quantity}")
+                    
+                    migrated_items += 1
                 
-                # Supprimer le panier anonyme
-                anonymous_cart.delete()
+                # Supprimer le panier anonyme seulement si la migration a réussi
+                if migrated_items > 0:
+                    anonymous_cart.delete()
+                    print(f"✅ Migration terminée: {migrated_items} articles migrés, panier anonyme supprimé")
+                else:
+                    print("⚠️ Aucun article migré, panier anonyme conservé")
+            else:
+                print("ℹ️ Aucun panier anonyme à migrer")
                 
     except Exception as e:
         # Log l'erreur mais ne pas bloquer la connexion
-        print(f"Erreur lors de la migration du panier: {str(e)}")
+        print(f"❌ Erreur lors de la migration du panier: {str(e)}")
         import traceback
         print(traceback.format_exc())
