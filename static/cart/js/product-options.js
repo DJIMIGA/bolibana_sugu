@@ -1,4 +1,4 @@
-export default class ProductOptions {
+class ProductOptions {
     constructor() {
         this.sidebar = document.getElementById('product-options-sidebar');
         this.overlay = document.getElementById('product-options-overlay');

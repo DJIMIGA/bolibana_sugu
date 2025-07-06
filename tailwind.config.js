@@ -16,11 +16,10 @@ module.exports = {
         new: '#22C55E', // green-500
         promo: '#EF4444', // red-500
         popular: '#FACC15', // yellow-400
-        clothing: '#3B82F6', // blue-500 
         stock: '#9333EA', // purple-600
-        phone: '#4F46E5', // indigo-600
-        fabric: '#4F46E5', // indigo-600
-        cultural: '#059669', // emerald-500
+        salam: '#F59E0B', // amber-500 - Jaune pour SALAM
+        classic: '#10B981', // emerald-500 - Vert pour CLASSIQUE
+        warranty: '#3B82F6', // blue-500 - Bleu pour garantie
         // Cartes avec couleurs très claires et élégantes
         'card-clothing': '#f5f0ff', // Violet très clair, élégant pour vêtements
         'card-fabric': '#f0fdf4', // Vert très clair, naturel pour tissus

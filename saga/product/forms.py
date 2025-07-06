@@ -27,9 +27,9 @@ class ProductForm(forms.ModelForm):
             'supplier',
             'brand',
             'is_available',
+            'stock',
             'is_salam',
             'sku',
-            'stock',
             'specifications',
             'weight',
             'dimensions',
@@ -40,7 +40,7 @@ class ProductForm(forms.ModelForm):
         widgets = {
             'description': forms.Textarea(attrs={'rows': 4}),
             'specifications': forms.Textarea(attrs={'rows': 4}),
-            'image_urls': forms.HiddenInput()
+            'image_urls': forms.HiddenInput(),
         }
 
     def save(self, commit=True):

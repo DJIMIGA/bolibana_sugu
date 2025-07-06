@@ -1,5 +1,3 @@
-
-
 // Ici, vous pouvez implémenter la logique pour ouvrir la vue rapide d'un produit
 document.addEventListener('DOMContentLoaded', function() {
   const productItems = document.querySelectorAll('.product-item');
@@ -50,6 +48,13 @@ document.addEventListener('DOMContentLoaded', function() {
 // pour les étoiles de notation des produits formulaire de notation des produits
 document.addEventListener('DOMContentLoaded', function() {
   const starRating = document.getElementById('star-rating');
+  
+  // Vérifier si l'élément existe avant de continuer
+  if (!starRating) {
+    console.log('Star rating element not found, skipping star rating initialization');
+    return;
+  }
+  
   const ratingText = document.getElementById('rating-text');
   const stars = starRating.querySelectorAll('label');
   const inputs = starRating.querySelectorAll('input[type="radio"]');
@@ -69,7 +74,9 @@ document.addEventListener('DOMContentLoaded', function() {
 // pour les étoiles de notation des produits formulaire de notation des produits
   function updateRatingText(rating) {
     const texts = ['Sélectionnez une note', 'Terrible', 'Mauvais', 'Correct', 'Bien', 'Excellent'];
-    ratingText.textContent = texts[rating];
+    if (ratingText) {
+      ratingText.textContent = texts[rating];
+    }
   }
 
   starRating.addEventListener('mouseover', (e) => {

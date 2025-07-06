@@ -8,21 +8,87 @@
   <div class="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHZpZXdCb3g9IjAgMCA2MCA2MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZyBmaWxsPSJub25lIiBmaWxsLXJ1bGU9ImV2ZW5vZGQiPjxwYXRoIGQ9Ik0zNiA0MmMwIDIuMjEgMS43OSA0IDQgNHM0LTEuNzkgNC00LTEuNzktNC00LTQtNCAxLjc5LTQgNHoiIGZpbGw9IiNlOGY1ZTAiLz48cGF0aCBkPSJNMTYgNDJjMCAyLjIxIDEuNzkgNCA0IDRzNC0xLjc5IDQtNC0xLjc5LTQtNC00LTQgMS43OS00IDR6IiBmaWxsPSIjZjBmZGYwIi8+PC9nPjwvc3ZnPg==')] opacity-10"></div>
   
   <div class="relative z-10">
+    <!-- En-tête avec navigation -->
+    <div class="bg-white shadow-sm border-b border-gray-200">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex items-center justify-between h-16">
+                <div class="flex items-center space-x-4">
+                    <a href="{% url 'cart:cart' %}" class="flex items-center text-gray-600 hover:text-gray-900 transition-colors">
+                        <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
+                        </svg>
+                        Retour au panier
+                    </a>
+                </div>
+                <div class="flex items-center space-x-2">
+                    <div class="w-2 h-2 bg-green-500 rounded-full"></div>
+                    <span class="text-sm text-gray-600">Étape 1/3</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <div class="pt-8 sm:pt-12 lg:pt-16">
     <div class="max-w-7xl mx-auto text-center px-4 sm:px-6 lg:px-8">
         <div class="max-w-2xl mx-auto space-y-3">
           <h2 class="text-lg leading-6 font-semibold text-green-600 uppercase tracking-wider">Options de paiement</h2>
-          <p class="text-2xl font-extrabold text-gray-900 sm:text-3xl lg:text-4xl">Choisissez votre mode de paiement</p>
-          <p class="text-lg text-gray-600">Sélectionnez l'option qui vous convient le mieux</p>
+          <p class="text-2xl font-extrabold text-gray-900 sm:text-3xl lg:text-4xl">
+            {% if product_type == 'salam' or payment_type == 'immediate' %}
+              Choisissez votre mode de paiement immédiat
+            {% elif product_type == 'classic' or payment_type == 'flexible' %}
+              Choisissez votre mode de paiement
+            {% else %}
+              Choisissez votre mode de paiement
+            {% endif %}
+          </p>
+          <p class="text-lg text-gray-600">
+            {% if product_type == 'salam' or payment_type == 'immediate' %}
+              Les produits Salam nécessitent un paiement immédiat pour respecter le principe de la vente Salam
+            {% elif product_type == 'classic' or payment_type == 'flexible' %}
+              Sélectionnez l'option qui vous convient le mieux
+            {% else %}
+              Sélectionnez l'option qui vous convient le mieux
+            {% endif %}
+          </p>
+          
+          <!-- Indication pour panier mixte -->
+          {% if is_mixed_cart %}
+          <div class="mt-6 p-4 bg-gradient-to-r from-blue-50 to-blue-100 border border-blue-200 rounded-lg">
+            <div class="flex items-center justify-center">
+              <svg class="w-5 h-5 text-blue-600 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+              </svg>
+              <p class="text-sm font-medium text-blue-800">
+                <strong>Panier mixte</strong> : Vous commandez {% if product_type == 'salam' %}les produits Salam{% elif product_type == 'classic' %}les produits classiques{% else %}tous les produits{% endif %}
+              </p>
+            </div>
+          </div>
+          {% endif %}
+          
+          <!-- Bannière informative pour les produits Salam -->
+          {% if product_type == 'salam' or payment_type == 'immediate' %}
+          <div class="mt-6 p-4 bg-gradient-to-r from-yellow-50 to-yellow-100 border border-yellow-200 rounded-lg">
+            <div class="flex items-center justify-center">
+              <svg class="w-5 h-5 text-yellow-600 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+              </svg>
+              <p class="text-sm font-medium text-yellow-800">
+                <strong>Produits Salam</strong> : Paiement immédiat obligatoire - Transaction sécurisée
+              </p>
+            </div>
+          </div>
+          {% endif %}
         </div>
       </div>
     </div>
     <div class="mt-6 pb-12 sm:mt-8 sm:pb-16 lg:mt-12 lg:pb-20">
     <div class="relative">
       <div class="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div class="mx-auto grid grid-cols-1 lg:grid-cols-3 gap-6 lg:gap-8">
+          <div class="mx-auto flex flex-wrap justify-center gap-6 lg:gap-8 max-w-6xl">
+            
             <!-- Première carte - Mobile Money -->
-            <div class="h-full flex flex-col rounded-lg shadow-lg overflow-hidden bg-white/80 backdrop-blur-sm">
+            {% if 'mobile_money' in available_payment_methods %}
+            <div class="h-full flex flex-col rounded-lg shadow-lg overflow-hidden bg-white/80 backdrop-blur-sm w-full max-w-sm">
               <div class="px-4 py-6 bg-white sm:px-6 sm:py-8">
               <div>
                   <h3 class="inline-flex px-3 py-1 rounded-full text-sm font-semibold tracking-wide uppercase bg-gradient-to-r from-orange-100 to-orange-200 text-orange-600" id="tier-mobile">Mobile Money</h3>
@@ -34,7 +100,13 @@
                   </svg>
                   Orange Money
                 </div>
-                <p class="mt-3 text-base text-gray-500">Paiement via Orange Money, MTN Mobile Money, etc.</p>
+                <p class="mt-3 text-base text-gray-500">
+                  {% if product_type == 'salam' %}
+                    Paiement immédiat via Orange Money, MTN Mobile Money, etc.
+                  {% else %}
+                    Paiement via Orange Money, MTN Mobile Money, etc.
+                  {% endif %}
+                </p>
               </div>
               <div class="flex-grow flex flex-col justify-between px-6 pt-6 pb-8 bg-gradient-to-b from-orange-50 to-white space-y-6 sm:p-10 sm:pt-6">
                 <ul role="list" class="space-y-4">
@@ -44,7 +116,13 @@
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
                       </svg>
                     </div>
-                    <p class="ml-3 text-base text-gray-700">Paiement mobile rapide</p>
+                    <p class="ml-3 text-base text-gray-700">
+                      {% if product_type == 'salam' %}
+                        Paiement mobile immédiat
+                      {% else %}
+                        Paiement mobile rapide
+                      {% endif %}
+                    </p>
                   </li>
                   <li class="flex items-start">
                     <div class="flex-shrink-0">
@@ -64,18 +142,24 @@
                   </li>
                 </ul>
                 <div class="rounded-md shadow mt-auto">
-                  <a href="{% url 'cart:payment_online' %}?payment_method=mobile_money" class="flex items-center justify-center px-5 py-3 border border-transparent text-base font-medium rounded-md text-white bg-gradient-to-r from-orange-600 to-orange-500 hover:from-orange-700 hover:to-orange-600 transform hover:scale-[1.02] transition-all duration-300" aria-describedby="tier-mobile">
+                  <a href="{% url 'cart:payment_online' %}?payment_method=mobile_money&type={{ product_type }}&payment={{ payment_type }}" class="flex items-center justify-center px-5 py-3 border border-transparent text-base font-medium rounded-md text-white bg-gradient-to-r from-orange-600 to-orange-500 hover:from-orange-700 hover:to-orange-600 transform hover:scale-[1.02] transition-all duration-300" aria-describedby="tier-mobile">
                     <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
                     </svg>
-                    Choisir Orange Money
+                    {% if product_type == 'salam' %}
+                      Payer avec Mobile Money
+                    {% else %}
+                      Choisir Orange Money
+                    {% endif %}
                   </a>
                 </div>
               </div>
             </div>
+            {% endif %}
 
             <!-- Deuxième carte - Paiement en ligne (Carte bancaire) -->
-            <div class="h-full flex flex-col rounded-lg shadow-lg overflow-hidden bg-white/80 backdrop-blur-sm">
+            {% if 'online_payment' in available_payment_methods %}
+            <div class="h-full flex flex-col rounded-lg shadow-lg overflow-hidden bg-white/80 backdrop-blur-sm w-full max-w-sm">
               <div class="px-4 py-6 bg-white sm:px-6 sm:py-8">
                 <div>
                   <h3 class="inline-flex px-3 py-1 rounded-full text-sm font-semibold tracking-wide uppercase bg-gradient-to-r from-green-100 to-green-200 text-green-600" id="tier-online">Paiement en ligne</h3>
@@ -87,7 +171,13 @@
                 </svg>
                 Carte bancaire
               </div>
-                <p class="mt-3 text-base text-gray-500">Paiement rapide et sécurisé par carte bancaire via Stripe.</p>
+                <p class="mt-3 text-base text-gray-500">
+                  {% if product_type == 'salam' %}
+                    Paiement immédiat et sécurisé par carte bancaire via Stripe.
+                  {% else %}
+                    Paiement rapide et sécurisé par carte bancaire via Stripe.
+                  {% endif %}
+                </p>
             </div>
               <div class="flex-grow flex flex-col justify-between px-6 pt-6 pb-8 bg-gradient-to-b from-green-50 to-white space-y-6 sm:p-10 sm:pt-6">
               <ul role="list" class="space-y-4">
@@ -97,7 +187,13 @@
                       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
                     </svg>
                   </div>
-                  <p class="ml-3 text-base text-gray-700">Transaction immédiate</p>
+                  <p class="ml-3 text-base text-gray-700">
+                    {% if product_type == 'salam' %}
+                      Transaction immédiate
+                    {% else %}
+                      Transaction rapide
+                    {% endif %}
+                  </p>
                 </li>
                 <li class="flex items-start">
                   <div class="flex-shrink-0">
@@ -117,18 +213,24 @@
                 </li>
               </ul>
               <div class="rounded-md shadow mt-auto">
-                  <a href="{% url 'cart:payment_online' %}?payment_method=online_payment" class="flex items-center justify-center px-5 py-3 border border-transparent text-base font-medium rounded-md text-white bg-gradient-to-r from-green-600 to-yellow-500 hover:from-green-700 hover:to-yellow-600 transform hover:scale-[1.02] transition-all duration-300" aria-describedby="tier-online">
+                  <a href="{% url 'cart:payment_online' %}?payment_method=online_payment&type={{ product_type }}&payment={{ payment_type }}" class="flex items-center justify-center px-5 py-3 border border-transparent text-base font-medium rounded-md text-white bg-gradient-to-r from-green-600 to-yellow-500 hover:from-green-700 hover:to-yellow-600 transform hover:scale-[1.02] transition-all duration-300" aria-describedby="tier-online">
                     <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
                     </svg>
-                    Choisir carte bancaire
+                    {% if product_type == 'salam' %}
+                      Payer avec carte bancaire
+                    {% else %}
+                      Choisir carte bancaire
+                    {% endif %}
                   </a>
               </div>
             </div>
           </div>
+          {% endif %}
 
           <!-- Troisième carte - Paiement à la livraison -->
-            <div class="h-full flex flex-col rounded-lg shadow-lg overflow-hidden bg-white/80 backdrop-blur-sm">
+          {% if 'cash_on_delivery' in available_payment_methods %}
+            <div class="h-full flex flex-col rounded-lg shadow-lg overflow-hidden bg-white/80 backdrop-blur-sm w-full max-w-sm">
               <div class="px-4 py-6 bg-white sm:px-6 sm:py-8">
               <div>
                   <h3 class="inline-flex px-3 py-1 rounded-full text-sm font-semibold tracking-wide uppercase bg-gradient-to-r from-yellow-100 to-yellow-200 text-yellow-600" id="tier-delivery">Paiement à la livraison</h3>
@@ -170,7 +272,7 @@
                 </li>
               </ul>
               <div class="rounded-md shadow mt-auto">
-                  <a href="{% url 'cart:payment_delivery' %}" class="flex items-center justify-center px-5 py-3 border border-transparent text-base font-medium rounded-md text-white bg-gradient-to-r from-yellow-600 to-yellow-500 hover:from-yellow-700 hover:to-yellow-600 transform hover:scale-[1.02] transition-all duration-300" aria-describedby="tier-delivery">
+                  <a href="{% url 'cart:payment_delivery' %}?type={{ product_type }}&payment={{ payment_type }}" class="flex items-center justify-center px-5 py-3 border border-transparent text-base font-medium rounded-md text-white bg-gradient-to-r from-yellow-600 to-yellow-500 hover:from-yellow-700 hover:to-yellow-600 transform hover:scale-[1.02] transition-all duration-300" aria-describedby="tier-delivery">
                     <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
                     </svg>
@@ -179,6 +281,7 @@
                 </div>
               </div>
             </div>
+          {% endif %}
           </div>
         </div>
       </div>

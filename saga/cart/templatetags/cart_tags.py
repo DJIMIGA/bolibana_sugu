@@ -28,3 +28,59 @@ def get_cart(context):
     }
     print('context', context)
     return context
+
+@register.inclusion_tag('cart/components/_product_image.html')
+def product_image(product, size_class="w-full h-full", alt_text=None, fallback_icon_size="w-8 h-8"):
+    """
+    Template tag pour afficher une image de produit avec fallback.
+    
+    Usage:
+    {% product_image product size_class="w-20 h-20" alt_text="Nom du produit" %}
+    """
+    has_image = product.image and product.image.url
+    return {
+        'product': product,
+        'has_image': has_image,
+        'size_class': size_class,
+        'alt_text': alt_text or product.title,
+        'fallback_icon_size': fallback_icon_size,
+    }
+
+@register.filter
+def filter_classic_products(cart_items):
+    """
+    Filtre pour récupérer uniquement les produits classiques (non Salam).
+    
+    Usage:
+    {% with classic_items=cart.cart_items.all|filter_classic_products %}
+    """
+    return [item for item in cart_items if not item.product.is_salam]
+
+@register.filter
+def filter_salam_products(cart_items):
+    """
+    Filtre pour récupérer uniquement les produits Salam.
+    
+    Usage:
+    {% with salam_items=cart.cart_items.all|filter_salam_products %}
+    """
+    return [item for item in cart_items if item.product.is_salam]
+
+@register.filter
+def format_price(value):
+    """
+    Filtre pour formater les prix avec des espaces comme séparateurs de milliers.
+    
+    Usage:
+    {{ price|format_price }}
+    """
+    if value is None:
+        return "0 FCFA"
+    
+    try:
+        # Convertir en entier et formater avec des espaces
+        int_value = int(float(value))
+        formatted = f"{int_value:,}".replace(',', ' ')
+        return f"{formatted} FCFA"
+    except (ValueError, TypeError):
+        return "0 FCFA"

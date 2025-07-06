@@ -47,8 +47,7 @@ def global_supplier_context(request):
     
     # Récupérer les produits actifs avec leurs relations
     base_queryset = Product.objects.filter(
-        is_available=True,
-        is_salam=True
+        is_available=True
     ).select_related(
         'phone',
         'phone__color',
@@ -128,8 +127,7 @@ def global_supplier_context(request):
     
     # Méthodes de livraison
     context['shipping_methods'] = ShippingMethod.objects.filter(
-        products__is_available=True,
-        products__is_salam=True
+        products__is_available=True
     ).distinct().order_by('price')
     
     # Statistiques globales
@@ -189,6 +187,11 @@ def global_supplier_context(request):
         context['selected_model'] = ''
         context['selected_storage'] = ''
         context['selected_ram'] = ''
+    
+    # Récupérer les catégories disponibles pour les filtres
+    categories_list = Category.objects.filter(
+        products__is_available=True
+    ).values_list('name', flat=True).distinct()
     
     return context
 

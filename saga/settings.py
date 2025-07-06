@@ -268,12 +268,32 @@ CACHES = {
 # ==================================================
 # CONFIGURATION DE L'EMAIL
 # ==================================================
-EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
-EMAIL_HOST = os.getenv('EMAIL_HOST', 'smtp.gmail.com')
-EMAIL_PORT = int(os.getenv('EMAIL_PORT', '587'))
-EMAIL_USE_TLS = True
-EMAIL_HOST_USER = os.getenv('EMAIL_HOST_USER')
-EMAIL_HOST_PASSWORD = os.getenv('EMAIL_HOST_PASSWORD')
+if DEBUG:
+    # En développement, utiliser le backend de console pour éviter les erreurs d'email
+    EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
+    EMAIL_HOST_USER = 'dev@localhost'  # Valeur par défaut pour le développement
+    print("📧 Email configuré en mode console (développement)")
+    
+    # Optionnel : Pour recevoir de vrais emails en développement, décommentez les lignes suivantes :
+    # EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+    # EMAIL_HOST = 'smtp.gmail.com'
+    # EMAIL_PORT = 587
+    # EMAIL_USE_TLS = True
+    # EMAIL_HOST_USER = 'votre-email@gmail.com'  # Remplacez par votre email
+    # EMAIL_HOST_PASSWORD = 'votre-mot-de-passe-app'  # Remplacez par votre mot de passe d'application
+else:
+    # En production, utiliser SMTP
+    EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+    EMAIL_HOST = os.getenv('EMAIL_HOST', 'smtp.gmail.com')
+    EMAIL_PORT = int(os.getenv('EMAIL_PORT', '587'))
+    EMAIL_USE_TLS = True
+    EMAIL_HOST_USER = os.getenv('EMAIL_HOST_USER')
+    EMAIL_HOST_PASSWORD = os.getenv('EMAIL_HOST_PASSWORD')
+    print("📧 Email configuré en mode SMTP (production)")
+
+# Email par défaut
+DEFAULT_FROM_EMAIL = EMAIL_HOST_USER
+print(f"📧 Email configuré : {'Oui' if EMAIL_HOST_USER else 'Non'}")
 
 # ==================================================
 # CONFIGURATION REST FRAMEWORK
@@ -543,15 +563,41 @@ print("=============================\n")
 # Configuration du logging
 LOGGING = {
     'version': 1,
-    'disable_existing_loggers': True,
-    'handlers': {
-        'null': {
-            'class': 'logging.NullHandler',
+    'disable_existing_loggers': False,
+    'formatters': {
+        'verbose': {
+            'format': '{levelname} {asctime} {module} {process:d} {thread:d} {message}',
+            'style': '{',
+        },
+        'simple': {
+            'format': '{levelname} {message}',
+            'style': '{',
         },
     },
-    'root': {
-        'handlers': ['null'],
-        'level': 'CRITICAL',
+    'handlers': {
+        'file': {
+            'level': 'DEBUG',
+            'class': 'logging.FileHandler',
+            'filename': os.path.join(BASE_DIR, 'debug.log'),
+            'formatter': 'verbose',
+        },
+        'console': {
+            'level': 'DEBUG',
+            'class': 'logging.StreamHandler',
+            'formatter': 'simple',
+        },
+    },
+    'loggers': {
+        'cart.views': {
+            'handlers': ['file', 'console'],
+            'level': 'DEBUG',
+            'propagate': True,
+        },
+        'django': {
+            'handlers': ['console'],
+            'level': 'INFO',
+            'propagate': True,
+        },
     },
 }
 

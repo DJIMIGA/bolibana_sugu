@@ -1,163 +1,412 @@
 {% extends 'base.html' %}
 {% load static %}
 {% load form_tags %}
+{% load cart_tags %}
 
 {% block extra_head %}
 <script src="https://js.stripe.com/v3/"></script>
+<style>
+/* Styles personnalisés pour les radios */
+.radio-option input[type="radio"]:checked + .radio-content .radio-dot {
+    opacity: 1 !important;
+    background-color: #10b981 !important;
+}
+
+.radio-option input[type="radio"]:checked + .radio-content .radio-circle {
+    border-color: #10b981 !important;
+}
+
+.radio-option input[type="radio"]:checked + .radio-content {
+    border-color: #10b981 !important;
+    background-color: #f0fdf4 !important;
+}
+</style>
 {% endblock %}
 
 {% block content %}
-<div class="bg-gray-50 min-h-screen">
-    <div class="max-w-7xl mx-auto pt-6 sm:pt-16 pb-24 px-4 sm:px-6 lg:px-8">
-        <!-- En-tête -->
-        <div class="text-center mb-8">
-            <h1 class="text-3xl font-bold text-gray-900">Paiement en ligne</h1>
-            <p class="mt-2 text-lg text-gray-600">Finalisez votre commande de manière sécurisée</p>
-        </div>
-
-        <!-- Message d'information -->
-        <div class="bg-white p-4 rounded-xl shadow-sm border border-green-100 mb-6">
-            <div class="flex items-center space-x-3">
-                <svg class="w-6 h-6 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/>
-                </svg>
-                <p class="text-sm text-gray-600">Vous allez être redirigé vers le site de paiement sécurisé Stripe</p>
+<div class="min-h-screen bg-gradient-to-br from-green-50 via-yellow-50 to-white">
+    <!-- En-tête avec navigation -->
+    <div class="bg-white shadow-sm border-b border-gray-200">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex items-center justify-between h-16">
+                <div class="flex items-center space-x-4">
+                    <a href="{% url 'cart:checkout' %}" class="flex items-center text-gray-600 hover:text-gray-900 transition-colors">
+                        <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
+                        </svg>
+                        Retour au choix de paiement
+                    </a>
+                </div>
+                <div class="flex items-center space-x-2">
+                    <div class="w-2 h-2 bg-green-500 rounded-full"></div>
+                    <span class="text-sm text-gray-600">Étape 2/3</span>
+                </div>
             </div>
         </div>
+    </div>
 
-        <form action="{% url 'cart:create_checkout_session' %}" method="post">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <!-- En-tête principal -->
+        <div class="text-center mb-8">
+            {% if product_type == 'salam' %}
+                <div class="inline-flex items-center px-4 py-2 rounded-full bg-yellow-100 text-yellow-800 text-sm font-medium mb-4">
+                    <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                </svg>
+                    Paiement Salam - Immédiat requis
+            </div>
+                <h1 class="text-4xl font-bold text-gray-900 mb-4">Finaliser votre commande Salam</h1>
+                <p class="text-xl text-gray-600 max-w-2xl mx-auto">
+                    Vos produits Salam nécessitent un paiement immédiat pour respecter le principe de la vente Salam
+                </p>
+            {% else %}
+                <h1 class="text-4xl font-bold text-gray-900 mb-4">Finaliser votre commande</h1>
+                <p class="text-xl text-gray-600 max-w-2xl mx-auto">
+                    Remplissez vos informations de livraison et procédez au paiement sécurisé
+                </p>
+            {% endif %}
+            
+            <!-- Indication pour panier mixte -->
+            {% if is_mixed_cart %}
+            <div class="mt-6 p-4 bg-gradient-to-r from-blue-50 to-blue-100 border border-blue-200 rounded-lg">
+                <div class="flex items-center justify-center">
+                    <svg class="w-5 h-5 text-blue-600 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                    </svg>
+                    <p class="text-sm font-medium text-blue-800">
+                        <strong>Panier mixte</strong> : Vous commandez {% if product_type == 'salam' %}les produits Salam{% elif product_type == 'classic' %}les produits classiques{% else %}tous les produits{% endif %} (paiement immédiat)
+                    </p>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+
+        <form method="post">
             {% csrf_token %}
+            <input type="hidden" name="product_type" value="{{ product_type }}">
+            <input type="hidden" name="shipping_address_id" id="shipping_address_id" value="{% if default_address %}{{ default_address.id }}{% endif %}">
+            <input type="hidden" name="payment_method" value="{{ selected_payment_method }}">
+            <input type="hidden" name="address_choice" id="address_choice_hidden" value="{% if default_address %}default{% else %}new{% endif %}">
+            <input type="hidden" name="action" value="create_checkout">
 
-            <!-- Adresse de livraison -->
-            <div class="bg-white p-6 rounded-xl shadow-sm border border-green-100 mb-6">
-                <div class="flex items-center space-x-3 mb-6">
+            <div class="grid grid-cols-1 xl:grid-cols-5 gap-8">
+                <!-- Colonne principale - Formulaire -->
+                <div class="xl:col-span-2 space-y-4">
+                    <!-- Section Adresse de livraison -->
+                    <div class="bg-white rounded-2xl shadow-lg border border-gray-200 overflow-hidden">
+                        <div class="bg-gradient-to-r from-green-50 to-green-100 px-6 py-4 border-b border-gray-200">
+                            <div class="flex items-center">
                     <div class="flex-shrink-0">
-                        <span class="flex items-center justify-center h-10 w-10 rounded-full bg-red-100">
-                            <svg class="h-6 w-6 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <div class="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center">
+                                        <svg class="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/>
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/>
                             </svg>
-                        </span>
+                                    </div>
+                                </div>
+                                <div class="ml-4">
+                                    <h2 class="text-xl font-semibold text-gray-900">Adresse de livraison</h2>
+                                    <p class="text-gray-600">Où souhaitez-vous recevoir votre commande ?</p>
                     </div>
-                    <div>
-                        <h3 class="text-lg font-medium text-gray-900">Adresse de livraison</h3>
-                        <p class="text-sm text-gray-500">Choisissez où vous souhaitez recevoir votre commande</p>
                     </div>
                 </div>
 
+                        <div class="p-6">
                 <!-- Choix de l'adresse -->
                 <div class="space-y-4 mb-6">
-                    <label class="relative flex p-4 border-2 rounded-xl cursor-pointer hover:border-red-500 transition-all duration-200 bg-gradient-to-r from-red-50 to-red-100">
+                                {% if default_address %}
+                                <label class="relative block radio-option">
                         <input type="radio" 
                                name="address_choice" 
                                value="default" 
-                               class="mt-1 h-4 w-4 text-red-600 border-gray-300 focus:ring-red-500"
-                               {% if default_address %}checked{% endif %}>
+                                           class="sr-only"
+                                           checked>
+                                    <div class="radio-content border-2 border-gray-200 rounded-xl p-4 cursor-pointer transition-all duration-200 hover:border-green-500 hover:shadow-md">
+                                        <div class="flex items-start">
+                                            <div class="flex-shrink-0 mt-1">
+                                                <div class="radio-circle w-4 h-4 border-2 border-gray-300 rounded-full flex items-center justify-center">
+                                                    <div class="radio-dot w-2 h-2 bg-green-500 rounded-full opacity-0 transition-opacity"></div>
+                                                </div>
+                                            </div>
                         <div class="ml-4 flex-1">
-                            <span class="block font-medium text-gray-900">Utiliser mon adresse par défaut</span>
-                            {% if default_address %}
-                            <span class="block text-sm text-gray-600 mt-1">
+                                                <div class="flex items-center justify-between">
+                                                    <span class="font-medium text-gray-900">Adresse par défaut</span>
+                                                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                                                        Recommandée
+                                                    </span>
+                                                </div>
+                                                <div class="mt-2 text-sm text-gray-600">
                                 {{ default_address.full_name }}<br>
                                 {{ default_address.address_line1 }}<br>
                                 {% if default_address.address_line2 %}{{ default_address.address_line2 }}<br>{% endif %}
                                 {{ default_address.city }}{% if default_address.state %}, {{ default_address.state }}{% endif %}<br>
-                                {{ default_address.postal_code }}<br>
-                                {{ default_address.country }}
-                            </span>
-                            {% else %}
-                            <span class="block text-sm text-red-600 mt-1">Aucune adresse par défaut définie</span>
-                            {% endif %}
+                                                    {{ default_address.postal_code }}, {{ default_address.country }}
+                                                </div>
+                                            </div>
+                                        </div>
                         </div>
                     </label>
+                                {% else %}
+                                <label class="relative block radio-option">
+                        <input type="radio" 
+                               name="address_choice" 
+                               value="default" 
+                                           class="sr-only"
+                                           disabled>
+                                    <div class="radio-content border-2 border-gray-200 rounded-xl p-4 bg-gray-50 opacity-60 cursor-not-allowed">
+                                    <div class="flex items-start">
+                                        <div class="flex-shrink-0 mt-1">
+                                            <div class="w-4 h-4 border-2 border-gray-300 rounded-full bg-gray-200"></div>
+                                        </div>
+                                        <div class="ml-4 flex-1">
+                                            <span class="font-medium text-gray-500">Adresse par défaut</span>
+                                            <div class="mt-1 text-sm text-red-600">Aucune adresse par défaut définie</div>
+                                        </div>
+                                    </div>
+                                </div>
+                                </label>
+                                {% endif %}
 
-                    <label class="relative flex p-4 border-2 rounded-xl cursor-pointer hover:border-red-500 transition-all duration-200 bg-gradient-to-r from-red-50 to-red-100">
+                                <label class="relative block radio-option">
                         <input type="radio" 
                                name="address_choice" 
                                value="new" 
-                               class="mt-1 h-4 w-4 text-red-600 border-gray-300 focus:ring-red-500"
+                                           class="sr-only"
                                {% if not default_address %}checked{% endif %}>
+                                    <div class="radio-content border-2 border-gray-200 rounded-xl p-4 cursor-pointer transition-all duration-200 hover:border-green-500 hover:shadow-md">
+                                        <div class="flex items-start">
+                                            <div class="flex-shrink-0 mt-1">
+                                                <div class="radio-circle w-4 h-4 border-2 border-gray-300 rounded-full flex items-center justify-center">
+                                                    <div class="radio-dot w-2 h-2 bg-green-500 rounded-full opacity-0 transition-opacity"></div>
+                                                </div>
+                                            </div>
                         <div class="ml-4 flex-1">
-                            <span class="block font-medium text-gray-900">Utiliser une nouvelle adresse</span>
-                            <span class="block text-sm text-gray-600">Remplir un nouveau formulaire d'adresse</span>
+                                                <span class="font-medium text-gray-900">Nouvelle adresse</span>
+                                                <div class="mt-1 text-sm text-gray-600">Remplir un nouveau formulaire d'adresse</div>
+                                            </div>
+                                        </div>
                         </div>
                     </label>
                 </div>
 
                 <!-- Formulaire de nouvelle adresse -->
                 <div id="new-address-form" class="{% if default_address %}hidden{% endif %}">
-                    {{ form.as_div }}
-                    <div class="mt-4">
-                        <label class="inline-flex items-center">
+                                <div class="border-t border-gray-200 pt-6">
+                                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                        <div class="md:col-span-2">
+                                            <label class="block text-sm font-medium text-gray-700 mb-2">Nom complet</label>
+                                            {{ form.full_name|add_class:"w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-colors" }}
+                                        </div>
+
+                                        <div class="md:col-span-2">
+                                            <label class="block text-sm font-medium text-gray-700 mb-2">Adresse <span class="text-red-500">*</span></label>
+                                            <input type="text" name="{{ form.street_address.name }}" value="{{ form.street_address.value|default:'' }}" class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-colors" data-required="true">
+                                        </div>
+
+                                        <div>
+                                            <label class="block text-sm font-medium text-gray-700 mb-2">Type d'adresse</label>
+                                            {{ form.address_type|add_class:"w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-colors" }}
+                                        </div>
+
+                                        <div>
+                                            <label class="block text-sm font-medium text-gray-700 mb-2">Quartier <span class="text-red-500">*</span></label>
+                                            <input type="text" name="{{ form.quarter.name }}" value="{{ form.quarter.value|default:'' }}" class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-colors" data-required="true">
+                                        </div>
+
+                                        <div>
+                                            <label class="block text-sm font-medium text-gray-700 mb-2">Ville</label>
+                                            {{ form.city|add_class:"w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-colors" }}
+                                        </div>
+
+                                        <div>
+                                            <label class="block text-sm font-medium text-gray-700 mb-2">Informations complémentaires</label>
+                                            {{ form.additional_info|add_class:"w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-colors" }}
+                                        </div>
+
+                                        <div class="md:col-span-2">
+                                            <label class="flex items-center cursor-pointer">
                             <input type="checkbox" 
                                    name="is_default" 
-                                   class="rounded border-gray-300 text-red-600 shadow-sm focus:border-red-300 focus:ring focus:ring-red-200 focus:ring-opacity-50">
-                            <span class="ml-2 text-sm text-gray-600">Définir comme adresse par défaut</span>
+                                                       class="w-4 h-4 text-green-600 border-gray-300 rounded focus:ring-green-500 focus:ring-2">
+                                                <span class="ml-3 text-sm text-gray-700">Définir comme adresse par défaut</span>
                         </label>
+                                        </div>
+                                    </div>
+                                </div>
                     </div>
                 </div>
             </div>
 
-            <!-- Méthode de livraison -->
-            <div class="bg-white p-6 rounded-xl shadow-sm border border-green-100 mb-6">
-                <div class="flex items-center space-x-3 mb-6">
+                    <!-- Section Frais de livraison -->
+                    <div class="bg-white rounded-2xl shadow-lg border border-gray-200 overflow-hidden">
+                        <div class="bg-gradient-to-r from-yellow-50 to-yellow-100 px-6 py-4 border-b border-gray-200">
+                            <div class="flex items-center">
                     <div class="flex-shrink-0">
-                        <span class="flex items-center justify-center h-10 w-10 rounded-full bg-red-100">
-                            <svg class="h-6 w-6 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/>
+                                    <div class="w-10 h-10 bg-yellow-100 rounded-full flex items-center justify-center">
+                                        <svg class="w-6 h-6 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16.5a1.5 1.5 0 11-3 0 1.5 1.5 0 013 0zM15 16.5a1.5 1.5 0 11-3 0 1.5 1.5 0 013 0z"/>
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 00-1 1v10a1 1 0 001 1h1.05a2.5 2.5 0 014.9 0H10a1 1 0 001-1V5a1 1 0 00-1-1H3zM14 7a1 1 0 00-1 1v6.05A2.5 2.5 0 0115.95 16H17a1 1 0 001-1v-5a1 1 0 00-.293-.707l-2-2A1 1 0 0015 7h-1z"/>
                             </svg>
-                        </span>
+                                    </div>
+                                </div>
+                                <div class="ml-4">
+                                    <h2 class="text-xl font-semibold text-gray-900">Frais de livraison</h2>
+                                    <p class="text-gray-600">Détail des frais par zone d'expédition</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="p-4">
+                            <div class="space-y-3">
+                                {% for supplier in shipping_summary.suppliers %}
+                                <div class="bg-gray-50 rounded-lg p-3 border border-gray-200">
+                                    <div class="flex items-center justify-between mb-2">
+                                        <div class="flex items-center space-x-2">
+                                            <div class="w-2 h-2 bg-green-500 rounded-full"></div>
+                                            <span class="font-medium text-sm text-gray-900">{{ supplier.name }}</span>
+                                        </div>
+                                        <span class="font-bold text-base text-green-600">{{ supplier.shipping_cost|format_price }}</span>
+                                    </div>
+                                    
+                                    <div class="space-y-1">
+                                        <div class="text-xs text-gray-600">
+                                            <div class="font-medium mb-1">Produits :</div>
+                                            {% for product in supplier.products %}
+                                            <div class="flex justify-between items-center py-0.5">
+                                                <span class="truncate text-xs">{{ product.title }}</span>
+                                                <span class="text-xs bg-gray-200 px-1.5 py-0.5 rounded text-xs">x{{ product.quantity }}</span>
+                                            </div>
+                                            {% endfor %}
+                                        </div>
+                                        
+                                        <div class="flex justify-between items-center pt-1 border-t border-gray-200">
+                                            <div class="text-xs text-gray-500">
+                                                {% if supplier.shipping_method %}
+                                                    {{ supplier.shipping_method.name }}
+                                                {% else %}
+                                                    Standard
+                                                {% endif %}
+                                            </div>
+                                            <div class="text-xs text-gray-500">
+                                                {{ supplier.delivery_time }}
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                {% endfor %}
+                                
+                                <!-- Résumé des frais -->
+                                <div class="bg-green-50 rounded-lg p-3 border border-green-200">
+                                    <div class="flex justify-between items-center">
+                                        <span class="font-medium text-sm text-gray-900">Total frais de livraison</span>
+                                        <span class="font-bold text-base text-green-600">{{ shipping_summary.summary.shipping_cost|format_price }}</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
                     </div>
+
+                    <!-- Section Informations de paiement -->
+                    <div class="bg-white rounded-2xl shadow-lg border border-gray-200 overflow-hidden">
+                        <div class="bg-gradient-to-r from-blue-50 to-blue-100 px-6 py-4 border-b border-gray-200">
+                            <div class="flex items-center">
+                                <div class="flex-shrink-0">
+                                    <div class="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
+                                        <svg class="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/>
+                                        </svg>
+                                    </div>
+                                </div>
+                                <div class="ml-4">
+                                    <h2 class="text-xl font-semibold text-gray-900">Paiement sécurisé</h2>
+                                    <p class="text-gray-600">Vos informations seront protégées par Stripe</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="p-6">
+                            <div class="bg-gray-50 rounded-xl p-4">
+                                <div class="flex items-center space-x-3">
+                                    <svg class="w-6 h-6 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/>
+                                    </svg>
                     <div>
-                        <h3 class="text-lg font-medium text-gray-900">Méthode de livraison</h3>
-                        <p class="text-sm text-gray-500">Choisissez votre mode de livraison préféré</p>
+                                        <p class="text-sm font-medium text-gray-900">
+                                            {% if selected_payment_method == 'mobile_money' %}
+                                                Paiement via Mobile Money
+                                            {% else %}
+                                                Paiement par carte bancaire
+                                            {% endif %}
+                                        </p>
+                                        <p class="text-sm text-gray-600">
+                                            {% if product_type == 'salam' %}
+                                                Vous serez redirigé vers Stripe pour le paiement immédiat
+                                            {% else %}
+                                                Vous serez redirigé vers Stripe pour finaliser votre paiement
+                                            {% endif %}
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
 
+                <!-- Colonne de droite - Résumé de la commande -->
+                <div class="xl:col-span-3">
+                    <div class="sticky top-8">
+                        <div class="bg-white rounded-2xl shadow-lg border border-gray-200 overflow-hidden">
+                            <div class="bg-gradient-to-r from-green-50 to-green-100 px-6 py-4 border-b border-gray-200">
+                                <h2 class="text-xl font-semibold text-gray-900 flex items-center">
+                                    <svg class="w-6 h-6 text-green-600 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                                    </svg>
+                                    Résumé de commande
+                                </h2>
+                            </div>
+
+                            <div class="p-6 space-y-6">
+                                <!-- Détails des produits -->
                 <div class="space-y-4">
-                    {% for method in shipping_methods %}
-                    <label class="relative flex p-4 border-2 rounded-xl cursor-pointer hover:border-red-500 transition-all duration-200 bg-gradient-to-r from-red-50 to-red-100">
-                        <input type="radio" 
-                               name="shipping_method" 
-                               value="{{ method.id }}" 
-                               class="mt-1 h-4 w-4 text-red-600 border-gray-300 focus:ring-red-500"
-                               {% if forloop.first %}checked{% endif %}
-                               hx-post="{% url 'cart:update_shipping' %}"
-                               hx-trigger="change"
-                               hx-swap="innerHTML"
-                               hx-target="#order-details"
-                               hx-include="[name='shipping_method']">
-                        <div class="ml-4 flex-1">
-                            <span class="block font-medium text-gray-900">{{ method.name }}</span>
-                            <span class="block text-sm text-gray-600">{{ method.description }}</span>
-                            <span class="block text-red-600 font-medium mt-1">{{ method.price|floatformat:0 }} FCFA</span>
+                                    {% if product_type == 'salam' %}
+                                        {% include 'cart/components/_salam_order_details.html' %}
+                                    {% else %}
+                                        {% include 'cart/components/_order_details.html' %}
+                                    {% endif %}
+                                </div>
+
+                                <!-- Totaux -->
+                                <div class="border-t border-gray-200 pt-6 space-y-3">
+                                    <div class="flex justify-between text-sm">
+                                        <span class="text-gray-600">Sous-total</span>
+                                        <span class="font-medium">{{ shipping_summary.summary.subtotal|format_price }}</span>
+                                    </div>
+                                    <div class="flex justify-between text-lg font-bold text-gray-900 pt-2 border-t border-gray-200">
+                                        <span>Total</span>
+                                        <span>{{ shipping_summary.summary.total|format_price }}</span>
                         </div>
-                    </label>
-                    {% endfor %}
                 </div>
             </div>
 
             <!-- Bouton de paiement -->
-            <div class="mb-6">
+                            <div class="bg-gradient-to-r from-green-50 to-green-100 px-6 py-6 border-t border-gray-200">
                 <button type="submit"
-                        class="w-full bg-gradient-to-r from-green-600 to-yellow-500 text-white py-4 px-6 rounded-xl 
-                               hover:from-green-700 hover:to-yellow-600 transition-all duration-300 
-                               flex items-center justify-center gap-2 text-lg font-medium shadow-lg">
+                                        class="w-full bg-green-600 hover:bg-green-700 text-white py-4 px-6 rounded-xl 
+                                               transition-all duration-300 transform hover:scale-[1.02] 
+                                               flex items-center justify-center gap-3 text-lg font-semibold shadow-lg">
                     <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/>
                     </svg>
-                    Payer de manière sécurisée
+                                    {% if product_type == 'salam' %}
+                                        Payer maintenant
+                                    {% else %}
+                                        Procéder au paiement
+                                    {% endif %}
                 </button>
-            </div>
-
-            <!-- Résumé de la commande -->
-            <div class="lg:col-span-5 mt-8 lg:mt-0">
-                <div class="sticky top-[88px] lg:top-[130px]">
-                    <div class="bg-white rounded-xl shadow-lg border border-green-100 overflow-hidden flex flex-col">
-                        <div class="p-4 sm:p-6 border-b border-gray-200 flex-shrink-0">
-                            <h2 class="text-lg font-medium text-gray-900">Résumé de la commande</h2>
+                                <p class="text-xs text-gray-500 text-center mt-3">
+                                    En cliquant, vous acceptez nos conditions de vente
+                                </p>
                         </div>
-                        <div class="overflow-y-auto" style="max-height: calc(100vh - 15rem);" id="order-details">
-                            {% include 'cart/components/_order_details.html' %}
                         </div>
                     </div>
                 </div>
@@ -170,16 +419,137 @@
 document.addEventListener('DOMContentLoaded', function() {
     const addressChoiceInputs = document.querySelectorAll('input[name="address_choice"]');
     const newAddressForm = document.getElementById('new-address-form');
+    const shippingAddressIdField = document.getElementById('shipping_address_id');
+    const form = document.querySelector('form');
+    const submitButton = document.querySelector('button[type="submit"]');
 
-    addressChoiceInputs.forEach(input => {
-        input.addEventListener('change', function() {
-            if (this.value === 'new') {
-                newAddressForm.classList.remove('hidden');
+    // Fonction pour mettre à jour les états visuels des radios
+    function updateRadioStates() {
+        addressChoiceInputs.forEach(input => {
+            const radioContent = input.nextElementSibling;
+            if (!radioContent) {
+                return;
+            }
+            
+            const radioCircle = radioContent.querySelector('.radio-circle');
+            const radioDot = radioContent.querySelector('.radio-dot');
+            
+            if (!radioCircle || !radioDot) {
+                return;
+            }
+            
+            if (input.checked) {
+                radioContent.classList.add('border-green-500', 'bg-green-50');
+                radioCircle.classList.add('border-green-500');
+                radioDot.classList.add('opacity-100');
+                radioDot.classList.remove('opacity-0');
             } else {
-                newAddressForm.classList.add('hidden');
+                radioContent.classList.remove('border-green-500', 'bg-green-50');
+                radioCircle.classList.remove('border-green-500');
+                radioDot.classList.remove('opacity-100');
+                radioDot.classList.add('opacity-0');
             }
         });
+    }
+
+    // Fonction pour gérer l'affichage du formulaire
+    function toggleAddressForm() {
+        const selectedInput = document.querySelector('input[name="address_choice"]:checked');
+        if (!selectedInput) {
+            return;
+        }
+        
+        const selectedValue = selectedInput.value;
+        
+        if (selectedValue === 'new') {
+            if (newAddressForm) {
+            newAddressForm.classList.remove('hidden');
+            newAddressForm.style.display = 'block';
+            // Vider l'ID de l'adresse car on crée une nouvelle
+                if (shippingAddressIdField) {
+            shippingAddressIdField.value = '';
+                }
+            }
+        } else {
+            if (newAddressForm) {
+            newAddressForm.classList.add('hidden');
+            newAddressForm.style.display = 'none';
+            // Remettre l'ID de l'adresse par défaut
+            {% if default_address %}
+                if (shippingAddressIdField) {
+            shippingAddressIdField.value = '{{ default_address.id }}';
+                }
+            {% endif %}
+            }
+        }
+    }
+
+    // Écouter les changements sur les radios
+    addressChoiceInputs.forEach(input => {
+        input.addEventListener('change', function() {
+            updateRadioStates();
+            toggleAddressForm();
+        });
     });
+
+    // Validation du formulaire avant soumission
+    function validateForm() {
+        const selectedInput = document.querySelector('input[name="address_choice"]:checked');
+        if (!selectedInput) {
+            return false;
+        }
+        
+        const selectedValue = selectedInput.value;
+        
+        if (selectedValue === 'new') {
+            // Vérifier que le formulaire de nouvelle adresse est valide
+            const requiredFields = newAddressForm.querySelectorAll('input[data-required="true"], select[data-required="true"]');
+            let isValid = true;
+            
+            requiredFields.forEach(field => {
+                if (!field.value.trim()) {
+                    isValid = false;
+                    field.classList.add('border-red-500');
+                } else {
+                    field.classList.remove('border-red-500');
+                }
+            });
+            
+            if (!isValid) {
+                alert('Veuillez remplir tous les champs obligatoires pour la nouvelle adresse.');
+                return false;
+            }
+        }
+        
+        return true;
+    }
+
+    // Gérer la soumission du formulaire
+    if (form) {
+        form.addEventListener('submit', function(e) {
+            // Valider le formulaire
+            if (!validateForm()) {
+                e.preventDefault();
+                return false;
+            }
+            
+            // Afficher un indicateur de chargement
+            if (submitButton) {
+                submitButton.disabled = true;
+                submitButton.innerHTML = `
+                    <svg class="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                    Traitement en cours...
+                `;
+            }
+        });
+    }
+
+    // Initialiser l'état au chargement
+    updateRadioStates();
+    toggleAddressForm();
 });
 </script>
 {% endblock %}

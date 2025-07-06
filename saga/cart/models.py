@@ -22,6 +22,53 @@ class Cart(models.Model):
     def get_total_price(self):
         return sum(item.get_total_price() for item in self.cart_items.all())
 
+    def get_classic_products_total(self):
+        """Calcule le total des produits classiques (non Salam)"""
+        return sum(item.get_total_price() for item in self.cart_items.all() if not item.product.is_salam)
+
+    def get_salam_products_total(self):
+        """Calcule le total des produits Salam"""
+        return sum(item.get_total_price() for item in self.cart_items.all() if item.product.is_salam)
+
+    def get_classic_items(self):
+        """Retourne les items de produits classiques"""
+        return [item for item in self.cart_items.all() if not item.product.is_salam]
+
+    def get_salam_items(self):
+        """Retourne les items de produits Salam"""
+        return [item for item in self.cart_items.all() if item.product.is_salam]
+
+    def validate_classic_products(self):
+        """Valide les produits classiques (vérification du stock)"""
+        errors = []
+        for item in self.get_classic_items():
+            if not item.product.has_stock():
+                errors.append(f"Le produit '{item.product.title}' n'est plus en stock")
+            elif item.product.stock < item.quantity:
+                errors.append(f"Stock insuffisant pour '{item.product.title}' (disponible: {item.product.stock}, demandé: {item.quantity})")
+        return errors
+
+    def validate_salam_products(self):
+        """Valide les produits Salam (pas de vérification de stock)"""
+        errors = []
+        for item in self.get_salam_items():
+            if not item.product.is_available:
+                errors.append(f"Le produit Salam '{item.product.title}' n'est plus disponible")
+        return errors
+
+    def can_checkout(self):
+        """Vérifie si le panier peut être commandé"""
+        classic_errors = self.validate_classic_products()
+        salam_errors = self.validate_salam_products()
+        return len(classic_errors) == 0 and len(salam_errors) == 0
+
+    def get_validation_errors(self):
+        """Retourne toutes les erreurs de validation"""
+        return {
+            'classic_errors': self.validate_classic_products(),
+            'salam_errors': self.validate_salam_products()
+        }
+
     @classmethod
     def get_or_create_cart(cls, request):
         if request.user.is_authenticated:

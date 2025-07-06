@@ -143,8 +143,7 @@ def test_similar_products(product_id):
         # Récupérer les produits similaires
         similar_products = Product.objects.filter(
             similar_conditions,
-            is_available=True,
-            is_salam=True
+            is_available=True
         ).exclude(
             id=product.id
         ).order_by(

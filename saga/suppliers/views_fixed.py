@@ -30,16 +30,14 @@ class BrandDetailView(TemplateView):
         
         # Récupérer toutes les marques disponibles pour le debug
         all_brands = Product.objects.filter(
-            is_available=True,
-            is_salam=True
+            is_available=True
         ).values_list('phone__brand', flat=True).distinct()
         logger.info(f"Marques disponibles dans la base de données: {list(all_brands)}")
         
         # Récupérer les produits de cette marque (insensible à la casse)
         queryset = Product.objects.filter(
             phone__brand__iexact=brand,
-            is_available=True,
-            is_salam=True
+            is_available=True
         ).select_related(
             'phone',
             'phone__color',
@@ -103,8 +101,7 @@ class BrandDetailView(TemplateView):
             # Récupérer les produits actifs avec leurs téléphones pour les filtres
             active_products = Product.objects.filter(
                 phone__brand__iexact=brand,
-                is_available=True,
-                is_salam=True
+                is_available=True
             ).select_related('phone', 'phone__color')
             
             logger.info(f"Nombre de produits actifs pour les filtres: {active_products.count()}")

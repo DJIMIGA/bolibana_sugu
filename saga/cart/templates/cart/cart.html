@@ -1,0 +1,28 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load cart_tags %}
+
+{% block content %}
+<div class="bg-gray-50 min-h-screen">
+    <div class="max-w-7xl mx-auto pt-6 sm:pt-16 pb-24 px-4 sm:px-6 lg:px-8">
+        <!-- En-tête -->
+        <div class="text-center mb-8">
+            <h1 class="text-3xl font-bold text-gray-900">Votre Panier</h1>
+            <p class="mt-2 text-lg text-gray-600">Gérez vos produits et finalisez votre commande</p>
+        </div>
+
+        <!-- Contenu du panier -->
+        <div class="max-w-4xl mx-auto">
+            <div class="bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden">
+                <!-- Contenu du panier -->
+                <div id="cart-content">
+                    {% include 'cart/components/_cart_content.html' %}
+                </div>
+                
+                <!-- Total et boutons de commande -->
+                {% include 'cart/components/_cart_total.html' %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

@@ -1,14 +1,147 @@
 <div id="cart-total" class="border-t border-gray-100 px-3 py-2 sm:px-4 bg-gradient-to-b from-white to-gray-50">
     {% if cart and cart.cart_items.exists %}
-        <!-- Section Prix compacte -->
+        {% load cart_tags %}
+        
+        <!-- Section Prix séparés par type -->
         <div class="space-y-2 mb-3">
-            <!-- Sous-total -->
-            <div class="flex justify-between items-center">
-                <p class="text-sm text-gray-600 font-sans">Sous-total</p>
-                <p class="text-lg font-bold bg-gradient-to-r from-green-600 to-yellow-500 bg-clip-text text-transparent font-bitter">
-                    {{ cart.get_total_price|floatformat:0 }} FCFA
-                </p>
-            </div>
+            <!-- Vérifier si c'est une commande mixte -->
+            {% with salam_items=cart.cart_items.all|filter_salam_products %}
+            {% with classic_items=cart.cart_items.all|filter_classic_products %}
+            
+            {% if classic_items and salam_items %}
+                <!-- COMMANDE MIXTE - Afficher seulement le bouton mixte -->
+                <div class="p-2 bg-gradient-to-r from-yellow-50 to-green-50 rounded-lg border border-yellow-300">
+                    <div class="flex justify-between items-center mb-2">
+                        <div class="flex items-center">
+                            <svg class="w-3 h-3 text-yellow-600 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"/>
+                            </svg>
+                            <p class="text-sm text-gray-700 font-sans font-medium">Commande mixte</p>
+                        </div>
+                    </div>
+                    
+                    <!-- Bouton Commander mixte -->
+                    {% if user.is_authenticated %}
+                        <a href="{% url 'cart:checkout' %}?type=mixed" 
+                           class="w-full flex justify-center items-center px-2 py-1.5 rounded-md shadow-sm text-xs font-medium text-white bg-gradient-to-r from-yellow-600 to-green-600 hover:from-yellow-700 hover:to-green-700 transform hover:scale-[1.02] transition-all duration-300 font-sans">
+                            <svg class="w-3 h-3 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"/>
+                            </svg>
+                            Commander
+                        </a>
+                    {% else %}
+                        <a href="{% url 'accounts:login' %}?next={% url 'cart:checkout' %}?type=mixed" 
+                           class="w-full flex justify-center items-center px-2 py-1.5 rounded-md shadow-sm text-xs font-medium text-white bg-gradient-to-r from-yellow-600 to-green-600 hover:from-yellow-700 hover:to-green-700 transform hover:scale-[1.02] transition-all duration-300 font-sans">
+                            <svg class="w-3 h-3 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
+                            </svg>
+                            Se connecter
+                        </a>
+                    {% endif %}
+                </div>
+                
+                <!-- Résumé des totaux pour commande mixte -->
+                <div class="text-xs text-gray-600 space-y-1">
+                    <div class="flex justify-between">
+                        <span class="flex items-center">
+                            <svg class="w-2.5 h-2.5 text-yellow-600 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                            </svg>
+                            Paiement immédiat (Salam):
+                        </span>
+                        <span class="text-yellow-700 font-medium">{{ cart.get_salam_products_total|format_price }}</span>
+                    </div>
+                    <div class="flex justify-between">
+                        <span class="flex items-center">
+                            <svg class="w-2.5 h-2.5 text-green-600 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+                            </svg>
+                            Paiement flexible (Classiques):
+                        </span>
+                        <span class="text-green-700 font-medium">{{ cart.get_classic_products_total|format_price }}</span>
+                    </div>
+                    <div class="border-t border-gray-200 pt-1 mt-1">
+                        <div class="flex justify-between font-semibold">
+                            <span>Total de la commande:</span>
+                            <span class="text-gray-800">{{ cart.get_total_price|format_price }}</span>
+                        </div>
+                    </div>
+                </div>
+                
+            {% else %}
+                <!-- COMMANDES SÉPARÉES - Afficher seulement les types présents -->
+                
+                <!-- Produits Classiques uniquement -->
+                {% if classic_items %}
+                <div class="p-2 bg-green-50 rounded-lg border border-green-200">
+                    <div class="flex justify-between items-center mb-2">
+                        <p class="text-sm text-green-700 font-sans">Produits classiques</p>
+                        <p class="text-sm font-bold text-green-700 font-sans">
+                            {{ cart.get_classic_products_total|format_price }}
+                        </p>
+                    </div>
+                    
+                    <!-- Bouton Commander pour produits classiques -->
+                    {% if user.is_authenticated %}
+                        <a href="{% url 'cart:checkout' %}?type=classic&payment=flexible" 
+                           class="w-full flex justify-center items-center px-2 py-1.5 rounded-md shadow-sm text-xs font-medium text-white bg-gradient-to-r from-green-600 to-green-500 hover:from-green-700 hover:to-green-600 transform hover:scale-[1.02] transition-all duration-300 font-sans">
+                            <svg class="w-3 h-3 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+                            </svg>
+                            Commander
+                        </a>
+                    {% else %}
+                        <a href="{% url 'accounts:login' %}?next={% url 'cart:checkout' %}?type=classic&payment=flexible" 
+                           class="w-full flex justify-center items-center px-2 py-1.5 rounded-md shadow-sm text-xs font-medium text-white bg-gradient-to-r from-green-600 to-green-500 hover:from-green-700 hover:to-green-600 transform hover:scale-[1.02] transition-all duration-300 font-sans">
+                            <svg class="w-3 h-3 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
+                            </svg>
+                            Se connecter
+                        </a>
+                    {% endif %}
+                </div>
+                {% endif %}
+                
+                <!-- Produits Salam uniquement -->
+                {% if salam_items %}
+                <div class="p-2 bg-yellow-50 rounded-lg border border-yellow-200">
+                    <div class="flex justify-between items-center mb-2">
+                        <div class="flex items-center">
+                            <svg class="w-3 h-3 text-yellow-600 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                            </svg>
+                            <p class="text-sm text-yellow-700 font-sans">Produits Salam</p>
+                        </div>
+                        <p class="text-sm font-bold text-yellow-700 font-sans">
+                            {{ cart.get_salam_products_total|format_price }}
+                        </p>
+                    </div>
+                    
+                    <!-- Bouton Commander pour produits Salam (paiement immédiat) -->
+                    {% if user.is_authenticated %}
+                        <a href="{% url 'cart:checkout' %}?type=salam&payment=immediate" 
+                           class="w-full flex justify-center items-center px-2 py-1.5 rounded-md shadow-sm text-xs font-medium text-white bg-gradient-to-r from-yellow-600 to-yellow-500 hover:from-yellow-700 hover:to-yellow-600 transform hover:scale-[1.02] transition-all duration-300 font-sans">
+                            <svg class="w-3 h-3 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                            </svg>
+                            Commander
+                        </a>
+                    {% else %}
+                        <a href="{% url 'accounts:login' %}?next={% url 'cart:checkout' %}?type=salam&payment=immediate" 
+                           class="w-full flex justify-center items-center px-2 py-1.5 rounded-md shadow-sm text-xs font-medium text-white bg-gradient-to-r from-yellow-600 to-yellow-500 hover:from-yellow-700 hover:to-yellow-600 transform hover:scale-[1.02] transition-all duration-300 font-sans">
+                            <svg class="w-3 h-3 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
+                            </svg>
+                            Se connecter
+                        </a>
+                    {% endif %}
+                </div>
+                {% endif %}
+                
+            {% endif %}
+            
+            {% endwith %}
+            {% endwith %}
             
             <!-- Information livraison compacte -->
             <div class="flex items-center p-1.5 bg-gradient-to-r from-yellow-50 to-yellow-100 rounded-md border border-yellow-200">
@@ -22,25 +155,6 @@
         {% if not is_checkout %}
         <!-- Section Boutons compacte -->
         <div class="space-y-1.5">
-            <!-- Bouton Commander -->
-            {% if user.is_authenticated %}
-                <a href="{% url 'cart:checkout' %}" 
-                   class="w-full flex justify-center items-center px-3 py-2 rounded-lg shadow-md text-sm font-medium text-white bg-gradient-to-r from-green-600 to-yellow-500 hover:from-green-700 hover:to-yellow-600 transform hover:scale-[1.02] transition-all duration-300 font-sans">
-                    <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
-                    </svg>
-                    Commander maintenant
-                </a>
-            {% else %}
-                <a href="{% url 'accounts:login' %}?next={% url 'cart:checkout' %}" 
-                   class="w-full flex justify-center items-center px-3 py-2 rounded-lg shadow-md text-sm font-medium text-white bg-gradient-to-r from-green-600 to-yellow-500 hover:from-green-700 hover:to-yellow-600 transform hover:scale-[1.02] transition-all duration-300 font-sans">
-                    <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
-                    </svg>
-                    Se connecter pour commander
-                </a>
-            {% endif %}
-            
             <!-- Bouton Vider le panier -->
             <button hx-delete="{% url 'cart:delete_cart' %}"
                     hx-target="#cart-content"

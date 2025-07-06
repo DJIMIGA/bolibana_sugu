@@ -154,7 +154,7 @@ class CulturalItemAdmin(admin.ModelAdmin):
 
 class ProductAdmin(admin.ModelAdmin):
     form = ProductForm
-    list_display = ('title', 'category', 'brand', 'price', 'stock', 'sku', 'is_available', 'is_salam', 'created_at', 'discount_price')
+    list_display = ('title', 'category', 'brand', 'price', 'get_stock_display', 'sku', 'is_available', 'is_salam', 'created_at', 'discount_price')
     list_filter = ('is_available', 'is_salam', 'category', 'brand', 'created_at')
     search_fields = ('title', 'sku', 'brand', 'description')
     readonly_fields = ('created_at', 'updated_at')
@@ -163,8 +163,12 @@ class ProductAdmin(admin.ModelAdmin):
         ('Informations de base', {
             'fields': ('title', 'description', 'category', 'supplier', 'brand')
         }),
-        ('Prix et stock', {
-            'fields': ('price', 'stock', 'sku', 'is_available', 'is_salam', 'discount_price')
+        ('Prix et stock classique', {
+            'fields': ('price', 'stock', 'sku', 'is_available', 'discount_price')
+        }),
+        ('Gestion Salam', {
+            'fields': ('is_salam',),
+            'classes': ('collapse',)
         }),
         ('Images', {
             'fields': ('image', 'image_urls')
@@ -177,6 +181,10 @@ class ProductAdmin(admin.ModelAdmin):
             'classes': ('collapse',)
         }),
     )
+
+    def get_stock_display(self, obj):
+        return obj.get_stock_display()
+    get_stock_display.short_description = 'Stock'
 
     def get_queryset(self, request):
         return super().get_queryset(request).select_related('category', 'supplier')

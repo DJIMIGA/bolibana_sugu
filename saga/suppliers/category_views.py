@@ -7,6 +7,7 @@ from product.models import Category, Product, Clothing, ShippingMethod
 import logging
 from django.utils import timezone
 from datetime import timedelta
+from django.db.models import Prefetch
 
 logger = logging.getLogger(__name__)
 
@@ -22,8 +23,7 @@ class BaseCategoryView(TemplateView):
     def get_base_queryset(self):
         """Retourne le queryset de base avec les relations communes"""
         queryset = Product.objects.filter(
-            is_available=True,
-            is_salam=True
+            is_available=True
         ).select_related(
             'phone',
             'phone__color',
@@ -526,7 +526,6 @@ class ClothingCategoryView(BaseCategoryView):
         # Récupérer les produits actifs pour les filtres avec toutes les relations nécessaires
         active_products = Product.objects.filter(
             is_available=True,
-            is_salam=True,
             clothing_product__isnull=False
         ).select_related(
             'clothing_product'
@@ -721,7 +720,6 @@ class PhoneCategoryView(BaseCategoryView):
         # Récupérer les produits actifs pour les filtres avec toutes les relations nécessaires
         active_products = Product.objects.filter(
             is_available=True,
-            is_salam=True,
             phone__isnull=False
         ).select_related(
             'phone',
@@ -828,7 +826,6 @@ class FabricCategoryView(BaseCategoryView):
         # Récupérer les produits actifs pour les filtres avec toutes les relations nécessaires
         active_products = Product.objects.filter(
             is_available=True,
-            is_salam=True,
             fabric_product__isnull=False
         ).select_related(
             'fabric_product',
@@ -891,7 +888,6 @@ class CulturalCategoryView(BaseCategoryView):
         # Récupérer les produits actifs pour les filtres
         active_products = Product.objects.filter(
             is_available=True,
-            is_salam=True,
             cultural_product__isnull=False
         ).select_related(
             'cultural_product'
@@ -933,8 +929,7 @@ class GenericCategoryView(BaseCategoryView):
             print("Cas 1: Catégorie principale (Tous les produits)")
             # Pour la catégorie principale, on inclut tous les produits disponibles
             queryset = queryset.filter(
-                is_available=True,
-                is_salam=True
+                is_available=True
             )
             print(f"Nombre de produits après filtres de base: {queryset.count()}")
         else:
@@ -945,8 +940,7 @@ class GenericCategoryView(BaseCategoryView):
             print(f"IDs des catégories concernées: {category_ids}")
             queryset = queryset.filter(
                 category_id__in=category_ids,
-                is_available=True,
-                is_salam=True
+                is_available=True
             )
             print(f"Nombre de produits après filtres de catégorie: {queryset.count()}")
         
@@ -1024,8 +1018,7 @@ class GenericCategoryView(BaseCategoryView):
         
         # Récupérer les produits actifs pour les filtres
         active_products = Product.objects.filter(
-            is_available=True,
-            is_salam=True
+            is_available=True
         ).select_related(
             'category'
         ).distinct()
@@ -1036,8 +1029,7 @@ class GenericCategoryView(BaseCategoryView):
         
         # Récupérer les catégories disponibles pour les filtres
         categories_list = Category.objects.filter(
-            products__is_available=True,
-            products__is_salam=True
+            products__is_available=True
         ).values_list('name', flat=True).distinct()
         context['filter_categories'] = [{'name': c} for c in sorted(set(filter(None, categories_list)))]
         
@@ -1083,7 +1075,7 @@ class CategoryListView(TemplateView):
         ).annotate(
             available_products_count=Count(
                 'products',
-                filter=Q(products__is_available=True, products__is_salam=True)
+                filter=Q(products__is_available=True)
             )
         ).order_by('order', 'name')
 
@@ -1093,7 +1085,7 @@ class CategoryListView(TemplateView):
         ).annotate(
             available_products_count=Count(
                 'products',
-                filter=Q(products__is_available=True, products__is_salam=True)
+                filter=Q(products__is_available=True)
             )
         ).order_by('order', 'name')
 

@@ -3,6 +3,7 @@ from django.contrib.auth.signals import user_logged_in
 from django.dispatch import receiver
 from .models import Cart, CartItem
 from django.db import transaction
+import re
 
 def render_cart_updates(request, cart, cart_item=None, include_payment_summary=False):
     """
@@ -67,8 +68,14 @@ def render_cart_updates(request, cart, cart_item=None, include_payment_summary=F
 def render_cart_item(request, cart_item):
     """Rendu d'un article individuel."""
     print(cart_item, 'cart_item')
+    # Rendre seulement le contenu intérieur, sans le <li>
+    # car HTMX va remplacer l'élément complet avec outerHTML
     item_html = render_to_string('cart/components/_cart_item.html', {'item': cart_item}, request=request)
-    return f'<li id="cart-item-{cart_item.id}" hx-swap-oob="true">{item_html}</li>'
+    # Extraire le contenu intérieur du <li>
+    # Supprimer les balises <li> et </li>
+    content = re.sub(r'^<li[^>]*>', '', item_html)
+    content = re.sub(r'</li>$', '', content)
+    return content
 
 
 def render_cart_count(cart):

@@ -29,8 +29,7 @@ class SupplierListView(ListView):
     paginate_by = 12
     def get_queryset(self):
         queryset = Product.objects.filter(
-            is_available=True,
-            is_salam=True
+            is_available=True
         ).select_related(
             'phone',
             'phone__color',
@@ -171,8 +170,7 @@ class SupplierListView(ListView):
 
         # Récupérer les produits actifs avec leurs relations
         active_products = Product.objects.filter(
-            is_available=True,
-            is_salam=True
+            is_available=True
         ).select_related(
             'phone',
             'phone__color',
@@ -293,8 +291,7 @@ class BrandDetailView(TemplateView):
         # Récupérer les produits de cette marque (insensible à la casse)
         queryset = Product.objects.filter(
             phone__brand__iexact=brand,
-            is_available=True,
-            is_salam=True
+            is_available=True
         ).select_related(
             'phone',
             'phone__color',
@@ -379,8 +376,7 @@ class CategoryDetailView(TemplateView):
         
         # Base queryset pour tous les produits disponibles et actifs
         queryset = Product.objects.filter(
-            is_available=True,
-            is_salam=True
+            is_available=True
         ).select_related(
             'phone',
             'phone__color',
@@ -572,8 +568,7 @@ class SupplierDetailView(DetailView):
 
     def get_queryset(self):
         return Product.objects.filter(
-            is_available=True,
-            is_salam=True
+            is_available=True
         ).select_related(
             'phone',
             'phone__color',
@@ -733,7 +728,6 @@ class PhoneDetailView(DetailView):
         similar_products = Product.objects.filter(
             similar_conditions,
             is_available=True,  # Uniquement les produits disponibles
-            is_salam=True  # Uniquement les produits Salam
         ).exclude(
             id=product.id
         ).select_related(
@@ -895,7 +889,6 @@ class ClothingDetailView(DetailView):
         similar_products = Product.objects.filter(
             similar_conditions,
             is_available=True,  # Uniquement les produits disponibles
-            is_salam=True  # Uniquement les produits Salam
         ).exclude(
             id=product.id
         ).select_related(
@@ -1030,7 +1023,6 @@ class CulturalItemDetailView(DetailView):
         similar_products = Product.objects.filter(
             similar_conditions,
             is_available=True,  # Uniquement les produits disponibles
-            is_salam=True  # Uniquement les produits Salam
         ).exclude(
             id=product.id
         ).select_related(
@@ -1170,7 +1162,7 @@ class CategoryListView(ListView):
         ).annotate(
             available_products_count=Count(
                 'products',
-                filter=Q(products__is_available=True, products__is_salam=True)
+                filter=Q(products__is_available=True)
             )
         ).order_by('order', 'name')
     
@@ -1192,8 +1184,7 @@ class ProductDetailView(DetailView):
 
     def get_queryset(self):
         return Product.objects.filter(
-            is_available=True,
-            is_salam=True
+            is_available=True
         ).select_related(
             'category',
             'supplier'
@@ -1247,7 +1238,6 @@ class ProductDetailView(DetailView):
             similar_products = Product.objects.filter(
                 similar_conditions,
                 is_available=True,
-                is_salam=True
             ).exclude(id=product.id).select_related(
                 'category',
                 'supplier',

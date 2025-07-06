@@ -21,11 +21,11 @@ class ProductAttributeValidator:
             return errors
             
         # Validation uniquement si le produit a des couleurs/tailles
-        if self.clothing.color.exists() and self.clothing.color.count() > 0:
+        if self.clothing.color.all().exists():
             if not attributes.get('color_id'):
                 errors['color'] = "Veuillez sélectionner une couleur"
                 
-        if self.clothing.size.exists() and self.clothing.size.count() > 0:
+        if self.clothing.size.all().exists():
             if not attributes.get('size_id'):
                 errors['size'] = "Veuillez sélectionner une taille"
                 

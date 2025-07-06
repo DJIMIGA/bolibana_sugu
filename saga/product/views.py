@@ -151,7 +151,7 @@ def product_list(request):
         'phone__color'
     ).prefetch_related(
         'images'
-    ).filter(is_salam=True)  # Ne montrer que les produits salam
+    ).filter(is_available=True)  # Afficher tous les produits disponibles
 
     return render(request, 'product_list.html', {'products': products})
 
@@ -183,7 +183,7 @@ def search(request):
             'category'
         ).prefetch_related(
             'images'
-        ).filter(is_available=True, is_salam=True)
+        ).filter(is_available=True)  # Afficher tous les produits disponibles
 
         # Recherche dans les catégories
         search_categories = Category.objects.filter(

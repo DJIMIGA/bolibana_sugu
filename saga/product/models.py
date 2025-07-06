@@ -137,8 +137,7 @@ class Category(models.Model):
         """Retourne les produits de la catégorie."""
         if self.slug == 'tous-les-produits':
             return Product.objects.filter(
-                is_available=True,
-                is_salam=True
+                is_available=True
             ).select_related(
                 'phone',
                 'phone__color',
@@ -152,8 +151,7 @@ class Category(models.Model):
             category_ids = self.get_all_children_ids()
             return Product.objects.filter(
                 category_id__in=category_ids,
-                is_available=True,
-                is_salam=True
+                is_available=True
             ).select_related(
                 'phone',
                 'phone__color',
@@ -255,7 +253,7 @@ class Category(models.Model):
     def product_count(self):
         """Retourne le nombre total de produits dans cette catégorie et ses sous-catégories"""
         if self.slug == 'tous-les-produits':
-            return Product.objects.filter(is_available=True, is_salam=True).count()
+            return Product.objects.filter(is_available=True).count()
         category_ids = self.get_all_children_ids()
         return Product.objects.filter(category_id__in=category_ids).count()
 
@@ -332,6 +330,75 @@ class Product(models.Model):
         return self.reviews.values('rating').annotate(
             count=Count('id')
         ).order_by('rating')
+
+    # Méthodes pour le système de stock simplifié
+    def get_stock_status(self):
+        """Retourne le statut du stock selon le type de produit"""
+        if self.is_salam:
+            return {
+                'status': 'salam',
+                'message': 'Commande Salam - Livraison selon méthode configurée',
+                'available': True,
+                'delivery_days': None,
+                'stock_type': 'salam'
+            }
+        else:
+            if self.stock > 0:
+                return {
+                    'status': 'in_stock',
+                    'message': f'En stock - {self.stock} disponible(s)',
+                    'available': True,
+                    'delivery_days': 3,
+                    'stock_type': 'classic'
+                }
+            else:
+                return {
+                    'status': 'out_of_stock',
+                    'message': 'Rupture de stock',
+                    'available': False,
+                    'delivery_days': None,
+                    'stock_type': 'classic'
+                }
+
+    def can_order(self, quantity=1):
+        """Vérifie si une commande peut être passée"""
+        if self.is_salam:
+            return True  # Salam = toujours possible
+        else:
+            return self.stock >= quantity
+
+    def reserve_stock(self, quantity):
+        """Réserve du stock pour une commande (uniquement pour les produits classiques)"""
+        if not self.is_salam and self.stock >= quantity:
+            self.stock -= quantity
+            self.save()
+            return True
+        return False
+
+    def release_stock(self, quantity):
+        """Libère du stock réservé (uniquement pour les produits classiques)"""
+        if not self.is_salam:
+            self.stock += quantity
+            self.save()
+            return True
+        return False
+
+    def get_stock_display(self):
+        """Retourne l'affichage du stock pour l'interface"""
+        status = self.get_stock_status()
+        return status['message']
+
+    def has_stock(self):
+        """Vérifie si le produit a du stock disponible"""
+        if self.is_salam:
+            return True  # Salam = toujours disponible
+        else:
+            return self.stock > 0
+
+    def get_delivery_estimate(self):
+        """Retourne l'estimation de délai de livraison"""
+        status = self.get_stock_status()
+        return status['delivery_days']
 
     class Meta:
         verbose_name = 'Produit'

@@ -15,11 +15,6 @@
                         <div>
                             <h2 class="text-lg font-semibold text-gray-900">Commande #{{ order.order_number }}</h2>
                             <p class="text-sm text-gray-500">Passée le {{ order.created_at|date:"d/m/Y à H:i" }}</p>
-                            <div class="mt-2 border-t border-gray-200 pt-2">
-                                <h3 class="text-sm font-medium text-gray-700 mb-2">Méthode de livraison</h3>
-                                <p class="text-sm text-gray-600">{{ order.shipping_method.name }}</p>
-                                <p class="text-sm text-gray-600">{{ order.shipping_method.description }}</p>
-                            </div>
                         </div>
                         <div class="flex items-center">
                             <span class="inline-flex items-center justify-center px-4 py-2 rounded-full text-sm font-medium w-full sm:w-auto text-center
@@ -39,61 +34,110 @@
                     <!-- Articles -->
                     <div class="space-y-4">
                         {% for item in order.items.all %}
-                        <div class="flex items-center space-x-4">
-                            {% if item.product.image %}
-                            <img src="{{ item.product.image.url }}" alt="{{ item.product.title }}" 
-                                 class="w-16 h-16 object-cover rounded-lg">
-                            {% endif %}
-                            <div class="flex-1">
-                                <h3 class="text-sm font-medium text-gray-900">{{ item.product.title }}</h3>
-                                <p class="text-sm text-gray-500">
-                                    {{ item.quantity }} × {{ item.price|floatformat:0 }} FCFA
-                                    {% if item.colors.exists or item.sizes.exists %}
-                                    <br>
-                                    {% if item.colors.exists %}
-                                    Couleur : {% for color in item.colors.all %}{{ color.name }}{% endfor %}
-                                    {% endif %}
-                                    {% if item.sizes.exists %}
-                                    Taille : {% for size in item.sizes.all %}{{ size.name }}{% endfor %}
-                                    {% endif %}
-                                    {% endif %}
-                                </p>
+                        <div class="flex items-start">
+                            <div class="w-16 h-16 flex-shrink-0">
+                                {% load cart_tags %}
+                                {% product_image item.product size_class="w-16 h-16 rounded-lg" alt_text=item.product.title %}
                             </div>
-                            <div class="text-right">
-                                <p class="text-sm font-medium text-gray-500">Sous-total</p>
-                                <p class="text-sm font-bold text-gray-900">
-                                    {{ item.get_total_price|floatformat:0 }} FCFA
+                            <div class="ml-4 flex-1 min-w-0">
+                                <h3 class="text-sm font-medium text-gray-900 truncate">{{ item.product.title }}</h3>
+                                <p class="text-xs text-gray-500 mb-2">
+                                    {% if item.product.discount_price %}
+                                        <span class="text-gray-400 line-through">{{ item.product.price|format_price }}</span>
+                                        <span class="text-red-500 font-medium ml-2">{{ item.product.discount_price|format_price }}</span>
+                                    {% else %}
+                                        <span class="text-gray-600 font-medium">{{ item.product.price|format_price }}</span>
+                                    {% endif %}
+                                    <span class="text-gray-400 ml-1">/ unité</span>
                                 </p>
+                                <div class="mt-1 flex items-center justify-between">
+                                    <div class="flex-1">
+                                        <div class="flex items-center space-x-4 text-sm">
+                                            <span class="text-gray-600">
+                                                <span class="font-medium">{{ item.quantity }}</span> × {{ item.price|format_price }}
+                                            </span>
+                                        </div>
+                                    </div>
+                                    <div class="text-right ml-4">
+                                        <p class="text-sm font-bold text-gray-900">{{ item.get_total_price|format_price }}</p>
+                                        <p class="text-xs text-gray-500">Total</p>
+                                    </div>
+                                </div>
+                                {% if item.colors.exists or item.sizes.exists %}
+                                <div class="mt-2 flex flex-wrap gap-2">
+                                    {% for color in item.colors.all %}
+                                    <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs bg-gray-100 text-gray-800">
+                                        <div class="w-2 h-2 rounded-full mr-1" style="background-color: {{ color.color_code }}"></div>
+                                        {{ color.name }}
+                                    </span>
+                                    {% endfor %}
+                                    {% for size in item.sizes.all %}
+                                    <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs bg-gray-100 text-gray-800">
+                                        Taille: {{ size.name }}
+                                    </span>
+                                    {% endfor %}
+                            </div>
+                                {% endif %}
                             </div>
                         </div>
                         {% endfor %}
                     </div>
 
                     <!-- Totaux et adresse de livraison -->
-                    <div class="mt-6 grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div class="mt-6 grid grid-cols-1 md:grid-cols-3 gap-6">
                         <div class="bg-gray-50 p-4 rounded-lg">
-                            <h4 class="text-sm font-medium text-gray-900 mb-2">Adresse de livraison</h4>
-                            <p class="text-sm text-gray-600">
-                                {{ order.shipping_address.full_name }}<br>
-                                {{ order.shipping_address.street_address }}<br>
-                                {{ order.shipping_address.quarter }}<br>
-                                {{ order.shipping_address.city }}
-                            </p>
+                            <h4 class="text-sm font-medium text-gray-700 mb-3 flex items-center">
+                                <svg class="w-4 h-4 mr-2 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/>
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/>
+                                </svg>
+                                Adresse de livraison
+                            </h4>
+                            <div class="space-y-1">
+                                <p class="text-sm font-medium text-gray-900">{{ order.shipping_address.full_name }}</p>
+                                <p class="text-sm text-gray-600">{{ order.shipping_address.street_address }}</p>
+                                {% if order.shipping_address.quarter %}
+                                <p class="text-sm text-gray-600">{{ order.shipping_address.quarter }}</p>
+                                {% endif %}
+                                <p class="text-sm text-gray-600">{{ order.shipping_address.city }}</p>
+                            </div>
                         </div>
                         <div class="bg-gray-50 p-4 rounded-lg">
-                            <h4 class="text-sm font-medium text-gray-900 mb-2">Récapitulatif</h4>
+                            <h4 class="text-sm font-medium text-gray-700 mb-3 flex items-center">
+                                <svg class="w-4 h-4 mr-2 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/>
+                                </svg>
+                                Méthode de livraison
+                            </h4>
+                            <div class="space-y-1">
+                                <p class="text-sm font-medium text-gray-900">{{ order.shipping_method.name }}</p>
+                                {% if order.shipping_method.description %}
+                                <p class="text-sm text-gray-600">{{ order.shipping_method.description }}</p>
+                                {% endif %}
+                                <p class="text-sm text-green-600 font-medium">
+                                    Délai estimé : {{ order.shipping_method.min_delivery_days }}-{{ order.shipping_method.max_delivery_days }} jours ouvrés
+                                </p>
+                            </div>
+                        </div>
+                        <div class="bg-gray-50 p-4 rounded-lg">
+                            <h4 class="text-sm font-medium text-gray-700 mb-3 flex items-center">
+                                <svg class="w-4 h-4 mr-2 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z"/>
+                                </svg>
+                                Récapitulatif
+                            </h4>
                             <div class="space-y-1">
                                 <div class="flex justify-between text-sm text-gray-600">
                                     <span>Sous-total</span>
-                                    <span>{{ order.subtotal|floatformat:0 }} FCFA</span>
+                                    <span>{{ order.subtotal|format_price }}</span>
                                 </div>
                                 <div class="flex justify-between text-sm text-gray-600">
                                     <span>Frais de livraison</span>
-                                    <span>{{ order.shipping_cost|floatformat:0 }} FCFA</span>
+                                    <span>{{ order.shipping_cost|format_price }}</span>
                                 </div>
                                 <div class="flex justify-between text-sm font-medium text-gray-900 pt-2 border-t border-gray-200">
                                     <span>Total</span>
-                                    <span>{{ order.total|floatformat:0 }} FCFA</span>
+                                    <span>{{ order.total|format_price }}</span>
                                 </div>
                             </div>
                         </div>
