@@ -81,6 +81,18 @@
                             Modifier
                         </a>
 
+                        {% if address.id in addresses_with_orders %}
+                        <!-- Adresse utilisée par des commandes - bouton désactivé -->
+                        <button type="button" 
+                                class="w-full sm:w-auto inline-flex items-center justify-center px-4 py-2 bg-gray-400 text-white text-sm font-medium rounded-xl cursor-not-allowed opacity-60"
+                                title="Cette adresse ne peut pas être supprimée car elle est utilisée par des commandes">
+                            <svg class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z"/>
+                            </svg>
+                            Utilisée par des commandes
+                        </button>
+                        {% else %}
+                        <!-- Adresse non utilisée - bouton de suppression normal -->
                         <form method="post" action="{% url 'accounts:delete_address' address.id %}" class="w-full sm:w-auto" 
                               onsubmit="return confirm('Êtes-vous sûr de vouloir supprimer cette adresse ?');">
                             {% csrf_token %}
@@ -92,6 +104,7 @@
                                 Supprimer
                             </button>
                         </form>
+                        {% endif %}
                     </div>
                 </div>
                 {% endfor %}

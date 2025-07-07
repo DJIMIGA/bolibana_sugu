@@ -323,6 +323,14 @@ def manage_addresses(request):
     addresses = ShippingAddress.objects.filter(user=request.user)
     default_address = addresses.filter(is_default=True).first()
 
+    # Vérifier quelles adresses sont utilisées par des commandes
+    from cart.models import Order
+    addresses_with_orders = {}
+    for address in addresses:
+        orders_count = Order.objects.filter(shipping_address=address).count()
+        if orders_count > 0:
+            addresses_with_orders[address.id] = orders_count
+
     if request.method == "POST":
         form = ShippingAddressForm(request.POST)
         if form.is_valid():
@@ -342,7 +350,8 @@ def manage_addresses(request):
     return render(request, 'addresses.html', {
         "form": form,
         "addresses": addresses,
-        "default_address": default_address
+        "default_address": default_address,
+        "addresses_with_orders": addresses_with_orders
     })
 
 
@@ -364,8 +373,28 @@ def edit_address(request, address_id):
 
 def delete_address(request, address_id):
     address = get_object_or_404(ShippingAddress, id=address_id, user=request.user)
+    
+    # Vérifier si l'adresse est utilisée par des commandes
+    from cart.models import Order
+    orders_using_address = Order.objects.filter(shipping_address=address)
+    
+    if orders_using_address.exists():
+        # L'adresse est utilisée par des commandes
+        orders_count = orders_using_address.count()
+        messages.error(request, f"❌ **Impossible de supprimer cette adresse** : Elle est utilisée par {orders_count} commande(s). Pour des raisons de sécurité, les adresses liées à des commandes ne peuvent pas être supprimées.")
+        return redirect('accounts:manage_addresses')
+    
+    # Vérifier si c'est l'adresse par défaut
+    if address.is_default:
+        # Si c'est l'adresse par défaut, vérifier s'il y a d'autres adresses
+        other_addresses = ShippingAddress.objects.filter(user=request.user).exclude(id=address_id)
+        if not other_addresses.exists():
+            messages.error(request, "❌ **Impossible de supprimer cette adresse** : C'est votre seule adresse. Vous devez avoir au moins une adresse de livraison.")
+            return redirect('accounts:manage_addresses')
+    
+    # Supprimer l'adresse
     address.delete()
-    messages.success(request, "Adresse supprimée avec succès ! ✅")  # ✅ Succès
+    messages.success(request, "Adresse supprimée avec succès ! ✅")
     return redirect('accounts:manage_addresses')
 
 
