@@ -544,9 +544,6 @@ def payment_online(request):
                     'payment_method': payment_method,
                     'shipping_cost': str(shipping_summary['summary']['shipping_cost']),
                 },
-                shipping_address_collection={
-                    'allowed_countries': ['ML']
-                },
                 shipping_options=[{
                     'shipping_rate_data': {
                         'type': 'fixed_amount',
@@ -1319,26 +1316,22 @@ def payment_success(request):
             # Récupérer les frais de livraison depuis les métadonnées
             shipping_cost = Decimal(str(session.metadata.get('shipping_cost', 0)))
             
-            # Récupérer l'adresse de livraison depuis la session Stripe
-            shipping_details = session.shipping_details
-            if not shipping_details:
-                raise ValueError("Aucune adresse de livraison trouvée dans la session Stripe")
+            # Récupérer l'adresse de livraison depuis les métadonnées
+            shipping_address_id = session.metadata.get('shipping_address_id')
+            if not shipping_address_id:
+                raise ValueError("Aucune adresse de livraison trouvée dans les métadonnées")
             
-            # Créer une nouvelle adresse de livraison
-            shipping_address = ShippingAddress.objects.create(
-                user=request.user,
-                full_name=shipping_details.name,
-                street_address=shipping_details.address.line1,
-                quarter=shipping_details.address.line2 or '',
-                city=shipping_details.address.city,
-                is_default=True
-            )
-            
-            # Mettre à jour les autres adresses pour ne plus être par défaut
-            ShippingAddress.objects.filter(user=request.user).exclude(id=shipping_address.id).update(is_default=False)
+            try:
+                shipping_address = ShippingAddress.objects.get(id=shipping_address_id, user=request.user)
+                debug_log(f"✅ Adresse de livraison trouvée: {shipping_address.id}")
+            except ShippingAddress.DoesNotExist:
+                raise ValueError(f"Adresse de livraison {shipping_address_id} introuvable")
             
             # Récupérer le type de produits depuis les métadonnées
             product_type = session.metadata.get('product_type', 'all')
+            
+            # Récupérer la méthode de livraison
+            shipping_method = ShippingMethod.objects.first()
             
             # Calculer le total selon le type de produits
             if product_type == 'salam':
@@ -1775,9 +1768,8 @@ def create_checkout_session(request):
                 'product_type': product_type,
                 'payment_method': payment_method,
                 'shipping_cost': str(shipping_cost),
-            },
-            shipping_address_collection={
-                'allowed_countries': ['ML']
+                'default_country': 'ML',
+                'default_country_name': 'Mali',
             },
             shipping_options=[{
                 'shipping_rate_data': {
@@ -1794,6 +1786,15 @@ def create_checkout_session(request):
                 }
             }],
             locale='fr',
+            # Configuration du pays par défaut pour Stripe
+            payment_intent_data={
+                'metadata': {
+                    'default_country': 'ML',
+                    'default_country_name': 'Mali'
+                }
+            },
+            # Collecte de l'adresse de facturation avec pays par défaut
+            billing_address_collection='required',
         )
         
         debug_log(f"✅ Stripe session created successfully: {checkout_session.id}")
