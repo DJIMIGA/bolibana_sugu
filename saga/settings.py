@@ -278,10 +278,23 @@ if DEBUG:
     EMAIL_HOST_PASSWORD = os.getenv('EMAIL_HOST_PASSWORD', '')
     print("📧 Email configuré en mode SMTP (développement)")
     
-    # Fallback vers console si pas de configuration SMTP
+    # Fallback vers console si pas de configuration SMTP ou si erreur d'authentification
     if not EMAIL_HOST_PASSWORD:
         EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
         print("⚠️ Pas de mot de passe SMTP configuré - emails en mode console")
+    else:
+        # Test de connexion SMTP
+        try:
+            import smtplib
+            server = smtplib.SMTP(EMAIL_HOST, EMAIL_PORT)
+            server.starttls()
+            server.login(EMAIL_HOST_USER, EMAIL_HOST_PASSWORD)
+            server.quit()
+            print("✅ Connexion SMTP testée avec succès")
+        except Exception as e:
+            print(f"⚠️ Erreur de connexion SMTP: {str(e)}")
+            print("🔄 Basculement vers le mode console")
+            EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
 else:
     # En production, utiliser SMTP
     EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
