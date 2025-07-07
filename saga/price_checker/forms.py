@@ -1,20 +1,15 @@
 from django import forms
 from .models import PriceEntry, City, PriceSubmission
-from product.models import Product, Phone
+from product.models import Product
 
 class PriceEntryForm(forms.ModelForm):
     class Meta:
         model = PriceEntry
-        fields = ['product', 'variant', 'city', 'price', 'is_active']
+        fields = ['product', 'city', 'price', 'is_active']
         widgets = {
             'product': forms.Select(attrs={
                 'class': 'w-full rounded-lg border border-gray-200 px-4 py-2 text-gray-700 focus:outline-none focus:ring-2 focus:ring-green-500',
                 'id': 'id_product'
-            }),
-            'variant': forms.Select(attrs={
-                'class': 'w-full rounded-lg border border-gray-200 px-4 py-2 text-gray-700 focus:outline-none focus:ring-2 focus:ring-green-500',
-                'id': 'id_variant',
-                'disabled': True
             }),
             'city': forms.Select(attrs={
                 'class': 'w-full rounded-lg border border-gray-200 px-4 py-2 text-gray-700 focus:outline-none focus:ring-2 focus:ring-green-500'
@@ -38,14 +33,12 @@ class PriceEntryForm(forms.ModelForm):
         # Initialiser les querysets de base
         self.fields['product'].queryset = Product.objects.filter(is_active=True)
         self.fields['city'].queryset = City.objects.filter(is_active=True)
-        self.fields['variant'].queryset = Phone.objects.none()
         self.fields['is_active'].initial = True
         
         # Si c'est une mise à jour et que l'instance a un produit
         if self.instance and self.instance.pk and self.instance.product:
             print(f"\n=== Valeurs de l'instance ===")
             print(f"Product: {self.instance.product}")
-            print(f"Variant: {self.instance.variant}")
             print(f"City: {self.instance.city}")
             print(f"Price: {self.instance.price}")
             
@@ -53,39 +46,6 @@ class PriceEntryForm(forms.ModelForm):
             self.initial['product'] = self.instance.product
             self.initial['city'] = self.instance.city
             self.initial['price'] = self.instance.price
-            
-            # Si l'instance a un produit, filtrer les variantes
-            try:
-                if hasattr(self.instance.product, 'phone'):
-                    self.fields['variant'].queryset = self.instance.product.phone.variants.filter(disponible_salam=True)
-                    self.initial['variant'] = self.instance.variant
-                    self.fields['variant'].widget.attrs['disabled'] = False
-                    
-                    # Ajouter la valeur initiale comme attribut data pour le JavaScript
-                    self.fields['variant'].widget.attrs['data-initial-value'] = str(self.instance.variant.id) if self.instance.variant else ''
-            except Exception as e:
-                print(f"Erreur lors de l'accès au téléphone: {e}")
-                self.fields['variant'].widget.attrs['disabled'] = True
-                self.fields['variant'].widget.attrs['data-initial-value'] = ''
-        
-        # Si un produit est sélectionné dans le formulaire
-        if 'product' in self.data:
-            try:
-                product_id = int(self.data.get('product'))
-                print(f"\n=== Produit sélectionné dans le formulaire ===")
-                print(f"Product ID: {product_id}")
-                
-                product = Product.objects.get(id=product_id)
-                try:
-                    if hasattr(product, 'phone'):
-                        self.fields['variant'].queryset = product.phone.variants.filter(disponible_salam=True)
-                        self.fields['variant'].widget.attrs['disabled'] = False
-                except Exception as e:
-                    print(f"Erreur lors de l'accès au téléphone: {e}")
-                    self.fields['variant'].widget.attrs['disabled'] = True
-            except (ValueError, TypeError, Product.DoesNotExist) as e:
-                print(f"Erreur lors de la récupération du produit: {e}")
-                self.fields['variant'].widget.attrs['disabled'] = True
         
         print("=========================\n")
 

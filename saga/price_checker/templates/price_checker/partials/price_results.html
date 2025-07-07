@@ -3,57 +3,55 @@
         {% for result in results %}
             <div class="bg-white rounded-lg shadow-md p-4 mb-4">
                 <div class="flex flex-col space-y-2">
-                    <h3 class="text-lg font-semibold text-gray-900">
-                        {{ result.product.brand }} {{ result.product.model }}
-                    </h3>
-                    <div class="flex items-center space-x-2 text-sm text-gray-600">
-                        <span class="font-medium">Variante :</span>
-                        <span>{{ result.ram }}GB RAM / {{ result.storage }}GB</span>
-                        {% if result.color %}
-                            <span class="text-gray-500">•</span>
-                            <div class="flex items-center space-x-2">
-                                <div class="w-4 h-4 rounded-full border border-gray-200" 
-                                     style="background-color: {{ result.color.code }}"
-                                     title="{{ result.color.name }}">
+                    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between">
+                        <div class="flex-1 min-w-0">
+                            <h3 class="text-lg font-medium text-gray-900 truncate">
+                                {{ result.product.title }}
+                            </h3>
+                            <p class="mt-1 text-sm text-gray-500">
+                                {{ result.product.brand }} - {{ result.product.category.name }}
+                            </p>
+                        </div>
+                    </div>
+                    
+                    <!-- Prix par ville -->
+                    <div class="mt-4">
+                        {% if result.prices_by_city %}
+                            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                                {% for city, price_info in result.prices_by_city.items %}
+                                <div class="bg-gray-50 rounded-lg p-3">
+                                    <div class="flex items-center justify-between">
+                                        <div>
+                                            <p class="text-sm font-medium text-gray-900">{{ city.name }}</p>
+                                            <p class="text-lg font-bold text-green-600">
+                                                {{ price_info.price|floatformat:0 }} FCFA
+                                            </p>
+                                            {% if price_info.is_average %}
+                                            <p class="text-xs text-gray-500">Moyenne ({{ price_info.count }} prix)</p>
+                                            {% endif %}
+                                        </div>
+                                        {% if price_info.price_change %}
+                                        <div class="text-right">
+                                            <span class="text-xs font-medium {% if price_info.price_change > 0 %}text-red-600{% else %}text-green-600{% endif %}">
+                                                {% if price_info.price_change > 0 %}+{% endif %}{{ price_info.price_change|floatformat:0 }} FCFA
+                                            </span>
+                                            {% if price_info.price_change_percentage %}
+                                            <p class="text-xs text-gray-500">
+                                                {% if price_info.price_change_percentage > 0 %}+{% endif %}{{ price_info.price_change_percentage|floatformat:1 }}%
+                                            </p>
+                                            {% endif %}
+                                        </div>
+                                        {% endif %}
+                                    </div>
                                 </div>
-                                <span>{{ result.color.first_word }}</span>
+                                {% endfor %}
+                            </div>
+                        {% else %}
+                            <div class="text-center py-4">
+                                <p class="text-gray-500">Aucun prix disponible pour ce produit</p>
                             </div>
                         {% endif %}
                     </div>
-                    
-                    {% if result.prices_by_city %}
-                        <div class="mt-2 space-y-2">
-                            {% for city, price_info in result.prices_by_city.items %}
-                                <div class="bg-gray-50 rounded-lg p-3">
-                                    <div class="flex justify-between items-center">
-                                        <span class="font-medium text-gray-900">{{ city.name }}</span>
-                                        <div class="flex items-center space-x-2">
-                                            <span class="text-lg font-bold text-green-600">{{ price_info.price }} FCFA</span>
-                                            {% if price_info.is_average %}
-                                                <span class="text-xs text-gray-500">(moyenne sur {{ price_info.count }} prix)</span>
-                                            {% endif %}
-                                        </div>
-                                    </div>
-                                    {% if price_info.price_change %}
-                                        <div class="mt-1 text-sm {% if price_info.price_change > 0 %}text-red-600{% else %}text-green-600{% endif %}">
-                                            {% if price_info.price_change > 0 %}
-                                                +{{ price_info.price_change }} FCFA ({{ price_info.price_change_percentage|floatformat:2 }}%)
-                                            {% else %}
-                                                {{ price_info.price_change }} FCFA ({{ price_info.price_change_percentage|floatformat:2 }}%)
-                                            {% endif %}
-                                        </div>
-                                    {% endif %}
-                                    <div class="mt-1 text-xs text-gray-500">
-                                        Mis à jour le {{ price_info.updated_at|date:"d/m/Y" }} à {{ price_info.updated_at|time:"H:i" }}
-                                    </div>
-                                </div>
-                            {% endfor %}
-                        </div>
-                    {% else %}
-                        <div class="text-gray-500 text-sm">
-                            Aucun prix disponible pour cette variante
-                        </div>
-                    {% endif %}
                 </div>
             </div>
         {% endfor %}

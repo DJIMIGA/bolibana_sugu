@@ -58,37 +58,11 @@
                 <form method="post" id="priceSubmissionForm" class="needs-validation" novalidate>
                     {% csrf_token %}
                     
-                    <!-- Champs cachés pour les valeurs désactivées -->
-                    <input type="hidden" name="brand" id="hidden_brand" value="{{ form.initial.brand }}">
-                    <input type="hidden" name="product" id="hidden_product" value="{{ form.initial.product.id }}">
-                    <input type="hidden" name="variant" id="hidden_variant" value="{{ form.initial.variant.id }}">
-                    
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <!-- Marque -->
-                        <div class="form-group">
-                            <label for="{{ form.brand.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-1">
-                                Marque <span class="text-red-500">*</span>
-                            </label>
-                            <div class="relative">
-                                {{ form.brand }}
-                                <div id="brand-loading" class="absolute inset-y-0 right-0 flex items-center pr-3 hidden">
-                                    <svg class="animate-spin h-5 w-5 text-gray-400" fill="none" viewBox="0 0 24 24">
-                                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                                    </svg>
-                                </div>
-                            </div>
-                            {% if form.brand.errors %}
-                                <div class="mt-1 text-sm text-red-600">
-                                    {{ form.brand.errors }}
-                                </div>
-                            {% endif %}
-                        </div>
-
                         <!-- Produit -->
                         <div class="form-group">
                             <label for="{{ form.product.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-1">
-                                Modèle <span class="text-red-500">*</span>
+                                Produit <span class="text-red-500">*</span>
                             </label>
                             <div class="relative">
                                 {{ form.product }}
@@ -102,27 +76,6 @@
                             {% if form.product.errors %}
                                 <div class="mt-1 text-sm text-red-600">
                                     {{ form.product.errors }}
-                                </div>
-                            {% endif %}
-                        </div>
-
-                        <!-- Variante -->
-                        <div class="form-group">
-                            <label for="{{ form.variant.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-1">
-                                Produit <span class="text-red-500">*</span>
-                            </label>
-                            <div class="relative">
-                                {{ form.variant }}
-                                <div id="variant-loading" class="absolute inset-y-0 right-0 flex items-center pr-3 hidden">
-                                    <svg class="animate-spin h-5 w-5 text-gray-400" fill="none" viewBox="0 0 24 24">
-                                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                                    </svg>
-                                </div>
-                            </div>
-                            {% if form.variant.errors %}
-                                <div class="mt-1 text-sm text-red-600">
-                                    {{ form.variant.errors }}
                                 </div>
                             {% endif %}
                         </div>
@@ -141,7 +94,7 @@
                         </div>
 
                         <!-- Prix -->
-                        <div class="form-group">
+                        <div class="form-group md:col-span-2">
                             <label for="{{ form.price.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-1">
                                 Prix (FCFA) <span class="text-red-500">*</span>
                             </label>
@@ -231,119 +184,10 @@
 {% block extra_js %}
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    const brandSelect = document.getElementById('id_brand');
     const productSelect = document.getElementById('id_product');
-    const variantSelect = document.getElementById('id_variant');
     const form = document.getElementById('priceSubmissionForm');
     const submitButton = document.getElementById('submit-button');
     const submitLoading = document.getElementById('submit-loading');
-    
-    // Stocker les valeurs initiales
-    const initialProductId = productSelect.value;
-    const initialVariantId = variantSelect.value;
-
-    // Désactiver les champs si on est en mode mise à jour
-    if ({{ is_update|yesno:"true,false" }}) {
-        brandSelect.disabled = true;
-        productSelect.disabled = true;
-        variantSelect.disabled = true;
-    }
-
-    // Fonction pour charger les produits en fonction de la marque
-    function loadProducts() {
-        const brandId = brandSelect.value;
-        const loadingIndicator = document.getElementById('brand-loading');
-        
-        if (brandId) {
-            loadingIndicator.classList.remove('hidden');
-            productSelect.disabled = true;
-            variantSelect.disabled = true;
-            
-            fetch(`{% url 'price_checker:api_products' %}?brand=${brandId}`)
-                .then(response => response.json())
-                .then(data => {
-                    productSelect.innerHTML = '<option value="">---------</option>';
-                    data.products.forEach(product => {
-                        const option = document.createElement('option');
-                        option.value = product[0]; // ID du produit
-                        option.textContent = product[1]; // Nom du modèle
-                        productSelect.appendChild(option);
-                    });
-                    
-                    // Restaurer la valeur initiale si elle existe
-                    if (initialProductId) {
-                        productSelect.value = initialProductId;
-                        // Déclencher le chargement des variants
-                        loadVariants();
-                    } else {
-                        productSelect.disabled = false;
-                    }
-                })
-                .catch(error => {
-                    console.error('Erreur lors du chargement des produits:', error);
-                    // Afficher un message d'erreur à l'utilisateur
-                })
-                .finally(() => {
-                    loadingIndicator.classList.add('hidden');
-                });
-        } else {
-            productSelect.innerHTML = '<option value="">---------</option>';
-            variantSelect.innerHTML = '<option value="">---------</option>';
-            if (!{{ is_update|yesno:"true,false" }}) {
-                productSelect.disabled = true;
-                variantSelect.disabled = true;
-            }
-        }
-    }
-
-    // Fonction pour charger les variants en fonction du produit
-    function loadVariants() {
-        const productId = productSelect.value;
-        const loadingIndicator = document.getElementById('variant-loading');
-        
-        if (productId) {
-            loadingIndicator.classList.remove('hidden');
-            variantSelect.disabled = true;
-            
-            fetch(`{% url 'price_checker:api_variants' %}?product_id=${productId}`)
-                .then(response => response.json())
-                .then(data => {
-                    variantSelect.innerHTML = '<option value="">---------</option>';
-                    data.variants.forEach(variant => {
-                        const option = document.createElement('option');
-                        option.value = variant.id;
-                        option.textContent = `${variant.storage}Go / ${variant.ram}Go RAM - ${variant.color__name}`;
-                        variantSelect.appendChild(option);
-                    });
-                    
-                    // Restaurer la valeur initiale de la variante si elle existe
-                    if (initialVariantId) {
-                        variantSelect.value = initialVariantId;
-                    }
-                    
-                    // Activer le champ variante si on n'est pas en mode mise à jour
-                    if (!{{ is_update|yesno:"true,false" }}) {
-                        variantSelect.disabled = false;
-                    }
-                })
-                .catch(error => {
-                    console.error('Erreur lors du chargement des variants:', error);
-                    // Afficher un message d'erreur à l'utilisateur
-                })
-                .finally(() => {
-                    loadingIndicator.classList.add('hidden');
-                });
-        } else {
-            variantSelect.innerHTML = '<option value="">---------</option>';
-            if (!{{ is_update|yesno:"true,false" }}) {
-                variantSelect.disabled = true;
-            }
-        }
-    }
-
-    // Événements
-    brandSelect.addEventListener('change', loadProducts);
-    productSelect.addEventListener('change', loadVariants);
 
     // Validation du formulaire
     form.addEventListener('submit', function(e) {
@@ -356,14 +200,6 @@ document.addEventListener('DOMContentLoaded', function() {
         }
         form.classList.add('was-validated');
     });
-
-    // Initialisation
-    if (initialProductId) {
-        loadProducts();
-    } else if (initialVariantId) {
-        // Si on a une variante mais pas de produit, on charge quand même les variants
-        loadVariants();
-    }
 });
 </script>
 {% endblock %}

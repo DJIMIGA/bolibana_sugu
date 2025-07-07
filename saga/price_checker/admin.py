@@ -23,7 +23,7 @@ class ProductStatusInline(admin.StackedInline):
 class PriceEntryInline(admin.TabularInline):
     model = PriceEntry
     extra = 0
-    fields = ('variant', 'city', 'price', 'created_at', 'is_active')
+    fields = ('city', 'price', 'created_at', 'is_active')
     readonly_fields = ('created_at',)
     can_delete = True
     ordering = ['-created_at']
@@ -38,13 +38,13 @@ class CityAdmin(admin.ModelAdmin):
 
 @admin.register(PriceSubmission)
 class PriceSubmissionAdmin(admin.ModelAdmin):
-    list_display = ('product', 'variant', 'city', 'price', 'user', 'status', 'created_at')
+    list_display = ('product', 'city', 'price', 'user', 'status', 'created_at')
     list_filter = ('status', 'city', 'created_at')
-    search_fields = ('product__title', 'variant__sku', 'user__username')
+    search_fields = ('product__title', 'user__username')
     readonly_fields = ('created_at', 'validated_at')
     fieldsets = (
         ('Informations de base', {
-            'fields': ('product', 'variant', 'city', 'price', 'user')
+            'fields': ('product', 'city', 'price', 'user')
         }),
         ('Validation', {
             'fields': ('status', 'validation_notes', 'validated_by', 'validated_at')
@@ -57,18 +57,18 @@ class PriceSubmissionAdmin(admin.ModelAdmin):
 
     def get_queryset(self, request):
         return super().get_queryset(request).select_related(
-            'product', 'variant', 'city', 'user', 'validated_by'
+            'product', 'city', 'user', 'validated_by'
         )
 
 @admin.register(PriceEntry)
 class PriceEntryAdmin(admin.ModelAdmin):
-    list_display = ('product', 'variant', 'city', 'price', 'user', 'is_active', 'created_at')
+    list_display = ('product', 'city', 'price', 'user', 'is_active', 'created_at')
     list_filter = ('is_active', 'city', 'created_at')
-    search_fields = ('product__title', 'variant__sku', 'user__username')
+    search_fields = ('product__title', 'user__username')
     readonly_fields = ('created_at', 'updated_at')
     fieldsets = (
         ('Informations de base', {
-            'fields': ('product', 'variant', 'city', 'price', 'user', 'is_active')
+            'fields': ('product', 'city', 'price', 'user', 'is_active')
         }),
         ('Soumission', {
             'fields': ('submission',),
@@ -82,7 +82,7 @@ class PriceEntryAdmin(admin.ModelAdmin):
 
     def get_queryset(self, request):
         return super().get_queryset(request).select_related(
-            'product', 'variant', 'city', 'user', 'submission'
+            'product', 'city', 'user', 'submission'
         )
 
 @admin.register(PriceDeactivation)

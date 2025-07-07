@@ -40,7 +40,8 @@ admin_urls = [
 # URLs API
 api_urls = [
     path('api/products/', views.get_products_by_brand, name='api_products'),
-    path('api/variants/', views.get_phone_variants, name='api_variants'),
+    path('api/product-details/', views.get_product_details, name='api_product_details'),
+    path('api/product-prices/', views.get_product_prices, name='api_product_prices'),
 ]
 
 # Combinaison de toutes les URLs

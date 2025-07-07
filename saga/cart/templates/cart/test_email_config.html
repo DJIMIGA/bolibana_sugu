@@ -1,0 +1,179 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto px-4 py-8">
+    <div class="text-center mb-8">
+        <div class="inline-flex items-center justify-center w-16 h-16 rounded-full bg-blue-100 mb-4">
+            <svg class="w-8 h-8 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 4.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/>
+            </svg>
+        </div>
+        <h1 class="text-3xl font-bold text-gray-900 mb-2">Test de Configuration Email</h1>
+        <p class="text-gray-600">Vérifiez et testez la configuration email de SagaKore</p>
+    </div>
+
+    <!-- Configuration actuelle -->
+    <div class="bg-white rounded-lg shadow-lg p-6 mb-8">
+        <h2 class="text-xl font-semibold text-gray-900 mb-4 flex items-center">
+            <svg class="w-5 h-5 mr-2 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/>
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+            </svg>
+            Configuration Actuelle
+        </h2>
+        
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div class="space-y-3">
+                <div class="flex justify-between items-center">
+                    <span class="text-sm font-medium text-gray-700">Mode DEBUG:</span>
+                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium 
+                        {% if email_config.debug %}bg-yellow-100 text-yellow-800{% else %}bg-green-100 text-green-800{% endif %}">
+                        {{ email_config.debug|yesno:"Activé,Désactivé" }}
+                    </span>
+                </div>
+                
+                <div class="flex justify-between items-center">
+                    <span class="text-sm font-medium text-gray-700">Backend Email:</span>
+                    <span class="text-sm text-gray-900">{{ email_config.backend }}</span>
+                </div>
+                
+                <div class="flex justify-between items-center">
+                    <span class="text-sm font-medium text-gray-700">Serveur SMTP:</span>
+                    <span class="text-sm text-gray-900">{{ email_config.host }}:{{ email_config.port }}</span>
+                </div>
+                
+                <div class="flex justify-between items-center">
+                    <span class="text-sm font-medium text-gray-700">TLS:</span>
+                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium 
+                        {% if email_config.tls %}bg-green-100 text-green-800{% else %}bg-red-100 text-red-800{% endif %}">
+                        {{ email_config.tls|yesno:"Activé,Désactivé" }}
+                    </span>
+                </div>
+            </div>
+            
+            <div class="space-y-3">
+                <div class="flex justify-between items-center">
+                    <span class="text-sm font-medium text-gray-700">Utilisateur SMTP:</span>
+                    <span class="text-sm text-gray-900">{{ email_config.host_user }}</span>
+                </div>
+                
+                <div class="flex justify-between items-center">
+                    <span class="text-sm font-medium text-gray-700">Mot de passe SMTP:</span>
+                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium 
+                        {% if email_config.host_password == 'Configuré' %}bg-green-100 text-green-800{% else %}bg-red-100 text-red-800{% endif %}">
+                        {{ email_config.host_password }}
+                    </span>
+                </div>
+                
+                <div class="flex justify-between items-center">
+                    <span class="text-sm font-medium text-gray-700">Email expéditeur:</span>
+                    <span class="text-sm text-gray-900">{{ email_config.from_email }}</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Test d'envoi d'email -->
+    <div class="bg-white rounded-lg shadow-lg p-6 mb-8">
+        <h2 class="text-xl font-semibold text-gray-900 mb-4 flex items-center">
+            <svg class="w-5 h-5 mr-2 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+            </svg>
+            Test d'Envoi d'Email
+        </h2>
+        
+        <form method="post" class="space-y-4">
+            {% csrf_token %}
+            <div>
+                <label for="test_email" class="block text-sm font-medium text-gray-700 mb-2">
+                    Adresse email de test
+                </label>
+                <input type="email" 
+                       id="test_email" 
+                       name="test_email" 
+                       required
+                       placeholder="votre-email@exemple.com"
+                       class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                <p class="mt-1 text-sm text-gray-500">
+                    Entrez votre adresse email pour recevoir un email de test
+                </p>
+            </div>
+            
+            <button type="submit" 
+                    class="w-full bg-blue-600 hover:bg-blue-700 text-white py-3 px-4 rounded-md transition-colors duration-200 flex items-center justify-center">
+                <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 4.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/>
+                </svg>
+                Envoyer un email de test
+            </button>
+        </form>
+    </div>
+
+    <!-- Guide de configuration -->
+    <div class="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg p-6">
+        <h2 class="text-xl font-semibold text-gray-900 mb-4 flex items-center">
+            <svg class="w-5 h-5 mr-2 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.746 0 3.332.477 4.5 1.253v13C19.832 18.477 18.246 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/>
+            </svg>
+            Guide de Configuration Gmail
+        </h2>
+        
+        <div class="space-y-4 text-sm text-gray-700">
+            <div class="bg-white rounded-lg p-4 border border-blue-200">
+                <h3 class="font-semibold text-gray-900 mb-2">1. Activer l'authentification à 2 facteurs</h3>
+                <p>Allez dans les paramètres Google > Sécurité > Authentification à 2 facteurs</p>
+            </div>
+            
+            <div class="bg-white rounded-lg p-4 border border-blue-200">
+                <h3 class="font-semibold text-gray-900 mb-2">2. Générer un mot de passe d'application</h3>
+                <p>Dans les paramètres Google > Sécurité > Mots de passe d'application > Générer</p>
+            </div>
+            
+            <div class="bg-white rounded-lg p-4 border border-blue-200">
+                <h3 class="font-semibold text-gray-900 mb-2">3. Configurer les variables d'environnement</h3>
+                <p>Créez un fichier <code class="bg-gray-100 px-1 rounded">.env</code> à la racine du projet avec :</p>
+                <pre class="bg-gray-100 p-2 rounded mt-2 text-xs overflow-x-auto">
+EMAIL_HOST_USER=votre-email@gmail.com
+EMAIL_HOST_PASSWORD=votre-mot-de-passe-app</pre>
+            </div>
+            
+            <div class="bg-white rounded-lg p-4 border border-blue-200">
+                <h3 class="font-semibold text-gray-900 mb-2">4. Redémarrer l'application</h3>
+                <p>Redémarrez le serveur Django pour prendre en compte les nouvelles variables</p>
+            </div>
+        </div>
+        
+        <div class="mt-4 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+            <div class="flex">
+                <svg class="h-5 w-5 text-yellow-400 mt-0.5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z"/>
+                </svg>
+                <p class="text-sm text-yellow-700">
+                    <strong>Important :</strong> N'utilisez PAS votre mot de passe Gmail normal ! 
+                    Utilisez UNIQUEMENT le mot de passe d'application généré.
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Boutons d'action -->
+    <div class="mt-8 flex flex-col sm:flex-row justify-center gap-4">
+        <a href="{% url 'suppliers:supplier_index' %}" 
+           class="inline-flex items-center justify-center px-6 py-3 border border-transparent text-base font-medium rounded-md text-white bg-gradient-to-r from-green-600 to-green-500 hover:from-green-700 hover:to-green-600 transform hover:scale-[1.02] transition-all duration-300 shadow-lg">
+            <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/>
+            </svg>
+            Retour à l'accueil
+        </a>
+        
+        <a href="{% url 'cart:my_orders' %}" 
+           class="inline-flex items-center justify-center px-6 py-3 border-2 border-blue-500 text-base font-medium rounded-md text-blue-700 bg-blue-50 hover:bg-blue-100 hover:border-blue-600 transform hover:scale-[1.02] transition-all duration-300 shadow-lg">
+            <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"/>
+            </svg>
+            Mes commandes
+        </a>
+    </div>
+</div>
+{% endblock %} 

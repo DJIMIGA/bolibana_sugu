@@ -613,33 +613,78 @@ def payment_online(request):
 
 
 def send_order_confirmation_email(order, request=None):
+    """
+    Envoie un email de confirmation de commande avec gestion d'erreurs détaillée
+    """
+    print(f"\n📧 === ENVOI EMAIL DE CONFIRMATION ===")
+    print(f"Commande: {order.order_number}")
+    print(f"Utilisateur: {order.user.email}")
+    print(f"Mode DEBUG: {settings.DEBUG}")
+    print(f"EMAIL_BACKEND: {getattr(settings, 'EMAIL_BACKEND', 'Non configuré')}")
+    print(f"DEFAULT_FROM_EMAIL: {getattr(settings, 'DEFAULT_FROM_EMAIL', 'Non configuré')}")
+    
     # Récupérer le domain_url de manière dynamique
     if request:
         domain_url = request.build_absolute_uri('/')[:-1]
+        print(f"Domain URL depuis request: {domain_url}")
     else:
         # Fallback pour les cas où request n'est pas disponible
         domain_url = "http://127.0.0.1:8000"
+        print(f"Domain URL fallback: {domain_url}")
     
     subject = f'Confirmation de votre commande {order.order_number}'
-    html_message = render_to_string('cart/emails/order_confirmation.html', {
+    print(f"Sujet: {subject}")
+    
+    # Préparer le contexte pour le template
+    context = {
         'order': order,
         'domain_url': domain_url
-    })
-    plain_message = strip_tags(html_message)
+    }
     
     try:
+        html_message = render_to_string('cart/emails/order_confirmation.html', context)
+        plain_message = strip_tags(html_message)
+        print(f"✅ Template email rendu avec succès")
+        print(f"Longueur HTML: {len(html_message)} caractères")
+        print(f"Longueur texte: {len(plain_message)} caractères")
+    except Exception as template_error:
+        print(f"❌ Erreur lors du rendu du template: {str(template_error)}")
+        return False
+    
+    try:
+        print(f"📤 Tentative d'envoi d'email...")
+        print(f"De: {settings.DEFAULT_FROM_EMAIL}")
+        print(f"À: {order.user.email}")
+        
         send_mail(
             subject,
             plain_message,
             settings.DEFAULT_FROM_EMAIL,
             [order.user.email],
-            html_message=html_message
+            html_message=html_message,
+            fail_silently=False  # Pour voir les erreurs détaillées
         )
         print(f"✅ Email de confirmation envoyé avec succès à {order.user.email}")
+        return True
+        
     except Exception as e:
-        print(f"⚠️ Erreur lors de l'envoi de l'email de confirmation: {str(e)}")
+        print(f"❌ Erreur lors de l'envoi de l'email de confirmation:")
+        print(f"   Type d'erreur: {type(e).__name__}")
+        print(f"   Message: {str(e)}")
+        
+        # Logs spécifiques selon le type d'erreur
+        if "SMTPAuthenticationError" in str(type(e)):
+            print(f"   🔐 Erreur d'authentification SMTP - Vérifiez EMAIL_HOST_USER et EMAIL_HOST_PASSWORD")
+        elif "SMTPConnectError" in str(type(e)):
+            print(f"   🌐 Erreur de connexion SMTP - Vérifiez EMAIL_HOST et EMAIL_PORT")
+        elif "SMTPServerDisconnected" in str(type(e)):
+            print(f"   🔌 Serveur SMTP déconnecté - Vérifiez la configuration")
+        elif "SMTPRecipientsRefused" in str(type(e)):
+            print(f"   📧 Destinataire refusé - Vérifiez l'adresse email: {order.user.email}")
+        
         # Ne pas lever l'exception pour éviter de bloquer le processus de commande
         # L'email peut être envoyé plus tard ou l'utilisateur peut voir la confirmation sur le site
+        return False
 
 
 @login_required
@@ -1774,3 +1819,73 @@ def debug_log(message):
     
     # Aussi afficher dans la console
     print(message)
+
+
+@login_required
+def test_email_configuration(request):
+    """
+    Vue de test pour vérifier la configuration email
+    Accessible uniquement aux administrateurs
+    """
+    if not request.user.is_staff:
+        messages.error(request, "❌ Accès refusé. Cette fonction est réservée aux administrateurs.")
+        return redirect('suppliers:supplier_index')
+    
+    if request.method == 'POST':
+        test_email = request.POST.get('test_email', '').strip()
+        
+        if not test_email:
+            messages.error(request, "❌ Veuillez fournir une adresse email de test")
+            return redirect('cart:test_email')
+        
+        try:
+            # Préparer le contexte pour le template
+            from django.utils import timezone
+            context = {
+                'backend': getattr(settings, 'EMAIL_BACKEND', 'Non configuré'),
+                'host': getattr(settings, 'EMAIL_HOST', 'Non configuré'),
+                'port': getattr(settings, 'EMAIL_PORT', 'Non configuré'),
+                'tls': getattr(settings, 'EMAIL_USE_TLS', 'Non configuré'),
+                'from_email': getattr(settings, 'DEFAULT_FROM_EMAIL', 'Non configuré'),
+                'test_date': timezone.now().strftime("%d/%m/%Y à %H:%M")
+            }
+            
+            # Rendre le template HTML
+            html_message = render_to_string('cart/emails/test_email.html', context)
+            plain_message = strip_tags(html_message)
+            
+            # Envoyer l'email de test
+            subject = "🧪 Test de configuration email - SagaKore"
+            
+            send_mail(
+                subject,
+                plain_message,
+                settings.DEFAULT_FROM_EMAIL,
+                [test_email],
+                html_message=html_message,
+                fail_silently=False
+            )
+            
+            messages.success(request, f"✅ Email de test envoyé avec succès à {test_email}")
+            messages.info(request, "📧 Vérifiez votre boîte de réception (et les spams)")
+            
+        except Exception as e:
+            error_msg = f"❌ Erreur lors de l'envoi de l'email de test: {str(e)}"
+            messages.error(request, error_msg)
+            print(f"Erreur email test: {str(e)}")
+    
+    # Afficher la configuration actuelle
+    email_config = {
+        'debug': settings.DEBUG,
+        'backend': getattr(settings, 'EMAIL_BACKEND', 'Non configuré'),
+        'host': getattr(settings, 'EMAIL_HOST', 'Non configuré'),
+        'port': getattr(settings, 'EMAIL_PORT', 'Non configuré'),
+        'tls': getattr(settings, 'EMAIL_USE_TLS', 'Non configuré'),
+        'host_user': getattr(settings, 'EMAIL_HOST_USER', 'Non configuré'),
+        'host_password': 'Configuré' if getattr(settings, 'EMAIL_HOST_PASSWORD', None) else 'Non configuré',
+        'from_email': getattr(settings, 'DEFAULT_FROM_EMAIL', 'Non configuré'),
+    }
+    
+    return render(request, 'cart/test_email_config.html', {
+        'email_config': email_config
+    })

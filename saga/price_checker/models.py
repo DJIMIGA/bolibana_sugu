@@ -4,7 +4,7 @@ from django.core.validators import MinValueValidator, MaxValueValidator
 from django.db.models import Q, Avg, Max, Min
 from django.utils.text import slugify
 from django.conf import settings
-from product.models import Product, Phone
+from product.models import Product
 from saga.utils.image_optimizer import ImageOptimizer
 from datetime import timedelta
 from django.contrib.contenttypes.fields import GenericForeignKey
@@ -43,7 +43,6 @@ class PriceSubmission(models.Model):
     ]
     
     product = models.ForeignKey(Product, on_delete=models.CASCADE, related_name='price_submissions')
-    variant = models.ForeignKey(Phone, on_delete=models.CASCADE, related_name='price_submissions', null=True, blank=True)
     city = models.ForeignKey(City, on_delete=models.CASCADE, related_name='price_submissions')
     price = models.DecimalField(max_digits=10, decimal_places=0)
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='price_submissions')
@@ -77,7 +76,6 @@ class PriceSubmission(models.Model):
         # Créer un PriceEntry à partir de la soumission
         PriceEntry.objects.create(
             product=self.product,
-            variant=self.variant,
             city=self.city,
             price=self.price,
             user=self.user,
@@ -96,7 +94,6 @@ class PriceSubmission(models.Model):
 class PriceEntry(models.Model):
     """Modèle pour les prix validés et actifs"""
     product = models.ForeignKey(Product, on_delete=models.CASCADE, related_name='price_entries')
-    variant = models.ForeignKey(Phone, on_delete=models.CASCADE, related_name='price_entries', null=True, blank=True)
     city = models.ForeignKey(City, on_delete=models.CASCADE, related_name='price_entries')
     price = models.DecimalField(max_digits=10, decimal_places=2)
     currency = models.CharField(max_length=3, default='XOF')
@@ -117,11 +114,10 @@ class PriceEntry(models.Model):
         return f"{self.product.title} - {self.price} {self.currency} ({self.city.name})"
 
     @classmethod
-    def get_average_price(cls, product, variant, city):
-        """Calcule le prix moyen pour un produit, une variante et une ville donnés"""
+    def get_average_price(cls, product, city):
+        """Calcule le prix moyen pour un produit et une ville donnés"""
         prices = cls.objects.filter(
             product=product,
-            variant=variant,
             city=city,
             is_active=True
         ).order_by('-created_at')
@@ -159,12 +155,11 @@ class PriceEntry(models.Model):
     @property
     def price_change(self):
         """Calcule la variation de prix par rapport au prix précédent"""
-        if not self.product or not self.variant or not self.city:
+        if not self.product or not self.city:
             return None
             
         previous_price = PriceEntry.objects.filter(
             product=self.product,
-            variant=self.variant,
             city=self.city,
             created_at__lt=self.created_at,
             is_active=True
@@ -177,12 +172,11 @@ class PriceEntry(models.Model):
     @property
     def price_change_percentage(self):
         """Calcule le pourcentage de variation du prix par rapport au prix précédent"""
-        if not self.product or not self.variant or not self.city:
+        if not self.product or not self.city:
             return None
             
         previous_price = PriceEntry.objects.filter(
             product=self.product,
-            variant=self.variant,
             city=self.city,
             created_at__lt=self.created_at,
             is_active=True

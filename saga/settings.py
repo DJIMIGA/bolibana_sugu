@@ -269,18 +269,19 @@ CACHES = {
 # CONFIGURATION DE L'EMAIL
 # ==================================================
 if DEBUG:
-    # En développement, utiliser le backend de console pour éviter les erreurs d'email
-    EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
-    EMAIL_HOST_USER = 'dev@localhost'  # Valeur par défaut pour le développement
-    print("📧 Email configuré en mode console (développement)")
+    # Configuration pour le développement avec envoi d'emails réels
+    EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+    EMAIL_HOST = 'smtp.gmail.com'
+    EMAIL_PORT = 587
+    EMAIL_USE_TLS = True
+    EMAIL_HOST_USER = os.getenv('EMAIL_HOST_USER', 'dev@localhost')
+    EMAIL_HOST_PASSWORD = os.getenv('EMAIL_HOST_PASSWORD', '')
+    print("📧 Email configuré en mode SMTP (développement)")
     
-    # Optionnel : Pour recevoir de vrais emails en développement, décommentez les lignes suivantes :
-    # EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
-    # EMAIL_HOST = 'smtp.gmail.com'
-    # EMAIL_PORT = 587
-    # EMAIL_USE_TLS = True
-    # EMAIL_HOST_USER = 'votre-email@gmail.com'  # Remplacez par votre email
-    # EMAIL_HOST_PASSWORD = 'votre-mot-de-passe-app'  # Remplacez par votre mot de passe d'application
+    # Fallback vers console si pas de configuration SMTP
+    if not EMAIL_HOST_PASSWORD:
+        EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
+        print("⚠️ Pas de mot de passe SMTP configuré - emails en mode console")
 else:
     # En production, utiliser SMTP
     EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
