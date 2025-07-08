@@ -395,15 +395,57 @@ def payment_online(request):
                     debug_log(f"❌ ERROR: Address {address_id} not found!")
                     messages.error(request, "❌ **Erreur** : Adresse par défaut introuvable")
                     return redirect('cart:payment_online')
+            else:
+                # Si pas d'ID fourni, essayer de récupérer l'adresse par défaut
+                address = ShippingAddress.objects.filter(user=request.user, is_default=True).first()
+                debug_log(f"📋 Found default address from DB: {address.id if address else None}")
+                
+                if not address:
+                    debug_log("❌ ERROR: No default address found!")
+                    messages.error(request, "❌ **Erreur** : Aucune adresse par défaut trouvée")
+                    return redirect('cart:payment_online')
         else:
-            # Essayer de récupérer l'adresse par défaut
-            address = ShippingAddress.objects.filter(user=request.user, is_default=True).first()
-            debug_log(f"📋 Found default address from DB: {address.id if address else None}")
+            # Pour "new", vérifier si des données d'adresse sont fournies
+            debug_log("📋 New address option selected")
             
-            if not address:
-                debug_log("❌ ERROR: No default address found!")
-                messages.error(request, "❌ **Erreur** : Aucune adresse par défaut trouvée")
-                return redirect('cart:payment_online')
+            # Vérifier si des données d'adresse sont présentes dans le formulaire
+            full_name = request.POST.get('full_name')
+            street_address = request.POST.get('street_address')
+            quarter = request.POST.get('quarter')
+            
+            if full_name and street_address and quarter:
+                # Créer une nouvelle adresse à partir des données du formulaire
+                debug_log("📋 Creating new address from form data...")
+                try:
+                    form = ShippingAddressForm(request.POST)
+                    if form.is_valid():
+                        address = form.save(commit=False)
+                        address.user = request.user
+                        address.save()
+                        debug_log(f"✅ Created new address: {address.id}")
+                        
+                        # Définir comme adresse par défaut si demandé
+                        if request.POST.get('is_default'):
+                            debug_log("📋 Setting as default address")
+                            ShippingAddress.objects.filter(user=request.user).update(is_default=False)
+                            address.is_default = True
+                            address.save()
+                            debug_log("✅ Set as default address")
+                    else:
+                        debug_log(f"❌ Form errors: {form.errors}")
+                        for field, errors in form.errors.items():
+                            for error in errors:
+                                messages.error(request, f"❌ **Erreur** : {error}")
+                        return redirect('cart:payment_online')
+                except Exception as e:
+                    debug_log(f"❌ ERROR creating address: {str(e)}")
+                    messages.error(request, f"❌ **Erreur** : Impossible de créer l'adresse - {str(e)}")
+                    return redirect('cart:payment_online')
+            else:
+                # Aucune donnée d'adresse fournie, rediriger vers la gestion des adresses
+                debug_log("❌ No address data provided in form")
+                messages.error(request, "❌ **Erreur** : Pour le paiement en ligne, vous devez d'abord créer une adresse de livraison")
+                return redirect('accounts:addresses')
         
         if not address:
             debug_log("❌ ERROR: No address found!")
@@ -633,8 +675,22 @@ def send_order_confirmation_email(order, request=None):
     print(f"Sujet: {subject}")
     
     # Préparer le contexte pour le template
+    # Précharger les relations pour optimiser les performances et s'assurer que les images sont disponibles
+    from django.db.models import Prefetch
+    
+    order_with_items = Order.objects.select_related(
+        'user', 'shipping_address', 'shipping_method'
+    ).prefetch_related(
+        Prefetch(
+            'items',
+            queryset=OrderItem.objects.select_related('product').prefetch_related(
+                'colors', 'sizes'
+            )
+        )
+    ).get(id=order.id)
+    
     context = {
-        'order': order,
+        'order': order_with_items,
         'domain_url': domain_url
     }
     
@@ -1052,9 +1108,19 @@ def order_confirmation(request, order_id):
     print(f"Commande {order.id}: metadata = {order.metadata}")
     print(f"is_salam_step = {order.metadata.get('is_salam_step', False)}")
     
+    # Préparer le contexte pour le template
+    # Précharger les relations pour optimiser les performances
+    order_with_items = Order.objects.select_related(
+        'user', 'shipping_address', 'shipping_method'
+    ).prefetch_related(
+        'items__product__images',  # Précharger les images des produits
+        'items__colors',
+        'items__sizes'
+    ).get(id=order.id)
+    
     context = {
-        'order': order,
-        'items': order.items.all().select_related('product')
+        'order': order_with_items,
+        'domain_url': domain_url
     }
     return render(request, 'cart/order_confirmation.html', context)
 
@@ -1597,6 +1663,7 @@ def create_checkout_session(request):
                     messages.error(request, "❌ **Erreur** : Adresse par défaut introuvable")
                     return redirect('cart:payment_online')
             else:
+                # Si pas d'ID fourni, essayer de récupérer l'adresse par défaut
                 address = ShippingAddress.objects.filter(user=request.user, is_default=True).first()
                 debug_log(f"📋 Found default address from DB: {address.id if address else None}")
                 
@@ -1605,23 +1672,47 @@ def create_checkout_session(request):
                     messages.error(request, "❌ **Erreur** : Aucune adresse par défaut trouvée")
                     return redirect('cart:payment_online')
         else:
-            debug_log("📋 Creating new address...")
-            form = ShippingAddressForm(request.POST)
-            if form.is_valid():
-                address = form.save(commit=False)
-                address.user = request.user
-                address.save()
-                debug_log(f"✅ Created new address: {address.id}")
-                
-                if request.POST.get('is_default'):
-                    ShippingAddress.objects.filter(user=request.user).update(is_default=False)
-                    address.is_default = True
-                    address.save()
-                    debug_log("✅ Set as default address")
+            # Pour "new", vérifier si des données d'adresse sont fournies
+            debug_log("📋 New address option selected")
+            
+            # Vérifier si des données d'adresse sont présentes dans le formulaire
+            full_name = request.POST.get('full_name')
+            street_address = request.POST.get('street_address')
+            quarter = request.POST.get('quarter')
+            
+            if full_name and street_address and quarter:
+                # Créer une nouvelle adresse à partir des données du formulaire
+                debug_log("📋 Creating new address from form data...")
+                try:
+                    form = ShippingAddressForm(request.POST)
+                    if form.is_valid():
+                        address = form.save(commit=False)
+                        address.user = request.user
+                        address.save()
+                        debug_log(f"✅ Created new address: {address.id}")
+                        
+                        # Définir comme adresse par défaut si demandé
+                        if request.POST.get('is_default'):
+                            debug_log("📋 Setting as default address")
+                            ShippingAddress.objects.filter(user=request.user).update(is_default=False)
+                            address.is_default = True
+                            address.save()
+                            debug_log("✅ Set as default address")
+                    else:
+                        debug_log(f"❌ Form errors: {form.errors}")
+                        for field, errors in form.errors.items():
+                            for error in errors:
+                                messages.error(request, f"❌ **Erreur** : {error}")
+                        return redirect('cart:payment_online')
+                except Exception as e:
+                    debug_log(f"❌ ERROR creating address: {str(e)}")
+                    messages.error(request, f"❌ **Erreur** : Impossible de créer l'adresse - {str(e)}")
+                    return redirect('cart:payment_online')
             else:
-                debug_log(f"❌ Form errors: {form.errors}")
-                messages.error(request, "❌ **Erreur** : Veuillez corriger les erreurs dans le formulaire d'adresse")
-                return redirect('cart:payment_online')
+                # Aucune donnée d'adresse fournie, rediriger vers la gestion des adresses
+                debug_log("❌ No address data provided in form")
+                messages.error(request, "❌ **Erreur** : Pour le paiement en ligne, vous devez d'abord créer une adresse de livraison")
+                return redirect('accounts:addresses')
         
         if not address:
             debug_log("❌ ERROR: No address found!")

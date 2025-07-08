@@ -49,10 +49,10 @@
             {% for item in order.items.all %}
             <div class="item">
                 <div class="item-image">
-                    {% if item.product.image %}
-                    <img src="{{ domain_url }}/media/{{ item.product.image }}" alt="{{ item.product.title }}">
+                    {% if item.product.get_main_image_url %}
+                    <img src="{{ item.product.get_main_image_url }}" alt="{{ item.product.title }}">
                     {% else %}
-                    <img src="{{ domain_url }}/static/icons/no-image.png" alt="Image non disponible">
+                    <img src="{{ domain_url }}/static/images/no-image.svg" alt="Image non disponible">
                     {% endif %}
                 </div>
                 <div class="item-details">
