@@ -455,7 +455,7 @@
                 <!-- Swiper container -->
                 <div class="swiper phonesSwiper sm:hidden">
                     <div class="swiper-wrapper">
-                        {% for product in products %}
+                        {% for product in products|slice:":4" %}
                             {% if product.phone %}
                                 <div class="swiper-slide">
                                     {% render_phone_card product %}
@@ -472,7 +472,7 @@
 
                 <!-- Grille pour desktop -->
                 <div class="hidden sm:grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-                {% for product in products %}
+                {% for product in products|slice:":4" %}
                     {% if product.phone %}
                         {% render_phone_card product %}
                     {% endif %}
@@ -515,7 +515,7 @@
                 <!-- Swiper container -->
                 <div class="swiper clothingSwiper sm:hidden">
                     <div class="swiper-wrapper">
-                        {% for product in clothing_products %}
+                        {% for product in clothing_products|slice:":4" %}
                             <div class="swiper-slide">
                                 {% render_clothing_card product %}
                             </div>
@@ -536,7 +536,7 @@
 
                 <!-- Grille pour desktop -->
                 <div class="hidden sm:grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-                {% for product in clothing_products %}
+                {% for product in clothing_products|slice:":4" %}
                     {% render_clothing_card product %}
                 {% empty %}
                 <div class="col-span-full text-center py-12">
@@ -577,7 +577,7 @@
                 <!-- Swiper container -->
                 <div class="swiper fabricSwiper sm:hidden">
                     <div class="swiper-wrapper">
-                        {% for product in fabric_products %}
+                        {% for product in fabric_products|slice:":4" %}
                             <div class="swiper-slide">
                                 {% render_fabric_card product %}
                             </div>
@@ -592,7 +592,7 @@
 
                 <!-- Grille pour desktop -->
                 <div class="hidden sm:grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-                {% for product in fabric_products %}
+                {% for product in fabric_products|slice:":4" %}
                     {% render_fabric_card product %}
                 {% empty %}
                 <div class="col-span-full text-center py-12">
@@ -633,7 +633,7 @@
                 <!-- Swiper container -->
                 <div class="swiper culturalSwiper sm:hidden">
                     <div class="swiper-wrapper">
-                        {% for product in cultural_products %}
+                        {% for product in cultural_products|slice:":4" %}
                             <div class="swiper-slide">
                                 {% render_cultural_card product %}
                             </div>
@@ -648,7 +648,7 @@
 
                 <!-- Grille pour desktop -->
                 <div class="hidden sm:grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-                {% for product in cultural_products %}
+                {% for product in cultural_products|slice:":4" %}
                     {% render_cultural_card product %}
                 {% empty %}
                 <div class="col-span-full text-center py-12">

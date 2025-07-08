@@ -86,7 +86,6 @@
             <input type="hidden" name="product_type" value="{{ product_type }}">
             <input type="hidden" name="shipping_address_id" id="shipping_address_id" value="{% if default_address %}{{ default_address.id }}{% endif %}">
             <input type="hidden" name="payment_method" value="{{ selected_payment_method }}">
-            <input type="hidden" name="address_choice" id="address_choice_hidden" value="{% if default_address %}default{% else %}new{% endif %}">
             <input type="hidden" name="action" value="create_checkout">
 
             <div class="grid grid-cols-1 xl:grid-cols-5 gap-8">
