@@ -103,9 +103,11 @@
       <div class="bg-white rounded-lg shadow-md overflow-hidden">
         {% if images %}
         <img id="main-image" src="{{ images.0.image.url }}" alt="{{ product.title }}" class="w-full h-auto object-cover">
+        {% elif product.image %}
+        <img id="main-image" src="{{ product.image.url }}" alt="{{ product.title }}" class="w-full h-auto object-cover">
         {% else %}
         <img id="main-image" src="{% static 'images/no-image.svg' %}" alt="Image non disponible" class="w-full h-auto object-cover">
-                {% endif %}
+        {% endif %}
             </div>
             {% if images %}
       <div class="grid grid-cols-4 gap-2">

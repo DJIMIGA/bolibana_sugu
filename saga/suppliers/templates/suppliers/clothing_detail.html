@@ -21,7 +21,19 @@
                              class="h-full w-full object-contain object-center transition-transform duration-300 hover:scale-105"
                              loading="eager"
                              decoding="async">
-                {% endif %}
+                    {% elif images %}
+                        <img src="{{ images.0.image.url }}" 
+                             alt="{{ product.title }}" 
+                             class="h-full w-full object-contain object-center transition-transform duration-300 hover:scale-105"
+                             loading="eager"
+                             decoding="async">
+                    {% else %}
+                        <img src="{% static 'images/no-image.svg' %}" 
+                             alt="Image non disponible" 
+                             class="h-full w-full object-contain object-center transition-transform duration-300 hover:scale-105"
+                             loading="eager"
+                             decoding="async">
+                    {% endif %}
             </div>
             {% if images %}
             <div class="mt-4 grid grid-cols-4 gap-4">
