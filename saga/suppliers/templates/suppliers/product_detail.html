@@ -104,7 +104,7 @@
         {% if images %}
         <img id="main-image" src="{{ images.0.image.url }}" alt="{{ product.title }}" class="w-full h-auto object-cover">
         {% else %}
-        <img id="main-image" src="{% static 'images/no-image.png' %}" alt="Image non disponible" class="w-full h-auto object-cover">
+        <img id="main-image" src="{% static 'images/no-image.svg' %}" alt="Image non disponible" class="w-full h-auto object-cover">
                 {% endif %}
             </div>
             {% if images %}

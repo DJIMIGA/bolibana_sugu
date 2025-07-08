@@ -15,7 +15,7 @@
         .item-details { flex: 1; }
         .total { margin-top: 20px; text-align: right; }
         .footer { text-align: center; margin-top: 30px; font-size: 0.9em; color: #666; }
-        .logo { max-width: 150px; height: auto; margin: 20px auto; }
+        .logo { max-width: 200px; height: auto; margin: 20px auto; }
     </style>
 </head>
 <body>
@@ -58,7 +58,7 @@
                     <p>
                         <strong>{{ item.product.title }}</strong><br>
                         Quantité : {{ item.quantity }}<br>
-                        Prix unitaire : {{ item.price|floatformat:0 }} FCFA
+                        Prix unitaire : {{ item.price|format_price }} FCFA
                         {% if item.colors.exists or item.sizes.exists %}
                         <br>
                         {% if item.colors.exists %}
@@ -75,9 +75,9 @@
         </div>
 
         <div class="total">
-            <p>Sous-total : {{ order.subtotal|floatformat:0 }} FCFA</p>
-            <p>Frais de livraison : {{ order.shipping_cost|floatformat:0 }} FCFA</p>
-            <h3>Total : {{ order.total|floatformat:0 }} FCFA</h3>
+            <p>Sous-total : {{ order.subtotal|format_price }} FCFA</p>
+            <p>Frais de livraison : {{ order.shipping_cost|format_price }} FCFA</p>
+            <h3>Total : {{ order.total|format_price }} FCFA</h3>
         </div>
 
         <div class="footer">
