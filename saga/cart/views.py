@@ -1118,6 +1118,9 @@ def order_confirmation(request, order_id):
         'items__sizes'
     ).get(id=order.id)
     
+    # Récupérer le domain_url de manière dynamique
+    domain_url = request.build_absolute_uri('/')[:-1]
+    
     context = {
         'order': order_with_items,
         'domain_url': domain_url
