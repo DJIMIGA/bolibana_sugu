@@ -78,9 +78,45 @@ class PriceCheckForm(forms.Form):
 class PriceSubmissionForm(forms.ModelForm):
     class Meta:
         model = PriceSubmission
-        fields = ['price', 'city', 'product']
+        fields = ['price', 'city', 'product', 'supplier_name', 'supplier_phone', 'supplier_address', 'proof_image']
         widgets = {
-            'price': forms.NumberInput(attrs={'min': 0}),
+            'price': forms.NumberInput(attrs={
+                'class': 'w-full rounded-lg border border-gray-200 px-4 py-2 text-gray-700 focus:outline-none focus:ring-2 focus:ring-green-500',
+                'placeholder': 'Prix en FCFA',
+                'min': '0'
+            }),
+            'city': forms.Select(attrs={
+                'class': 'w-full rounded-lg border border-gray-200 px-4 py-2 text-gray-700 focus:outline-none focus:ring-2 focus:ring-green-500'
+            }),
+            'product': forms.Select(attrs={
+                'class': 'w-full rounded-lg border border-gray-200 px-4 py-2 text-gray-700 focus:outline-none focus:ring-2 focus:ring-green-500'
+            }),
+            'supplier_name': forms.TextInput(attrs={
+                'class': 'w-full rounded-lg border border-gray-200 px-4 py-2 text-gray-700 focus:outline-none focus:ring-2 focus:ring-green-500',
+                'placeholder': 'Nom du fournisseur (ex: Magasin ABC, Boutique XYZ)'
+            }),
+            'supplier_phone': forms.TextInput(attrs={
+                'class': 'w-full rounded-lg border border-gray-200 px-4 py-2 text-gray-700 focus:outline-none focus:ring-2 focus:ring-green-500',
+                'placeholder': 'Téléphone du fournisseur (optionnel)'
+            }),
+            'supplier_address': forms.Textarea(attrs={
+                'class': 'w-full rounded-lg border border-gray-200 px-4 py-2 text-gray-700 focus:outline-none focus:ring-2 focus:ring-green-500',
+                'placeholder': 'Adresse du fournisseur (optionnel)',
+                'rows': '3'
+            }),
+            'proof_image': forms.FileInput(attrs={
+                'class': 'w-full rounded-lg border border-gray-200 px-4 py-2 text-gray-700 focus:outline-none focus:ring-2 focus:ring-green-500',
+                'accept': 'image/*'
+            }),
+        }
+        labels = {
+            'price': 'Prix (FCFA)',
+            'city': 'Ville',
+            'product': 'Produit',
+            'supplier_name': 'Nom du fournisseur',
+            'supplier_phone': 'Téléphone du fournisseur',
+            'supplier_address': 'Adresse du fournisseur',
+            'proof_image': 'Preuve en image'
         }
 
 class CityForm(forms.ModelForm):

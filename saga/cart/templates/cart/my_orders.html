@@ -149,9 +149,7 @@
         {% else %}
         <div class="bg-white rounded-xl shadow-lg p-6 text-center">
             <p class="text-gray-500">Vous n'avez pas encore passé de commande.</p>
-            <a href="{% url 'product:product_list' %}" class="mt-4 inline-block px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors">
-                Commencer vos achats
-            </a>
+            <a href="{% url 'suppliers:supplier_index' %}" class="mt-4 inline-block px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors">Continuer mes achats</a>
         </div>
         {% endif %}
     </div>

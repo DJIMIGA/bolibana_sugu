@@ -1,0 +1,91 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{{ about_story_title|default:"Notre Histoire" }} - {{ config.site_name }}{% endblock %}
+
+{% block content %}
+<div class="bg-gray-50 py-12">
+    <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+        <!-- En-tête de la page -->
+        <div class="text-center mb-12">
+            <h1 class="text-4xl font-bold font-bitter text-gray-900 mb-4">
+                {{ about_story_title|default:"Notre Histoire" }}
+            </h1>
+            <p class="text-xl text-gray-600 max-w-2xl mx-auto">
+                {% if about_story_subtitle %}
+                    {{ about_story_subtitle }}
+                {% else %}
+                    Découvrez l'histoire passionnante de {{ company_name }} et notre parcours vers l'excellence
+                {% endif %}
+            </p>
+        </div>
+
+        <!-- Contenu principal -->
+        <div class="bg-white rounded-lg shadow-lg p-8 mb-8">
+            <div class="prose prose-lg max-w-none">
+                {% if about_story_content %}
+                    {{ about_story_content|safe }}
+                {% else %}
+                    <h2 class="text-2xl font-semibold font-bitter text-green-600 mb-6">
+                        Les débuts de notre aventure
+                    </h2>
+                    
+                    <p class="text-gray-700 mb-6 leading-relaxed">
+                        L'histoire de {{ company_name }} commence avec une vision simple mais ambitieuse : 
+                        révolutionner l'expérience d'achat en ligne au Mali. Fondée avec la conviction que 
+                        chaque client mérite une expérience exceptionnelle, notre entreprise s'est développée 
+                        étape par étape pour devenir un acteur majeur du e-commerce.
+                    </p>
+
+                    <h3 class="text-xl font-semibold font-bitter text-yellow-600 mb-4">
+                        Notre mission
+                    </h3>
+                    
+                    <p class="text-gray-700 mb-6 leading-relaxed">
+                        Depuis nos débuts, notre mission reste inchangée : offrir à nos clients une plateforme 
+                        d'achat en ligne fiable, sécurisée et conviviale. Nous nous engageons à fournir des 
+                        produits de qualité, un service client exceptionnel et une expérience utilisateur 
+                        sans pareil.
+                    </p>
+
+                    <h3 class="text-xl font-semibold font-bitter text-red-600 mb-4">
+                        Notre croissance
+                    </h3>
+                    
+                    <p class="text-gray-700 mb-6 leading-relaxed">
+                        De nos modestes débuts à notre position actuelle de leader du marché, nous avons 
+                        constamment innové et adapté nos services aux besoins de nos clients. Notre équipe 
+                        dévouée et notre engagement envers l'excellence ont été les moteurs de notre succès.
+                    </p>
+
+                    <div class="bg-gradient-to-r from-green-50 to-yellow-50 p-6 rounded-lg border-l-4 border-green-500">
+                        <h4 class="text-lg font-semibold font-bitter text-green-700 mb-3">
+                            Notre engagement envers vous
+                        </h4>
+                        <p class="text-green-800">
+                            Chaque jour, nous nous efforçons d'améliorer nos services et de répondre 
+                            aux attentes de nos clients. Votre satisfaction est notre priorité absolue.
+                        </p>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Section contact -->
+        <div class="bg-white rounded-lg shadow-lg p-8">
+            <div class="text-center">
+                <h3 class="text-2xl font-semibold font-bitter text-gray-900 mb-4">
+                    En savoir plus sur nous
+                </h3>
+                <p class="text-gray-600 mb-6">
+                    Découvrez nos valeurs et notre engagement envers l'excellence
+                </p>
+                <a href="{% url 'core:about_values' %}" 
+                   class="inline-flex items-center px-6 py-3 border border-transparent text-base font-medium rounded-md text-white bg-green-600 hover:bg-green-700 transition-colors duration-300">
+                    Découvrir nos valeurs
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

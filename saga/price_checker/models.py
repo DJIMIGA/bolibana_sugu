@@ -1,7 +1,7 @@
 from django.db import models
 from django.utils import timezone
 from django.core.validators import MinValueValidator, MaxValueValidator
-from django.db.models import Q, Avg, Max, Min
+from django.db.models import Q, Avg, Max, Min, Count
 from django.utils.text import slugify
 from django.conf import settings
 from product.models import Product
@@ -45,6 +45,16 @@ class PriceSubmission(models.Model):
     product = models.ForeignKey(Product, on_delete=models.CASCADE, related_name='price_submissions')
     city = models.ForeignKey(City, on_delete=models.CASCADE, related_name='price_submissions')
     price = models.DecimalField(max_digits=10, decimal_places=0)
+    supplier_name = models.CharField(max_length=255, verbose_name='Nom du fournisseur', null=True, blank=True)
+    supplier_phone = models.CharField(max_length=20, blank=True, null=True, verbose_name='Téléphone du fournisseur')
+    supplier_address = models.TextField(blank=True, null=True, verbose_name='Adresse du fournisseur')
+    proof_image = models.ImageField(
+        upload_to='price_proofs/%Y/%m/%d/',
+        blank=True,
+        null=True,
+        verbose_name='Preuve en image',
+        help_text='Photo du prix ou de l\'étiquette (optionnel)'
+    )
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='price_submissions')
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='PENDING')
     validation_notes = models.TextField(blank=True, null=True)
@@ -78,6 +88,10 @@ class PriceSubmission(models.Model):
             product=self.product,
             city=self.city,
             price=self.price,
+            supplier_name=self.supplier_name,
+            supplier_phone=self.supplier_phone,
+            supplier_address=self.supplier_address,
+            proof_image=self.proof_image,
             user=self.user,
             submission=self,
             validated_by=admin_user
@@ -97,6 +111,16 @@ class PriceEntry(models.Model):
     city = models.ForeignKey(City, on_delete=models.CASCADE, related_name='price_entries')
     price = models.DecimalField(max_digits=10, decimal_places=2)
     currency = models.CharField(max_length=3, default='XOF')
+    supplier_name = models.CharField(max_length=255, verbose_name='Nom du fournisseur', null=True, blank=True)
+    supplier_phone = models.CharField(max_length=20, blank=True, null=True, verbose_name='Téléphone du fournisseur')
+    supplier_address = models.TextField(blank=True, null=True, verbose_name='Adresse du fournisseur')
+    proof_image = models.ImageField(
+        upload_to='price_proofs/%Y/%m/%d/',
+        blank=True,
+        null=True,
+        verbose_name='Preuve en image',
+        help_text='Photo du prix ou de l\'étiquette (optionnel)'
+    )
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='price_entries')
     validated_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True, related_name='validated_price_entries')
     submission = models.OneToOneField(PriceSubmission, on_delete=models.SET_NULL, null=True, blank=True, related_name='price_entry')
@@ -277,4 +301,39 @@ class PriceValidation(models.Model):
         ordering = ['-created_at']
 
     def __str__(self):
-        return f"Validation de {self.price_entry} par {self.admin_user}" 
+        return f"Validation de {self.price_entry} par {self.admin_user}"
+
+
+# Fonction utilitaire pour récupérer les produits avec le plus de prix collectés
+def get_products_with_most_prices(limit=6):
+    """
+    Récupère les produits ayant le plus de prix collectés
+    """
+    from product.models import Product as ProductModel
+    
+    # Récupérer les produits avec le plus de prix actifs
+    products_with_prices = ProductModel.objects.filter(
+        is_available=True,
+        price_entries__is_active=True
+    ).annotate(
+        price_count=Count('price_entries', filter=Q(price_entries__is_active=True))
+    ).filter(
+        price_count__gt=0
+    ).order_by(
+        '-price_count', '-created_at'
+    ).select_related(
+        'phone',
+        'phone__color',
+        'supplier',
+        'category',
+        'fabric_product',
+        'clothing_product',
+        'cultural_product'
+    ).prefetch_related(
+        'clothing_product__size',
+        'clothing_product__color',
+        'fabric_product__color',
+        'images'
+    )[:limit]
+    
+    return products_with_prices 

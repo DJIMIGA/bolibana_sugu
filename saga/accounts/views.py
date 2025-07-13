@@ -44,6 +44,10 @@ class CustomPasswordResetView(PasswordResetView):
     email_template_name = 'password_reset_email.html'
     success_url = reverse_lazy('password_reset_done')
 
+    @ratelimit(key='ip', rate='2/m', method=['POST'])
+    def post(self, request, *args, **kwargs):
+        return super().post(request, *args, **kwargs)
+
     def form_valid(self, form):
         email = form.cleaned_data['email']
         user = Shopper.objects.filter(email=email).first()
@@ -151,6 +155,7 @@ class CustomPasswordResetConfirmView(PasswordResetConfirmView):
         return self.form_invalid(form)
 
 
+@ratelimit(key='ip', rate='3/m', method=['POST'])
 def signup(request):
     if request.method == 'POST':
         form = UserForm(request.POST)
@@ -249,6 +254,7 @@ def logout_user(request):
     return redirect('suppliers:supplier_index')
 
 
+@login_required
 def profile(request):
     addresses = ShippingAddress.objects.filter(user=request.user)
     default_address = addresses.filter(is_default=True).first()
@@ -263,6 +269,7 @@ def profile(request):
     return render(request, 'profile.html', context={"addresses": addresses, "default_address": default_address})
 
 
+@login_required
 def update_profile(request):
     old_email = request.user.email
     if request.method == "POST":
@@ -297,7 +304,7 @@ def update_profile(request):
     return render(request, 'update_profile.html', {'form': form})
 
 
-@ratelimit(key='user', rate='5/m', method=['POST'])
+@ratelimit(key='ip', rate='5/m', method=['POST'])
 def edit_password(request):
     if request.method == "POST":
         form = PasswordChangeForm(user=request.user, data=request.POST)
@@ -355,6 +362,7 @@ def manage_addresses(request):
     })
 
 
+@login_required
 def edit_address(request, address_id):
     address = get_object_or_404(ShippingAddress, id=address_id, user=request.user)
     if request.method == "POST":
@@ -371,6 +379,7 @@ def edit_address(request, address_id):
     return render(request, 'edit_address.html', {"form": form, "address": address})
 
 
+@login_required
 def delete_address(request, address_id):
     address = get_object_or_404(ShippingAddress, id=address_id, user=request.user)
     

@@ -3,6 +3,11 @@ document.addEventListener('DOMContentLoaded', function() {
     const resultsContainer = document.getElementById('results-desktop');
     const form = document.getElementById('form-desktop');
 
+    if (!searchInput || !resultsContainer || !form) {
+        console.log('Éléments de recherche desktop non trouvés');
+        return;
+    }
+
     // Gérer la visibilité des résultats
     searchInput.addEventListener('focus', function() {
         if (this.value.trim() !== '') {
@@ -29,9 +34,30 @@ document.addEventListener('DOMContentLoaded', function() {
         if (evt.detail.elt.id === 'search-input-desktop') {
             if (searchInput.value.trim() !== '') {
                 resultsContainer.classList.remove('hidden');
+                
+                // Utiliser les utilitaires de recherche
+                const resultsScrollContainer = resultsContainer.querySelector('.overflow-y-auto');
+                if (window.SearchUtils && resultsScrollContainer) {
+                    window.SearchUtils.handleSearchResults(resultsScrollContainer, searchInput);
+                }
             } else {
                 resultsContainer.classList.add('hidden');
             }
+        }
+    });
+
+    // Gérer le clic en dehors pour fermer les résultats
+    document.addEventListener('click', function(e) {
+        if (!searchInput.contains(e.target) && !resultsContainer.contains(e.target)) {
+            resultsContainer.classList.add('hidden');
+        }
+    });
+
+    // Gérer les touches clavier
+    searchInput.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape') {
+            resultsContainer.classList.add('hidden');
+            searchInput.blur();
         }
     });
 }); 

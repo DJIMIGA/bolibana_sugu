@@ -16,6 +16,7 @@
     
     <!-- CSS -->
     <link rel="stylesheet" href="{% static 'src/output.css' %}">
+    <link rel="stylesheet" href="{% static 'search/css/search-results.css' %}">
 
     <!-- GSAP -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
@@ -51,6 +52,15 @@
     <!-- Scripts des applications -->
     {% include 'cart/scripts/_cart_scripts.html' %}
     <script src="{% static 'accounts/js/main.js' %}"></script>
+    <script src="{% static 'search/js/search-utils.js' %}"></script>
+    <script src="{% static 'search/js/search-error-handler.js' %}"></script>
+    <script src="{% static 'search/js/search-pagination.js' %}"></script>
+    <script src="{% static 'search/js/search-suggestions.js' %}"></script>
+
+    <!-- Script de test (développement uniquement) -->
+    {% if debug %}
+        <script src="{% static 'search/js/search-test.js' %}"></script>
+    {% endif %}
 
     <!-- Configuration HTMX -->
     {% csrf_token %}

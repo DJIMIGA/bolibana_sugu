@@ -47,7 +47,23 @@ def add_to_cart(request, product_id):
         try:
             product = get_object_or_404(Product, id=product_id)
             
-            quantity = int(request.POST.get('quantity', 1))
+                        # Validation de sécurité : quantité
+            try:
+                quantity = int(request.POST.get('quantity', 1))
+            except (ValueError, TypeError):
+                quantity = 1
+            
+            # Limites de sécurité
+            max_quantity = 50
+            if quantity > max_quantity:
+                messages.error(request, f"❌ Quantité maximum autorisée : {max_quantity}")
+                messages_html = f'<div id="messages-container" hx-swap-oob="true">' + render_to_string('includes/_messages.html', {}, request=request) + '</div>'
+                return HttpResponse(messages_html, status=400)
+            
+            if quantity <= 0:
+                messages.error(request, "❌ Quantité invalide")
+                messages_html = f'<div id="messages-container" hx-swap-oob="true">' + render_to_string('includes/_messages.html', {}, request=request) + '</div>'
+                return HttpResponse(messages_html, status=400)
 
             # Récupérer ou créer le panier
             cart = Cart.get_or_create_cart(request)
@@ -249,7 +265,19 @@ def delete_cart(request):
 def increase_quantity(request, cartitem_id):
     if request.method == 'POST':
         cart = Cart.get_or_create_cart(request)
-        cart_item = get_object_or_404(CartItem, id=cartitem_id, cart=cart)
+        
+        # Vérification de sécurité : s'assurer que l'item appartient au panier de l'utilisateur
+        try:
+            cart_item = CartItem.objects.get(id=cartitem_id, cart=cart)
+        except CartItem.DoesNotExist:
+            return JsonResponse({'error': 'Article non trouvé'}, status=404)
+        
+        # Limite de sécurité : quantité maximum par article
+        max_quantity = 50
+        if cart_item.quantity >= max_quantity:
+            messages.error(request, f"❌ Quantité maximum atteinte ({max_quantity})")
+            messages_html = f'<div id="messages-container" hx-swap-oob="true">' + render_to_string('includes/_messages.html', {}, request=request) + '</div>'
+            return HttpResponse(messages_html, status=400)
         
         # Utiliser le service pour mettre à jour la quantité
         success, message = CartService.update_quantity(cart_item, cart_item.quantity + 1)
@@ -277,7 +305,12 @@ def increase_quantity(request, cartitem_id):
 def decrease_quantity(request, cartitem_id):
     if request.method == 'POST':
         cart = Cart.get_or_create_cart(request)
-        cart_item = get_object_or_404(CartItem, id=cartitem_id, cart=cart)
+        
+        # Vérification de sécurité : s'assurer que l'item appartient au panier de l'utilisateur
+        try:
+            cart_item = CartItem.objects.get(id=cartitem_id, cart=cart)
+        except CartItem.DoesNotExist:
+            return JsonResponse({'error': 'Article non trouvé'}, status=404)
         
         if cart_item.quantity > 1:
             # Utiliser le service pour mettre à jour la quantité
@@ -314,8 +347,7 @@ def payment_online(request):
     print("="*80)
     print(f"🚨 Method: {request.method}")
     print(f"🚨 User: {request.user.email}")
-    print(f"🚨 POST data: {dict(request.POST)}")
-    print(f"🚨 GET data: {dict(request.GET)}")
+    # Suppression des logs sensibles
     print("="*80)
     
     try:
@@ -657,7 +689,7 @@ def send_order_confirmation_email(order, request=None):
     """
     print(f"\n📧 === ENVOI EMAIL DE CONFIRMATION ===")
     print(f"Commande: {order.order_number}")
-    print(f"Utilisateur: {order.user.email}")
+    print(f"Utilisateur: {order.user.email[:3]}***@{order.user.email.split('@')[1] if '@' in order.user.email else '***'}")
     print(f"Mode DEBUG: {settings.DEBUG}")
     print(f"EMAIL_BACKEND: {getattr(settings, 'EMAIL_BACKEND', 'Non configuré')}")
     print(f"DEFAULT_FROM_EMAIL: {getattr(settings, 'DEFAULT_FROM_EMAIL', 'Non configuré')}")
@@ -707,7 +739,7 @@ def send_order_confirmation_email(order, request=None):
     try:
         print(f"📤 Tentative d'envoi d'email...")
         print(f"De: {settings.DEFAULT_FROM_EMAIL}")
-        print(f"À: {order.user.email}")
+        print(f"À: {order.user.email[:3]}***@{order.user.email.split('@')[1] if '@' in order.user.email else '***'}")
         
         send_mail(
             subject,
@@ -717,7 +749,7 @@ def send_order_confirmation_email(order, request=None):
             html_message=html_message,
             fail_silently=False  # Pour voir les erreurs détaillées
         )
-        print(f"✅ Email de confirmation envoyé avec succès à {order.user.email}")
+        print(f"✅ Email de confirmation envoyé avec succès à {order.user.email[:3]}***@{order.user.email.split('@')[1] if '@' in order.user.email else '***'}")
         return True
         
     except Exception as e:
@@ -727,13 +759,13 @@ def send_order_confirmation_email(order, request=None):
         
         # Logs spécifiques selon le type d'erreur
         if "SMTPAuthenticationError" in str(type(e)):
-            print(f"   🔐 Erreur d'authentification SMTP - Vérifiez EMAIL_HOST_USER et EMAIL_HOST_PASSWORD")
+            print(f"   🔐 Erreur d'authentification SMTP - Vérifiez les paramètres d'authentification")
         elif "SMTPConnectError" in str(type(e)):
             print(f"   🌐 Erreur de connexion SMTP - Vérifiez EMAIL_HOST et EMAIL_PORT")
         elif "SMTPServerDisconnected" in str(type(e)):
             print(f"   🔌 Serveur SMTP déconnecté - Vérifiez la configuration")
         elif "SMTPRecipientsRefused" in str(type(e)):
-            print(f"   📧 Destinataire refusé - Vérifiez l'adresse email: {order.user.email}")
+            print(f"   📧 Destinataire refusé - Vérifiez l'adresse email: {order.user.email[:3]}***@{order.user.email.split('@')[1] if '@' in order.user.email else '***'}")
         
         # Ne pas lever l'exception pour éviter de bloquer le processus de commande
         # L'email peut être envoyé plus tard ou l'utilisateur peut voir la confirmation sur le site
@@ -773,12 +805,12 @@ def payment_delivery(request):
         # Pour 'all', traiter tous les produits du panier
         cart_items = cart.cart_items.all().select_related('product')
     
-    print(f"Panier trouvé pour l'utilisateur {request.user.email} avec {cart_items.count()} articles")
+    print(f"Panier trouvé pour l'utilisateur {request.user.email[:3]}***@{request.user.email.split('@')[1] if '@' in request.user.email else '***'} avec {cart_items.count()} articles")
     print(f"Type de produit: {product_type}, Panier mixte: {is_mixed_cart}")
     
     if request.method == 'POST':
         print("\n=== Traitement du formulaire (POST) ===")
-        print(f"POST data: {dict(request.POST)}")
+        # Suppression des logs sensibles
         
         # Récupérer les données du formulaire
         address_choice = request.POST.get('address_choice')
@@ -1069,7 +1101,17 @@ def get_product_options(request, product_id):
 def remove_from_cart(request, cartitem_id):
     if request.method == 'DELETE' and request.htmx:
         cart = Cart.get_or_create_cart(request)
-        cart_item = get_object_or_404(CartItem, id=cartitem_id, cart=cart)
+        
+        # Vérification de sécurité : s'assurer que l'item appartient au panier de l'utilisateur
+        try:
+            cart_item = CartItem.objects.get(id=cartitem_id, cart=cart)
+        except CartItem.DoesNotExist:
+            return JsonResponse({'error': 'Article non trouvé'}, status=404)
+        
+        # Log de sécurité pour tracer les suppressions
+        if hasattr(request, 'user') and request.user.is_authenticated:
+            print(f"🔒 Suppression d'article {cart_item_id} par l'utilisateur {request.user.email[:3]}***")
+        
         cart_item.delete()
         
         return HttpResponse(render_cart_updates(request, cart))
@@ -1149,9 +1191,19 @@ def stripe_webhook(request):
     debug_log("🔄 DÉBUT DU WEBHOOK STRIPE")
     debug_log("="*80)
     
+    # Vérifier la méthode HTTP
+    if request.method != 'POST':
+        debug_log("❌ Méthode HTTP non autorisée")
+        return HttpResponse('Method not allowed', status=405)
+    
     webhook_secret = settings.STRIPE_WEBHOOK_SECRET
     payload = request.body
     sig_header = request.META.get('HTTP_STRIPE_SIGNATURE', '')
+    
+    # Vérifier que le secret webhook est configuré
+    if not webhook_secret:
+        debug_log("❌ Webhook secret non configuré")
+        return HttpResponse('Webhook secret not configured', status=500)
     
     debug_log(f"📋 Webhook secret configuré: {bool(webhook_secret)}")
     debug_log(f"📋 Payload length: {len(payload)}")
@@ -1166,6 +1218,12 @@ def stripe_webhook(request):
         data = event['data']
         event_type = event['type']
         debug_log(f"✅ Event type: {event_type}")
+    except ValueError as e:
+        debug_log(f"❌ Erreur payload invalide: {str(e)}")
+        return HttpResponse('Invalid payload', status=400)
+    except stripe.error.SignatureVerificationError as e:
+        debug_log(f"❌ Erreur signature invalide: {str(e)}")
+        return HttpResponse('Invalid signature', status=400)
     except Exception as e:
         debug_log(f"❌ Erreur construction webhook: {str(e)}")
         return HttpResponse(str(e), status=400)
@@ -1541,61 +1599,6 @@ def payment_cancel(request):
     return render(request, 'payment_cancel.html')
 
 
-def add_phone_to_cart(request, variant_id):
-    print(f"\n=== Début de add_phone_to_cart ===")
-    print(f"Variant ID: {variant_id}")
-    
-    if request.method == 'POST':
-        try:
-            variant = get_object_or_404(Phone, id=variant_id)
-            print(f"Variante trouvée: {variant}")
-            print(f"Produit associé: {variant.phone.product}")
-            
-            # Récupérer ou créer le panier
-            print("Récupération/création du panier...")
-            cart = Cart.get_or_create_cart(request)
-            print(f"Panier: {cart}")
-
-            # Vérifier si l'article existe déjà dans le panier avec la même variante
-            print("Recherche d'un article existant...")
-            existing_item = cart.cart_items.filter(product=variant.phone.product, variant=variant).first()
-            print(f"Article existant: {existing_item}")
-
-            if existing_item:
-                # Mettre à jour la quantité
-                print("Mise à jour de la quantité...")
-                existing_item.quantity += 1
-                existing_item.save()
-                cart_item = existing_item
-            else:
-                # Créer un nouvel article
-                print("Création d'un nouvel article...")
-                cart_item = CartItem.objects.create(
-                    cart=cart,
-                    product=variant.phone.product,
-                    variant=variant,
-                    quantity=1
-                )
-                print(f"Nouvel article créé: {cart_item}")
-
-            # Générer la réponse
-            print("Génération de la réponse...")
-            response = HttpResponse()
-            response['HX-Trigger'] = 'cartUpdated'
-            response.write(render_cart_updates(request, cart, cart_item))
-            print("=== Fin de add_phone_to_cart ===\n")
-            return response
-
-        except Exception as e:
-            print(f"!!! ERREUR: {str(e)}")
-            print("=== Fin de add_phone_to_cart avec erreur ===\n")
-            messages.error(request, _("Une erreur est survenue lors de l'ajout au panier."))
-            return JsonResponse({'error': str(e)}, status=500)
-
-    print("=== Fin de add_phone_to_cart (méthode non autorisée) ===\n")
-    return JsonResponse({'error': 'Méthode non autorisée'}, status=405)
-
-
 @login_required
 def create_checkout_session(request):
     """
@@ -1609,7 +1612,7 @@ def create_checkout_session(request):
     debug_log("="*80)
     
     debug_log(f"📋 Method: {request.method}")
-    debug_log(f"📋 POST data: {dict(request.POST)}")
+    # Suppression des logs sensibles
     
     # Vérifier la configuration Stripe
     debug_log(f"🔑 STRIPE_SECRET_KEY configurée: {bool(settings.STRIPE_SECRET_KEY)}")
@@ -1730,6 +1733,10 @@ def create_checkout_session(request):
         # Préparer les items selon le type de panier
         line_items = []
         
+        # Validation des montants pour sécurité
+        total_amount = 0
+        max_amount = 1000000  # 1 million FCFA maximum par commande
+        
         if is_mixed:
             # Panier mixte - utiliser la logique existante de create_mixed_checkout_session
             debug_log("🔄 Traitement panier mixte")
@@ -1746,26 +1753,40 @@ def create_checkout_session(request):
                 
                 # Ajouter les produits Salam
                 for item in salam_order.items.all():
+                    item_amount = int(item.product.price * 100)
+                    total_amount += item_amount
+                    
+                    if total_amount > max_amount:
+                        messages.error(request, "❌ **Erreur** : Montant de commande trop élevé")
+                        return redirect('cart:checkout')
+                    
                     line_items.append({
                         'price_data': {
                             'currency': 'xof',
                             'product_data': {
                                 'name': f"{item.product.title} (Salam)",
                             },
-                            'unit_amount': int(item.product.price * 100),
+                            'unit_amount': item_amount,
                         },
                         'quantity': item.quantity,
                     })
                 
                 # Ajouter les produits classiques
                 for item in classic_order.items.all():
+                    item_amount = int(item.product.price * 100)
+                    total_amount += item_amount
+                    
+                    if total_amount > max_amount:
+                        messages.error(request, "❌ **Erreur** : Montant de commande trop élevé")
+                        return redirect('cart:checkout')
+                    
                     line_items.append({
                         'price_data': {
                             'currency': 'xof',
                             'product_data': {
                                 'name': f"{item.product.title} (Classique)",
                             },
-                            'unit_amount': int(item.product.price * 100),
+                            'unit_amount': item_amount,
                         },
                         'quantity': item.quantity,
                     })

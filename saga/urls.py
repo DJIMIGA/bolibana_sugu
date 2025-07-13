@@ -14,12 +14,12 @@ urlpatterns = [
     path(f'{settings.ADMIN_URL}', admin_site.urls),
     
     # Autres URLs
-    path('products/', include('product.urls')),
     path('accounts/', include('accounts.urls')),
     path('', include('suppliers.urls')),
     path('cart/', include('cart.urls')),
     path('api/', include('product.api.urls')),
     path('price-checker/', include('price_checker.urls', namespace='price_checker')),
+    path('core/', include('core.urls', namespace='core')),
 ]
 
 # Ajout des URLs pour les fichiers médias en développement

@@ -213,6 +213,8 @@ def render_product_card(context, product):
             'user': context['request'].user
         }
 
+
+
 @register.simple_tag
 def get_product_details(product_id):
     """Récupère les détails d'un produit."""

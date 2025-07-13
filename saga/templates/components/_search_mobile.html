@@ -1,6 +1,56 @@
 {% load static %}
 {% load product_tags %}
 
+<style>
+    /* Scrollbar personnalisée pour la recherche mobile */
+    #searchResults::-webkit-scrollbar {
+        width: 8px;
+        height: 8px;
+    }
+    
+    #searchResults::-webkit-scrollbar-track {
+        background: #f1f1f1;
+        border-radius: 4px;
+    }
+    
+    #searchResults::-webkit-scrollbar-thumb {
+        background: #c1c1c1;
+        border-radius: 4px;
+        transition: background 0.2s ease;
+    }
+    
+    #searchResults::-webkit-scrollbar-thumb:hover {
+        background: #a8a8a8;
+    }
+    
+    #searchResults::-webkit-scrollbar-corner {
+        background: #f1f1f1;
+    }
+    
+    /* Optimisation pour mobile */
+    #searchResults {
+        -webkit-overflow-scrolling: touch;
+        scrollbar-width: thin;
+        scrollbar-color: #c1c1c1 #f1f1f1;
+    }
+    
+    /* Animation pour les résultats de recherche */
+    .search-results-loaded {
+        animation: fadeInUp 0.3s ease-out;
+    }
+    
+    @keyframes fadeInUp {
+        from {
+            opacity: 0;
+            transform: translateY(10px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+</style>
+
 <div class="flex items-center justify-center relative">
     <button id="searchToggle" type="button"
             class="group relative focus:outline-none">
@@ -30,7 +80,7 @@
                           d="M10 19l-7-7m0 0l7-7m-7 7h18"/>
                 </svg>
             </button>
-            <form id="searchForm" method="get" autocomplete="off" action="{% url 'product:search' %}" class="flex-1 border-2 border-gray-200 rounded focus-within:ring-2 focus-within:ring-green-500 transition-all duration-200 px-2 m-2">
+            <form id="searchForm" method="get" autocomplete="off" action="{% url 'suppliers:search' %}" class="flex-1 border-2 border-gray-200 rounded focus-within:ring-2 focus-within:ring-green-500 transition-all duration-200 px-2 m-2">
                 <div class="flex items-center w-full">
                     <svg class="pointer-events-none h-5 w-5 text-gray-400 mr-3"
                          xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"
@@ -44,7 +94,7 @@
                            placeholder="Rechercher un produit..."
                            aria-label="Search"
                            aria-describedby="search-icon"
-                           hx-get="{% url 'product:search' %}"
+                           hx-get="{% url 'suppliers:search_suggestions' %}"
                            hx-target="#searchResults"
                            hx-trigger="keyup changed delay:300ms"
                            hx-push-url="false"
@@ -52,7 +102,7 @@
                     />
                     <button type="button" id="clearSearch" 
                             class="text-gray-400 hover:text-gray-600 ml-2"
-                            hx-get="{% url 'product:search' %}"
+                            hx-get="{% url 'suppliers:search' %}"
                             hx-trigger="'#searchInput',  'keyup'"
                             hx-vals='{"q": ""}'
                             hx-push-url="true"
@@ -69,7 +119,7 @@
 
         <!-- Results -->
         <div id="searchResults"
-             class="flex-1 overflow-y-auto py-2 px-4">
+             class="flex-1 overflow-y-auto py-2 px-4 max-h-[calc(100vh-120px)]">
             {% include 'search_results.html' %}
         </div>
     </div>

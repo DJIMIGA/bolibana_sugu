@@ -185,6 +185,40 @@ if not DEBUG:
     SECURE_HSTS_PRELOAD = True
 
 # ==================================================
+# CONFIGURATION DE SÉCURITÉ DES PAIEMENTS
+# ==================================================
+# Limites de sécurité pour les paiements
+PAYMENT_RATE_LIMIT = 10  # Requêtes par minute
+PAYMENT_MAX_AMOUNT = 1000000  # 1 million FCFA maximum par commande
+PAYMENT_SESSION_TIMEOUT = 3600  # 1 heure en secondes
+
+# IPs blacklistées pour les paiements
+PAYMENT_BLACKLISTED_IPS = os.getenv('PAYMENT_BLACKLISTED_IPS', '').split(',')
+
+# Configuration de sécurité des sessions de paiement
+PAYMENT_SESSION_SECURE = True
+PAYMENT_SESSION_HTTPONLY = True
+PAYMENT_SESSION_SAMESITE = 'Strict'
+
+# Configuration des webhooks Stripe
+STRIPE_WEBHOOK_TIMEOUT = 30  # Timeout en secondes
+STRIPE_WEBHOOK_MAX_RETRIES = 3
+
+# ==================================================
+# CONFIGURATION DE SÉCURITÉ DU PANIER
+# ==================================================
+# Limites de sécurité pour le panier
+CART_MAX_QUANTITY_PER_ITEM = 10  # Quantité maximum par article
+CART_MAX_ITEMS = 100  # Nombre maximum d'articles dans le panier
+CART_RATE_LIMIT = 100  # Actions par minute sur le panier
+CART_SESSION_TIMEOUT = 7200  # 2 heures en secondes
+
+# Protection contre les attaques
+CART_CSRF_PROTECTION = True
+CART_OWNERSHIP_VERIFICATION = True
+CART_STOCK_VALIDATION = True
+
+# ==================================================
 # CONFIGURATION ADMIN ET SÉCURITÉ
 # ==================================================
 # URL d'administration sécurisée
@@ -452,10 +486,11 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'phonenumber_field',
+    'saga',  # Ajout de l'application saga pour les commandes personnalisées
     'product',
     'accounts.apps.AccountsConfig',
     'suppliers',
-    'core',
+    'core.apps.CoreConfig',
     'django_htmx',
     'widget_tweaks',
     'cart.apps.CartConfig',
@@ -482,6 +517,7 @@ INSTALLED_APPS = [
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
     'whitenoise.middleware.WhiteNoiseMiddleware',
+    'saga.middleware.SecurityMiddleware',  # Middleware de sécurité personnalisé
     'django.contrib.sessions.middleware.SessionMiddleware',
     'corsheaders.middleware.CorsMiddleware',
     'django.middleware.common.CommonMiddleware',
@@ -592,27 +628,38 @@ LOGGING = {
     },
     'handlers': {
         'file': {
-            'level': 'DEBUG',
+            'level': 'INFO',
             'class': 'logging.FileHandler',
-            'filename': os.path.join(BASE_DIR, 'debug.log'),
+            'filename': 'django.log',
+            'formatter': 'verbose',
+        },
+        'security_file': {
+            'level': 'WARNING',
+            'class': 'logging.FileHandler',
+            'filename': 'security.log',
             'formatter': 'verbose',
         },
         'console': {
-            'level': 'DEBUG',
+            'level': 'INFO',
             'class': 'logging.StreamHandler',
             'formatter': 'simple',
         },
     },
     'loggers': {
-        'cart.views': {
-            'handlers': ['file', 'console'],
-            'level': 'DEBUG',
-            'propagate': True,
-        },
         'django': {
-            'handlers': ['console'],
+            'handlers': ['file', 'console'],
             'level': 'INFO',
             'propagate': True,
+        },
+        'security': {
+            'handlers': ['security_file', 'console'],
+            'level': 'WARNING',
+            'propagate': False,
+        },
+        'admin_access': {
+            'handlers': ['security_file', 'console'],
+            'level': 'INFO',
+            'propagate': False,
         },
     },
 }

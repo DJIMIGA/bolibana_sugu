@@ -44,7 +44,7 @@
         </svg>
         <div class="ml-4">
           <h3 class="text-lg font-semibold font-bitter text-gray-900">Retour produits</h3>
-          <p class="mt-1 text-sm text-gray-600">30 jours pour changer d'avis</p>
+          <p class="mt-1 text-sm text-gray-600">{% if site_return_policy %}{{ site_return_policy }}{% else %}30 jours pour changer d'avis{% endif %}</p>
         </div>
       </div>
 
@@ -54,8 +54,8 @@
         </svg>
         <div class="ml-4">
           <h3 class="text-lg font-semibold font-bitter text-gray-900">Service client 7j/7</h3>
-          <p class="mt-1 text-sm text-gray-600">72 46 42 94</p>
-          <p class="text-sm text-gray-600">8h>21h, dimanche 8h30>13h</p>
+          <p class="mt-1 text-sm text-gray-600">{{ site_phone }}</p>
+          <p class="text-sm text-gray-600">{{ site_opening_hours_detailed }}</p>
         </div>
       </div>
     </div>
@@ -68,8 +68,13 @@
       <!-- Logo & Description -->
       <div class="text-center sm:text-left">
         <a href="{% url 'suppliers:supplier_index' %}" class="inline-block">
-          <img class="h-16 w-auto transition-all duration-300 hover:scale-110 hover:drop-shadow-lg"
-               src="{% static 'icons/bolibana.png' %}" alt="Logo de BoliBana Sugu">
+          {% if site_logo_url %}
+            <img class="h-16 w-auto transition-all duration-300 hover:scale-110 hover:drop-shadow-lg"
+                 src="{{ site_logo_url }}" alt="Logo de {{ company_name }}">
+          {% else %}
+            <img class="h-16 w-auto transition-all duration-300 hover:scale-110 hover:drop-shadow-lg"
+                 src="{% static 'icons/bolibana.png' %}" alt="Logo de {{ company_name }}">
+          {% endif %}
         </a>
         <p class="mt-6 text-lg font-light text-gray-700 leading-relaxed">
           Découvrez une expérience d'achat révolutionnaire. Simplicité, fluidité et satisfaction garanties à chaque
@@ -83,7 +88,8 @@
             Suivez-nous</h2>
           <div class="flex justify-center space-x-6">
           <!-- WhatsApp -->
-          <a href="https://wa.me/22372464294" class="social-icon whatsapp">
+          {% if site_whatsapp %}
+          <a href="https://wa.me/{{ site_whatsapp }}" class="social-icon whatsapp">
             <svg xmlns="http://www.w3.org/2000/svg" x="0px" y="0px" width="50" height="50" viewBox="0,0,256,256">
               <defs>
                 <linearGradient x1="32" y1="5.25" x2="32" y2="58.834" gradientUnits="userSpaceOnUse"
@@ -116,9 +122,11 @@
               </g>
             </svg>
           </a>
+          {% endif %}
 
           <!-- Facebook -->
-          <a href="https://www.facebook.com/profile.php?id=61573936749149" class="social-icon facebook">
+          {% if site_facebook %}
+          <a href="{{ site_facebook }}" class="social-icon facebook">
             <svg xmlns="http://www.w3.org/2000/svg" x="0px" y="0px" width="50" height="50" viewBox="0,0,256,256">
               <defs>
                 <linearGradient x1="34.083" y1="4.872" x2="29.773" y2="57.75" gradientUnits="userSpaceOnUse"
@@ -146,9 +154,11 @@
               </g>
             </svg>
           </a>
+          {% endif %}
 
           <!-- TikTok -->
-          <a href="https://www.tiktok.com/@djimiga1" class="social-icon tiktok">
+          {% if site_tiktok %}
+          <a href="{{ site_tiktok }}" class="social-icon tiktok">
             <svg xmlns="http://www.w3.org/2000/svg" x="0px" y="0px" width="50" height="50" viewBox="0,0,256,256">
               <g fill="none" fill-rule="nonzero" stroke="none" stroke-width="1" stroke-linecap="butt"
                  stroke-linejoin="miter" stroke-miterlimit="10" stroke-dasharray="" stroke-dashoffset="0"
@@ -168,6 +178,7 @@
               </g>
             </svg>
           </a>
+          {% endif %}
           </div>
         </div>
 
@@ -179,24 +190,34 @@
         <div>
           <h3 class="text-xl font-semibold font-bitter text-gray-900 mb-4">À propos</h3>
           <ul class="space-y-3 text-base">
-            <li><a href="#" class="text-gray-600 hover:text-green-600 transition-colors duration-300">Notre histoire</a>
-            </li>
-            <li><a href="#" class="text-gray-600 hover:text-green-600 transition-colors duration-300">Nos valeurs</a></li>
+            <li><a href="{% url 'core:about' %}" class="text-gray-600 hover:text-green-600 transition-colors duration-300">À propos de nous</a></li>
+            {% if about_story_title %}
+            <li><a href="{% url 'core:about_story' %}" class="text-gray-600 hover:text-green-600 transition-colors duration-300">{{ about_story_title }}</a></li>
+            {% endif %}
+            {% if about_values_title %}
+            <li><a href="{% url 'core:about_values' %}" class="text-gray-600 hover:text-green-600 transition-colors duration-300">{{ about_values_title }}</a></li>
+            {% endif %}
           </ul>
         </div>
         <div>
           <h3 class="text-xl font-semibold font-bitter text-gray-900 mb-4">Services</h3>
           <ul class="space-y-3 text-base">
-            <li><a href="#" class="text-gray-600 hover:text-green-600 transition-colors duration-300">Fidélité Boli</a></li>
-            <li><a href="#" class="text-gray-600 hover:text-green-600 transition-colors duration-300">Livraison express</a></li>
+            <li><a href="{% url 'core:service_loyalty' %}" class="text-gray-600 hover:text-green-600 transition-colors duration-300">{{ service_loyalty_title|default:"Fidélité" }}</a></li>
+            <li><a href="{% url 'core:service_express' %}" class="text-gray-600 hover:text-green-600 transition-colors duration-300">{{ service_express_title|default:"Livraisons" }}</a></li>
           </ul>
         </div>
         <div>
           <h3 class="text-xl font-semibold font-bitter text-gray-900 mb-4">Assistance</h3>
           <ul class="space-y-3 text-base">
-            <li><a href="#" class="text-gray-600 hover:text-green-600 transition-colors duration-300">Centre d'aide</a></li>
-            <li><a href="#" class="text-gray-600 hover:text-green-600 transition-colors duration-300">Retours faciles</a></li>
-            <li><a href="#" class="text-gray-600 hover:text-green-600 transition-colors duration-300">Garantie qualité</a></li>
+            {% if help_center_title %}
+            <li><a href="{% url 'core:help_center' %}" class="text-gray-600 hover:text-green-600 transition-colors duration-300">{{ help_center_title }}</a></li>
+            {% endif %}
+            {% if help_returns_title %}
+            <li><a href="{% url 'core:help_returns' %}" class="text-gray-600 hover:text-green-600 transition-colors duration-300">{{ help_returns_title }}</a></li>
+            {% endif %}
+            {% if help_warranty_title %}
+            <li><a href="{% url 'core:help_warranty' %}" class="text-gray-600 hover:text-green-600 transition-colors duration-300">{{ help_warranty_title }}</a></li>
+            {% endif %}
           </ul>
         </div>
         <div>
@@ -206,20 +227,20 @@
               <svg class="h-6 w-6 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/>
               </svg>
-              <a href="mailto:bolibanasugu@gmail.com" class="text-gray-600 ">bolibanasugu@gmail.com</a>
+              <a href="mailto:{{ site_email }}" class="text-gray-600 ">{{ site_email }}</a>
             </li>
             <li class="flex items-center gap-3">
               <svg class="h-6 w-6 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"/>
               </svg>
-              <span class="text-gray-600">+223 72 46 42 94</span>
+              <span class="text-gray-600">{{ site_phone }}</span>
             </li>
             <li class="flex items-center gap-3">
-              <svg class="h-10 w-10 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <svg class="h-6 w-6 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/>
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/>
               </svg>
-              <span class="text-gray-600">Rue 754, Kalaban Coro, Bamako</span>
+              <span class="text-gray-600">{{ site_address }}</span>
             </li>
           </ul>
         </div>
@@ -228,10 +249,10 @@
 
     <!-- Bas de page -->
     <div class="mt-12 border-t border-gray-200 pt-8 flex flex-col sm:flex-row justify-between items-center text-sm text-gray-500">
-      <p>&copy; 2025 BoliBana - Tous droits réservés</p>
+      <p>&copy; {{ current_year }} {{ company_name }} - Tous droits réservés</p>
       <div class="flex space-x-6 mt-4 sm:mt-0">
-        <a href="{% url 'product:terms_conditions' %}" class="hover:text-green-600 transition-colors duration-300 font-bitter">Mentions Légales</a>
-        <a href="{% url 'product:cgv' %}" class="hover:text-green-600 transition-colors duration-300 font-bitter">CGV</a>
+                        <a href="{% url 'core:terms_conditions' %}" class="hover:text-green-600 transition-colors duration-300 font-bitter">Mentions Légales</a>
+                <a href="{% url 'core:cgv' %}" class="hover:text-green-600 transition-colors duration-300 font-bitter">CGV</a>
       </div>
     </div>
   </div>

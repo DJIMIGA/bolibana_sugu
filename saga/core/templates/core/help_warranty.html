@@ -1,0 +1,240 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{{ help_warranty_title|default:"Garantie et Qualité" }} - {{ config.site_name }}{% endblock %}
+
+{% block content %}
+<div class="bg-gray-50 py-12">
+    <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+        <!-- En-tête de la page -->
+        <div class="text-center mb-12">
+            <h1 class="text-4xl font-bold font-bitter text-gray-900 mb-4">
+                {{ help_warranty_title|default:"Garantie et Qualité" }}
+            </h1>
+            <p class="text-xl text-gray-600 max-w-2xl mx-auto">
+                Notre engagement envers la satisfaction client dans un contexte local
+            </p>
+        </div>
+
+        <!-- Notre approche -->
+        <div class="bg-white rounded-lg shadow-lg p-8 mb-8">
+            <h2 class="text-2xl font-semibold font-bitter text-green-600 mb-6">
+                Notre approche qualité
+            </h2>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                <div>
+                    <h3 class="text-lg font-semibold font-bitter text-gray-900 mb-4">
+                        Produits de confiance
+                    </h3>
+                    <p class="text-gray-700 mb-4">
+                        Nous sélectionnons avec soin nos fournisseurs et produits pour 
+                        vous offrir des articles de qualité à des prix accessibles. 
+                        Notre objectif : votre satisfaction.
+                    </p>
+                    <ul class="space-y-2 text-gray-600">
+                        <li class="flex items-center">
+                            <svg class="w-4 h-4 text-green-500 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                            </svg>
+                            Produits testés et approuvés
+                        </li>
+                        <li class="flex items-center">
+                            <svg class="w-4 h-4 text-green-500 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                            </svg>
+                            Fournisseurs fiables
+                        </li>
+                        <li class="flex items-center">
+                            <svg class="w-4 h-4 text-green-500 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                            </svg>
+                            Prix compétitifs
+                        </li>
+                    </ul>
+                </div>
+                
+                <div>
+                    <h3 class="text-lg font-semibold font-bitter text-gray-900 mb-4">
+                        Contrôle adapté
+                    </h3>
+                    <p class="text-gray-700 mb-4">
+                        Nous vérifions chaque produit avant la vente pour nous assurer 
+                        qu'il répond à nos standards de qualité. Notre équipe s'engage 
+                        à vous proposer le meilleur.
+                    </p>
+                    <ul class="space-y-2 text-gray-600">
+                        <li class="flex items-center">
+                            <svg class="w-4 h-4 text-green-500 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                            </svg>
+                            Vérification de l'état
+                        </li>
+                        <li class="flex items-center">
+                            <svg class="w-4 h-4 text-green-500 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                            </svg>
+                            Test de fonctionnement
+                        </li>
+                        <li class="flex items-center">
+                            <svg class="w-4 h-4 text-green-500 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                            </svg>
+                            Emballage soigné
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <!-- Notre garantie -->
+        <div class="bg-white rounded-lg shadow-lg p-8 mb-8">
+            <h2 class="text-2xl font-semibold font-bitter text-gray-900 mb-6 text-center">
+                Notre garantie
+            </h2>
+            
+            <div class="bg-gradient-to-r from-green-50 to-yellow-50 rounded-lg p-8 mb-6">
+                <div class="text-center">
+                    <div class="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                        <svg class="w-8 h-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"></path>
+                        </svg>
+                    </div>
+                    <h3 class="text-xl font-semibold font-bitter text-gray-900 mb-4">
+                        Garantie {{ company_name }}
+                    </h3>
+                    <p class="text-gray-700 mb-6">
+                        Nous nous engageons à vous accompagner en cas de problème avec vos produits. 
+                        Notre équipe est là pour trouver une solution adaptée.
+                    </p>
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
+                        <div class="bg-white rounded-lg p-4">
+                            <h4 class="font-semibold text-green-700 mb-2">Retour simple</h4>
+                            <p class="text-gray-600">Retour possible sous 7 jours si le produit ne convient pas</p>
+                        </div>
+                        <div class="bg-white rounded-lg p-4">
+                            <h4 class="font-semibold text-yellow-700 mb-2">Échange facilité</h4>
+                            <p class="text-gray-600">Échange rapide en cas de défaut constaté</p>
+                        </div>
+                        <div class="bg-white rounded-lg p-4">
+                            <h4 class="font-semibold text-red-700 mb-2">Support client</h4>
+                            <p class="text-gray-600">Assistance téléphonique et en ligne</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="bg-blue-50 rounded-lg p-6">
+                <h3 class="text-lg font-semibold font-bitter text-blue-800 mb-3">
+                    ⚠️ Informations importantes
+                </h3>
+                <ul class="text-sm text-blue-700 space-y-2">
+                    <li>• Les garanties constructeur varient selon les produits</li>
+                    <li>• Certains produits peuvent avoir des garanties limitées</li>
+                    <li>• Nous nous efforçons de résoudre chaque situation individuellement</li>
+                    <li>• Contactez-nous rapidement en cas de problème</li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- Service client -->
+        <div class="bg-gradient-to-r from-green-50 to-yellow-50 rounded-lg shadow-lg p-8">
+            <h2 class="text-2xl font-semibold font-bitter text-green-700 mb-6 text-center">
+                Notre service client
+            </h2>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
+                <div>
+                    <h3 class="text-lg font-semibold font-bitter text-green-700 mb-4">
+                        Notre équipe
+                    </h3>
+                    <p class="text-green-800 mb-4">
+                        Notre équipe locale est là pour vous accompagner et trouver 
+                        des solutions adaptées à vos besoins.
+                    </p>
+                    <ul class="space-y-2 text-green-800">
+                        <li class="flex items-center">
+                            <svg class="w-4 h-4 text-green-600 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                            </svg>
+                            Écoute et compréhension
+                        </li>
+                        <li class="flex items-center">
+                            <svg class="w-4 h-4 text-green-600 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                            </svg>
+                            Solutions personnalisées
+                        </li>
+                        <li class="flex items-center">
+                            <svg class="w-4 h-4 text-green-600 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                            </svg>
+                            Suivi jusqu'à résolution
+                        </li>
+                    </ul>
+                </div>
+                
+                <div>
+                    <h3 class="text-lg font-semibold font-bitter text-yellow-700 mb-4">
+                        Nous contacter
+                    </h3>
+                    <p class="text-yellow-800 mb-4">
+                        Contactez-nous pour toute question ou problème avec vos produits.
+                    </p>
+                    <div class="space-y-3">
+                        {% if site_phone %}
+                        <div class="flex items-center">
+                            <svg class="w-5 h-5 text-yellow-600 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"></path>
+                            </svg>
+                            <span class="text-yellow-800">{{ site_phone }}</span>
+                        </div>
+                        {% endif %}
+                        {% if site_email %}
+                        <div class="flex items-center">
+                            <svg class="w-5 h-5 text-yellow-600 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path>
+                            </svg>
+                            <span class="text-yellow-800">{{ site_email }}</span>
+                        </div>
+                        {% endif %}
+                        {% if site_address %}
+                        <div class="flex items-center">
+                            <svg class="w-5 h-5 text-yellow-600 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path>
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                            </svg>
+                            <span class="text-yellow-800">{{ site_address }}</span>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+            
+            <div class="text-center">
+                {% if site_phone %}
+                <a href="tel:{{ site_phone }}" 
+                   class="inline-flex items-center px-8 py-4 border border-transparent text-lg font-medium rounded-md text-white bg-green-600 hover:bg-green-700 transition-colors duration-300">
+                    <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"></path>
+                    </svg>
+                    Nous appeler
+                </a>
+                {% endif %}
+            </div>
+        </div>
+        
+        <!-- Contenu personnalisable -->
+        {% if help_warranty_content %}
+        <div class="bg-white rounded-lg shadow-lg p-8 mt-8">
+            <h2 class="text-2xl font-semibold font-bitter text-gray-900 mb-6">
+                Informations complémentaires
+            </h2>
+            <div class="prose prose-lg max-w-none">
+                {{ help_warranty_content|safe }}
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %} 

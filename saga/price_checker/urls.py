@@ -7,6 +7,7 @@ app_name = 'price_checker'
 # URLs publiques
 public_urls = [
     path('check_price/', views.check_price, name='check_price'),
+    path('product/<int:product_id>/', views.product_detail, name='product_detail'),
     path('submit/', views.PriceSubmissionCreateView.as_view(), name='price_submission_create'),
     path('submissions/', views.PriceSubmissionListView.as_view(), name='price_submission_list'),
     path('submissions/<int:pk>/update/', views.PriceSubmissionUpdateView.as_view(), name='price_submission_update'),

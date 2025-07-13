@@ -16,6 +16,96 @@ from accounts.models import AllowedIP
 
 logger = logging.getLogger(__name__)
 
+class SecurityMiddleware:
+    """Middleware de sécurité pour la protection contre les attaques"""
+    
+    def __init__(self, get_response):
+        self.get_response = get_response
+        self.logger = logging.getLogger('security')
+    
+    def __call__(self, request):
+        # Vérifications de sécurité
+        if self._is_suspicious_request(request):
+            self.logger.warning(f"Requête suspecte détectée: {request.path} depuis {self._get_client_ip(request)}")
+            return HttpResponseForbidden('Requête suspecte détectée')
+        
+        response = self.get_response(request)
+        
+        # Journalisation des accès sensibles
+        if self._is_sensitive_path(request.path):
+            self._log_sensitive_access(request, response)
+        
+        return response
+    
+    def _is_suspicious_request(self, request):
+        """Détecte les requêtes suspectes"""
+        # Vérifier les en-têtes suspects
+        suspicious_headers = [
+            'HTTP_X_FORWARDED_FOR',
+            'HTTP_X_REAL_IP',
+            'HTTP_CLIENT_IP'
+        ]
+        
+        for header in suspicious_headers:
+            if header in request.META:
+                ip = request.META[header]
+                if self._is_blacklisted_ip(ip):
+                    return True
+        
+        # Vérifier les patterns d'URL suspects
+        suspicious_patterns = [
+            '/admin/',
+            '/wp-admin/',
+            '/phpmyadmin/',
+            '/.env',
+            '/config.php',
+            '/shell.php'
+        ]
+        
+        for pattern in suspicious_patterns:
+            if pattern in request.path.lower():
+                return True
+        
+        return False
+    
+    def _is_blacklisted_ip(self, ip):
+        """Vérifie si l'IP est blacklistée"""
+        # Liste d'IPs blacklistées (à étendre selon vos besoins)
+        blacklisted_ips = [
+            # Ajouter des IPs blacklistées ici
+        ]
+        return ip in blacklisted_ips
+    
+    def _is_sensitive_path(self, path):
+        """Détermine si le chemin est sensible"""
+        sensitive_paths = [
+            '/admin/',
+            '/accounts/login/',
+            '/accounts/signup/',
+            '/cart/payment/',
+            '/api/'
+        ]
+        return any(sensitive in path for sensitive in sensitive_paths)
+    
+    def _log_sensitive_access(self, request, response):
+        """Journalise les accès aux ressources sensibles"""
+        client_ip = self._get_client_ip(request)
+        user = getattr(request, 'user', None)
+        user_email = getattr(user, 'email', 'Anonymous') if user and user.is_authenticated else 'Anonymous'
+        
+        self.logger.info(
+            f"Accès sensible: {request.method} {request.path} - "
+            f"IP: {client_ip} - User: {user_email} - "
+            f"Status: {response.status_code}"
+        )
+    
+    def _get_client_ip(self, request):
+        """Récupère l'IP réelle du client"""
+        x_forwarded_for = request.META.get('HTTP_X_FORWARDED_FOR')
+        if x_forwarded_for:
+            return x_forwarded_for.split(',')[0]
+        return request.META.get('REMOTE_ADDR')
+
 class FileRequestLoggingMiddleware:
     def __init__(self, get_response):
         self.get_response = get_response

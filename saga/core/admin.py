@@ -1,8 +1,8 @@
 from django.contrib import admin
 from django.utils.html import format_html
+from accounts.admin import admin_site
 from .models import SiteConfiguration
 
-@admin.register(SiteConfiguration)
 class SiteConfigurationAdmin(admin.ModelAdmin):
     """Interface admin pour la configuration du site"""
     
@@ -16,13 +16,43 @@ class SiteConfigurationAdmin(admin.ModelAdmin):
     
     fieldsets = (
         ('Informations générales', {
-            'fields': ('site_name', 'phone_number', 'email', 'address', 'rccm')
+            'fields': ('site_name', 'phone_number', 'email', 'address', 'rccm', 'ninea_number')
         }),
         ('Informations de l\'entreprise', {
             'fields': ('company_name', 'company_type', 'company_address')
         }),
         ('Réseaux sociaux', {
-            'fields': ('facebook_url', 'instagram_url', 'twitter_url'),
+            'fields': ('whatsapp_number', 'facebook_url', 'instagram_url', 'twitter_url', 'tiktok_url'),
+            'classes': ('collapse',)
+        }),
+        ('Horaires et services', {
+            'fields': ('opening_hours', 'opening_hours_detailed', 'delivery_info', 'return_policy'),
+            'classes': ('collapse',)
+        }),
+        ('Configuration visuelle', {
+            'fields': ('logo_url', 'favicon_url'),
+            'classes': ('collapse',)
+        }),
+        ('Contenu du footer - À propos', {
+            'fields': (
+                ('about_story_title', 'about_story_content'),
+                ('about_values_title', 'about_values_content'),
+            ),
+            'classes': ('collapse',)
+        }),
+        ('Contenu du footer - Services', {
+            'fields': (
+                ('service_loyalty_title', 'service_loyalty_content'),
+                ('service_express_title', 'service_express_content'),
+            ),
+            'classes': ('collapse',)
+        }),
+        ('Contenu du footer - Assistance', {
+            'fields': (
+                ('help_center_title', 'help_center_content'),
+                ('help_returns_title', 'help_returns_content'),
+                ('help_warranty_title', 'help_warranty_content'),
+            ),
             'classes': ('collapse',)
         }),
         ('Métadonnées SEO', {
@@ -30,7 +60,7 @@ class SiteConfigurationAdmin(admin.ModelAdmin):
             'classes': ('collapse',)
         }),
         ('Configuration avancée', {
-            'fields': ('maintenance_mode', 'google_analytics_id', 'opening_hours'),
+            'fields': ('maintenance_mode', 'google_analytics_id'),
             'classes': ('collapse',)
         }),
     )
@@ -48,4 +78,7 @@ class SiteConfigurationAdmin(admin.ModelAdmin):
         """S'assurer qu'il n'y a qu'une seule configuration"""
         if not change:  # Si c'est une nouvelle configuration
             obj.id = 1  # Forcer l'ID à 1
-        super().save_model(request, obj, form, change) 
+        super().save_model(request, obj, form, change)
+
+# Enregistrement avec admin_site
+admin_site.register(SiteConfiguration, SiteConfigurationAdmin) 

@@ -88,7 +88,12 @@ def check_price(request):
                             'price_change_percentage': price_entry.price_change_percentage,
                             'updated_at': price_entry.created_at,
                             'is_average': avg_price_info['count'] > 1,
-                            'count': avg_price_info['count']
+                            'count': avg_price_info['count'],
+                            'supplier_name': price_entry.supplier_name,
+                            'supplier_phone': price_entry.supplier_phone,
+                            'supplier_address': price_entry.supplier_address,
+                            'proof_image': price_entry.proof_image.url if price_entry.proof_image else None,
+                            'source': 'Utilisateur' if price_entry.user else 'Admin'
                         }
                 
                 results.append({

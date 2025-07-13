@@ -6,7 +6,6 @@ app_name = 'cart'  # Définir le namespace de l'application
 
 urlpatterns = [
     path('add_to_cart/<int:product_id>/', views.add_to_cart, name='add_to_cart'),
-    path('add_phone_to_cart/<int:variant_id>/', views.add_phone_to_cart, name='add_phone_to_cart'),
     path('', views.cart, name='cart'),
     path('checkout/', views.checkout, name='checkout'),
     path('delete_cart/', views.delete_cart, name='delete_cart'),

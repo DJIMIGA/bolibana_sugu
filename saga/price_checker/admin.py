@@ -38,13 +38,19 @@ class CityAdmin(admin.ModelAdmin):
 
 @admin.register(PriceSubmission)
 class PriceSubmissionAdmin(admin.ModelAdmin):
-    list_display = ('product', 'city', 'price', 'user', 'status', 'created_at')
+    list_display = ('product', 'city', 'price', 'supplier_name', 'user', 'status', 'created_at')
     list_filter = ('status', 'city', 'created_at')
-    search_fields = ('product__title', 'user__username')
-    readonly_fields = ('created_at', 'validated_at')
+    search_fields = ('product__title', 'user__username', 'supplier_name')
+    readonly_fields = ('created_at', 'validated_at', 'proof_image_preview')
     fieldsets = (
         ('Informations de base', {
             'fields': ('product', 'city', 'price', 'user')
+        }),
+        ('Informations du fournisseur', {
+            'fields': ('supplier_name', 'supplier_phone', 'supplier_address')
+        }),
+        ('Preuve', {
+            'fields': ('proof_image', 'proof_image_preview')
         }),
         ('Validation', {
             'fields': ('status', 'validation_notes', 'validated_by', 'validated_at')
@@ -59,16 +65,32 @@ class PriceSubmissionAdmin(admin.ModelAdmin):
         return super().get_queryset(request).select_related(
             'product', 'city', 'user', 'validated_by'
         )
+    
+    def proof_image_preview(self, obj):
+        if obj.proof_image:
+            return format_html(
+                '<a href="{}" target="_blank"><img src="{}" style="max-width: 100px; max-height: 100px;" /></a>',
+                obj.proof_image.url,
+                obj.proof_image.url
+            )
+        return "Aucune image"
+    proof_image_preview.short_description = 'Aperçu de la preuve'
 
 @admin.register(PriceEntry)
 class PriceEntryAdmin(admin.ModelAdmin):
-    list_display = ('product', 'city', 'price', 'user', 'is_active', 'created_at')
+    list_display = ('product', 'city', 'price', 'supplier_name', 'user', 'is_active', 'created_at')
     list_filter = ('is_active', 'city', 'created_at')
-    search_fields = ('product__title', 'user__username')
-    readonly_fields = ('created_at', 'updated_at')
+    search_fields = ('product__title', 'user__username', 'supplier_name')
+    readonly_fields = ('created_at', 'updated_at', 'proof_image_preview')
     fieldsets = (
         ('Informations de base', {
             'fields': ('product', 'city', 'price', 'user', 'is_active')
+        }),
+        ('Informations du fournisseur', {
+            'fields': ('supplier_name', 'supplier_phone', 'supplier_address')
+        }),
+        ('Preuve', {
+            'fields': ('proof_image', 'proof_image_preview')
         }),
         ('Soumission', {
             'fields': ('submission',),
@@ -84,6 +106,16 @@ class PriceEntryAdmin(admin.ModelAdmin):
         return super().get_queryset(request).select_related(
             'product', 'city', 'user', 'submission'
         )
+    
+    def proof_image_preview(self, obj):
+        if obj.proof_image:
+            return format_html(
+                '<a href="{}" target="_blank"><img src="{}" style="max-width: 100px; max-height: 100px;" /></a>',
+                obj.proof_image.url,
+                obj.proof_image.url
+            )
+        return "Aucune image"
+    proof_image_preview.short_description = 'Aperçu de la preuve'
 
 @admin.register(PriceDeactivation)
 class PriceDeactivationAdmin(admin.ModelAdmin):

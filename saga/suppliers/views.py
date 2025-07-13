@@ -1,4 +1,5 @@
 from django.shortcuts import render, get_object_or_404, redirect
+from django.template.response import TemplateResponse
 from django.views.generic import ListView, DetailView, TemplateView
 from django.core.paginator import Paginator
 from .models import Supplier, Hero, HeroImage
@@ -18,8 +19,69 @@ from django.core.cache import cache
 from django.template.loader import render_to_string
 import json
 import logging
+import re
+import unicodedata
 
 logger = logging.getLogger(__name__)
+
+def normalize_search_term(term):
+    """
+    Normalise un terme de recherche pour ignorer les accents et la casse.
+    Exemple: 'telephones' -> 'telephones', 'Téléphones' -> 'telephones'
+    """
+    if not term:
+        return ''
+    
+    # Convertir en minuscules
+    term = term.lower()
+    
+    # Normaliser les caractères Unicode (supprimer les accents)
+    term = unicodedata.normalize('NFD', term)
+    term = ''.join(c for c in term if not unicodedata.combining(c))
+    
+    return term
+
+def create_search_query(term):
+    """
+    Recherche multi-mots avec logique ET et recherche permissive.
+    Permet de trouver "Bazin Super Riche1" quand on tape "bazin supp"
+    """
+    if not term or not term.strip():
+        return Q()
+    
+    words = [normalize_search_term(word) for word in term.strip().split() if word.strip()]
+    if not words:
+        return Q()
+    
+    query = Q()
+    for word in words:
+        # Recherche permissive : le mot dans le produit doit contenir le terme saisi
+        word_query = (
+            Q(title__icontains=word) |
+            Q(description__icontains=word) |
+            Q(category__name__icontains=word) |
+            Q(brand__icontains=word)
+        )
+        
+        # Recherche par préfixe pour plus de flexibilité
+        word_query |= (
+            Q(title__istartswith=word) |
+            Q(description__istartswith=word) |
+            Q(category__name__istartswith=word) |
+            Q(brand__istartswith=word)
+        )
+        
+        # Recherche par suffixe pour capturer les mots qui se terminent par le terme
+        word_query |= (
+            Q(title__iendswith=word) |
+            Q(description__iendswith=word) |
+            Q(category__name__iendswith=word) |
+            Q(brand__iendswith=word)
+        )
+        
+        query &= word_query
+    
+    return query
 
 
 class SupplierListView(ListView):
@@ -255,12 +317,21 @@ class SupplierListView(ListView):
         logger.info(f"Nombre de tissus: {fabric_count}")
         logger.info(f"Nombre de produits culturels: {cultural_count}")
 
+        # Récupérer les produits en promotion (avec discount_price)
+        promotional_products = active_products.filter(
+            discount_price__isnull=False,
+            discount_price__gt=0
+        ).order_by('-created_at')[:8]
+        
+        logger.info(f"Nombre de produits en promotion: {promotional_products.count()}")
+
         # Ajouter les produits par type au contexte
         context['products'] = products  # Tous les produits
         context['phone_products'] = products.filter(phone__isnull=False)[:4]
         context['clothing_products'] = products.filter(clothing_product__isnull=False)[:4]
         context['fabric_products'] = products.filter(fabric_product__isnull=False)[:4]
         context['cultural_products'] = products.filter(cultural_product__isnull=False)[:4]
+        context['promotional_products'] = promotional_products
         
         # Log des produits ajoutés au contexte
         logger.info("\n=== PRODUITS DANS LE CONTEXTE ===")
@@ -1305,9 +1376,28 @@ class ProductDetailView(DetailView):
 def add_review(request, slug):
     product = get_object_or_404(Product, slug=slug)
     
+    # Vérifier que l'utilisateur a acheté ce produit
+    from cart.models import OrderItem
+    has_purchased = OrderItem.objects.filter(
+        order__user=request.user,
+        product=product,
+        order__is_paid=True
+    ).exists()
+    
+    if not has_purchased:
+        messages.error(request, 'Vous devez avoir acheté ce produit pour pouvoir laisser un avis.')
+        return redirect('suppliers:product_detail', slug=product.slug)
+    
     if request.method == 'POST':
         form = ReviewForm(request.POST)
         if form.is_valid():
+            # Vérifier qu'il n'a pas déjà laissé un avis
+            from product.models import Review
+            existing_review = Review.objects.filter(user=request.user, product=product).first()
+            if existing_review:
+                messages.error(request, 'Vous avez déjà laissé un avis pour ce produit.')
+                return redirect('suppliers:product_detail', slug=product.slug)
+            
             review = form.save(commit=False)
             review.product = product
             review.user = request.user
@@ -1410,5 +1500,241 @@ class FavoriteListView(LoginRequiredMixin, ListView):
         context = super().get_context_data(**kwargs)
         context['title'] = 'Mes favoris'
         return context
+
+
+def search(request):
+    query = request.GET.get('q', '').strip()
+    products = None  # None au lieu d'une liste vide pour distinguer "pas de recherche" de "aucun résultat"
+    
+    if query:
+        # Utiliser la nouvelle fonction de recherche améliorée
+        search_query = create_search_query(query)
+        products = Product.objects.filter(search_query).select_related('category', 'supplier').prefetch_related('images')
+    
+    context = {
+        'query': query,
+        'products': products,
+        'has_searched': bool(query)  # Indique si une recherche a été effectuée
+    }
+    
+    if request.htmx:
+        return render(request, 'search_results.html', context)
+    return render(request, 'suppliers/search_results.html', context)
+
+
+def search_suggestions(request):
+    """Vue pour les suggestions de recherche"""
+    query = request.GET.get('q', '').strip()
+    suggestions = None  # None au lieu d'une liste vide pour distinguer "pas de recherche" de "aucun résultat"
+    
+    if query:
+        suggestions = []
+        # Utiliser la nouvelle fonction de recherche améliorée
+        search_query = create_search_query(query)
+        products = Product.objects.filter(search_query).select_related('category').distinct()[:10]
+        
+        # Créer des suggestions basées sur les produits trouvés
+        for product in products:
+            # Suggestion basée sur le titre (plus précise)
+            normalized_title = normalize_search_term(product.title)
+            normalized_query = normalize_search_term(query)
+            if normalized_query in normalized_title:
+                suggestions.append({
+                    'type': 'product',
+                    'text': product.title,
+                    'url': f'/search/results/?text={product.title}&keywords={product.title}',
+                    'icon': 'product',
+                    'relevance': normalized_title.count(normalized_query)  # Score de pertinence
+                })
+            # Suggestion basée sur la catégorie
+            if product.category:
+                normalized_category = normalize_search_term(product.category.name)
+                if normalized_query in normalized_category:
+                    # Éviter les doublons de catégories
+                    if not any(s['type'] == 'category' and s['text'] == product.category.name for s in suggestions):
+                        suggestions.append({
+                            'type': 'category',
+                            'text': product.category.name,
+                            'url': f'/search/results/?text={product.category.name}&keywords={product.category.name}',
+                            'icon': 'category',
+                            'relevance': 5  # Score de pertinence pour les catégories
+                        })
+        # Ajouter des suggestions populaires si pas assez de résultats
+        if len(suggestions) < 5:
+            popular_keywords = [
+                'iPhone', 'Samsung', 'Téléphone', 'Ordinateur', 'Laptop',
+                'Vêtements', 'Chaussures', 'Accessoires', 'Électronique',
+                'Smartphone', 'Tablette', 'Écouteurs', 'Montre'
+            ]
+            normalized_query = normalize_search_term(query)
+            for keyword in popular_keywords:
+                normalized_keyword = normalize_search_term(keyword)
+                if normalized_query in normalized_keyword:
+                    # Éviter les doublons
+                    if not any(s['text'] == keyword for s in suggestions):
+                        suggestions.append({
+                            'type': 'keyword',
+                            'text': keyword,
+                            'url': f'/search/results/?text={keyword}&keywords={keyword}',
+                            'icon': 'search',
+                            'relevance': 3  # Score de pertinence pour les mots-clés
+                        })
+        # Trier par pertinence et limiter à 8 suggestions maximum
+        suggestions.sort(key=lambda x: x.get('relevance', 0), reverse=True)
+        suggestions = suggestions[:8]
+        # Nettoyer les suggestions (enlever le score de pertinence)
+        for suggestion in suggestions:
+            suggestion.pop('relevance', None)
+    context = {
+        'suggestions': suggestions,
+        'query': query,
+        'has_searched': bool(query)  # Indique si une recherche a été effectuée
+    }
+    if request.htmx:
+        return render(request, 'search_suggestions.html', context)
+    return JsonResponse({'suggestions': suggestions})
+
+
+def search_results_page(request):
+    """Page dédiée aux résultats de recherche avec paramètres text et keywords"""
+    text = request.GET.get('text', '').strip()
+    keywords = request.GET.get('keywords', '').strip()
+    
+    # Utiliser text comme requête principale, keywords comme contexte
+    search_query = text or keywords
+    
+    # Initialiser avec tous les produits disponibles
+    products = Product.objects.filter(is_available=True).select_related('category', 'supplier').prefetch_related('images')
+    
+    # Appliquer la recherche si un terme est fourni
+    if search_query:
+        # Utiliser la nouvelle fonction de recherche améliorée
+        search_filter = create_search_query(search_query)
+        products = products.filter(search_filter)
+    
+    # Appliquer les filtres si présents
+    # Filtres de prix
+    price_min = request.GET.get('price_min')
+    price_max = request.GET.get('price_max')
+    
+    logger.info(f"Filtres de prix - min: {price_min}, max: {price_max}")
+    
+    if price_min and price_min.strip():
+        try:
+            min_price = float(price_min)
+            products = products.filter(price__gte=min_price)
+            logger.info(f"Filtre prix min appliqué: {min_price}")
+        except (ValueError, TypeError) as e:
+            logger.warning(f"Valeur invalide pour prix min: {price_min}, erreur: {e}")
+    
+    if price_max and price_max.strip():
+        try:
+            max_price = float(price_max)
+            products = products.filter(price__lte=max_price)
+            logger.info(f"Filtre prix max appliqué: {max_price}")
+        except (ValueError, TypeError) as e:
+            logger.warning(f"Valeur invalide pour prix max: {price_max}, erreur: {e}")
+    
+    # Filtre de condition
+    condition = request.GET.get('condition')
+    logger.info(f"Filtre de condition: {condition}")
+    if condition and condition.strip():
+        products = products.filter(condition=condition)
+        logger.info(f"Filtre condition appliqué: {condition}")
+        logger.info(f"Nombre de produits après filtre condition: {products.count()}")
+    
+    # Filtre de garantie
+    warranty = request.GET.get('warranty')
+    logger.info(f"Filtre de garantie: {warranty}")
+    if warranty and warranty.strip():
+        if warranty == 'yes':
+            products = products.filter(has_warranty=True)
+        elif warranty == 'no':
+            products = products.filter(has_warranty=False)
+        logger.info(f"Filtre garantie appliqué: {warranty}")
+        logger.info(f"Nombre de produits après filtre garantie: {products.count()}")
+    
+    # Filtre de promotion
+    promotion = request.GET.get('promotion')
+    if promotion and promotion.strip():
+        if promotion == 'yes':
+            products = products.filter(discount_price__isnull=False)
+        elif promotion == 'no':
+            products = products.filter(discount_price__isnull=True)
+    
+    # Filtre de marque
+    brand = request.GET.get('brand')
+    if brand and brand.strip():
+        products = products.filter(brand__icontains=brand)
+    
+    # Log final du nombre de produits
+    final_count = products.count()
+    logger.info(f"Nombre final de produits après tous les filtres: {final_count}")
+    
+    # Récupérer les valeurs sélectionnées pour les filtres
+    selected_price_min = request.GET.get('price_min', '')
+    selected_price_max = request.GET.get('price_max', '')
+    selected_condition = request.GET.get('condition', '')
+    selected_warranty = request.GET.get('warranty', '')
+    selected_promotion = request.GET.get('promotion', '')
+    selected_brand = request.GET.get('brand', '')
+    
+    # Créer les breadcrumbs pour la recherche
+    breadcrumbs = [
+        {'name': 'Accueil', 'url': '/'},
+        {'name': 'Recherche', 'url': '#'},
+        {'name': f'"{search_query}"', 'url': None}
+    ]
+    
+    context = {
+        'products': products,
+        'query': search_query,
+        'text': text,
+        'keywords': keywords,
+        'total_results': len(products),
+        'breadcrumbs': breadcrumbs,
+        # Données pour les filtres
+        'selected_price_min': selected_price_min,
+        'selected_price_max': selected_price_max,
+        'selected_condition': selected_condition,
+        'selected_warranty': selected_warranty,
+        'selected_promotion': selected_promotion,
+        'selected_brand': selected_brand,
+    }
+    
+    return TemplateResponse(request, 'suppliers/search_results_page.html', context)
+
+
+def category_subcategories(request, category_id):
+    """Vue pour récupérer les sous-catégories d'une catégorie (pour le menu mobile)"""
+    try:
+        category = Category.objects.get(id=category_id)
+        subcategories = category.children.all().order_by('order', 'name')
+        
+        context = {
+            'category': category,
+            'subcategories': subcategories,
+        }
+        
+        return render(request, 'components/_subcategories_menu.html', context)
+    except Category.DoesNotExist:
+        return HttpResponse('Catégorie non trouvée', status=404)
+
+
+def category_tree(request):
+    """Vue pour récupérer l'arbre des catégories (pour le menu mobile)"""
+    categories = Category.objects.filter(
+        parent__isnull=True,
+        is_main=True
+    ).prefetch_related('children').order_by('order', 'name')
+    
+    context = {
+        'categories': categories,
+    }
+    
+    return render(request, 'components/_subcategories_menu.html', context)
+
+
+
 
 

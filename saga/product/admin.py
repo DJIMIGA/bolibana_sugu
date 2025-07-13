@@ -6,7 +6,6 @@ from django.db.models import Count, Q, Avg
 from price_checker.models import PriceEntry
 from price_checker.admin import PriceEntryInline
 from accounts.admin import admin_site
-from .forms import ProductForm
 from django.utils.text import slugify
 
 # Register your models here.
@@ -153,7 +152,6 @@ class CulturalItemAdmin(admin.ModelAdmin):
         verbose_name_plural = 'Livres et Culture'
 
 class ProductAdmin(admin.ModelAdmin):
-    form = ProductForm
     list_display = ('title', 'category', 'brand', 'price', 'get_stock_display', 'sku', 'is_available', 'is_salam', 'created_at', 'discount_price')
     list_filter = ('is_available', 'is_salam', 'category', 'brand', 'created_at')
     search_fields = ('title', 'sku', 'brand', 'description')

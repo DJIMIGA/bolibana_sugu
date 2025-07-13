@@ -15,10 +15,12 @@ from django.db import transaction
 from django.core.cache import cache
 from .models import (
     PriceEntry, PriceSubmission, City, Product,
-    PriceValidation, ProductStatus
+    PriceValidation, ProductStatus, get_products_with_most_prices
 )
 from product.models import Product as ProductModel
 from .forms import PriceSubmissionForm, CityForm
+# Import des fonctions de recherche depuis suppliers
+from suppliers.views import normalize_search_term, create_search_query
 
 def check_price(request):
     # Si c'est une requête HTMX
@@ -26,38 +28,9 @@ def check_price(request):
         product_name = request.GET.get('product_name', '').strip()
         page = request.GET.get('page', 1)
         
-        if not product_name:
-            return render(request, 'price_checker/partials/price_results.html', {
-                'results': [],
-                'empty_search': True
-            })
-        
         try:
-            # Recherche des produits similaires
-            search_terms = product_name.split()
-            query = Q()
-            
-            for term in search_terms:
-                term_query = (
-                    Q(title__icontains=term) |
-                    Q(brand__icontains=term) |
-                    Q(description__icontains=term) |
-                    Q(category__name__icontains=term)
-                )
-                
-                # Ajouter des recherches spécifiques pour les téléphones
-                if hasattr(ProductModel, 'phone'):
-                    term_query |= (
-                        Q(phone__brand__icontains=term) |
-                        Q(phone__model__icontains=term) |
-                        Q(phone__operating_system__icontains=term) |
-                        Q(phone__processor__icontains=term)
-                    )
-                
-                query &= term_query
-            
-            # Récupérer les produits
-            similar_products = ProductModel.objects.filter(query).select_related(
+            # Récupérer tous les produits (pas seulement ceux disponibles sur le site)
+            products = ProductModel.objects.all().select_related(
                 'category',
                 'supplier'
             ).prefetch_related(
@@ -68,8 +41,13 @@ def check_price(request):
                         .order_by('-created_at'))
             ).order_by('title')
             
+            # Si un terme de recherche est fourni, filtrer les résultats
+            if product_name:
+                query = create_search_query(product_name)
+                products = products.filter(query)
+            
             # Pagination
-            paginator = Paginator(similar_products, 5)
+            paginator = Paginator(products, 10)  # Augmenter à 10 produits par page
             try:
                 products_page = paginator.page(page)
             except Http404:
@@ -77,23 +55,25 @@ def check_price(request):
             
             results = []
             for product in products_page:
+                # Récupérer tous les prix individuels pour ce produit, triés par prix croissant
+                price_entries = product.price_entries.all().order_by('price')
+                
+                # Grouper les prix par ville avec les détails de chaque entrée
                 prices_by_city = {}
-                for price_entry in product.price_entries.all():
-                    if price_entry.city not in prices_by_city:
-                        # Utiliser la nouvelle méthode get_average_price
-                        avg_price_info = PriceEntry.get_average_price(
-                            product=product,
-                            city=price_entry.city
-                        )
-                        
-                        prices_by_city[price_entry.city] = {
-                            'price': avg_price_info['average_price'] if avg_price_info['count'] > 1 else price_entry.price,
-                            'price_change': price_entry.price_change,
-                            'price_change_percentage': price_entry.price_change_percentage,
-                            'updated_at': price_entry.created_at,
-                            'is_average': avg_price_info['count'] > 1,
-                            'count': avg_price_info['count']
-                        }
+                for price_entry in price_entries:
+                    city = price_entry.city
+                    if city not in prices_by_city:
+                        prices_by_city[city] = []
+                    
+                    prices_by_city[city].append({
+                        'price': price_entry.price,
+                        'supplier_name': price_entry.supplier_name,
+                        'supplier_phone': price_entry.supplier_phone,
+                        'supplier_address': price_entry.supplier_address,
+                        'updated_at': price_entry.created_at,
+                        'is_active': price_entry.is_active,
+                        'proof_image': price_entry.proof_image.url if price_entry.proof_image else None
+                    })
                 
                 results.append({
                     'product': product,
@@ -104,7 +84,9 @@ def check_price(request):
                 'results': results,
                 'page_obj': products_page,
                 'paginator': paginator,
-                'is_paginated': paginator.num_pages > 1
+                'is_paginated': paginator.num_pages > 1,
+                'total_products': products.count(),
+                'debug_results_count': len(results)  # Debug pour voir le nombre de résultats
             })
                 
         except Exception as e:
@@ -114,7 +96,12 @@ def check_price(request):
             })
     
     # Pour les requêtes normales
-    return render(request, 'price_checker/check_price.html')
+    # Récupérer les produits avec le plus de prix collectés
+    popular_products = get_products_with_most_prices(limit=6)
+    
+    return render(request, 'price_checker/check_price.html', {
+        'popular_products': popular_products
+    })
 
 class UserDashboardView(LoginRequiredMixin, TemplateView):
     template_name = 'price_checker/user_dashboard.html'
@@ -354,7 +341,13 @@ def approve_price_submission(request, pk):
     if not request.user.is_staff:
         return HttpResponseRedirect(reverse_lazy('price_checker:admin_price_submission_list'))
     
-    submission = PriceSubmission.objects.get(pk=pk)
+    # Vérification de sécurité : s'assurer que la soumission existe et peut être approuvée
+    try:
+        submission = PriceSubmission.objects.get(pk=pk, status='PENDING')
+    except PriceSubmission.DoesNotExist:
+        messages.error(request, 'Soumission non trouvée ou déjà traitée.')
+        return HttpResponseRedirect(reverse_lazy('price_checker:admin_price_submission_list'))
+    
     submission.status = 'APPROVED'
     submission.validated_by = request.user
     submission.save()
@@ -375,7 +368,13 @@ def reject_price_submission(request, pk):
     if not request.user.is_staff:
         return HttpResponseRedirect(reverse_lazy('price_checker:admin_price_submission_list'))
     
-    submission = PriceSubmission.objects.get(pk=pk)
+    # Vérification de sécurité : s'assurer que la soumission existe et peut être rejetée
+    try:
+        submission = PriceSubmission.objects.get(pk=pk, status='PENDING')
+    except PriceSubmission.DoesNotExist:
+        messages.error(request, 'Soumission non trouvée ou déjà traitée.')
+        return HttpResponseRedirect(reverse_lazy('price_checker:admin_price_submission_list'))
+    
     submission.status = 'REJECTED'
     submission.validated_by = request.user
     submission.save()
@@ -454,7 +453,16 @@ def toggle_product_status(request, pk):
     if not request.user.is_staff:
         return HttpResponseRedirect(reverse_lazy('price_checker:admin_product_status_list'))
     
-    product = ProductModel.objects.get(pk=pk)
+    # Vérification de sécurité : s'assurer que le produit existe
+    try:
+        product = ProductModel.objects.get(pk=pk)
+    except ProductModel.DoesNotExist:
+        messages.error(request, 'Produit non trouvé.')
+        return HttpResponseRedirect(reverse_lazy('price_checker:admin_product_status_list'))
+    
+    # Log de sécurité pour tracer les modifications
+    print(f"🔒 Modification du statut Salam du produit {pk} par l'utilisateur {request.user.email[:3]}***")
+    
     product.is_salam = not product.is_salam
     product.save()
     
@@ -515,7 +523,21 @@ def delete_city(request, pk):
     if not request.user.is_staff:
         return HttpResponseRedirect(reverse_lazy('price_checker:admin_city_list'))
     
-    city = City.objects.get(pk=pk)
+    # Vérification de sécurité : s'assurer que la ville existe
+    try:
+        city = City.objects.get(pk=pk)
+    except City.DoesNotExist:
+        messages.error(request, 'Ville non trouvée.')
+        return HttpResponseRedirect(reverse_lazy('price_checker:admin_city_list'))
+    
+    # Vérification de sécurité : empêcher la suppression si la ville est utilisée
+    if PriceEntry.objects.filter(city=city).exists() or PriceSubmission.objects.filter(city=city).exists():
+        messages.error(request, 'Impossible de supprimer cette ville car elle est utilisée dans des soumissions ou entrées de prix.')
+        return HttpResponseRedirect(reverse_lazy('price_checker:admin_city_list'))
+    
+    # Log de sécurité pour tracer les suppressions
+    print(f"🔒 Suppression de la ville {pk} ({city.name}) par l'utilisateur {request.user.email[:3]}***")
+    
     city.delete()
     
     messages.success(request, 'La ville a été supprimée avec succès.')
@@ -664,3 +686,42 @@ def get_product_prices(request):
         return JsonResponse({'prices': price_data})
     except ProductModel.DoesNotExist:
         return JsonResponse({'prices': []}) 
+
+def product_detail(request, product_id):
+    """Vue pour afficher les détails d'un produit avec comparaison des prix"""
+    try:
+        product = ProductModel.objects.get(id=product_id)
+        
+        # Récupérer tous les prix individuels pour ce produit, triés par prix croissant
+        price_entries = product.price_entries.all().order_by('price')
+        
+        # Grouper les prix par ville avec les détails de chaque entrée
+        prices_by_city = {}
+        for price_entry in price_entries:
+            city = price_entry.city
+            if city not in prices_by_city:
+                prices_by_city[city] = []
+            
+            prices_by_city[city].append({
+                'price': price_entry.price,
+                'source': price_entry.source if hasattr(price_entry, 'source') else 'BoliBana',
+                'updated_at': price_entry.created_at,
+                'is_active': price_entry.is_active,
+                'supplier_name': price_entry.supplier_name,
+                'supplier_phone': price_entry.supplier_phone,
+                'supplier_address': price_entry.supplier_address,
+                'proof_image': price_entry.proof_image.url if price_entry.proof_image else None
+            })
+        
+        context = {
+            'product': product,
+            'prices_by_city': prices_by_city,
+            'total_prices': price_entries.count(),
+            'cities_count': len(prices_by_city)
+        }
+        
+        return render(request, 'price_checker/product_detail.html', context)
+        
+    except ProductModel.DoesNotExist:
+        messages.error(request, 'Produit non trouvé.')
+        return redirect('price_checker:check_price') 

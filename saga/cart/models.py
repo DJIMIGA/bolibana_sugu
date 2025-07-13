@@ -4,6 +4,7 @@ from django.db.models import Sum, F
 from product.models import Product, Color, Size, ShippingMethod
 from django.conf import settings
 from django.core.exceptions import ValidationError
+from django.utils import timezone
 
 User = get_user_model()
 
@@ -85,6 +86,16 @@ class Cart(models.Model):
             cart = cls.objects.filter(session_key=session_key).first()
             
             if not cart:
+                # Vérifier qu'il n'y a pas trop de paniers anonymes (protection anti-spam)
+                anonymous_carts_count = cls.objects.filter(session_key__isnull=False).count()
+                if anonymous_carts_count > 1000:  # Limite arbitraire
+                    # Supprimer les anciens paniers anonymes
+                    old_carts = cls.objects.filter(
+                        session_key__isnull=False,
+                        created_at__lt=timezone.now() - timezone.timedelta(hours=24)
+                    )
+                    old_carts.delete()
+                
                 cart = cls.objects.create(session_key=session_key)
         
         return cart
