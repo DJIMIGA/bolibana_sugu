@@ -8,6 +8,7 @@ import os
 import sys
 import django
 import logging
+import json
 from datetime import datetime
 
 # Configuration Django
@@ -29,30 +30,80 @@ def test_security_logs():
     # Test 1: Tentative d'accès non autorisé
     print("1. Test: Tentative d'accès non autorisé")
     admin_logger.warning("Tentative d'accès non autorisé depuis l'IP: 192.168.1.100")
+    # Double log pour s'assurer qu'il apparaît
+    log_data = {
+        "timestamp": datetime.now().isoformat(),
+        "level": "WARNING",
+        "module": "test_security_alerts",
+        "message": "Tentative d'accès non autorisé depuis l'IP: 192.168.1.100"
+    }
+    print(json.dumps(log_data), file=sys.stderr)
     
     # Test 2: Requête suspecte
     print("2. Test: Requête suspecte détectée")
     security_logger.warning("Requête suspecte détectée: /admin/ depuis 10.0.0.50")
+    log_data = {
+        "timestamp": datetime.now().isoformat(),
+        "level": "WARNING",
+        "module": "test_security_alerts",
+        "message": "Requête suspecte détectée: /admin/ depuis 10.0.0.50"
+    }
+    print(json.dumps(log_data), file=sys.stderr)
     
     # Test 3: Rate limiting
     print("3. Test: Rate limit dépassé")
     security_logger.warning("Rate limit dépassé pour l'IP: 172.16.0.25")
+    log_data = {
+        "timestamp": datetime.now().isoformat(),
+        "level": "WARNING",
+        "module": "test_security_alerts",
+        "message": "Rate limit dépassé pour l'IP: 172.16.0.25"
+    }
+    print(json.dumps(log_data), file=sys.stderr)
     
     # Test 4: Action sensible
     print("4. Test: Action sensible")
     security_logger.info("Action sensible 'modification_profil_admin' initiée par admin@bolibana.com depuis 192.168.1.100")
+    log_data = {
+        "timestamp": datetime.now().isoformat(),
+        "level": "INFO",
+        "module": "test_security_alerts",
+        "message": "Action sensible 'modification_profil_admin' initiée par admin@bolibana.com depuis 192.168.1.100"
+    }
+    print(json.dumps(log_data), file=sys.stderr)
     
     # Test 5: Erreur de paiement
     print("5. Test: Erreur de paiement")
     payment_logger.error("Erreur de paiement: Tentative de fraude détectée pour la commande #12345")
+    log_data = {
+        "timestamp": datetime.now().isoformat(),
+        "level": "ERROR",
+        "module": "test_security_alerts",
+        "message": "Erreur de paiement: Tentative de fraude détectée pour la commande #12345"
+    }
+    print(json.dumps(log_data), file=sys.stderr)
     
     # Test 6: Activité suspecte
     print("6. Test: Activité suspecte")
     suspicious_logger.warning("Activité suspecte détectée: Tentative de brute force sur /accounts/login/")
+    log_data = {
+        "timestamp": datetime.now().isoformat(),
+        "level": "WARNING",
+        "module": "test_security_alerts",
+        "message": "Activité suspecte détectée: Tentative de brute force sur /accounts/login/"
+    }
+    print(json.dumps(log_data), file=sys.stderr)
     
     # Test 7: IP non autorisée
     print("7. Test: IP non autorisée")
     admin_logger.warning("IP 203.0.113.0 non autorisée pour l'accès admin")
+    log_data = {
+        "timestamp": datetime.now().isoformat(),
+        "level": "WARNING",
+        "module": "test_security_alerts",
+        "message": "IP 203.0.113.0 non autorisée pour l'accès admin"
+    }
+    print(json.dumps(log_data), file=sys.stderr)
     
     print("\n✅ Tests terminés !")
     print("📧 Vérifiez votre email pour les alertes Papertrail")
