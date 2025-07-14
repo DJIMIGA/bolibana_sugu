@@ -626,7 +626,7 @@ LOGGING = {
             'style': '{',
         },
         'json': {
-            'format': '{"timestamp": "%(asctime)s", "level": "%(levelname)s", "module": "%(module)s", "message": "%(message)s", "ip": "%(ip)s", "user": "%(user)s"}',
+            'format': '{"timestamp": "%(asctime)s", "level": "%(levelname)s", "module": "%(module)s", "message": "%(message)s"}',
             'style': '%',
         },
     },
