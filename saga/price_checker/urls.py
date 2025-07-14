@@ -43,6 +43,7 @@ api_urls = [
     path('api/products/', views.get_products_by_brand, name='api_products'),
     path('api/product-details/', views.get_product_details, name='api_product_details'),
     path('api/product-prices/', views.get_product_prices, name='api_product_prices'),
+    path('api/test-security-logs/', views.test_security_logs_view, name='test_security_logs'),
 ]
 
 # Combinaison de toutes les URLs
