@@ -625,6 +625,10 @@ LOGGING = {
             'format': '{levelname} {message}',
             'style': '{',
         },
+        'json': {
+            'format': '{"timestamp": "%(asctime)s", "level": "%(levelname)s", "module": "%(module)s", "message": "%(message)s", "ip": "%(ip)s", "user": "%(user)s"}',
+            'style': '%',
+        },
     },
     'handlers': {
         'file': {
@@ -644,21 +648,46 @@ LOGGING = {
             'class': 'logging.StreamHandler',
             'formatter': 'simple',
         },
+        'heroku_console': {
+            'level': 'INFO',
+            'class': 'logging.StreamHandler',
+            'formatter': 'json',
+        },
+        'security_alert': {
+            'level': 'ERROR',
+            'class': 'logging.StreamHandler',
+            'formatter': 'json',
+        },
     },
     'loggers': {
         'django': {
-            'handlers': ['file', 'console'],
+            'handlers': ['file', 'console', 'heroku_console'],
             'level': 'INFO',
             'propagate': True,
         },
         'security': {
-            'handlers': ['security_file', 'console'],
+            'handlers': ['security_file', 'console', 'security_alert'],
             'level': 'WARNING',
             'propagate': False,
         },
         'admin_access': {
+            'handlers': ['security_file', 'console', 'security_alert'],
+            'level': 'INFO',
+            'propagate': False,
+        },
+        'payment_security': {
+            'handlers': ['security_file', 'console', 'security_alert'],
+            'level': 'WARNING',
+            'propagate': False,
+        },
+        'rate_limit': {
             'handlers': ['security_file', 'console'],
             'level': 'INFO',
+            'propagate': False,
+        },
+        'suspicious_activity': {
+            'handlers': ['security_file', 'console', 'security_alert'],
+            'level': 'WARNING',
             'propagate': False,
         },
     },
