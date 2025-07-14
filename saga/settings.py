@@ -666,27 +666,27 @@ LOGGING = {
             'propagate': True,
         },
         'security': {
-            'handlers': ['security_file', 'console', 'security_alert'],
+            'handlers': ['security_file', 'console', 'heroku_console'],
             'level': 'WARNING',
             'propagate': False,
         },
         'admin_access': {
-            'handlers': ['security_file', 'console', 'security_alert'],
+            'handlers': ['security_file', 'console', 'heroku_console'],
             'level': 'INFO',
             'propagate': False,
         },
         'payment_security': {
-            'handlers': ['security_file', 'console', 'security_alert'],
+            'handlers': ['security_file', 'console', 'heroku_console'],
             'level': 'WARNING',
             'propagate': False,
         },
         'rate_limit': {
-            'handlers': ['security_file', 'console'],
+            'handlers': ['security_file', 'console', 'heroku_console'],
             'level': 'INFO',
             'propagate': False,
         },
         'suspicious_activity': {
-            'handlers': ['security_file', 'console', 'security_alert'],
+            'handlers': ['security_file', 'console', 'heroku_console'],
             'level': 'WARNING',
             'propagate': False,
         },
