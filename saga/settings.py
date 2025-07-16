@@ -515,7 +515,6 @@ INSTALLED_APPS = [
 ]
 
 MIDDLEWARE = [
-    'core.middleware.MaintenanceModeMiddleware',
     'django.middleware.security.SecurityMiddleware',
     'whitenoise.middleware.WhiteNoiseMiddleware',
     'saga.middleware.SecurityMiddleware',  # Middleware de sécurité personnalisé
@@ -526,6 +525,7 @@ MIDDLEWARE = [
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
+    'core.middleware.MaintenanceModeMiddleware',  # Après AuthenticationMiddleware pour accéder à request.user
     'django_otp.middleware.OTPMiddleware',  # Middleware OTP juste après AuthenticationMiddleware
     'saga.middleware.AdminIPRestrictionMiddleware',  # Middleware de restriction IP
     'django.contrib.messages.middleware.MessageMiddleware',
