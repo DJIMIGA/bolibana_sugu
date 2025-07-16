@@ -1,5 +1,6 @@
 {% load static %}
 {% load cart_tags %}
+{% load cookie_tags %}
 <!DOCTYPE html>
 <html lang="fr">
 <head>
@@ -31,6 +32,15 @@
     {% include "suppliers/components/_notyf.html" %}
 
     {% block extra_head %}{% endblock %}
+    
+    <!-- Scripts conditionnels selon le consentement cookies -->
+    {% render_cookie_conditional_scripts as cookie_scripts %}
+    {{ cookie_scripts|safe }}
+    
+    <!-- Test Google Analytics (développement uniquement) -->
+    {% if debug %}
+        <script src="{% static 'js/test-ga.js' %}"></script>
+    {% endif %}
 </head>
 <body>
     {% include 'header.html' %}
@@ -71,5 +81,7 @@
     </script>
 
     {% block extra_scripts %}{% endblock %}
+    {% include "components/_cookie_banner.html" %}
+    <script src="/static/js/cookie-banner.js"></script>
 </body>
 </html>

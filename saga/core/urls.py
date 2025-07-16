@@ -21,4 +21,5 @@ urlpatterns = [
     path('help/center/', views.HelpCenterView.as_view(), name='help_center'),
     path('help/returns/', views.HelpReturnsView.as_view(), name='help_returns'),
     path('help/warranty/', views.HelpWarrantyView.as_view(), name='help_warranty'),
+    path('api/cookie-consent/', views.save_cookie_consent, name='save_cookie_consent'),
 ] 

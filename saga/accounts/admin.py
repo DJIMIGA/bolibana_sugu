@@ -73,6 +73,13 @@ def register_admin_models(admin_site):
     admin_site.register(Shopper, ShopperAdmin)
     admin_site.register(TOTPDevice, TOTPDeviceAdmin)
     admin_site.register(ShippingAddress)
+    
+    # Enregistrement des modèles de l'app core
+    try:
+        from core.admin import register_admin_models as register_core_models
+        register_core_models(admin_site)
+    except ImportError:
+        pass  # Ignorer si l'app core n'est pas disponible
 
 # Enregistrement initial des modèles pour l'admin 2FA
 register_admin_models(admin_site)

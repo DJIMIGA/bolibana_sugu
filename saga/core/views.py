@@ -3,6 +3,9 @@ from django.views.generic import TemplateView
 from .models import SiteConfiguration
 from product.models import ShippingMethod
 from django.db import models
+from django.views.decorators.csrf import csrf_exempt
+from django.http import JsonResponse
+from .models import CookieConsent
 
 class TermsConditionsView(TemplateView):
     """Vue pour la page 'Mentions légales'"""
@@ -152,3 +155,30 @@ class HelpWarrantyView(TemplateView):
         context = super().get_context_data(**kwargs)
         context['config'] = SiteConfiguration.get_config()
         return context 
+
+@csrf_exempt
+def save_cookie_consent(request):
+    if request.method == 'POST':
+        analytics = request.POST.get('analytics') == 'true'
+        marketing = request.POST.get('marketing') == 'true'
+        user = request.user if request.user.is_authenticated else None
+        session_id = request.session.session_key or request.session._get_or_create_session_key()
+
+        print(f"🔍 API - Analytics: {analytics}, Marketing: {marketing}")
+        print(f"🔍 API - User: {user}, Session: {session_id[:10]}...")
+
+        # Mettre à jour ou créer le consentement
+        consent, created = CookieConsent.objects.update_or_create(
+            user=user,
+            session_id=session_id,
+            defaults={
+                'analytics': analytics,
+                'marketing': marketing
+            }
+        )
+        
+        print(f"🔍 API - Consent créé: {created}, ID: {consent.id}")
+        
+        response_data = {'success': True, 'message': 'Consentement enregistré'}
+        return JsonResponse(response_data)
+    return JsonResponse({'error': 'Méthode non autorisée'}, status=405) 

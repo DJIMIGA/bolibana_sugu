@@ -39,6 +39,7 @@ from .payment_config import (
 import logging
 import os
 from datetime import datetime
+from core.utils import track_purchase, track_add_to_cart
 
 
 
@@ -88,6 +89,15 @@ def add_to_cart(request, product_id):
                     
                     # Générer la réponse avec les mises à jour du panier
                     cart_updates = render_cart_updates(request, cart, cart_item)
+                    
+                    # Tracking de l'ajout au panier
+                    track_add_to_cart(
+                        request=request,
+                        product_id=product.id,
+                        product_name=product.title,
+                        quantity=quantity,
+                        price=str(product.price)
+                    )
                     
                     return HttpResponse(messages_html + cart_updates)
                 except Exception as e:
@@ -240,6 +250,16 @@ def checkout(request):
         'payment_required': payment_required,  # Si le paiement est obligatoire
         'is_mixed_cart': is_mixed_cart,  # Si le panier est mixte
     }
+    
+    # Tracking de l'achat
+    track_purchase(
+        request=request,
+        order_id=order.id,
+        total_amount=str(order.total_amount),
+        currency='XOF',
+        items_count=order.items.count()
+    )
+    
     return render(request, 'checkout.html', context)
 
 

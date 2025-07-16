@@ -17,8 +17,8 @@ sys.path.insert(0, project_root)
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'saga.settings')
 django.setup()
 
-from price_checker.models import PriceSubmission, PriceEntry
-from product.models import Product
+from saga.price_checker.models import PriceSubmission, PriceEntry
+from saga.product.models import Product
 
 def create_test_prices():
     """Créer des prix de test pour différents produits"""

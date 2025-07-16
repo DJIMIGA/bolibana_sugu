@@ -1,0 +1,37 @@
+<div id="cookie-banner" class="fixed bottom-0 left-0 w-full z-50 flex justify-center items-center bg-gradient-to-r from-green-500 via-yellow-400 to-red-500 text-white py-4 px-2 shadow-lg transition-all duration-300" style="display: none;">
+  <div class="flex flex-col sm:flex-row items-center gap-3 sm:gap-6 w-full max-w-3xl mx-auto">
+    <span class="text-sm sm:text-base font-medium flex-1 text-center sm:text-left">
+      Ce site utilise des cookies pour améliorer votre expérience. En continuant, vous acceptez notre <a href="{% url 'core:terms_conditions' %}#cookies" class="underline text-yellow-200 hover:text-yellow-400 transition">politique de cookies</a>.
+    </span>
+    <div class="flex gap-2">
+      <button id="cookie-accept-btn" class="bg-green-700 hover:bg-green-800 text-white font-bold py-2 px-4 rounded-lg shadow transition">J'accepte</button>
+      <button id="cookie-reject-btn" class="bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded-lg shadow transition">Tout refuser</button>
+      <button id="cookie-preferences-btn" class="bg-yellow-500 hover:bg-yellow-600 text-white font-bold py-2 px-4 rounded-lg shadow transition">Gérer les préférences</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal de gestion des préférences cookies -->
+<div id="cookie-preferences-modal" class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-40 hidden">
+  <div class="bg-white rounded-xl shadow-lg p-8 w-full max-w-lg mx-2">
+    <h2 class="text-xl font-bold text-gray-900 mb-4">Gérer mes préférences cookies</h2>
+    <form id="cookie-preferences-form" class="space-y-4">
+      <div class="flex items-center justify-between">
+        <span class="font-medium text-gray-800">Cookies essentiels</span>
+        <span class="text-green-600 font-semibold">Toujours actifs</span>
+      </div>
+      <div class="flex items-center justify-between">
+        <label for="analytics-cookies" class="font-medium text-gray-800">Cookies analytiques</label>
+        <input type="checkbox" id="analytics-cookies" name="analytics" class="form-checkbox h-5 w-5 text-yellow-500 rounded focus:ring-yellow-400">
+      </div>
+      <div class="flex items-center justify-between">
+        <label for="marketing-cookies" class="font-medium text-gray-800">Cookies marketing</label>
+        <input type="checkbox" id="marketing-cookies" name="marketing" class="form-checkbox h-5 w-5 text-red-500 rounded focus:ring-red-400">
+      </div>
+      <div class="flex justify-end gap-2 mt-6">
+        <button type="button" id="cookie-modal-cancel" class="bg-gray-200 hover:bg-gray-300 text-gray-800 font-bold py-2 px-4 rounded-lg transition">Annuler</button>
+        <button type="submit" class="bg-green-700 hover:bg-green-800 text-white font-bold py-2 px-4 rounded-lg transition">Enregistrer</button>
+      </div>
+    </form>
+  </div>
+</div> 

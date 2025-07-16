@@ -21,6 +21,7 @@ import json
 import logging
 import re
 import unicodedata
+from core.utils import track_search
 
 logger = logging.getLogger(__name__)
 
@@ -1510,6 +1511,13 @@ def search(request):
         # Utiliser la nouvelle fonction de recherche améliorée
         search_query = create_search_query(query)
         products = Product.objects.filter(search_query).select_related('category', 'supplier').prefetch_related('images')
+    
+    # Tracking de la recherche
+    track_search(
+        request=request,
+        search_term=query,
+        results_count=products.count() if products else 0
+    )
     
     context = {
         'query': query,

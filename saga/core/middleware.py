@@ -9,7 +9,7 @@ import os
 from django.shortcuts import render
 from django.conf import settings
 from django.http import HttpResponse
-from .models import CookieConsent
+from .models import CookieConsent, SiteConfiguration
 from .utils import track_page_view
 
 class CookieConsentMiddleware:
@@ -63,14 +63,20 @@ class AnalyticsMiddleware:
 
 class MaintenanceModeMiddleware:
     """
-    Affiche une page de maintenance si MAINTENANCE_MODE=true,
+    Affiche une page de maintenance si maintenance_mode est activé dans la config du site,
     sauf pour les superusers/admins connectés.
+    Fallback sur la variable d'environnement MAINTENANCE_MODE si la base n'est pas accessible.
     """
     def __init__(self, get_response):
         self.get_response = get_response
 
     def __call__(self, request):
-        maintenance_mode = os.environ.get('MAINTENANCE_MODE', 'false').lower() == 'true'
+        try:
+            config = SiteConfiguration.get_config()
+            maintenance_mode = getattr(config, 'maintenance_mode', False)
+        except Exception:
+            # Fallback Heroku (ex: migration KO)
+            maintenance_mode = os.environ.get('MAINTENANCE_MODE', 'false').lower() == 'true'
         # Autoriser les superusers/admins à accéder au site même en maintenance
         if maintenance_mode and not (request.user.is_authenticated and (request.user.is_superuser or request.user.is_staff)):
             return render(request, 'core/maintenance.html', status=503)

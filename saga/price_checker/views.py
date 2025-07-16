@@ -1,3 +1,8 @@
+import json
+import logging
+from datetime import datetime
+import sys
+
 from django.shortcuts import render, get_object_or_404
 from django.views.generic import ListView, CreateView, DeleteView, TemplateView, UpdateView, DetailView
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
@@ -70,7 +75,7 @@ def check_price(request):
                         'supplier_name': price_entry.supplier_name,
                         'supplier_phone': price_entry.supplier_phone,
                         'supplier_address': price_entry.supplier_address,
-                        'updated_at': price_entry.created_at,
+                            'updated_at': price_entry.created_at,
                         'is_active': price_entry.is_active,
                         'proof_image': price_entry.proof_image.url if price_entry.proof_image else None
                     })
@@ -725,3 +730,68 @@ def product_detail(request, product_id):
     except ProductModel.DoesNotExist:
         messages.error(request, 'Produit non trouvé.')
         return redirect('price_checker:check_price') 
+
+def test_security_logs_view(request):
+    """Vue de test pour générer des logs de sécurité depuis l'application web"""
+    
+    # Configuration des loggers
+    security_logger = logging.getLogger('security')
+    admin_logger = logging.getLogger('admin_access')
+    payment_logger = logging.getLogger('payment_security')
+    suspicious_logger = logging.getLogger('suspicious_activity')
+    
+    # Test 1: Tentative d'accès non autorisé
+    admin_logger.warning("Tentative d'accès non autorisé depuis l'IP: 192.168.1.100")
+    log_data = {
+        "timestamp": datetime.now().isoformat(),
+        "level": "WARNING",
+        "module": "price_checker.views",
+        "message": "Tentative d'accès non autorisé depuis l'IP: 192.168.1.100"
+    }
+    print(json.dumps(log_data), file=sys.stderr)
+    
+    # Test 2: Requête suspecte
+    security_logger.warning("Requête suspecte détectée: /admin/ depuis 10.0.0.50")
+    log_data = {
+        "timestamp": datetime.now().isoformat(),
+        "level": "WARNING",
+        "module": "price_checker.views",
+        "message": "Requête suspecte détectée: /admin/ depuis 10.0.0.50"
+    }
+    print(json.dumps(log_data), file=sys.stderr)
+    
+    # Test 3: Rate limiting
+    security_logger.warning("Rate limit dépassé pour l'IP: 172.16.0.25")
+    log_data = {
+        "timestamp": datetime.now().isoformat(),
+        "level": "WARNING",
+        "module": "price_checker.views",
+        "message": "Rate limit dépassé pour l'IP: 172.16.0.25"
+    }
+    print(json.dumps(log_data), file=sys.stderr)
+    
+    # Test 4: Erreur de paiement
+    payment_logger.error("Erreur de paiement: Tentative de fraude détectée pour la commande #12345")
+    log_data = {
+        "timestamp": datetime.now().isoformat(),
+        "level": "ERROR",
+        "module": "price_checker.views",
+        "message": "Erreur de paiement: Tentative de fraude détectée pour la commande #12345"
+    }
+    print(json.dumps(log_data), file=sys.stderr)
+    
+    # Test 5: Activité suspecte
+    suspicious_logger.warning("Activité suspecte détectée: Tentative de brute force sur /accounts/login/")
+    log_data = {
+        "timestamp": datetime.now().isoformat(),
+        "level": "WARNING",
+        "module": "price_checker.views",
+        "message": "Activité suspecte détectée: Tentative de brute force sur /accounts/login/"
+    }
+    print(json.dumps(log_data), file=sys.stderr)
+    
+    return JsonResponse({
+        "status": "success",
+        "message": "Logs de sécurité générés avec succès",
+        "logs_sent": 5
+    }) 
