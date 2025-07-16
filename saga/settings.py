@@ -515,10 +515,13 @@ INSTALLED_APPS = [
 ]
 
 MIDDLEWARE = [
+    'core.middleware.MaintenanceModeMiddleware',
     'django.middleware.security.SecurityMiddleware',
     'whitenoise.middleware.WhiteNoiseMiddleware',
     'saga.middleware.SecurityMiddleware',  # Middleware de sécurité personnalisé
     'django.contrib.sessions.middleware.SessionMiddleware',
+    'core.middleware.CookieConsentMiddleware',  # Middleware pour le consentement cookies
+    'core.middleware.AnalyticsMiddleware',  # Middleware pour le tracking automatique
     'corsheaders.middleware.CorsMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
