@@ -64,7 +64,7 @@ class AnalyticsMiddleware:
 class MaintenanceModeMiddleware:
     """
     Affiche une page de maintenance si maintenance_mode est activé dans la config du site,
-    sauf pour les superusers/admins connectés.
+    sauf pour les superusers/admins connectés et les URLs d'authentification.
     Fallback sur la variable d'environnement MAINTENANCE_MODE si la base n'est pas accessible.
     """
     def __init__(self, get_response):
@@ -77,7 +77,33 @@ class MaintenanceModeMiddleware:
         except Exception:
             # Fallback Heroku (ex: migration KO)
             maintenance_mode = os.environ.get('MAINTENANCE_MODE', 'false').lower() == 'true'
-        # Autoriser les superusers/admins à accéder au site même en maintenance
-        if maintenance_mode and not (request.user.is_authenticated and (request.user.is_superuser or request.user.is_staff)):
-            return render(request, 'core/maintenance.html', status=503)
-        return self.get_response(request) 
+        
+        # Si le mode maintenance n'est pas activé, continuer normalement
+        if not maintenance_mode:
+            return self.get_response(request)
+        
+        # URLs autorisées même en mode maintenance
+        allowed_urls = [
+            '/accounts/login/',  # Page de connexion
+            '/accounts/logout/',  # Page de déconnexion
+            '/accounts/2fa/setup/',  # Configuration 2FA
+            '/accounts/2fa/verify/',  # Vérification 2FA
+            '/bismillah/',  # Admin Django
+            '/bismillah/login/',  # Login admin Django
+            '/bismillah/logout/',  # Logout admin Django
+            '/static/',  # Fichiers statiques
+            '/media/',  # Fichiers médias
+        ]
+        
+        # Vérifier si l'URL actuelle est autorisée
+        current_path = request.path
+        is_allowed_url = any(current_path.startswith(url) for url in allowed_urls)
+        
+        # Autoriser l'accès si :
+        # 1. L'utilisateur est connecté ET est admin/staff, OU
+        # 2. L'URL est dans la liste des URLs autorisées
+        if (request.user.is_authenticated and (request.user.is_superuser or request.user.is_staff)) or is_allowed_url:
+            return self.get_response(request)
+        
+        # Sinon, afficher la page de maintenance
+        return render(request, 'core/maintenance.html', status=503) 
