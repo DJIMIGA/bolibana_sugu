@@ -4,18 +4,18 @@ Configuration de Gunicorn pour l'application Django.
 import multiprocessing
 import os
 
-# Nombre de workers réduit pour économiser la mémoire
-workers = 2  # Réduit de 4 à 2 workers
+# Nombre de workers optimisé pour Heroku
+workers = 1  # Réduit à 1 worker pour éviter les timeouts
 
 # Configuration des workers
-worker_class = 'gthread'
-threads = 2
+worker_class = 'sync'  # Plus simple et plus rapide
+threads = 1
 worker_connections = 1000
 
-# Timeouts
-timeout = 30
+# Timeouts réduits pour éviter H12
+timeout = 25  # Réduit de 30 à 25 secondes
 keepalive = 2
-graceful_timeout = 30
+graceful_timeout = 25
 
 # Logging
 accesslog = '-'
@@ -59,5 +59,5 @@ secure_scheme_headers = {
 }
 
 # Configuration du worker
-worker_timeout = 30
+worker_timeout = 25
 worker_abort_on_memory_error = True 
