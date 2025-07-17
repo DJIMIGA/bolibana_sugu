@@ -121,25 +121,34 @@ def render_marketing_scripts(context):
     if not request.cookie_consent.marketing:
         return ""
     
-    # Ici vous pouvez ajouter vos scripts marketing
-    # Exemple avec Facebook Pixel
-    return """
+    # Récupérer l'ID Facebook Pixel depuis la configuration
+    try:
+        from core.models import SiteConfiguration
+        config = SiteConfiguration.get_config()
+        pixel_id = config.facebook_pixel_id
+        if not pixel_id:
+            return ""
+    except Exception as e:
+        print(f"Erreur lors du chargement du Facebook Pixel: {e}")
+        return ""
+    
+    return f"""
     <!-- Facebook Pixel -->
     <script>
         !function(f,b,e,v,n,t,s)
-        {if(f.fbq)return;n=f.fbq=function(){n.callMethod?
-        n.callMethod.apply(n,arguments):n.queue.push(arguments)};
+        {{if(f.fbq)return;n=f.fbq=function(){{n.callMethod?
+        n.callMethod.apply(n,arguments):n.queue.push(arguments)}};
         if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';
         n.queue=[];t=b.createElement(e);t.async=!0;
         t.src=v;s=b.getElementsByTagName(e)[0];
-        s.parentNode.insertBefore(t,s)}(window, document,'script',
+        s.parentNode.insertBefore(t,s)}}(window, document,'script',
         'https://connect.facebook.net/en_US/fbevents.js');
-        fbq('init', 'VOTRE_PIXEL_ID'); // Remplacez par votre ID
+        fbq('init', '{pixel_id}');
         fbq('track', 'PageView');
     </script>
     <noscript>
         <img height="1" width="1" style="display:none"
-        src="https://www.facebook.com/tr?id=VOTRE_PIXEL_ID&ev=PageView&noscript=1"/>
+        src="https://www.facebook.com/tr?id={pixel_id}&ev=PageView&noscript=1"/>
     </noscript>
     """
 

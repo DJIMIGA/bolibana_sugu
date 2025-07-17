@@ -6,6 +6,38 @@ class SiteConfigurationAdmin(admin.ModelAdmin):
     list_display = ['site_name', 'company_name', 'email', 'phone_number', 'maintenance_mode']
     list_editable = ['maintenance_mode']
     search_fields = ['site_name', 'company_name', 'email']
+    fieldsets = (
+        ('Informations générales', {
+            'fields': ('site_name', 'phone_number', 'email', 'address', 'rccm')
+        }),
+        ('Réseaux sociaux', {
+            'fields': ('whatsapp_number', 'facebook_url', 'instagram_url', 'twitter_url', 'tiktok_url')
+        }),
+        ('Informations légales', {
+            'fields': ('company_name', 'company_type', 'company_address', 'ninea_number')
+        }),
+        ('Métadonnées', {
+            'fields': ('meta_description', 'meta_keywords')
+        }),
+        ('Configuration du site', {
+            'fields': ('maintenance_mode', 'google_analytics_id', 'facebook_pixel_id')
+        }),
+        ('Horaires et services', {
+            'fields': ('opening_hours', 'opening_hours_detailed', 'delivery_info', 'return_policy')
+        }),
+        ('Configuration visuelle', {
+            'fields': ('logo_url', 'favicon_url')
+        }),
+        ('Contenu - À propos', {
+            'fields': ('about_story_title', 'about_story_content', 'about_values_title', 'about_values_content')
+        }),
+        ('Contenu - Services', {
+            'fields': ('service_loyalty_title', 'service_loyalty_content', 'service_express_title', 'service_express_content')
+        }),
+        ('Contenu - Assistance', {
+            'fields': ('help_center_title', 'help_center_content', 'help_returns_title', 'help_returns_content', 'help_warranty_title', 'help_warranty_content')
+        }),
+    )
     
     def has_add_permission(self, request):
         # Permettre seulement une configuration

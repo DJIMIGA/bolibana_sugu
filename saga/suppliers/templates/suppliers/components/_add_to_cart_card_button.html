@@ -106,6 +106,27 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 </script>
 
+{% if request.cookie_consent and request.cookie_consent.marketing %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const addToCartForm = document.querySelector('#add-to-cart-{{ product.id }} form');
+    if (addToCartForm) {
+        addToCartForm.addEventListener('htmx:afterRequest', function(evt) {
+            if (evt.detail.successful && typeof fbq !== 'undefined') {
+                fbq('track', 'AddToCart', {
+                    value: {{ product.price|floatformat:2 }},
+                    currency: 'EUR',
+                    content_ids: [{{ product.id }}],
+                    content_type: 'product',
+                    content_name: '{{ product.title|escapejs }}'
+                });
+            }
+        });
+    }
+});
+</script>
+{% endif %}
+
 <style>
 .add-to-cart-component button {
     @apply transition-all duration-300 ease-in-out;

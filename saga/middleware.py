@@ -72,7 +72,7 @@ class SecurityMiddleware:
         """Vérifie si l'IP est blacklistée"""
         # Liste d'IPs blacklistées (à étendre selon vos besoins)
         blacklisted_ips = [
-            # Ajouter des IPs blacklistées ici
+            '194.26.192.144',  # IP malveillante détectée le 17/07/2025 - tentative d'accès à .env
         ]
         return ip in blacklisted_ips
     
