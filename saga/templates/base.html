@@ -81,7 +81,11 @@
     <!-- Script de test Facebook Pixel (développement uniquement) -->
     {% if debug %}
         <script src="{% static 'js/fb-pixel-test.js' %}"></script>
+        <script src="{% static 'js/fb-pixel-debug.js' %}"></script>
     {% endif %}
+    
+    <!-- Script de force test Facebook Pixel (toujours disponible) -->
+    <script src="{% static 'js/fb-pixel-force-test.js' %}"></script>
     
     <!-- 
     💡 Pour vérifier les événements Facebook Pixel en temps réel :
