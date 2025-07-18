@@ -2,6 +2,21 @@
 {% load static %}
 {% block content %}
 
+<!-- Facebook Pixel InitiateCheckout Event -->
+{% if request.cookie_consent and request.cookie_consent.marketing %}
+<script>
+  if (typeof fbq !== 'undefined') {
+    fbq('track', 'InitiateCheckout', {
+      value: {{ cart.get_total_price|floatformat:2 }},
+      currency: 'XOF',
+      num_items: {{ cart.cart_items.count }},
+      content_ids: [{% for item in cart.cart_items.all %}{{ item.product.id }}{% if not forloop.last %},{% endif %}{% endfor %}],
+      content_type: 'product'
+    });
+  }
+</script>
+{% endif %}
+
 <div class="relative min-h-screen">
   <!-- Fond avec motif subtil -->
   <div class="absolute inset-0 bg-gradient-to-br from-green-50 via-yellow-50 to-white opacity-90"></div>

@@ -88,9 +88,12 @@ class MaintenanceModeMiddleware:
             '/accounts/logout/',  # Page de déconnexion
             '/accounts/2fa/setup/',  # Configuration 2FA
             '/accounts/2fa/verify/',  # Vérification 2FA
-            '/bismillah/',  # Admin Django
-            '/bismillah/login/',  # Login admin Django
-            '/bismillah/logout/',  # Logout admin Django
+            '/bismillah/',  # Admin Django (développement local)
+            '/bismillah/login/',  # Login admin Django (développement local)
+            '/bismillah/logout/',  # Logout admin Django (développement local)
+            f'/{settings.ADMIN_URL}',  # Admin Django (production)
+            f'/{settings.ADMIN_URL}login/',  # Login admin Django (production)
+            f'/{settings.ADMIN_URL}logout/',  # Logout admin Django (production)
             '/static/',  # Fichiers statiques
             '/media/',  # Fichiers médias
         ]

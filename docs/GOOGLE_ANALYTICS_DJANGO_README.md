@@ -93,7 +93,39 @@ return f"""
 
 ---
 
-## 9. Pour aller plus loin
+## 9. Événements Implémentés
+
+### **Événements E-commerce**
+- ✅ **PageView** : Vue de page automatique
+- ✅ **ViewContent** : Vue de produit
+- ✅ **AddToCart** : Ajout au panier
+- ✅ **ViewCart** : Vue du panier
+- ✅ **InitiateCheckout** : Début de commande
+- ✅ **Purchase** : Achat finalisé
+
+### **Événements d'Authentification**
+- ✅ **User_Registration** : Inscription
+- ✅ **Login** : Connexion
+- ✅ **Logout** : Déconnexion
+
+### **Événements de Recherche**
+- ✅ **Search** : Recherche de produits
+
+### **Événements d'Engagement (Côté Client)**
+- ✅ **Scroll** : Défilement de page
+- ✅ **Engagement** : Temps passé
+- ✅ **Button_Click** : Clics sur boutons
+- ✅ **Link_Click** : Clics sur liens
+- ✅ **Form_Submit** : Soumissions de formulaires
+- ✅ **Product_Image_Click** : Clics sur images produits
+- ✅ **Favorite_Toggle** : Ajout/suppression favoris
+- ✅ **JavaScript_Error** : Erreurs JavaScript
+- ✅ **Page_Performance** : Performance de page
+
+### **Documentation Complète**
+Voir `docs/GOOGLE_ANALYTICS_EVENTS_COMPLETE.md` pour la documentation détaillée de tous les événements.
+
+## 10. Pour aller plus loin
 - **Documenter le flux de consentement** (cookie banner, stockage du choix, etc.).
 - **Ajouter d’autres scripts conditionnels** (Facebook Pixel, etc.) dans le même tag custom.
 - **Vérifier la conformité RGPD régulièrement**.

@@ -39,7 +39,7 @@ from .payment_config import (
 import logging
 import os
 from datetime import datetime
-from core.utils import track_purchase, track_add_to_cart
+from core.utils import track_purchase, track_add_to_cart, track_view_cart, track_initiate_checkout
 
 
 
@@ -131,6 +131,15 @@ def cart(request):
         'cart_items': cart_items,
     }
     
+    # Tracking de la vue du panier
+    track_view_cart(
+        request=request,
+        total_amount=str(cart.get_total_price()),
+        currency='XOF',
+        items_count=cart.cart_items.count(),
+        cart_id=cart.id
+    )
+    
     # Si c'est une requête AJAX/HTMX, retourner juste le composant
     if request.headers.get('HX-Request'):
         html = render_to_string('cart/components/_cart_content.html', context, request=request)
@@ -168,6 +177,18 @@ def checkout(request):
             'classic_total': classic_total,
             'salam_total': salam_total,
         }
+        
+        # Tracking du début de commande mixte
+        total_amount = classic_total + salam_total
+        total_items = classic_items.count() + salam_items.count()
+        track_initiate_checkout(
+            request=request,
+            total_amount=str(total_amount),
+            currency='XOF',
+            items_count=total_items,
+            cart_id=cart.id
+        )
+        
         return render(request, 'checkout_mixed.html', context)
     
     # Valider le panier avant d'afficher la page de commande
@@ -251,13 +272,13 @@ def checkout(request):
         'is_mixed_cart': is_mixed_cart,  # Si le panier est mixte
     }
     
-    # Tracking de l'achat
-    track_purchase(
+    # Tracking du début de commande
+    track_initiate_checkout(
         request=request,
-        order_id=order.id,
-        total_amount=str(order.total_amount),
+        total_amount=str(order_total),
         currency='XOF',
-        items_count=order.items.count()
+        items_count=total_items,
+        cart_id=cart.id
     )
     
     return render(request, 'checkout.html', context)

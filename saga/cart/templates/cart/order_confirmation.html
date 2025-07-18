@@ -2,6 +2,22 @@
 {% load static %}
 
 {% block content %}
+<!-- Facebook Pixel Purchase Event -->
+{% if request.cookie_consent and request.cookie_consent.marketing %}
+<script>
+  if (typeof fbq !== 'undefined') {
+    fbq('track', 'Purchase', {
+      value: {{ order.total|floatformat:2 }},
+      currency: 'EUR',
+      content_ids: [{% for item in items %}{{ item.product.id }}{% if not forloop.last %},{% endif %}{% endfor %}],
+      content_type: 'product',
+      num_items: {{ items.count }},
+      order_id: '{{ order.order_number }}'
+    });
+  }
+</script>
+{% endif %}
+
 <div class="max-w-3xl mx-auto px-4 py-8">
     <div class="text-center mb-8">
         <div class="inline-flex items-center justify-center w-16 h-16 rounded-full bg-green-100 mb-4">

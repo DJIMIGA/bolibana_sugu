@@ -91,6 +91,22 @@
 {% endblock %}
 
 {% block content %}
+<!-- Facebook Pixel ViewContent Event -->
+{% if request.cookie_consent and request.cookie_consent.marketing %}
+<script>
+  if (typeof fbq !== 'undefined') {
+    fbq('track', 'ViewContent', {
+      value: {{ product.price|floatformat:2 }},
+      currency: 'XOF',
+      content_ids: [{{ product.id }}],
+      content_type: 'product',
+      content_name: '{{ product.title|escapejs }}',
+      content_category: '{{ product.category.name|escapejs }}'
+    });
+  }
+</script>
+{% endif %}
+
 <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
     <!-- Fil d'Ariane -->
   <div class="mb-8">

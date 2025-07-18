@@ -29,6 +29,7 @@ from .forms import UserForm, ShippingAddressForm, PasswordChangeForm, CustomPass
     CustomSetPasswordForm, LoginForm, TwoFactorVerificationForm, UpdateProfileForm
 from django.core.mail import send_mail
 from django.contrib.auth.views import PasswordResetView, PasswordResetConfirmView
+from core.utils import track_user_registration, track_login, track_logout
 
 # Import de la fonction de migration du panier
 try:
@@ -167,6 +168,10 @@ def signup(request):
                 old_session_key = request.session.session_key
             user = form.save()
             login(request, user)
+            
+            # Tracking de l'inscription
+            track_user_registration(request, method='email', source='website')
+            
             # Migrer le panier anonyme vers le compte utilisateur
             try:
                 migrate_anonymous_cart(None, request, user, old_session_key=old_session_key)
@@ -231,6 +236,9 @@ class LoginView(AuthLoginView):
                 old_session_key = self.request.session.session_key
             auth_login(self.request, user)
             
+            # Tracking de la connexion
+            track_login(self.request, method='email', source='website')
+            
             # Migrer le panier anonyme vers le compte utilisateur
             try:
                 migrate_anonymous_cart(None, self.request, user, old_session_key=old_session_key)
@@ -250,6 +258,9 @@ class LoginView(AuthLoginView):
 
 
 def logout_user(request):
+    # Tracking de la déconnexion
+    track_logout(request)
+    
     logout(request)
     return redirect('suppliers:supplier_index')
 

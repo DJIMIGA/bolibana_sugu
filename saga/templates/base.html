@@ -8,6 +8,36 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}BoliBana - SuGu{% endblock %}</title>
 
+    <!-- Métadonnées SEO -->
+    {% if site_meta_description %}
+        <meta name="description" content="{{ site_meta_description }}">
+    {% endif %}
+    {% if site_meta_keywords %}
+        <meta name="keywords" content="{{ site_meta_keywords }}">
+    {% endif %}
+    
+    <!-- Open Graph / Facebook -->
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="{{ request.build_absolute_uri }}">
+    <meta property="og:title" content="{% block og_title %}{{ site_name }}{% endblock %}">
+    {% if site_meta_description %}
+        <meta property="og:description" content="{{ site_meta_description }}">
+    {% endif %}
+    {% if site_logo_url %}
+        <meta property="og:image" content="{{ site_logo_url }}">
+    {% endif %}
+
+    <!-- Twitter -->
+    <meta property="twitter:card" content="summary_large_image">
+    <meta property="twitter:url" content="{{ request.build_absolute_uri }}">
+    <meta property="twitter:title" content="{% block twitter_title %}{{ site_name }}{% endblock %}">
+    {% if site_meta_description %}
+        <meta property="twitter:description" content="{{ site_meta_description }}">
+    {% endif %}
+    {% if site_logo_url %}
+        <meta property="twitter:image" content="{{ site_logo_url }}">
+    {% endif %}
+
     <!-- Favicon -->
     <link rel="icon" type="image/x-icon" href="{% static 'src/images/favicon.ico' %}">
     <link rel="icon" type="image/png" href="{% static 'icons/logo-sugu.png' %}">
@@ -41,6 +71,9 @@
     {% if debug %}
         <script src="{% static 'js/test-ga.js' %}"></script>
     {% endif %}
+    
+    <!-- Événements d'engagement Google Analytics -->
+    <script src="{% static 'js/analytics-events.js' %}"></script>
 </head>
 <body>
     {% include 'header.html' %}

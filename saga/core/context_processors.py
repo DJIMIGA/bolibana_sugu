@@ -41,6 +41,10 @@ def site_config(request):
             'site_logo_url': config.logo_url,
             'site_favicon_url': config.favicon_url,
             
+            # Métadonnées SEO
+            'site_meta_description': config.meta_description,
+            'site_meta_keywords': config.meta_keywords,
+            
             # Contenu personnalisable du footer - À propos
             'about_story_title': config.about_story_title,
             'about_story_content': config.about_story_content,
@@ -99,6 +103,10 @@ def site_config(request):
             # Configuration visuelle
             'site_logo_url': '',
             'site_favicon_url': '',
+            
+            # Métadonnées SEO
+            'site_meta_description': '',
+            'site_meta_keywords': '',
             
             # Contenu personnalisable du footer - À propos
             'about_story_title': 'Notre histoire',

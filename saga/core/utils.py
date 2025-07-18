@@ -71,10 +71,45 @@ def get_tracking_data(request, event_type='page_view', **kwargs):
             'quantity': kwargs.get('quantity'),
             'price': kwargs.get('price'),
         })
+    elif event_type == 'view_content':
+        tracking_data.update({
+            'product_id': kwargs.get('product_id'),
+            'product_name': kwargs.get('product_name'),
+            'category': kwargs.get('category'),
+            'price': kwargs.get('price'),
+        })
+    elif event_type == 'initiate_checkout':
+        tracking_data.update({
+            'total_amount': kwargs.get('total_amount'),
+            'currency': kwargs.get('currency', 'XOF'),
+            'items_count': kwargs.get('items_count'),
+            'cart_id': kwargs.get('cart_id'),
+        })
+    elif event_type == 'view_cart':
+        tracking_data.update({
+            'total_amount': kwargs.get('total_amount'),
+            'currency': kwargs.get('currency', 'XOF'),
+            'items_count': kwargs.get('items_count'),
+            'cart_id': kwargs.get('cart_id'),
+        })
     elif event_type == 'search':
         tracking_data.update({
             'search_term': kwargs.get('search_term'),
             'results_count': kwargs.get('results_count'),
+        })
+    elif event_type == 'user_registration':
+        tracking_data.update({
+            'method': kwargs.get('method', 'email'),  # email, social, etc.
+            'source': kwargs.get('source', 'website'),
+        })
+    elif event_type == 'login':
+        tracking_data.update({
+            'method': kwargs.get('method', 'email'),
+            'source': kwargs.get('source', 'website'),
+        })
+    elif event_type == 'logout':
+        tracking_data.update({
+            'session_duration': kwargs.get('session_duration'),
         })
     
     # Anonymiser l'IP si analytics seulement
@@ -193,10 +228,96 @@ def track_add_to_cart(request, product_id, product_name, quantity, price):
                         quantity=quantity,
                         price=price)
 
+def track_view_content(request, product_id, product_name, category=None, price=None):
+    """
+    Track la vue d'un produit selon le consentement.
+    """
+    send_analytics_event(request, 'view_content',
+                        product_id=product_id,
+                        product_name=product_name,
+                        category=category,
+                        price=price)
+    
+    send_marketing_event(request, 'ViewContent',
+                        product_id=product_id,
+                        product_name=product_name,
+                        category=category,
+                        price=price)
+
+def track_initiate_checkout(request, total_amount, currency='XOF', items_count=1, cart_id=None):
+    """
+    Track le début de commande selon le consentement.
+    """
+    send_analytics_event(request, 'initiate_checkout',
+                        total_amount=total_amount,
+                        currency=currency,
+                        items_count=items_count,
+                        cart_id=cart_id)
+    
+    send_marketing_event(request, 'InitiateCheckout',
+                        total_amount=total_amount,
+                        currency=currency,
+                        items_count=items_count,
+                        cart_id=cart_id)
+
+def track_view_cart(request, total_amount, currency='XOF', items_count=1, cart_id=None):
+    """
+    Track la vue du panier selon le consentement.
+    """
+    send_analytics_event(request, 'view_cart',
+                        total_amount=total_amount,
+                        currency=currency,
+                        items_count=items_count,
+                        cart_id=cart_id)
+    
+    send_marketing_event(request, 'ViewCart',
+                        total_amount=total_amount,
+                        currency=currency,
+                        items_count=items_count,
+                        cart_id=cart_id)
+
 def track_search(request, search_term, results_count):
     """
     Track une recherche selon le consentement.
     """
     send_analytics_event(request, 'search',
                         search_term=search_term,
-                        results_count=results_count) 
+                        results_count=results_count)
+    
+    send_marketing_event(request, 'Search',
+                        search_term=search_term,
+                        results_count=results_count)
+
+def track_user_registration(request, method='email', source='website'):
+    """
+    Track l'inscription d'un utilisateur selon le consentement.
+    """
+    send_analytics_event(request, 'user_registration',
+                        method=method,
+                        source=source)
+    
+    send_marketing_event(request, 'CompleteRegistration',
+                        method=method,
+                        source=source)
+
+def track_login(request, method='email', source='website'):
+    """
+    Track la connexion d'un utilisateur selon le consentement.
+    """
+    send_analytics_event(request, 'login',
+                        method=method,
+                        source=source)
+    
+    send_marketing_event(request, 'Login',
+                        method=method,
+                        source=source)
+
+def track_logout(request, session_duration=None):
+    """
+    Track la déconnexion d'un utilisateur selon le consentement.
+    """
+    send_analytics_event(request, 'logout',
+                        session_duration=session_duration)
+    
+    send_marketing_event(request, 'Logout',
+                        session_duration=session_duration) 

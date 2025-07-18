@@ -21,7 +21,7 @@ import json
 import logging
 import re
 import unicodedata
-from core.utils import track_search
+from core.utils import track_search, track_view_content
 
 logger = logging.getLogger(__name__)
 
@@ -674,6 +674,15 @@ class SupplierDetailView(DetailView):
             ).exclude(id=product.phone.id)[:4]
             context['similar_phones'] = similar_phones
         
+        # Tracking de la vue de produit
+        track_view_content(
+            request=self.request,
+            product_id=product.id,
+            product_name=product.title,
+            category=product.category.name,
+            price=str(product.price)
+        )
+        
         return context
 
 
@@ -832,6 +841,15 @@ class PhoneDetailView(DetailView):
             'breadcrumbs': self.get_breadcrumbs(product),
             'main_categories': main_categories
         })
+        
+        # Tracking de la vue de produit
+        track_view_content(
+            request=self.request,
+            product_id=product.id,
+            product_name=product.title,
+            category=product.category.name,
+            price=str(product.price)
+        )
         
         return context
 
@@ -995,6 +1013,15 @@ class ClothingDetailView(DetailView):
             'clothing': clothing  # Ajouter l'objet clothing au contexte
         })
         
+        # Tracking de la vue de produit
+        track_view_content(
+            request=self.request,
+            product_id=product.id,
+            product_name=product.title,
+            category=product.category.name,
+            price=str(product.price)
+        )
+        
         return context
 
 
@@ -1112,6 +1139,15 @@ class CulturalItemDetailView(DetailView):
         context['cultural_item'] = cultural_item
         context['category_slug'] = product.category.slug  # Ajouter le slug de la catégorie
         
+        # Tracking de la vue de produit
+        track_view_content(
+            request=self.request,
+            product_id=product.id,
+            product_name=product.title,
+            category=product.category.name,
+            price=str(product.price)
+        )
+        
         return context
 
 
@@ -1213,6 +1249,15 @@ class FabricDetailView(DetailView):
         context['reviews'] = reviews
         context['images'] = product.images.all()
         context['category_slug'] = product.category.slug  # Ajouter le slug de la catégorie
+        
+        # Tracking de la vue de produit
+        track_view_content(
+            request=self.request,
+            product_id=product.id,
+            product_name=product.title,
+            category=product.category.name,
+            price=str(product.price)
+        )
         
         return context
 
@@ -1343,6 +1388,15 @@ class ProductDetailView(DetailView):
             'images': images,
             'category_slug': product.category.slug,
         })
+        
+        # Tracking de la vue de produit
+        track_view_content(
+            request=self.request,
+            product_id=product.id,
+            product_name=product.title,
+            category=product.category.name,
+            price=str(product.price)
+        )
         
         return context
     
