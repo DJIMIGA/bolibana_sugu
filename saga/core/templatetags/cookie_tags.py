@@ -140,8 +140,9 @@ def render_marketing_scripts(context):
         events_script = """
         // Envoyer les événements stockés en session
         const storedMarketingEvents = """ + str(marketing_events) + """;
+        console.log('🎯 Événements Facebook Pixel à envoyer:', storedMarketingEvents);
         storedMarketingEvents.forEach(function(eventData) {
-            console.log('🎯 Envoi événement Facebook Pixel différé:', eventData.event_type);
+            console.log('🎯 Envoi événement Facebook Pixel:', eventData.event_type, eventData.parameters);
             fbq('track', eventData.event_type, eventData.parameters);
         });
         """

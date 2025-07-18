@@ -74,6 +74,23 @@
     
     <!-- Événements d'engagement Google Analytics -->
     <script src="{% static 'js/analytics-events.js' %}"></script>
+
+    <!-- Facebook Pixel -->
+    {% render_marketing_scripts %}
+    
+    <!-- Script de test Facebook Pixel (développement uniquement) -->
+    {% if debug %}
+        <script src="{% static 'js/fb-pixel-test.js' %}"></script>
+    {% endif %}
+    
+    <!-- 
+    💡 Pour vérifier les événements Facebook Pixel en temps réel :
+    1. Installer l'extension "Facebook Pixel Helper" sur Chrome
+    2. Ouvrir les DevTools (F12)
+    3. Aller dans l'onglet "Facebook Pixel Helper"
+    4. Les événements apparaissent instantanément dans l'extension
+    5. Dans l'Event Manager Facebook : délai de 15-30 minutes
+    -->
 </head>
 <body>
     {% include 'header.html' %}
