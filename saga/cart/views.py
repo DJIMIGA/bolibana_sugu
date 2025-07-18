@@ -1191,6 +1191,15 @@ def order_confirmation(request, order_id):
     print(f"Commande {order.id}: metadata = {order.metadata}")
     print(f"is_salam_step = {order.metadata.get('is_salam_step', False)}")
     
+    # Tracking de l'achat
+    track_purchase(
+        request=request,
+        order_id=str(order.id),
+        total_amount=str(order.total),
+        currency='XOF',
+        items_count=order.items.count()
+    )
+    
     # Préparer le contexte pour le template
     # Précharger les relations pour optimiser les performances
     order_with_items = Order.objects.select_related(

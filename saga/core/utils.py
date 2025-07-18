@@ -181,8 +181,18 @@ def send_marketing_event(request, event_type, **kwargs):
         # Log pour le développement
         print(f"🎯 Marketing Event: {event_type} - {tracking_data}")
         
-        # TODO: Implémenter l'envoi réel vers Facebook Pixel
-        # fbq('track', event_type, tracking_data)
+        # Stocker l'événement en session pour envoi différé côté client
+        if 'marketing_events' not in request.session:
+            request.session['marketing_events'] = []
+        
+        # Ajouter l'événement à la session pour envoi différé
+        event_data = {
+            'event_type': event_type,
+            'parameters': tracking_data,
+            'timestamp': timezone.now().isoformat()
+        }
+        request.session['marketing_events'].append(event_data)
+        request.session.modified = True
         
         return True
     except Exception as e:

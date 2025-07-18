@@ -132,6 +132,23 @@ def render_marketing_scripts(context):
         print(f"Erreur lors du chargement du Facebook Pixel: {e}")
         return ""
     
+    # Récupérer les événements stockés en session
+    marketing_events = request.session.get('marketing_events', [])
+    events_script = ""
+    
+    if marketing_events:
+        events_script = """
+        // Envoyer les événements stockés en session
+        const storedMarketingEvents = """ + str(marketing_events) + """;
+        storedMarketingEvents.forEach(function(eventData) {
+            console.log('🎯 Envoi événement Facebook Pixel différé:', eventData.event_type);
+            fbq('track', eventData.event_type, eventData.parameters);
+        });
+        """
+        # Vider les événements après envoi
+        request.session['marketing_events'] = []
+        request.session.modified = True
+    
     return f"""
     <!-- Facebook Pixel -->
     <script>
@@ -145,6 +162,14 @@ def render_marketing_scripts(context):
         'https://connect.facebook.net/en_US/fbevents.js');
         fbq('init', '{pixel_id}');
         fbq('track', 'PageView');
+        
+        // Log pour le développement
+        if ({str(settings.DEBUG).lower()}) {{
+            console.log('🎯 Facebook Pixel chargé avec ID:', '{pixel_id}');
+            console.log('🎯 Consentement marketing:', {str(request.cookie_consent.marketing).lower()});
+        }}
+        
+        {events_script}
     </script>
     <noscript>
         <img height="1" width="1" style="display:none"
