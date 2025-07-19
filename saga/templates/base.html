@@ -84,6 +84,9 @@
         <script src="{% static 'js/fb-pixel-debug.js' %}"></script>
     {% endif %}
     
+    <!-- Script de test officiel Facebook Pixel (toujours disponible) -->
+    <script src="{% static 'js/fb-pixel-official-test.js' %}"></script>
+    
     <!-- 
     💡 Pour vérifier les événements Facebook Pixel en temps réel :
     1. Installer l'extension "Facebook Pixel Helper" sur Chrome
@@ -91,6 +94,12 @@
     3. Aller dans l'onglet "Facebook Pixel Helper"
     4. Les événements apparaissent instantanément dans l'extension
     5. Dans l'Event Manager Facebook : délai de 15-30 minutes
+    
+    🧪 TEST OFFICIEL FACEBOOK :
+    - Ouvrir Facebook Events Manager
+    - Aller dans la page de test d'événements
+    - Taper dans la console : testAllFacebookEvents()
+    - Les événements apparaissent instantanément avec le code TEST91163
     -->
 </head>
 <body>
