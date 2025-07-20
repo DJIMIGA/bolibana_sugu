@@ -32,7 +32,6 @@ class SiteConfiguration(models.Model):
     google_analytics_id = models.CharField(max_length=50, blank=True)
     facebook_pixel_id = models.CharField(max_length=50, blank=True, help_text="ID du Facebook Pixel (Meta Pixel)")
     facebook_access_token = models.CharField(max_length=500, blank=True, help_text="Token d'accès Facebook pour l'API Conversions")
-    facebook_access_token = models.CharField(max_length=500, blank=True, help_text="Token d'accès Facebook pour l'API Conversions")
     
     # Horaires d'ouverture
     opening_hours = models.TextField(blank=True, help_text="Horaires d'ouverture (ex: Lun-Ven: 8h-18h)")

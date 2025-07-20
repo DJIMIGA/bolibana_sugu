@@ -23,9 +23,13 @@ urlpatterns = [
     path('product/<slug:slug>/review/', views.add_review, name='add_review'),
     path('favorites/', views.FavoriteListView.as_view(), name='favorite_list'),
     path('favorites/<int:product_id>/', views.toggle_favorite, name='toggle_favorite'),
+    
+    # URLs de recherche optimisées
     path('search/', views.search, name='search'),
     path('search/suggestions/', views.search_suggestions, name='search_suggestions'),
     path('search/results/', views.search_results_page, name='search_results_page'),
+    # Nouvelle URL optimisée avec slug
+    path('recherche/<slug:search_term>/', views.search_by_slug, name='search_by_slug'),
 
     path('product-list/', views.SupplierListView.as_view(), name='product_list'),
 ]

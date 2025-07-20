@@ -1602,6 +1602,25 @@ def search(request):
     products = None  # None au lieu d'une liste vide pour distinguer "pas de recherche" de "aucun résultat"
     
     if query:
+        # Rediriger vers l'URL optimisée si c'est une recherche simple
+        from django.utils.text import slugify
+        from django.shortcuts import redirect
+        
+        # Vérifier s'il y a des filtres supplémentaires
+        has_filters = any([
+            request.GET.get('price_min'),
+            request.GET.get('price_max'),
+            request.GET.get('condition'),
+            request.GET.get('warranty'),
+            request.GET.get('promotion'),
+            request.GET.get('brand')
+        ])
+        
+        # Si pas de filtres, rediriger vers l'URL optimisée
+        if not has_filters:
+            search_slug = slugify(query)
+            return redirect('suppliers:search_by_slug', search_term=search_slug)
+        
         # Utiliser la nouvelle fonction de recherche améliorée
         search_query = create_search_query(query)
         products = Product.objects.filter(search_query).select_related('category', 'supplier').prefetch_related('images')
@@ -1660,10 +1679,13 @@ def search_suggestions(request):
             normalized_title = normalize_search_term(product.title)
             normalized_query = normalize_search_term(query)
             if normalized_query in normalized_title:
+                # Créer un slug pour l'URL optimisée
+                from django.utils.text import slugify
+                search_slug = slugify(product.title)
                 suggestions.append({
                     'type': 'product',
                     'text': product.title,
-                    'url': f'/search/results/?text={product.title}&keywords={product.title}',
+                    'url': f'/recherche/{search_slug}/',
                     'icon': 'product',
                     'relevance': normalized_title.count(normalized_query)  # Score de pertinence
                 })
@@ -1673,10 +1695,11 @@ def search_suggestions(request):
                 if normalized_query in normalized_category:
                     # Éviter les doublons de catégories
                     if not any(s['type'] == 'category' and s['text'] == product.category.name for s in suggestions):
+                        category_slug = slugify(product.category.name)
                         suggestions.append({
                             'type': 'category',
                             'text': product.category.name,
-                            'url': f'/search/results/?text={product.category.name}&keywords={product.category.name}',
+                            'url': f'/recherche/{category_slug}/',
                             'icon': 'category',
                             'relevance': 5  # Score de pertinence pour les catégories
                         })
@@ -1693,10 +1716,11 @@ def search_suggestions(request):
                 if normalized_query in normalized_keyword:
                     # Éviter les doublons
                     if not any(s['text'] == keyword for s in suggestions):
+                        keyword_slug = slugify(keyword)
                         suggestions.append({
                             'type': 'keyword',
                             'text': keyword,
-                            'url': f'/search/results/?text={keyword}&keywords={keyword}',
+                            'url': f'/recherche/{keyword_slug}/',
                             'icon': 'search',
                             'relevance': 3  # Score de pertinence pour les mots-clés
                         })
@@ -1821,6 +1845,123 @@ def search_results_page(request):
         'selected_warranty': selected_warranty,
         'selected_promotion': selected_promotion,
         'selected_brand': selected_brand,
+    }
+    
+    return TemplateResponse(request, 'suppliers/search_results_page.html', context)
+
+
+def search_by_slug(request, search_term):
+    """
+    Vue pour les URLs de recherche optimisées avec slug
+    Exemple: /recherche/tecno-pop-5-bleu-ice/
+    """
+    from django.utils.text import slugify
+    
+    # Convertir le slug en terme de recherche
+    # Remplacer les tirets par des espaces
+    query = search_term.replace('-', ' ').replace('_', ' ')
+    
+    # Initialiser avec tous les produits disponibles
+    products = Product.objects.filter(is_available=True).select_related('category', 'supplier').prefetch_related('images')
+    
+    # Appliquer la recherche
+    if query:
+        search_filter = create_search_query(query)
+        products = products.filter(search_filter)
+    
+    # Appliquer les filtres GET si présents
+    # Filtres de prix
+    price_min = request.GET.get('price_min')
+    price_max = request.GET.get('price_max')
+    
+    if price_min and price_min.strip():
+        try:
+            min_price = float(price_min)
+            products = products.filter(price__gte=min_price)
+        except (ValueError, TypeError):
+            pass
+    
+    if price_max and price_max.strip():
+        try:
+            max_price = float(price_max)
+            products = products.filter(price__lte=max_price)
+        except (ValueError, TypeError):
+            pass
+    
+    # Filtre de condition
+    condition = request.GET.get('condition')
+    if condition and condition.strip():
+        products = products.filter(condition=condition)
+    
+    # Filtre de garantie
+    warranty = request.GET.get('warranty')
+    if warranty and warranty.strip():
+        if warranty == 'yes':
+            products = products.filter(has_warranty=True)
+        elif warranty == 'no':
+            products = products.filter(has_warranty=False)
+    
+    # Filtre de promotion
+    promotion = request.GET.get('promotion')
+    if promotion and promotion.strip():
+        if promotion == 'yes':
+            products = products.filter(discount_price__isnull=False)
+        elif promotion == 'no':
+            products = products.filter(discount_price__isnull=True)
+    
+    # Filtre de marque
+    brand = request.GET.get('brand')
+    if brand and brand.strip():
+        products = products.filter(brand__icontains=brand)
+    
+    # Tracking de la recherche
+    track_search(
+        request=request,
+        search_term=query,
+        results_count=products.count()
+    )
+    
+    # Envoyer l'événement Search à Facebook
+    if request.user.is_authenticated:
+        user_data = {
+            "email": request.user.email,
+            "phone": getattr(request.user, 'phone', '')
+        }
+        
+        facebook_conversions.send_search_event(
+            user_data=user_data,
+            search_string=query,
+            content_category="Produits BoliBana"
+        )
+    else:
+        # Pour les utilisateurs anonymes, envoyer sans données utilisateur
+        facebook_conversions.send_search_event(
+            search_string=query,
+            content_category="Produits BoliBana"
+        )
+    
+    # Créer les breadcrumbs pour la recherche
+    breadcrumbs = [
+        {'name': 'Accueil', 'url': '/'},
+        {'name': 'Recherche', 'url': '#'},
+        {'name': f'"{query}"', 'url': None}
+    ]
+    
+    context = {
+        'products': products,
+        'query': query,
+        'search_term': search_term,
+        'keywords': query,  # Ajouter keywords pour compatibilité avec le template
+        'text': query,      # Ajouter text pour compatibilité avec le template
+        'total_results': len(products),
+        'breadcrumbs': breadcrumbs,
+        # Données pour les filtres
+        'selected_price_min': request.GET.get('price_min', ''),
+        'selected_price_max': request.GET.get('price_max', ''),
+        'selected_condition': request.GET.get('condition', ''),
+        'selected_warranty': request.GET.get('warranty', ''),
+        'selected_promotion': request.GET.get('promotion', ''),
+        'selected_brand': request.GET.get('brand', ''),
     }
     
     return TemplateResponse(request, 'suppliers/search_results_page.html', context)
