@@ -3,6 +3,19 @@
 {% load cart_tags %}
 
 {% block content %}
+<!-- Facebook Pixel ViewCart Event -->
+{% if request.cookie_consent and request.cookie_consent.marketing %}
+<script>
+  if (typeof fbq !== 'undefined') {
+    fbq('track', 'ViewCart', {
+      value: {{ cart.get_total_price|floatformat:2 }},
+      currency: 'XOF',
+      content_type: 'product',
+      content_ids: [{% for item in cart.cart_items.all %}{{ item.product.id }}{% if not forloop.last %},{% endif %}{% endfor %}]
+    });
+  }
+</script>
+{% endif %}
 <div class="bg-gray-50 min-h-screen">
     <div class="max-w-7xl mx-auto pt-6 sm:pt-16 pb-24 px-4 sm:px-6 lg:px-8">
         <!-- En-tête -->

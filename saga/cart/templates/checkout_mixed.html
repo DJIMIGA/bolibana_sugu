@@ -3,6 +3,20 @@
 {% load cart_tags %}
 
 {% block content %}
+<!-- Facebook Pixel InitiateCheckout Event -->
+{% if request.cookie_consent and request.cookie_consent.marketing %}
+<script>
+  if (typeof fbq !== 'undefined') {
+    fbq('track', 'InitiateCheckout', {
+      value: {{ classic_total|add:salam_total|floatformat:2 }},
+      currency: 'XOF',
+      num_items: {{ classic_count|add:salam_count }},
+      content_ids: [{% for item in classic_items %}{{ item.product.id }}{% if not forloop.last %},{% endif %}{% endfor %}{% for item in salam_items %}{% if not forloop.first or classic_items %},{% endif %}{{ item.product.id }}{% endfor %}],
+      content_type: 'product'
+    });
+  }
+</script>
+{% endif %}
 <div class="relative min-h-screen">
   <!-- Fond avec motif subtil -->
   <div class="absolute inset-0 bg-gradient-to-br from-green-50 via-yellow-50 to-white opacity-90"></div>

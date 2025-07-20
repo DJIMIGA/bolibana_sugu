@@ -4,6 +4,17 @@
 {% block title %}Résultats de recherche : {{ query }} - BoliBana{% endblock %}
 
 {% block content %}
+<!-- Facebook Pixel Search Event -->
+{% if request.cookie_consent and request.cookie_consent.marketing %}
+<script>
+  if (typeof fbq !== 'undefined') {
+    fbq('track', 'Search', {
+      search_string: '{{ text|default:keywords|default:query|escapejs }}',
+      content_category: '{{ category.name|default:"All"|escapejs }}'
+    });
+  }
+</script>
+{% endif %}
 
 <div class="bg-white">
     <!-- Breadcrumb -->

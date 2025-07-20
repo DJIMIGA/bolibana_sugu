@@ -187,7 +187,7 @@ def signup(request):
                     .format(reverse('accounts:setup_2fa'))
                 )
             )
-            return redirect('suppliers:supplier_index')
+            return redirect('suppliers:supplier_index' + '?registration=success')
     else:
         form = UserForm()
 
