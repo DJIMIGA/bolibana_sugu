@@ -192,27 +192,110 @@ function checkPixelConfig() {
         return;
     }
     
-    // Vérifier l'ID du pixel
+    console.log('✅ fbq disponible');
+    
+    // Vérifier l'ID du pixel de plusieurs façons
+    let pixelId = null;
+    
+    // Méthode 1: window._fbq.id
     try {
-        const pixelId = window._fbq && window._fbq.id;
-        console.log('🎯 ID du pixel détecté:', pixelId || 'Non détecté');
-        
+        if (window._fbq && window._fbq.id) {
+            pixelId = window._fbq.id;
+            console.log('🎯 ID du pixel (window._fbq.id):', pixelId);
+        }
+    } catch (e) {
+        console.log('⚠️  Impossible de récupérer window._fbq.id');
+    }
+    
+    // Méthode 2: Rechercher dans les scripts
+    if (!pixelId) {
+        try {
+            const scripts = Array.from(document.querySelectorAll('script'));
+            const fbScript = scripts.find(s => s.innerHTML && s.innerHTML.includes('fbevents.js'));
+            if (fbScript) {
+                const match = fbScript.innerHTML.match(/fbevents\.js\?id=(\d+)/);
+                if (match) {
+                    pixelId = match[1];
+                    console.log('🎯 ID du pixel (dans script):', pixelId);
+                }
+            }
+        } catch (e) {
+            console.log('⚠️  Impossible de récupérer l\'ID depuis les scripts');
+        }
+    }
+    
+    // Méthode 3: Rechercher dans fbq
+    if (!pixelId) {
+        try {
+            if (fbq && fbq._pixelId) {
+                pixelId = fbq._pixelId;
+                console.log('🎯 ID du pixel (fbq._pixelId):', pixelId);
+            }
+        } catch (e) {
+            console.log('⚠️  Impossible de récupérer fbq._pixelId');
+        }
+    }
+    
+    // Méthode 4: Rechercher dans les variables globales
+    if (!pixelId) {
+        try {
+            for (let key in window) {
+                if (key.includes('fbq') || key.includes('facebook')) {
+                    const value = window[key];
+                    if (typeof value === 'string' && /^\d{15,16}$/.test(value)) {
+                        pixelId = value;
+                        console.log('🎯 ID du pixel (variable globale):', pixelId);
+                        break;
+                    }
+                }
+            }
+        } catch (e) {
+            console.log('⚠️  Impossible de rechercher dans les variables globales');
+        }
+    }
+    
+    // Vérifier l'ID
+    if (pixelId) {
         if (pixelId === '2046663719482491') {
             console.log('✅ ID du pixel correct');
         } else {
             console.log('⚠️  ID du pixel différent de celui configuré');
+            console.log('   Configuré: 2046663719482491');
+            console.log('   Détecté:   ' + pixelId);
         }
-    } catch (e) {
-        console.log('⚠️  Impossible de récupérer l\'ID du pixel');
+    } else {
+        console.log('❌ ID du pixel non détecté');
+        console.log('💡 Le pixel peut fonctionner même sans ID détecté');
     }
     
     // Vérifier les scripts chargés
     const scripts = Array.from(document.querySelectorAll('script[src]')).map(s => s.src);
     const fbScripts = scripts.filter(s => s.includes('facebook') || s.includes('fbevents'));
     console.log('📜 Scripts Facebook chargés:', fbScripts.length);
+    fbScripts.forEach((script, index) => {
+        console.log(`   ${index + 1}. ${script}`);
+    });
+    
+    // Vérifier les cookies
+    const cookies = document.cookie.split(';').map(c => c.trim());
+    const fbCookies = cookies.filter(c => c.includes('fb') || c.includes('facebook'));
+    console.log('🍪 Cookies Facebook:', fbCookies.length);
+    fbCookies.forEach((cookie, index) => {
+        console.log(`   ${index + 1}. ${cookie}`);
+    });
     
     // Test de base
+    console.log('🧪 Test d\'envoi d\'événement...');
     testEvent('TestEvent', { test: true, timestamp: new Date().toISOString() });
+    
+    // Vérifier si fbq est fonctionnel
+    console.log('🔧 Test de fonctionnalité fbq...');
+    try {
+        const testResult = fbq('track', 'TestEvent', { test: 'functionality' });
+        console.log('✅ fbq fonctionne correctement');
+    } catch (e) {
+        console.log('❌ Erreur avec fbq:', e.message);
+    }
 }
 
 // Exposer les fonctions globalement
