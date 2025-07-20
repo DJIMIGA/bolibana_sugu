@@ -106,6 +106,46 @@ class FacebookConversionsAPI:
             custom_data["content_name"] = content_name
         
         return self.send_event("Lead", user_data, custom_data)
+    
+    def send_pageview_event(self, user_data=None, content_name=None, content_category=None):
+        """Événement de visite de page"""
+        custom_data = {"content_type": "website"}
+        
+        if content_name:
+            custom_data["content_name"] = content_name
+        
+        if content_category:
+            custom_data["content_category"] = content_category
+        
+        return self.send_event("PageView", user_data, custom_data)
+    
+    def send_view_content_event(self, user_data, content_name=None, content_category=None, value=None, currency="XOF"):
+        """Événement de consultation de contenu"""
+        custom_data = {"content_type": "product"}
+        
+        if content_name:
+            custom_data["content_name"] = content_name
+        
+        if content_category:
+            custom_data["content_category"] = content_category
+        
+        if value:
+            custom_data["value"] = value
+            custom_data["currency"] = currency
+        
+        return self.send_event("ViewContent", user_data, custom_data)
+    
+    def send_search_event(self, user_data, search_string, content_category=None):
+        """Événement de recherche"""
+        custom_data = {
+            "search_string": search_string,
+            "content_type": "product"
+        }
+        
+        if content_category:
+            custom_data["content_category"] = content_category
+        
+        return self.send_event("Search", user_data, custom_data)
 
 # Instance globale
 facebook_conversions = FacebookConversionsAPI() 

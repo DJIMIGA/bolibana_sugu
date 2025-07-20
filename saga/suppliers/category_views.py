@@ -8,6 +8,7 @@ import logging
 from django.utils import timezone
 from datetime import timedelta
 from django.db.models import Prefetch
+from core.facebook_conversions import facebook_conversions
 
 logger = logging.getLogger(__name__)
 
@@ -394,6 +395,26 @@ class BaseCategoryView(TemplateView):
             'is_filtered': is_filtered,
             'breadcrumbs': self.get_breadcrumbs(category),
         })
+        
+        # Envoyer l'événement PageView à Facebook
+        category = self.get_category()
+        if self.request.user.is_authenticated:
+            user_data = {
+                "email": self.request.user.email,
+                "phone": getattr(self.request.user, 'phone', '')
+            }
+            
+            facebook_conversions.send_pageview_event(
+                user_data=user_data,
+                content_name=f"Page Catégorie - {category.name}",
+                content_category=category.name
+            )
+        else:
+            # Pour les utilisateurs anonymes, envoyer sans données utilisateur
+            facebook_conversions.send_pageview_event(
+                content_name=f"Page Catégorie - {category.name}",
+                content_category=category.name
+            )
         
         return context
     
@@ -1091,6 +1112,26 @@ class CategoryListView(TemplateView):
 
         context['main_categories'] = main_categories
         context['sub_categories'] = sub_categories
+        
+        # Envoyer l'événement PageView à Facebook
+        if self.request.user.is_authenticated:
+            user_data = {
+                "email": self.request.user.email,
+                "phone": getattr(self.request.user, 'phone', '')
+            }
+            
+            facebook_conversions.send_pageview_event(
+                user_data=user_data,
+                content_name="Page Liste des Catégories BoliBana",
+                content_category="Navigation"
+            )
+        else:
+            # Pour les utilisateurs anonymes, envoyer sans données utilisateur
+            facebook_conversions.send_pageview_event(
+                content_name="Page Liste des Catégories BoliBana",
+                content_category="Navigation"
+            )
+        
         return context
 
 

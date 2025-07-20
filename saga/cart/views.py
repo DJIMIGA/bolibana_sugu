@@ -100,6 +100,20 @@ def add_to_cart(request, product_id):
                         price=str(product.price)
                     )
                     
+                    # Envoyer l'événement AddToCart à Facebook
+                    if request.user.is_authenticated:
+                        user_data = {
+                            "email": request.user.email,
+                            "phone": getattr(request.user, 'phone', '')
+                        }
+                        
+                        facebook_conversions.send_add_to_cart_event(
+                            user_data=user_data,
+                            content_name=product.title,
+                            value=float(product.price),
+                            currency="XOF"
+                        )
+                    
                     return HttpResponse(messages_html + cart_updates)
                 except Exception as e:
                     # Si le rendu échoue, retourner une réponse simple
@@ -189,6 +203,20 @@ def checkout(request):
             items_count=total_items,
             cart_id=cart.id
         )
+        
+        # Envoyer l'événement InitiateCheckout à Facebook
+        if request.user.is_authenticated:
+            user_data = {
+                "email": request.user.email,
+                "phone": getattr(request.user, 'phone', '')
+            }
+            
+            facebook_conversions.send_initiate_checkout_event(
+                user_data=user_data,
+                content_name="Commande BoliBana",
+                value=float(total_amount),
+                currency="XOF"
+            )
         
         return render(request, 'checkout_mixed.html', context)
     
@@ -281,6 +309,20 @@ def checkout(request):
         items_count=total_items,
         cart_id=cart.id
     )
+    
+    # Envoyer l'événement InitiateCheckout à Facebook
+    if request.user.is_authenticated:
+        user_data = {
+            "email": request.user.email,
+            "phone": getattr(request.user, 'phone', '')
+        }
+        
+        facebook_conversions.send_initiate_checkout_event(
+            user_data=user_data,
+            content_name="Commande BoliBana",
+            value=float(order_total),
+            currency="XOF"
+        )
     
     return render(request, 'checkout.html', context)
 

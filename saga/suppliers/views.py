@@ -22,6 +22,7 @@ import logging
 import re
 import unicodedata
 from core.utils import track_search, track_view_content
+from core.facebook_conversions import facebook_conversions
 
 logger = logging.getLogger(__name__)
 
@@ -1289,6 +1290,26 @@ class CategoryListView(ListView):
             'title': 'Nos catégories principales',
             'main_categories': self.get_queryset()
         })
+        
+        # Envoyer l'événement PageView à Facebook
+        if self.request.user.is_authenticated:
+            user_data = {
+                "email": self.request.user.email,
+                "phone": getattr(self.request.user, 'phone', '')
+            }
+            
+            facebook_conversions.send_pageview_event(
+                user_data=user_data,
+                content_name="Page Catégories BoliBana",
+                content_category="Navigation"
+            )
+        else:
+            # Pour les utilisateurs anonymes, envoyer sans données utilisateur
+            facebook_conversions.send_pageview_event(
+                content_name="Page Catégories BoliBana",
+                content_category="Navigation"
+            )
+        
         return context
 
 
@@ -1397,6 +1418,25 @@ class ProductDetailView(DetailView):
             category=product.category.name,
             price=str(product.price)
         )
+        
+        # Envoyer l'événement PageView à Facebook
+        if self.request.user.is_authenticated:
+            user_data = {
+                "email": self.request.user.email,
+                "phone": getattr(self.request.user, 'phone', '')
+            }
+            
+            facebook_conversions.send_pageview_event(
+                user_data=user_data,
+                content_name=f"Page Produit - {product.title}",
+                content_category=product.category.name
+            )
+        else:
+            # Pour les utilisateurs anonymes, envoyer sans données utilisateur
+            facebook_conversions.send_pageview_event(
+                content_name=f"Page Produit - {product.title}",
+                content_category=product.category.name
+            )
         
         return context
     
@@ -1572,6 +1612,25 @@ def search(request):
         search_term=query,
         results_count=products.count() if products else 0
     )
+    
+    # Envoyer l'événement Search à Facebook
+    if request.user.is_authenticated:
+        user_data = {
+            "email": request.user.email,
+            "phone": getattr(request.user, 'phone', '')
+        }
+        
+        facebook_conversions.send_search_event(
+            user_data=user_data,
+            search_string=query,
+            content_category="Produits BoliBana"
+        )
+    else:
+        # Pour les utilisateurs anonymes, envoyer sans données utilisateur
+        facebook_conversions.send_search_event(
+            search_string=query,
+            content_category="Produits BoliBana"
+        )
     
     context = {
         'query': query,

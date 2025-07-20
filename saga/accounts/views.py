@@ -30,6 +30,7 @@ from .forms import UserForm, ShippingAddressForm, PasswordChangeForm, CustomPass
 from django.core.mail import send_mail
 from django.contrib.auth.views import PasswordResetView, PasswordResetConfirmView
 from core.utils import track_user_registration, track_login, track_logout
+from core.facebook_conversions import facebook_conversions
 
 # Import de la fonction de migration du panier
 try:
@@ -172,6 +173,17 @@ def signup(request):
             # Tracking de l'inscription
             track_user_registration(request, method='email', source='website')
             
+            # Envoyer l'événement CompleteRegistration à Facebook
+            user_data = {
+                "email": user.email,
+                "phone": getattr(user, 'phone', '')
+            }
+            
+            facebook_conversions.send_complete_registration_event(
+                user_data=user_data,
+                content_name="Inscription BoliBana"
+            )
+            
             # Migrer le panier anonyme vers le compte utilisateur
             try:
                 migrate_anonymous_cart(None, request, user, old_session_key=old_session_key)
@@ -238,6 +250,17 @@ class LoginView(AuthLoginView):
             
             # Tracking de la connexion
             track_login(self.request, method='email', source='website')
+            
+            # Envoyer l'événement Login à Facebook
+            user_data = {
+                "email": user.email,
+                "phone": getattr(user, 'phone', '')
+            }
+            
+            facebook_conversions.send_login_event(
+                user_data=user_data,
+                content_name="Connexion BoliBana"
+            )
             
             # Migrer le panier anonyme vers le compte utilisateur
             try:
