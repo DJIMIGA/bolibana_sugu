@@ -26,8 +26,10 @@ from product.models import Product as ProductModel
 from .forms import PriceSubmissionForm, CityForm
 # Import des fonctions de recherche depuis suppliers
 from suppliers.views import normalize_search_term, create_search_query
+from core.facebook_conversions import facebook_conversions
 
 def check_price(request):
+    """Vue du comparateur de prix avec tracking Facebook"""
     # Si c'est une requête HTMX
     if request.headers.get('HX-Request'):
         product_name = request.GET.get('product_name', '').strip()

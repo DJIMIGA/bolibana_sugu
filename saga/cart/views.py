@@ -40,6 +40,7 @@ import logging
 import os
 from datetime import datetime
 from core.utils import track_purchase, track_add_to_cart, track_view_cart, track_initiate_checkout
+from core.facebook_conversions import facebook_conversions
 
 
 
@@ -1469,6 +1470,7 @@ def stripe_webhook(request):
 
 @login_required
 def payment_success(request):
+    """Vue de succès de paiement avec tracking Facebook"""
     session_id = request.GET.get('session_id')
     if session_id:
         try:
@@ -1632,6 +1634,23 @@ def payment_success(request):
 
             # Envoyer l'email de confirmation
             send_order_confirmation_email(order, request)
+
+            # Envoyer l'événement de conversion à Facebook
+            if request.user.is_authenticated:
+                user_data = {
+                    "email": request.user.email,
+                    "phone": getattr(request.user, 'phone', '')
+                }
+                
+                # Calculer le montant total de la commande
+                cart_total = request.session.get('cart_total', 0)
+                
+                facebook_conversions.send_purchase_event(
+                    user_data=user_data,
+                    amount=cart_total,
+                    currency="XOF",
+                    content_name="Service Salam BoliBana"
+                )
 
             return redirect('cart:order_confirmation', order_id=order.id)
 

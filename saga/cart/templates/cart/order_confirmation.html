@@ -8,7 +8,7 @@
   if (typeof fbq !== 'undefined') {
     fbq('track', 'Purchase', {
       value: {{ order.total|floatformat:2 }},
-      currency: 'EUR',
+      currency: 'XOF',
       content_ids: [{% for item in items %}{{ item.product.id }}{% if not forloop.last %},{% endif %}{% endfor %}],
       content_type: 'product',
       num_items: {{ items.count }},

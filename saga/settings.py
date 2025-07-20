@@ -255,6 +255,8 @@ stripe.api_key = STRIPE_SECRET_KEY
 # Tinify
 TINIFY_API_KEY = os.getenv('TINIFY_API_KEY')
 
+
+
 # Configuration de l'optimisation d'images
 MAX_IMAGE_SIZE = 5 * 1024 * 1024  # 5MB
 MAX_IMAGE_DIMENSIONS = (4000, 4000)

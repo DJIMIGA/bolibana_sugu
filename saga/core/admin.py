@@ -20,7 +20,7 @@ class SiteConfigurationAdmin(admin.ModelAdmin):
             'fields': ('meta_description', 'meta_keywords')
         }),
         ('Configuration du site', {
-            'fields': ('maintenance_mode', 'google_analytics_id', 'facebook_pixel_id')
+            'fields': ('maintenance_mode', 'google_analytics_id', 'facebook_pixel_id', 'facebook_access_token')
         }),
         ('Horaires et services', {
             'fields': ('opening_hours', 'opening_hours_detailed', 'delivery_info', 'return_policy')
