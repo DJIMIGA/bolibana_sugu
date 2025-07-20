@@ -1,0 +1,56 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Accès interdit - BoliBana{% endblock %}
+
+{% block content %}
+<div class="min-h-screen bg-gradient-to-br from-yellow-50 to-red-50 flex items-center justify-center px-4">
+    <div class="max-w-md w-full text-center">
+        <!-- Logo BoliBana -->
+        <div class="mb-8">
+            <img src="{% static 'icons/bolibana.png' %}" alt="BoliBana" class="h-16 mx-auto">
+        </div>
+        
+        <!-- Numéro d'erreur -->
+        <div class="text-8xl font-bold text-yellow-600 mb-4">403</div>
+        
+        <!-- Titre -->
+        <h1 class="text-3xl font-bold text-gray-800 mb-4">Accès interdit</h1>
+        
+        <!-- Message -->
+        <p class="text-gray-600 mb-8">
+            Désolé, vous n'avez pas les permissions nécessaires pour accéder à cette page.
+        </p>
+        
+        <!-- Actions -->
+        <div class="space-y-4">
+            <a href="{% url 'suppliers:home' %}" 
+               class="inline-block bg-green-600 hover:bg-green-700 text-white font-semibold py-3 px-6 rounded-lg transition duration-300">
+                Retour à l'accueil
+            </a>
+            
+            <div class="text-sm text-gray-500">
+                <p>Ou essayez de :</p>
+                <div class="mt-2 space-x-4">
+                    <a href="{% url 'accounts:login' %}" class="text-green-600 hover:text-green-700">
+                        Vous connecter
+                    </a>
+                    <span class="text-gray-400">|</span>
+                    <a href="{% url 'suppliers:category_list' %}" class="text-green-600 hover:text-green-700">
+                        Parcourir nos produits
+                    </a>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Illustration -->
+        <div class="mt-12">
+            <div class="w-32 h-32 mx-auto bg-yellow-100 rounded-full flex items-center justify-center">
+                <svg class="w-16 h-16 text-yellow-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path>
+                </svg>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 
