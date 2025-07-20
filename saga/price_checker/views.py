@@ -173,6 +173,19 @@ class PriceSubmissionCreateView(LoginRequiredMixin, CreateView):
         try:
             response = super().form_valid(form)
             messages.success(self.request, 'Votre soumission a été enregistrée avec succès.')
+            
+            # Envoyer l'événement de lead à Facebook
+            if self.request.user.is_authenticated:
+                user_data = {
+                    "email": self.request.user.email,
+                    "phone": getattr(self.request.user, 'phone', '')
+                }
+                
+                facebook_conversions.send_lead_event(
+                    user_data=user_data,
+                    content_name="Comparateur de Prix Salam"
+                )
+            
             return response
         except Exception as e:
             messages.error(self.request, f'Une erreur est survenue: {str(e)}')

@@ -80,29 +80,6 @@
         <script src="{% static 'js/test-all-events.js' %}"></script>
         <script src="{% static 'js/quick-test-events.js' %}"></script>
     {% endif %}
-
-    <!-- Facebook Pixel -->
-    {% render_marketing_scripts %}
-    
-    <!-- Événements spéciaux -->
-    {% if request.cookie_consent and request.cookie_consent.marketing %}
-    <script>
-      // Événement CompleteRegistration après inscription réussie
-      if (typeof fbq !== 'undefined' && window.location.search.includes('registration=success')) {
-        fbq('track', 'CompleteRegistration', {
-          value: 0,
-          currency: 'XOF'
-        });
-        console.log('🎯 Événement CompleteRegistration envoyé');
-      }
-    </script>
-    {% endif %}
-    
-    <!-- Script de test Facebook Pixel (développement uniquement) -->
-    {% if debug %}
-        <script src="{% static 'js/fb-pixel-test.js' %}"></script>
-        <script src="{% static 'js/fb-pixel-debug.js' %}"></script>
-    {% endif %}
     
     <!-- Scripts de diagnostic (toujours disponibles) -->
     <script src="{% static 'js/pixel-diagnostic.js' %}"></script>
