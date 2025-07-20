@@ -146,6 +146,41 @@ class FacebookConversionsAPI:
             custom_data["content_category"] = content_category
         
         return self.send_event("Search", user_data, custom_data)
+    
+    def send_initiate_checkout_event(self, user_data, value=None, currency="XOF", content_name=None, content_category=None):
+        """Événement d'initiation de checkout"""
+        custom_data = {"content_type": "product"}
+        
+        if value:
+            custom_data["value"] = value
+            custom_data["currency"] = currency
+        
+        if content_name:
+            custom_data["content_name"] = content_name
+        
+        if content_category:
+            custom_data["content_category"] = content_category
+        
+        return self.send_event("InitiateCheckout", user_data, custom_data)
+    
+    def send_add_to_cart_event(self, user_data, value=None, currency="XOF", content_name=None, content_category=None, content_ids=None):
+        """Événement d'ajout au panier"""
+        custom_data = {"content_type": "product"}
+        
+        if value:
+            custom_data["value"] = value
+            custom_data["currency"] = currency
+        
+        if content_name:
+            custom_data["content_name"] = content_name
+        
+        if content_category:
+            custom_data["content_category"] = content_category
+        
+        if content_ids:
+            custom_data["content_ids"] = content_ids
+        
+        return self.send_event("AddToCart", user_data, custom_data)
 
 # Instance globale
 facebook_conversions = FacebookConversionsAPI() 
