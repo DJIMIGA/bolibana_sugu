@@ -170,6 +170,9 @@ class PriceSubmissionCreateView(LoginRequiredMixin, CreateView):
         form.instance.user = self.request.user
         form.instance.status = 'PENDING'
         
+        # Nettoyer les données du formulaire
+        cleaned_data = form.cleaned_data
+        
         try:
             response = super().form_valid(form)
             messages.success(self.request, 'Votre soumission a été enregistrée avec succès.')
@@ -248,6 +251,11 @@ class PriceSubmissionUpdateView(LoginRequiredMixin, UpdateView):
 
     def get_form(self, form_class=None):
         form = super().get_form(form_class)
+        
+        # Initialiser le champ de recherche avec le nom du produit
+        if self.object and self.object.product:
+            form.fields['product_search'].initial = self.object.product.title
+        
         # Désactiver les champs qui ne peuvent pas être modifiés
         form.fields['product'].disabled = True
         form.fields['city'].disabled = True
@@ -810,3 +818,31 @@ def test_security_logs_view(request):
         "message": "Logs de sécurité générés avec succès",
         "logs_sent": 5
     }) 
+
+@require_GET
+def product_autocomplete(request):
+    """Vue pour l'autocomplétion des produits"""
+    query = request.GET.get('q', '').strip()
+    
+    if not query or len(query) < 2:
+        return JsonResponse({'results': []})
+    
+    # Utiliser la même logique de recherche que dans check_price
+    from suppliers.views import create_search_query
+    
+    search_query = create_search_query(query)
+    products = ProductModel.objects.filter(search_query).select_related(
+        'category', 'supplier'
+    ).order_by('title')[:10]  # Limiter à 10 résultats
+    
+    results = []
+    for product in products:
+        results.append({
+            'id': product.id,
+            'text': f"{product.title} - {product.category.name if product.category else 'Sans catégorie'}",
+            'title': product.title,
+            'category': product.category.name if product.category else 'Sans catégorie',
+            'supplier': product.supplier.company_name if product.supplier else 'Fournisseur inconnu'
+        })
+    
+    return JsonResponse({'results': results}) 

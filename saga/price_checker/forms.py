@@ -76,6 +76,19 @@ class PriceCheckForm(forms.Form):
     )
 
 class PriceSubmissionForm(forms.ModelForm):
+    # Champ de recherche pour le produit
+    product_search = forms.CharField(
+        label='Rechercher un produit',
+        max_length=255,
+        required=False,
+        widget=forms.TextInput(attrs={
+            'class': 'w-full rounded-lg border border-gray-200 px-4 py-2 text-gray-700 focus:outline-none focus:ring-2 focus:ring-green-500',
+            'placeholder': 'Tapez le nom du produit (ex: iPhone 13, Samsung Galaxy...)',
+            'autocomplete': 'off',
+            'id': 'product-search'
+        })
+    )
+    
     class Meta:
         model = PriceSubmission
         fields = ['price', 'city', 'product', 'supplier_name', 'supplier_phone', 'supplier_address', 'proof_image']
@@ -88,8 +101,8 @@ class PriceSubmissionForm(forms.ModelForm):
             'city': forms.Select(attrs={
                 'class': 'w-full rounded-lg border border-gray-200 px-4 py-2 text-gray-700 focus:outline-none focus:ring-2 focus:ring-green-500'
             }),
-            'product': forms.Select(attrs={
-                'class': 'w-full rounded-lg border border-gray-200 px-4 py-2 text-gray-700 focus:outline-none focus:ring-2 focus:ring-green-500'
+            'product': forms.HiddenInput(attrs={
+                'id': 'product-id'
             }),
             'supplier_name': forms.TextInput(attrs={
                 'class': 'w-full rounded-lg border border-gray-200 px-4 py-2 text-gray-700 focus:outline-none focus:ring-2 focus:ring-green-500',
@@ -109,6 +122,30 @@ class PriceSubmissionForm(forms.ModelForm):
                 'accept': 'image/*'
             }),
         }
+        
+    def clean(self):
+        cleaned_data = super().clean()
+        product_id = cleaned_data.get('product')
+        product_search = cleaned_data.get('product_search')
+        
+        # Si un produit est sélectionné via l'autocomplétion, on l'utilise
+        if product_id:
+            return cleaned_data
+        
+        # Sinon, essayer de trouver le produit par le nom de recherche
+        if product_search:
+            from product.models import Product as ProductModel
+            try:
+                product = ProductModel.objects.filter(title__icontains=product_search).first()
+                if product:
+                    cleaned_data['product'] = product
+                else:
+                    self.add_error('product_search', 'Produit non trouvé. Veuillez sélectionner un produit dans la liste.')
+            except Exception:
+                self.add_error('product_search', 'Erreur lors de la recherche du produit.')
+        
+        return cleaned_data
+        
         labels = {
             'price': 'Prix (FCFA)',
             'city': 'Ville',

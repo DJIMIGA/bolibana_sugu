@@ -96,7 +96,7 @@ class CategoryAdmin(admin.ModelAdmin):
 class PhoneAdmin(admin.ModelAdmin):
     list_display = ('get_name', 'brand', 'model', 'storage', 'ram', 'color', 'get_price', 'get_stock', 'get_sku')
     list_filter = ('brand', 'storage', 'ram', 'color')
-    search_fields = ('product__title', 'brand', 'model', 'product__sku')
+    search_fields = ('product__title', 'brand', 'model', 'product__sku', 'resolution')
 
     def get_name(self, obj):
         return obj.product.title if hasattr(obj, 'product') else '-'
@@ -119,7 +119,7 @@ class PhoneAdmin(admin.ModelAdmin):
             'fields': ('product', 'brand', 'model', 'is_new', 'imei')
         }),
         ('Caractéristiques techniques', {
-            'fields': ('operating_system', 'screen_size', 'processor', 'ram', 'storage')
+            'fields': ('operating_system', 'screen_size', 'processor', 'ram', 'storage', 'resolution')
         }),
         ('Multimédia et batterie', {
             'fields': ('camera_main', 'camera_front', 'battery_capacity')
