@@ -17,6 +17,13 @@
         <!-- Filtres -->
         {% include "suppliers/components/_phone_brand_filters.html" with is_detail=True slug=brand|slugify %}
 
+        <!-- Message si aucun produit trouvé -->
+        {% if no_products_message %}
+        <div class="my-8 p-4 rounded-lg bg-yellow-100 text-yellow-800 text-center font-semibold">
+            {{ no_products_message }}
+        </div>
+        {% endif %}
+
         <!-- Grille des produits -->
         {% include "suppliers/components/_product_grid.html" %}
     </div>

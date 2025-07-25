@@ -358,10 +358,7 @@ class BrandDetailView(TemplateView):
         if not brand:
             logger.error("Aucune marque fournie")
             raise Http404("Marque non trouvée")
-            
         logger.info(f"Recherche des produits de la marque: {brand}")
-        
-        # Récupérer les produits de cette marque (insensible à la casse)
         queryset = Product.objects.filter(
             phone__brand__iexact=brand,
             is_available=True
@@ -370,16 +367,14 @@ class BrandDetailView(TemplateView):
             'phone__color',
             'supplier'
         )
-        
         logger.info(f"Nombre de produits trouvés pour la marque {brand}: {queryset.count()}")
-        
         # Appliquer les filtres
         model = self.request.GET.get('model')
         storage = self.request.GET.get('storage')
         ram = self.request.GET.get('ram')
         price_min = self.request.GET.get('price_min')
         price_max = self.request.GET.get('price_max')
-        
+        sort = self.request.GET.get('sort')
         if model:
             queryset = queryset.filter(phone__model=model)
             logger.info(f"Filtre par modèle: {model}")
@@ -395,13 +390,20 @@ class BrandDetailView(TemplateView):
         if price_max:
             queryset = queryset.filter(price__lte=price_max)
             logger.info(f"Filtre par prix maximum: {price_max}")
-        
-        logger.info(f"Nombre final de produits après filtres: {queryset.count()}")
-        return queryset.order_by('-created_at')
+        # Tri global
+        if sort == 'price_asc':
+            queryset = queryset.order_by('price')
+        elif sort == 'price_desc':
+            queryset = queryset.order_by('-price')
+        elif sort == 'new':
+            queryset = queryset.order_by('-created_at')
+        elif sort == 'best_selling':
+            queryset = queryset.order_by('-sales_count')
+        return queryset.order_by('-created_at') if not sort else queryset
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        brand = kwargs.get('brand')
+        brand = self.kwargs.get('brand')
         
         if not brand:
             logger.error("Aucune marque fournie dans le contexte")
@@ -413,10 +415,6 @@ class BrandDetailView(TemplateView):
             # Récupérer les produits avec les filtres
             products = self.get_queryset()
             
-            if not products.exists():
-                logger.warning(f"Aucun produit trouvé pour la marque {brand}")
-                raise Http404(f"Aucun produit trouvé pour la marque {brand}")
-            
             # Pagination
             paginator = Paginator(products, 12)
             page_number = self.request.GET.get('page')
@@ -425,7 +423,44 @@ class BrandDetailView(TemplateView):
             context['products'] = page_obj
             context['brand'] = brand
             context['page_title'] = f"Téléphones {brand}"
-            
+
+            # Préparation des filtres pour le template
+            active_products = Product.objects.filter(
+                phone__brand__iexact=brand,
+                is_available=True
+            ).select_related('phone', 'phone__color')
+
+            # Marques (ici une seule, mais structure attendue par le template)
+            context['brands'] = [{'phone__brand': brand}]
+
+            # Modèles disponibles
+            models_list = list(active_products.values_list('phone__model', flat=True))
+            models_clean = sorted(set(filter(None, models_list)))
+            context['models'] = [{'phone__model': m} for m in models_clean]
+
+            # Stockages disponibles
+            storages_list = list(active_products.values_list('phone__storage', flat=True))
+            storages_clean = sorted(set(filter(None, storages_list)))
+            context['storages'] = [{'phone__storage': s} for s in storages_clean]
+
+            # RAM disponibles
+            rams_list = list(active_products.values_list('phone__ram', flat=True))
+            rams_clean = sorted(set(filter(None, rams_list)))
+            context['rams'] = [{'phone__ram': r} for r in rams_clean]
+
+            # Filtres sélectionnés
+            context['selected_brand'] = brand
+            context['selected_model'] = self.request.GET.get('model', '')
+            context['selected_storage'] = self.request.GET.get('storage', '')
+            context['selected_ram'] = self.request.GET.get('ram', '')
+            context['selected_price_min'] = self.request.GET.get('price_min', '')
+            context['selected_price_max'] = self.request.GET.get('price_max', '')
+            context['selected_sort'] = self.request.GET.get('sort', '')
+
+            # Message si aucun produit trouvé
+            if not products.exists():
+                context['no_products_message'] = "Aucun produit trouvé pour cette marque et ces filtres."
+
             logger.info("Contexte préparé avec succès")
             
         except Exception as e:

@@ -1,5 +1,5 @@
 <!-- Filtres communs -->
-<div class="mb-6 sm:mb-8">
+<div class="mb-6 sm:mb-8 hidden sm:block">
     <div class="bg-white rounded-xl shadow-lg p-3 sm:p-4 mx-2 sm:mx-0">
         <form class="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-6 gap-2 sm:gap-3"
               method="get"
@@ -54,12 +54,14 @@
                 </select>
             </div>
 
+            <!-- Menu de tri global -->
             <div class="space-y-1">
-                <select name="popularity" class="w-full text-sm rounded-lg border border-gray-200 px-2 py-1.5 text-gray-700 focus:outline-none focus:ring-1 focus:ring-green-500 font-bitter">
-                    <option value="">Tendance</option>
-                    <option value="trending" {% if selected_popularity == 'trending' %}selected{% endif %}>Tendance</option>
-                    <option value="best_selling" {% if selected_popularity == 'best_selling' %}selected{% endif %}>Meilleures ventes</option>
-                    <option value="new_arrivals" {% if selected_popularity == 'new_arrivals' %}selected{% endif %}>Nouveautés</option>
+                <select name="sort" class="w-full text-sm rounded-lg border border-gray-200 px-2 py-1.5 text-gray-700 focus:outline-none focus:ring-1 focus:ring-green-500 font-bitter">
+                    <option value="">Trier par</option>
+                    <option value="price_asc" {% if selected_sort == 'price_asc' %}selected{% endif %}>Prix croissant</option>
+                    <option value="price_desc" {% if selected_sort == 'price_desc' %}selected{% endif %}>Prix décroissant</option>
+                    <option value="new" {% if selected_sort == 'new' %}selected{% endif %}>Nouveautés</option>
+                    <option value="best_selling" {% if selected_sort == 'best_selling' %}selected{% endif %}>Meilleures ventes</option>
                 </select>
             </div>
 
@@ -113,9 +115,12 @@
                 <select name="model" class="w-full text-sm rounded-lg border border-gray-200 px-2 py-1.5 text-gray-700 focus:outline-none focus:ring-1 focus:ring-green-500 font-bitter">
                     <option value="">Modèle</option>
                     {% for model in models %}
-                    <option value="{{ model.phone__model }}" {% if model.phone__model == selected_model %}selected{% endif %}>
-                            {{ model.phone__model }}
-                    </option>
+                    <div class="flex items-center">
+                        <input type="radio" name="model" id="model_{{ model.phone__model|default:model.model|slugify }}" value="{{ model.phone__model|default:model.model }}" 
+                               {% if selected_model == model.phone__model|default:model.model %}checked{% endif %}
+                               class="h-3.5 w-3.5 sm:h-4 sm:w-4 text-green-600 focus:ring-green-500">
+                        <label for="model_{{ model.phone__model|default:model.model|slugify }}" class="ml-2 text-xs sm:text-sm text-gray-700">{{ model.phone__model|default:model.model }}</label>
+                    </div>
                     {% endfor %}
                 </select>
             </div>
@@ -177,6 +182,90 @@
             {% endif %}
         {% endif %}
 
+        {% if category.slug == 'tissus' or category.parent.slug == 'tissus' or category.parent.parent.slug == 'tissus' %}
+        <!-- Filtres spécifiques aux tissus -->
+            {% if fabric_types %}
+            <div class="space-y-1">
+                <select name="fabric_type" class="w-full text-sm rounded-lg border border-gray-200 px-2 py-1.5 text-gray-700 focus:outline-none focus:ring-1 focus:ring-green-500 font-bitter">
+                    <option value="">Type de tissu</option>
+                    {% for fabric_type in fabric_types %}
+                    <option value="{{ fabric_type.fabric_type }}" {% if fabric_type.fabric_type == selected_fabric_type %}selected{% endif %}>
+                        {{ fabric_type.fabric_type }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+            {% endif %}
+
+            {% if colors %}
+            <div class="space-y-1">
+                <select name="color" class="w-full text-sm rounded-lg border border-gray-200 px-2 py-1.5 text-gray-700 focus:outline-none focus:ring-1 focus:ring-green-500 font-bitter">
+                    <option value="">Couleur</option>
+                    {% for color in colors %}
+                    <option value="{{ color.name }}" {% if color.name == selected_color %}selected{% endif %}>
+                        {{ color.name }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+            {% endif %}
+
+            {% if qualities %}
+            <div class="space-y-1">
+                <select name="quality" class="w-full text-sm rounded-lg border border-gray-200 px-2 py-1.5 text-gray-700 focus:outline-none focus:ring-1 focus:ring-green-500 font-bitter">
+                    <option value="">Qualité</option>
+                    {% for quality in qualities %}
+                    <option value="{{ quality.quality }}" {% if quality.quality == selected_quality %}selected{% endif %}>
+                        {{ quality.quality }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+            {% endif %}
+        {% endif %}
+
+        {% if category.slug == 'culture' or category.slug == 'articles-culturels' or category.parent.slug == 'culture' or category.parent.slug == 'articles-culturels' or category.parent.parent.slug == 'culture' or category.parent.parent.slug == 'articles-culturels' %}
+        <!-- Filtres spécifiques aux articles culturels -->
+            {% if authors %}
+            <div class="space-y-1">
+                <select name="author" class="w-full text-sm rounded-lg border border-gray-200 px-2 py-1.5 text-gray-700 focus:outline-none focus:ring-1 focus:ring-green-500 font-bitter">
+                    <option value="">Auteur</option>
+                    {% for author in authors %}
+                    <option value="{{ author.author }}" {% if author.author == selected_author %}selected{% endif %}>
+                        {{ author.author }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+            {% endif %}
+
+            {% if isbns %}
+            <div class="space-y-1">
+                <select name="isbn" class="w-full text-sm rounded-lg border border-gray-200 px-2 py-1.5 text-gray-700 focus:outline-none focus:ring-1 focus:ring-green-500 font-bitter" style="max-height: 200px; overflow-y: auto;">
+                    <option value="">ISBN</option>
+                    {% for isbn in isbns %}
+                    <option value="{{ isbn.isbn }}" {% if isbn.isbn == selected_isbn %}selected{% endif %}>
+                        {{ isbn.isbn }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+            {% endif %}
+
+            {% if dates %}
+            <div class="space-y-1">
+                <select name="date" class="w-full text-sm rounded-lg border border-gray-200 px-2 py-1.5 text-gray-700 focus:outline-none focus:ring-1 focus:ring-green-500 font-bitter" style="max-height: 200px; overflow-y: auto;">
+                    <option value="">Date de publication</option>
+                    {% for date in dates %}
+                    <option value="{{ date.date }}" {% if date.date == selected_date %}selected{% endif %}>
+                        {{ date.date }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+            {% endif %}
+        {% endif %}
+
             <!-- Bouton de soumission -->
             <div class="col-span-2 sm:col-span-4 md:col-span-6 flex flex-col sm:flex-row justify-end gap-2 sm:gap-3">
                 <button type="submit" 
@@ -198,13 +287,72 @@
     </div>
 </div>
 
-<!-- Bouton Filtres mobile -->
-<button class="fixed bottom-4 right-4 z-50 bg-green-600 text-white p-2.5 rounded-full shadow-lg md:hidden hover:bg-green-700 transition-colors duration-200"
-        onclick="toggleFilters()">
-    <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/>
-    </svg>
-</button>
+<!-- Barre de filtres mobile -->
+<div class="mt-4 mb-4 md:hidden">
+    <form method="get" id="mobileFiltersForm">
+        <!-- Champs cachés pour préserver les autres filtres -->
+        {% if selected_price_min %}
+        <input type="hidden" name="price_min" value="{{ selected_price_min }}">
+        {% endif %}
+        {% if selected_price_max %}
+        <input type="hidden" name="price_max" value="{{ selected_price_max }}">
+        {% endif %}
+        {% if selected_condition %}
+        <input type="hidden" name="condition" value="{{ selected_condition }}">
+        {% endif %}
+        {% if selected_warranty %}
+        <input type="hidden" name="warranty" value="{{ selected_warranty }}">
+        {% endif %}
+        {% if selected_sort %}
+        <input type="hidden" name="sort" value="{{ selected_sort }}">
+        {% endif %}
+        {% if selected_shipping %}
+        <input type="hidden" name="shipping" value="{{ selected_shipping }}">
+        {% endif %}
+        {% if selected_brand %}
+        <input type="hidden" name="brand" value="{{ selected_brand }}">
+        {% endif %}
+        {% if selected_model %}
+        <input type="hidden" name="model" value="{{ selected_model }}">
+        {% endif %}
+        {% if selected_storage %}
+        <input type="hidden" name="storage" value="{{ selected_storage }}">
+        {% endif %}
+        {% if selected_ram %}
+        <input type="hidden" name="ram" value="{{ selected_ram }}">
+        {% endif %}
+        {% if selected_main_category %}
+        <input type="hidden" name="main_category" value="{{ selected_main_category }}">
+        {% endif %}
+        
+        <div class="bg-white border border-gray-200 rounded-lg shadow-sm">
+            <div class="flex items-center justify-around py-3 px-4">
+                <!-- Section Promo -->
+                <div class="flex items-center space-x-2">
+                    <input type="checkbox" name="promotion" id="promo_quick" value="yes" 
+                           {% if selected_promotion == 'yes' %}checked{% endif %}
+                           class="w-4 h-4 text-green-600 focus:ring-green-500 border-gray-300 rounded"
+                           onchange="submitMobileForm()">
+                    <label for="promo_quick" class="text-sm text-gray-700 font-medium">Promo</label>
+                    <svg class="w-4 h-4 text-red-500" fill="currentColor" viewBox="0 0 20 20">
+                        <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/>
+                    </svg>
+                </div>
+
+                <!-- Séparateur -->
+                <div class="w-px h-6 bg-gray-300"></div>
+
+                <!-- Section Filtrer -->
+                <button type="button" onclick="toggleFilters()" class="flex items-center space-x-2 text-gray-700">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"/>
+                    </svg>
+                    <span class="text-sm font-medium">Filtrer</span>
+                </button>
+            </div>
+        </div>
+    </form>
+</div>
 
 <!-- Panneau de filtres mobile (modal) -->
 <div id="filtersPanel" class="fixed inset-0 z-40 bg-black bg-opacity-40 flex items-end md:items-center justify-center transition-all duration-300 hidden">
@@ -342,35 +490,391 @@
                 </div>
             </div>
 
-            <!-- Popularité -->
+            <!-- Livraison -->
+            {% if shipping_methods %}
             <div class="bg-gray-50 rounded-lg p-2 sm:p-3">
-                <button type="button" class="w-full px-2 sm:px-3 py-1 sm:py-1.5 flex items-center justify-between text-sm font-medium text-gray-900 font-bitter" onclick="toggleSection('popularitySection')">
-                    <span class="flex-1 text-left">Tendance</span>
-                    <svg class="h-4 w-4 flex-shrink-0 ml-2 transform transition-transform duration-200" id="popularitySectionIcon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <button type="button" class="w-full px-2 sm:px-3 py-1 sm:py-1.5 flex items-center justify-between text-sm font-medium text-gray-900 font-bitter" onclick="toggleSection('shippingSection')">
+                    <span class="flex-1 text-left">Livraison</span>
+                    <svg class="h-4 w-4 flex-shrink-0 ml-2 transform transition-transform duration-200" id="shippingSectionIcon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
                     </svg>
                 </button>
-                <div id="popularitySection" class="mt-2 space-y-1.5 sm:space-y-2">
+                <div id="shippingSection" class="mt-2 space-y-1.5 sm:space-y-2">
                     <div class="flex items-center">
-                        <input type="radio" name="popularity" id="popularity_all" value="" 
-                               {% if not selected_popularity %}checked{% endif %}
+                        <input type="radio" name="shipping" id="shipping_all" value="" 
+                               {% if not selected_shipping %}checked{% endif %}
                                class="h-3.5 w-3.5 sm:h-4 sm:w-4 text-green-600 focus:ring-green-500">
-                        <label for="popularity_all" class="ml-2 text-xs sm:text-sm text-gray-700">Tous</label>
+                        <label for="shipping_all" class="ml-2 text-xs sm:text-sm text-gray-700">Toutes</label>
+                    </div>
+                    {% for method in shipping_methods %}
+                    <div class="flex items-center">
+                        <input type="radio" name="shipping" id="shipping_{{ method.name|slugify }}" value="{{ method.name }}" 
+                               {% if selected_shipping == method.name %}checked{% endif %}
+                               class="h-3.5 w-3.5 sm:h-4 sm:w-4 text-green-600 focus:ring-green-500">
+                        <label for="shipping_{{ method.name|slugify }}" class="ml-2 text-xs sm:text-sm text-gray-700">{{ method.name }}</label>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Trier par -->
+            <div class="bg-gray-50 rounded-lg p-2 sm:p-3">
+                <button type="button" class="w-full px-2 sm:px-3 py-1 sm:py-1.5 flex items-center justify-between text-sm font-medium text-gray-900 font-bitter" onclick="toggleSection('sortSection')">
+                    <span class="flex-1 text-left">Trier par</span>
+                    <svg class="h-4 w-4 flex-shrink-0 ml-2 transform transition-transform duration-200" id="sortSectionIcon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+                    </svg>
+                </button>
+                <div id="sortSection" class="mt-2 space-y-1.5 sm:space-y-2">
+                    <div class="flex items-center">
+                        <input type="radio" name="sort" id="sort_default" value="" 
+                               {% if not selected_sort %}checked{% endif %}
+                               class="h-3.5 w-3.5 sm:h-4 sm:w-4 text-green-600 focus:ring-green-500">
+                        <label for="sort_default" class="ml-2 text-xs sm:text-sm text-gray-700">Par défaut</label>
                     </div>
                     <div class="flex items-center">
-                        <input type="radio" name="popularity" id="popularity_trending" value="trending" 
-                               {% if selected_popularity == 'trending' %}checked{% endif %}
+                        <input type="radio" name="sort" id="sort_price_asc" value="price_asc" 
+                               {% if selected_sort == 'price_asc' %}checked{% endif %}
                                class="h-3.5 w-3.5 sm:h-4 sm:w-4 text-green-600 focus:ring-green-500">
-                        <label for="popularity_trending" class="ml-2 text-xs sm:text-sm text-gray-700">Tendance</label>
+                        <label for="sort_price_asc" class="ml-2 text-xs sm:text-sm text-gray-700">Prix croissant</label>
                     </div>
                     <div class="flex items-center">
-                        <input type="radio" name="popularity" id="popularity_bestseller" value="bestseller" 
-                               {% if selected_popularity == 'bestseller' %}checked{% endif %}
+                        <input type="radio" name="sort" id="sort_price_desc" value="price_desc" 
+                               {% if selected_sort == 'price_desc' %}checked{% endif %}
                                class="h-3.5 w-3.5 sm:h-4 sm:w-4 text-green-600 focus:ring-green-500">
-                        <label for="popularity_bestseller" class="ml-2 text-xs sm:text-sm text-gray-700">Meilleures ventes</label>
+                        <label for="sort_price_desc" class="ml-2 text-xs sm:text-sm text-gray-700">Prix décroissant</label>
+                    </div>
+                    <div class="flex items-center">
+                        <input type="radio" name="sort" id="sort_new" value="new" 
+                               {% if selected_sort == 'new' %}checked{% endif %}
+                               class="h-3.5 w-3.5 sm:h-4 sm:w-4 text-green-600 focus:ring-green-500">
+                        <label for="sort_new" class="ml-2 text-xs sm:text-sm text-gray-700">Nouveautés</label>
+                    </div>
+                    <div class="flex items-center">
+                        <input type="radio" name="sort" id="sort_best_selling" value="best_selling" 
+                               {% if selected_sort == 'best_selling' %}checked{% endif %}
+                               class="h-3.5 w-3.5 sm:h-4 sm:w-4 text-green-600 focus:ring-green-500">
+                        <label for="sort_best_selling" class="ml-2 text-xs sm:text-sm text-gray-700">Meilleures ventes</label>
                     </div>
                 </div>
             </div>
+
+            <!-- Catégorie (pour "Tous les produits") -->
+            {% if main_categories %}
+            <div class="bg-gray-50 rounded-lg p-2 sm:p-3">
+                <button type="button" class="w-full px-2 sm:px-3 py-1 sm:py-1.5 flex items-center justify-between text-sm font-medium text-gray-900 font-bitter" onclick="toggleSection('categorySection')">
+                    <span class="flex-1 text-left">Catégorie</span>
+                    <svg class="h-4 w-4 flex-shrink-0 ml-2 transform transition-transform duration-200" id="categorySectionIcon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+                    </svg>
+                </button>
+                <div id="categorySection" class="mt-2 space-y-1.5 sm:space-y-2 max-h-48 overflow-y-auto">
+                    <div class="flex items-center">
+                        <input type="radio" name="main_category" id="category_all" value="" 
+                               {% if not selected_main_category %}checked{% endif %}
+                               class="h-3.5 w-3.5 sm:h-4 sm:w-4 text-green-600 focus:ring-green-500">
+                        <label for="category_all" class="ml-2 text-xs sm:text-sm text-gray-700">Toutes</label>
+                    </div>
+                    {% for cat in main_categories %}
+                    <div class="flex items-center">
+                        <input type="radio" name="main_category" id="category_{{ cat.slug }}" value="{{ cat.slug }}" 
+                               {% if selected_main_category == cat.slug %}checked{% endif %}
+                               class="h-3.5 w-3.5 sm:h-4 sm:w-4 text-green-600 focus:ring-green-500">
+                        <label for="category_{{ cat.slug }}" class="ml-2 text-xs sm:text-sm text-gray-700">{{ cat.name }}</label>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Marque (pour téléphones) -->
+            {% if brands %}
+            <!-- DEBUG: {{ brands|length }} marques trouvées -->
+            <div class="bg-gray-50 rounded-lg p-2 sm:p-3">
+                <button type="button" class="w-full px-2 sm:px-3 py-1 sm:py-1.5 flex items-center justify-between text-sm font-medium text-gray-900 font-bitter" onclick="toggleSection('brandSection')">
+                    <span class="flex-1 text-left">Marque</span>
+                    <svg class="h-4 w-4 flex-shrink-0 ml-2 transform transition-transform duration-200" id="brandSectionIcon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+                    </svg>
+                </button>
+                <div id="brandSection" class="mt-2 space-y-1.5 sm:space-y-2 max-h-48 overflow-y-auto">
+                    <div class="flex items-center">
+                        <input type="radio" name="brand" id="brand_all" value="" 
+                               {% if not selected_brand %}checked{% endif %}
+                               class="h-3.5 w-3.5 sm:h-4 sm:w-4 text-green-600 focus:ring-green-500">
+                        <label for="brand_all" class="ml-2 text-xs sm:text-sm text-gray-700">Toutes</label>
+                    </div>
+                    {% for brand in brands %}
+                    <!-- DEBUG: Marque {{ forloop.counter }}: {{ brand.phone__brand|default:brand.brand }} -->
+                    <div class="flex items-center">
+                        <input type="radio" name="brand" id="brand_{{ brand.phone__brand|default:brand.brand|slugify }}" value="{{ brand.phone__brand|default:brand.brand }}" 
+                               {% if selected_brand == brand.phone__brand|default:brand.brand %}checked{% endif %}
+                               class="h-3.5 w-3.5 sm:h-4 sm:w-4 text-green-600 focus:ring-green-500">
+                        <label for="brand_{{ brand.phone__brand|default:brand.brand|slugify }}" class="ml-2 text-xs sm:text-sm text-gray-700">
+                            {{ brand.phone__brand|default:brand.brand|default:"Marque inconnue" }}
+                        </label>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            {% else %}
+            <!-- DEBUG: Aucune marque trouvée -->
+            {% endif %}
+
+            <!-- Modèle (pour téléphones) -->
+            {% if models %}
+            <div class="bg-gray-50 rounded-lg p-2 sm:p-3">
+                <button type="button" class="w-full px-2 sm:px-3 py-1 sm:py-1.5 flex items-center justify-between text-sm font-medium text-gray-900 font-bitter" onclick="toggleSection('modelSection')">
+                    <span class="flex-1 text-left">Modèle</span>
+                    <svg class="h-4 w-4 flex-shrink-0 ml-2 transform transition-transform duration-200" id="modelSectionIcon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+                    </svg>
+                </button>
+                <div id="modelSection" class="mt-2 space-y-1.5 sm:space-y-2 max-h-48 overflow-y-auto">
+                    <div class="flex items-center">
+                        <input type="radio" name="model" id="model_all" value="" 
+                               {% if not selected_model %}checked{% endif %}
+                               class="h-3.5 w-3.5 sm:h-4 sm:w-4 text-green-600 focus:ring-green-500">
+                        <label for="model_all" class="ml-2 text-xs sm:text-sm text-gray-700">Tous</label>
+                    </div>
+                    {% for model in models %}
+                    <div class="flex items-center">
+                        <input type="radio" name="model" id="model_{{ model.phone__model|default:model.model|slugify }}" value="{{ model.phone__model|default:model.model }}" 
+                               {% if selected_model == model.phone__model|default:model.model %}checked{% endif %}
+                               class="h-3.5 w-3.5 sm:h-4 sm:w-4 text-green-600 focus:ring-green-500">
+                        <label for="model_{{ model.phone__model|default:model.model|slugify }}" class="ml-2 text-xs sm:text-sm text-gray-700">{{ model.phone__model|default:model.model }}</label>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Stockage (pour téléphones) -->
+            {% if storages %}
+            <div class="bg-gray-50 rounded-lg p-2 sm:p-3">
+                <button type="button" class="w-full px-2 sm:px-3 py-1 sm:py-1.5 flex items-center justify-between text-sm font-medium text-gray-900 font-bitter" onclick="toggleSection('storageSection')">
+                    <span class="flex-1 text-left">Stockage</span>
+                    <svg class="h-4 w-4 flex-shrink-0 ml-2 transform transition-transform duration-200" id="storageSectionIcon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+                    </svg>
+                </button>
+                <div id="storageSection" class="mt-2 space-y-1.5 sm:space-y-2 max-h-48 overflow-y-auto">
+                    <div class="flex items-center">
+                        <input type="radio" name="storage" id="storage_all" value="" 
+                               {% if not selected_storage %}checked{% endif %}
+                               class="h-3.5 w-3.5 sm:h-4 sm:w-4 text-green-600 focus:ring-green-500">
+                        <label for="storage_all" class="ml-2 text-xs sm:text-sm text-gray-700">Tous</label>
+                    </div>
+                    {% for storage in storages %}
+                    <div class="flex items-center">
+                        <input type="radio" name="storage" id="storage_{{ storage.phone__storage|slugify }}" value="{{ storage.phone__storage }}" 
+                               {% if selected_storage == storage.phone__storage %}checked{% endif %}
+                               class="h-3.5 w-3.5 sm:h-4 sm:w-4 text-green-600 focus:ring-green-500">
+                        <label for="storage_{{ storage.phone__storage|slugify }}" class="ml-2 text-xs sm:text-sm text-gray-700">{{ storage.phone__storage }} GB</label>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- RAM (pour téléphones) -->
+            {% if rams %}
+            <div class="bg-gray-50 rounded-lg p-2 sm:p-3">
+                <button type="button" class="w-full px-2 sm:px-3 py-1 sm:py-1.5 flex items-center justify-between text-sm font-medium text-gray-900 font-bitter" onclick="toggleSection('ramSection')">
+                    <span class="flex-1 text-left">RAM</span>
+                    <svg class="h-4 w-4 flex-shrink-0 ml-2 transform transition-transform duration-200" id="ramSectionIcon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+                    </svg>
+                </button>
+                <div id="ramSection" class="mt-2 space-y-1.5 sm:space-y-2 max-h-48 overflow-y-auto">
+                    <div class="flex items-center">
+                        <input type="radio" name="ram" id="ram_all" value="" 
+                               {% if not selected_ram %}checked{% endif %}
+                               class="h-3.5 w-3.5 sm:h-4 sm:w-4 text-green-600 focus:ring-green-500">
+                        <label for="ram_all" class="ml-2 text-xs sm:text-sm text-gray-700">Toutes</label>
+                    </div>
+                    {% for ram in rams %}
+                    <div class="flex items-center">
+                        <input type="radio" name="ram" id="ram_{{ ram.phone__ram|slugify }}" value="{{ ram.phone__ram }}" 
+                               {% if selected_ram == ram.phone__ram %}checked{% endif %}
+                               class="h-3.5 w-3.5 sm:h-4 sm:w-4 text-green-600 focus:ring-green-500">
+                        <label for="ram_{{ ram.phone__ram|slugify }}" class="ml-2 text-xs sm:text-sm text-gray-700">{{ ram.phone__ram }} GB</label>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
+
+            {% if category.slug == 'tissus' or category.parent.slug == 'tissus' or category.parent.parent.slug == 'tissus' %}
+            <!-- Type de tissu -->
+            {% if fabric_types %}
+            <div class="bg-gray-50 rounded-lg p-2 sm:p-3">
+                <button type="button" class="w-full px-2 sm:px-3 py-1 sm:py-1.5 flex items-center justify-between text-sm font-medium text-gray-900 font-bitter" onclick="toggleSection('fabricTypeSection')">
+                    <span class="flex-1 text-left">Type de tissu</span>
+                    <svg class="h-4 w-4 flex-shrink-0 ml-2 transform transition-transform duration-200" id="fabricTypeSectionIcon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+                    </svg>
+                </button>
+                <div id="fabricTypeSection" class="mt-2 space-y-1.5 sm:space-y-2">
+                    <div class="flex items-center">
+                        <input type="radio" name="fabric_type" id="fabric_type_all" value="" 
+                               {% if not selected_fabric_type %}checked{% endif %}
+                               class="h-3.5 w-3.5 sm:h-4 sm:w-4 text-green-600 focus:ring-green-500">
+                        <label for="fabric_type_all" class="ml-2 text-xs sm:text-sm text-gray-700">Tous</label>
+                    </div>
+                    {% for fabric_type in fabric_types %}
+                    <div class="flex items-center">
+                        <input type="radio" name="fabric_type" id="fabric_type_{{ fabric_type.fabric_type|slugify }}" value="{{ fabric_type.fabric_type }}" 
+                               {% if selected_fabric_type == fabric_type.fabric_type %}checked{% endif %}
+                               class="h-3.5 w-3.5 sm:h-4 sm:w-4 text-green-600 focus:ring-green-500">
+                        <label for="fabric_type_{{ fabric_type.fabric_type|slugify }}" class="ml-2 text-xs sm:text-sm text-gray-700">{{ fabric_type.fabric_type }}</label>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Couleur -->
+            {% if colors %}
+            <div class="bg-gray-50 rounded-lg p-2 sm:p-3">
+                <button type="button" class="w-full px-2 sm:px-3 py-1 sm:py-1.5 flex items-center justify-between text-sm font-medium text-gray-900 font-bitter" onclick="toggleSection('colorSection')">
+                    <span class="flex-1 text-left">Couleur</span>
+                    <svg class="h-4 w-4 flex-shrink-0 ml-2 transform transition-transform duration-200" id="colorSectionIcon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+                    </svg>
+                </button>
+                <div id="colorSection" class="mt-2 space-y-1.5 sm:space-y-2">
+                    <div class="flex items-center">
+                        <input type="radio" name="color" id="color_all" value="" 
+                               {% if not selected_color %}checked{% endif %}
+                               class="h-3.5 w-3.5 sm:h-4 sm:w-4 text-green-600 focus:ring-green-500">
+                        <label for="color_all" class="ml-2 text-xs sm:text-sm text-gray-700">Toutes</label>
+                    </div>
+                    {% for color in colors %}
+                    <div class="flex items-center">
+                        <input type="radio" name="color" id="color_{{ color.name|slugify }}" value="{{ color.name }}" 
+                               {% if selected_color == color.name %}checked{% endif %}
+                               class="h-3.5 w-3.5 sm:h-4 sm:w-4 text-green-600 focus:ring-green-500">
+                        <label for="color_{{ color.name|slugify }}" class="ml-2 text-xs sm:text-sm text-gray-700">{{ color.name }}</label>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Qualité -->
+            {% if qualities %}
+            <div class="bg-gray-50 rounded-lg p-2 sm:p-3">
+                <button type="button" class="w-full px-2 sm:px-3 py-1 sm:py-1.5 flex items-center justify-between text-sm font-medium text-gray-900 font-bitter" onclick="toggleSection('qualitySection')">
+                    <span class="flex-1 text-left">Qualité</span>
+                    <svg class="h-4 w-4 flex-shrink-0 ml-2 transform transition-transform duration-200" id="qualitySectionIcon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+                    </svg>
+                </button>
+                <div id="qualitySection" class="mt-2 space-y-1.5 sm:space-y-2">
+                    <div class="flex items-center">
+                        <input type="radio" name="quality" id="quality_all" value="" 
+                               {% if not selected_quality %}checked{% endif %}
+                               class="h-3.5 w-3.5 sm:h-4 sm:w-4 text-green-600 focus:ring-green-500">
+                        <label for="quality_all" class="ml-2 text-xs sm:text-sm text-gray-700">Toutes</label>
+                    </div>
+                    {% for quality in qualities %}
+                    <div class="flex items-center">
+                        <input type="radio" name="quality" id="quality_{{ quality.quality|slugify }}" value="{{ quality.quality }}" 
+                               {% if selected_quality == quality.quality %}checked{% endif %}
+                               class="h-3.5 w-3.5 sm:h-4 sm:w-4 text-green-600 focus:ring-green-500">
+                        <label for="quality_{{ quality.quality|slugify }}" class="ml-2 text-xs sm:text-sm text-gray-700">{{ quality.quality }}</label>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
+
+            {% if category.slug == 'culture' or category.slug == 'articles-culturels' or category.parent.slug == 'culture' or category.parent.slug == 'articles-culturels' or category.parent.parent.slug == 'culture' or category.parent.parent.slug == 'articles-culturels' %}
+            <!-- Auteur -->
+            <div class="bg-gray-50 rounded-lg p-2 sm:p-3">
+                <button type="button" class="w-full px-2 sm:px-3 py-1 sm:py-1.5 flex items-center justify-between text-sm font-medium text-gray-900 font-bitter" onclick="toggleSection('authorSection')">
+                    <span class="flex-1 text-left">Auteur</span>
+                    <svg class="h-4 w-4 flex-shrink-0 ml-2 transform transition-transform duration-200" id="authorSectionIcon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+                    </svg>
+                </button>
+                <div id="authorSection" class="mt-2 space-y-1.5 sm:space-y-2">
+                    <div class="flex items-center">
+                        <input type="radio" name="author" id="author_all" value="" 
+                               {% if not selected_author %}checked{% endif %}
+                               class="h-3.5 w-3.5 sm:h-4 sm:w-4 text-green-600 focus:ring-green-500">
+                        <label for="author_all" class="ml-2 text-xs sm:text-sm text-gray-700">Tous</label>
+                    </div>
+                    {% for author in authors %}
+                    <div class="flex items-center">
+                        <input type="radio" name="author" id="author_{{ author.author|slugify }}" value="{{ author.author }}" 
+                               {% if selected_author == author.author %}checked{% endif %}
+                               class="h-3.5 w-3.5 sm:h-4 sm:w-4 text-green-600 focus:ring-green-500">
+                        <label for="author_{{ author.author|slugify }}" class="ml-2 text-xs sm:text-sm text-gray-700">{{ author.author }}</label>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- ISBN -->
+            {% if isbns %}
+            <div class="bg-gray-50 rounded-lg p-2 sm:p-3">
+                <button type="button" class="w-full px-2 sm:px-3 py-1 sm:py-1.5 flex items-center justify-between text-sm font-medium text-gray-900 font-bitter" onclick="toggleSection('isbnSection')">
+                    <span class="flex-1 text-left">ISBN</span>
+                    <svg class="h-4 w-4 flex-shrink-0 ml-2 transform transition-transform duration-200" id="isbnSectionIcon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+                    </svg>
+                </button>
+                <div id="isbnSection" class="mt-2 space-y-1.5 sm:space-y-2 max-h-48 overflow-y-auto">
+                    <div class="flex items-center">
+                        <input type="radio" name="isbn" id="isbn_all" value="" 
+                               {% if not selected_isbn %}checked{% endif %}
+                               class="h-3.5 w-3.5 sm:h-4 sm:w-4 text-green-600 focus:ring-green-500">
+                        <label for="isbn_all" class="ml-2 text-xs sm:text-sm text-gray-700">Tous</label>
+                    </div>
+                    {% for isbn in isbns %}
+                    <div class="flex items-center">
+                        <input type="radio" name="isbn" id="isbn_{{ isbn.isbn|slugify }}" value="{{ isbn.isbn }}" 
+                               {% if selected_isbn == isbn.isbn %}checked{% endif %}
+                               class="h-3.5 w-3.5 sm:h-4 sm:w-4 text-green-600 focus:ring-green-500">
+                        <label for="isbn_{{ isbn.isbn|slugify }}" class="ml-2 text-xs sm:text-sm text-gray-700">{{ isbn.isbn }}</label>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Date de publication -->
+            {% if dates %}
+            <div class="bg-gray-50 rounded-lg p-2 sm:p-3">
+                <button type="button" class="w-full px-2 sm:px-3 py-1 sm:py-1.5 flex items-center justify-between text-sm font-medium text-gray-900 font-bitter" onclick="toggleSection('dateSection')">
+                    <span class="flex-1 text-left">Date de publication</span>
+                    <svg class="h-4 w-4 flex-shrink-0 ml-2 transform transition-transform duration-200" id="dateSectionIcon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+                    </svg>
+                </button>
+                <div id="dateSection" class="mt-2 space-y-1.5 sm:space-y-2 max-h-48 overflow-y-auto">
+                    <div class="flex items-center">
+                        <input type="radio" name="date" id="date_all" value="" 
+                               {% if not selected_date %}checked{% endif %}
+                               class="h-3.5 w-3.5 sm:h-4 sm:w-4 text-green-600 focus:ring-green-500">
+                        <label for="date_all" class="ml-2 text-xs sm:text-sm text-gray-700">Toutes</label>
+                    </div>
+                    {% for date in dates %}
+                    <div class="flex items-center">
+                        <input type="radio" name="date" id="date_{{ date.date|slugify }}" value="{{ date.date }}" 
+                               {% if selected_date == date.date %}checked{% endif %}
+                               class="h-3.5 w-3.5 sm:h-4 sm:w-4 text-green-600 focus:ring-green-500">
+                        <label for="date_{{ date.date|slugify }}" class="ml-2 text-xs sm:text-sm text-gray-700">{{ date.date }}</label>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
+            {% endif %}
 
             <!-- Boutons d'action -->
             <div class="flex flex-col sm:flex-row gap-2 sm:gap-3 pt-3">
@@ -393,11 +897,81 @@
     </div>
 </div>
 
+<!-- Panneau de tri mobile (modal) -->
+<div id="sortPanel" class="fixed inset-0 z-40 bg-black bg-opacity-40 flex items-end md:items-center justify-center transition-all duration-300 hidden">
+    <div class="bg-white w-full md:w-80 rounded-t-2xl md:rounded-xl p-3 max-h-[60vh] overflow-y-auto shadow-xl">
+        <div class="flex items-center justify-between mb-4">
+            <h2 class="text-base font-bold text-gray-900 font-bitter">Trier par</h2>
+            <button onclick="toggleSort()" class="text-gray-400 hover:text-gray-700 transition-colors duration-200">
+                <span class="sr-only">Fermer</span>
+                <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                </svg>
+            </button>
+        </div>
+
+        <form method="get" class="space-y-3">
+            <!-- Options de tri -->
+            <div class="space-y-2">
+                <div class="flex items-center p-3 rounded-lg border border-gray-200 hover:bg-gray-50">
+                    <input type="radio" name="sort" id="sort_default" value="" 
+                           {% if not selected_sort %}checked{% endif %}
+                           class="h-4 w-4 text-green-600 focus:ring-green-500">
+                    <label for="sort_default" class="ml-3 text-sm text-gray-700 font-medium">Par défaut</label>
+                </div>
+                
+                <div class="flex items-center p-3 rounded-lg border border-gray-200 hover:bg-gray-50">
+                    <input type="radio" name="sort" id="sort_price_asc" value="price_asc" 
+                           {% if selected_sort == 'price_asc' %}checked{% endif %}
+                           class="h-4 w-4 text-green-600 focus:ring-green-500">
+                    <label for="sort_price_asc" class="ml-3 text-sm text-gray-700 font-medium">Prix croissant</label>
+                </div>
+                
+                <div class="flex items-center p-3 rounded-lg border border-gray-200 hover:bg-gray-50">
+                    <input type="radio" name="sort" id="sort_price_desc" value="price_desc" 
+                           {% if selected_sort == 'price_desc' %}checked{% endif %}
+                           class="h-4 w-4 text-green-600 focus:ring-green-500">
+                    <label for="sort_price_desc" class="ml-3 text-sm text-gray-700 font-medium">Prix décroissant</label>
+                </div>
+                
+                <div class="flex items-center p-3 rounded-lg border border-gray-200 hover:bg-gray-50">
+                    <input type="radio" name="sort" id="sort_new" value="new" 
+                           {% if selected_sort == 'new' %}checked{% endif %}
+                           class="h-4 w-4 text-green-600 focus:ring-green-500">
+                    <label for="sort_new" class="ml-3 text-sm text-gray-700 font-medium">Nouveautés</label>
+                </div>
+                
+                <div class="flex items-center p-3 rounded-lg border border-gray-200 hover:bg-gray-50">
+                    <input type="radio" name="sort" id="sort_best_selling" value="best_selling" 
+                           {% if selected_sort == 'best_selling' %}checked{% endif %}
+                           class="h-4 w-4 text-green-600 focus:ring-green-500">
+                    <label for="sort_best_selling" class="ml-3 text-sm text-gray-700 font-medium">Meilleures ventes</label>
+                </div>
+            </div>
+
+            <!-- Boutons d'action -->
+            <div class="flex space-x-3 pt-4 border-t border-gray-200">
+                <button type="submit" class="flex-1 bg-green-600 text-white py-2 px-4 rounded-lg font-medium hover:bg-green-700 transition-colors duration-200">
+                    Appliquer
+                </button>
+                <a href="?" class="flex-1 bg-gray-200 text-gray-700 py-2 px-4 rounded-lg font-medium text-center hover:bg-gray-300 transition-colors duration-200">
+                    Reset
+                </a>
+            </div>
+        </form>
+    </div>
+</div>
+
 <script>
 function toggleFilters() {
     const panel = document.getElementById('filtersPanel');
     panel.classList.toggle('hidden');
     document.body.style.overflow = panel.classList.contains('hidden') ? 'auto' : 'hidden';
+}
+
+function toggleSort() {
+    const sortPanel = document.getElementById('sortPanel');
+    sortPanel.classList.toggle('hidden');
 }
 
 function toggleSection(sectionId) {
@@ -414,16 +988,23 @@ document.getElementById('filtersPanel').addEventListener('click', function(e) {
     }
 });
 
+document.getElementById('sortPanel').addEventListener('click', function(e) {
+    if (e.target === this) {
+        toggleSort();
+    }
+});
+
 // Ouvrir les sections qui ont des valeurs sélectionnées
 document.addEventListener('DOMContentLoaded', function() {
     const sections = ['priceSection', 'brandSection', 'modelSection', 'storageSection', 'ramSection', 
                      'genderSection', 'sizeSection', 'colorSection', 'typeSection',
                      'fabricTypeSection', 'qualitySection',
-                     'authorSection', 'isbnSection', 'dateSection'];
+                     'authorSection', 'isbnSection', 'dateSection',
+                     'shippingSection', 'sortSection', 'categorySection'];
     sections.forEach(section => {
         const element = document.getElementById(section);
-        if (element && element.querySelector('select option:checked, input[type="number"]')) {
-            const hasValue = Array.from(element.querySelectorAll('select option:checked, input[type="number"]'))
+        if (element && element.querySelector('select option:checked, input[type="number"], input[type="radio"]:checked')) {
+            const hasValue = Array.from(element.querySelectorAll('select option:checked, input[type="number"], input[type="radio"]:checked'))
                 .some(input => input.value);
             if (hasValue) {
                 element.classList.remove('hidden');
@@ -473,4 +1054,11 @@ document.addEventListener('DOMContentLoaded', function() {
         form.submit();
     }
 });
+
+function submitMobileForm() {
+    const mobileForm = document.getElementById('mobileFiltersForm');
+    if (mobileForm) {
+        mobileForm.submit();
+    }
+}
 </script> 

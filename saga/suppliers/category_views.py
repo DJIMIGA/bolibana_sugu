@@ -9,8 +9,46 @@ from django.utils import timezone
 from datetime import timedelta
 from django.db.models import Prefetch
 from core.facebook_conversions import facebook_conversions
+from django.db import models
+import re
 
 logger = logging.getLogger(__name__)
+
+def convert_french_date_to_db_format(french_date_str):
+    """
+    Convertit une date française (ex: "1 janvier 2019") en format de base de données (YYYY-MM-DD)
+    """
+    if not french_date_str:
+        return None
+    
+    # Mapping des mois français vers les numéros
+    mois_mapping = {
+        'janvier': '01', 'février': '02', 'mars': '03', 'avril': '04',
+        'mai': '05', 'juin': '06', 'juillet': '07', 'août': '08',
+        'septembre': '09', 'octobre': '10', 'novembre': '11', 'décembre': '12'
+    }
+    
+    try:
+        # Nettoyer la chaîne
+        date_str = french_date_str.strip()
+        
+        # Pattern pour "1 janvier 2019" ou "01 janvier 2019"
+        pattern = r'(\d{1,2})\s+(\w+)\s+(\d{4})'
+        match = re.match(pattern, date_str)
+        
+        if match:
+            jour, mois_fr, annee = match.groups()
+            mois_num = mois_mapping.get(mois_fr.lower())
+            
+            if mois_num:
+                # Formater en YYYY-MM-DD
+                jour_formate = jour.zfill(2)  # Ajouter un zéro si nécessaire
+                return f"{annee}-{mois_num}-{jour_formate}"
+        
+        return None
+    except Exception as e:
+        print(f"Erreur lors de la conversion de la date '{french_date_str}': {e}")
+        return None
 
 class BaseCategoryView(TemplateView):
     """Vue de base pour toutes les catégories"""
@@ -116,17 +154,6 @@ class BaseCategoryView(TemplateView):
             queryset = queryset.filter(shipping_methods__name=shipping)
             print(f"Filtre livraison: {shipping} - Produits restants: {queryset.count()}")
 
-        # Filtre par popularité (tendance, meilleures ventes, nouveautés)
-        popularity = self.request.GET.get('popularity')
-        if popularity:
-            if popularity == 'trending':
-                queryset = queryset.filter(is_trending=True)
-            elif popularity == 'best_selling':
-                queryset = queryset.order_by('-sales_count')
-            elif popularity == 'new_arrivals':
-                queryset = queryset.order_by('-created_at')
-            print(f"Filtre popularité: {popularity} - Produits restants: {queryset.count()}")
-
         # Filtre par poids (min et max)
         weight_min = self.request.GET.get('weight_min')
         if weight_min:
@@ -186,11 +213,22 @@ class BaseCategoryView(TemplateView):
             queryset = queryset.filter(cultural_product__date=publication_date)
             print(f"Filtre date publication: {publication_date} - Produits restants: {queryset.count()}")
 
+        sort = self.request.GET.get('sort')
+        if sort == 'price_asc':
+            queryset = queryset.order_by('price')
+        elif sort == 'price_desc':
+            queryset = queryset.order_by('-price')
+        elif sort == 'new':
+            queryset = queryset.order_by('-created_at')
+        elif sort == 'best_selling':
+            queryset = queryset.order_by('-sales_count')
+
         print(f"Nombre final de produits après tous les filtres: {queryset.count()}")
         print("=== FIN DEBUG GENERIC FILTERS ===\n")
         return queryset
 
     def get_queryset(self):
+        print(f"[DEBUG] Paramètres GET reçus dans get_queryset : {self.request.GET}")
         category = self.get_category()
         queryset = self.get_base_queryset()
 
@@ -214,7 +252,12 @@ class BaseCategoryView(TemplateView):
             # Appliquer le filtre de catégorie principale
             main_category = self.request.GET.get('main_category')
             if main_category:
-                queryset = queryset.filter(category_id__in=Category.objects.filter(slug=main_category).values_list('id', flat=True))
+                cat = Category.objects.filter(slug=main_category).first()
+                print(f"[DEBUG] main_category param: {main_category}, cat found: {cat}")
+                if cat:
+                    all_ids = cat.get_all_children_ids()
+                    print(f"[DEBUG] IDs filtrés pour la catégorie '{cat.name}': {all_ids}")
+                    queryset = queryset.filter(category_id__in=all_ids)
 
         # Si c'est "Téléphones" ou une de ses sous-catégories (jusqu'au niveau 3)
         elif (category.slug == 'telephones' or 
@@ -711,14 +754,11 @@ class PhoneCategoryView(BaseCategoryView):
         model = self.request.GET.get('model')
         storage = self.request.GET.get('storage')
         ram = self.request.GET.get('ram')
-        
-        print("\n=== DEBUG PHONE FILTERS ===")
-        print(f"Filtres appliqués:")
-        print(f"- Marque: {brand}")
-        print(f"- Modèle: {model}")
-        print(f"- Stockage: {storage}")
-        print(f"- RAM: {ram}")
-        
+        condition = self.request.GET.get('condition')
+        promotion = self.request.GET.get('promotion')
+        shipping = self.request.GET.get('shipping')
+        sort = self.request.GET.get('sort')
+
         if brand:
             queryset = queryset.filter(phone__brand=brand)
         if model:
@@ -727,10 +767,23 @@ class PhoneCategoryView(BaseCategoryView):
             queryset = queryset.filter(phone__storage=storage)
         if ram:
             queryset = queryset.filter(phone__ram=ram)
-            
-        print(f"Nombre de produits après filtres: {queryset.count()}")
-        print("=== FIN DEBUG FILTERS ===\n")
-        
+        if condition:
+            queryset = queryset.filter(condition=condition)
+        if promotion == 'yes':
+            queryset = queryset.filter(discount_price__isnull=False, discount_price__lt=models.F('price'))
+        elif promotion == 'no':
+            queryset = queryset.filter(models.Q(discount_price__isnull=True) | models.Q(discount_price__gte=models.F('price')))
+        if shipping:
+            queryset = queryset.filter(shipping_methods__name=shipping)
+        # Nouveau tri global
+        if sort == 'price_asc':
+            queryset = queryset.order_by('price')
+        elif sort == 'price_desc':
+            queryset = queryset.order_by('-price')
+        elif sort == 'new':
+            queryset = queryset.order_by('-created_at')
+        elif sort == 'best_selling':
+            queryset = queryset.order_by('-sales_count')
         return queryset
     
     def get_context_data(self, **kwargs):
@@ -766,7 +819,7 @@ class PhoneCategoryView(BaseCategoryView):
         
         # Récupérer les RAM disponibles
         rams_list = list(active_products.values_list('phone__ram', flat=True).distinct())
-        context['rams'] = [{'phone__ram': r} for r in sorted(set(filter(None, rams_list)))]
+        context['rams'] = [{'phone__ram': str(r)} for r in sorted(set(filter(None, rams_list)))]
         print(f"RAM disponibles: {context['rams']}")
         
         # Récupérer les couleurs disponibles avec leurs codes
@@ -785,8 +838,15 @@ class PhoneCategoryView(BaseCategoryView):
         # Filtres sélectionnés
         context['selected_brand'] = self.request.GET.get('brand', '')
         context['selected_model'] = self.request.GET.get('model', '')
-        context['selected_storage'] = self.request.GET.get('storage', '')
-        context['selected_ram'] = self.request.GET.get('ram', '')
+        context['selected_storage'] = str(self.request.GET.get('storage', '')) if self.request.GET.get('storage') is not None else ''
+        context['selected_ram'] = str(self.request.GET.get('ram', '')) if self.request.GET.get('ram') is not None else ''
+        context['selected_price_min'] = self.request.GET.get('price_min', '')
+        context['selected_price_max'] = self.request.GET.get('price_max', '')
+        context['selected_condition'] = self.request.GET.get('condition', '')
+        context['selected_warranty'] = self.request.GET.get('warranty', '')
+        context['selected_promotion'] = self.request.GET.get('promotion', '')
+        context['selected_sort'] = self.request.GET.get('sort', '')
+        context['selected_shipping'] = self.request.GET.get('shipping', '')
         
         # Ajouter les informations sur les sous-catégories
         category = self.get_category()
@@ -814,7 +874,10 @@ class FabricCategoryView(BaseCategoryView):
     """Vue spécialisée pour les catégories de tissus"""
     
     def get_queryset(self):
+        print(f"[DEBUG] Paramètres GET reçus dans FabricCategoryView.get_queryset : {self.request.GET}")
         queryset = self.get_base_queryset().filter(fabric_product__isnull=False)
+        
+        print(f"Nombre initial de produits tissus: {queryset.count()}")
         
         # Appliquer le filtre de garantie
         warranty = self.request.GET.get('warranty')
@@ -823,9 +886,48 @@ class FabricCategoryView(BaseCategoryView):
                 queryset = queryset.filter(has_warranty=True)
             elif warranty == 'no':
                 queryset = queryset.filter(has_warranty=False)
+            print(f"Filtre garantie: {warranty} - Produits restants: {queryset.count()}")
 
+        # Appliquer le filtre de condition
+        condition = self.request.GET.get('condition')
+        if condition:
+            queryset = queryset.filter(condition=condition)
+            print(f"Filtre condition: {condition} - Produits restants: {queryset.count()}")
+
+        # Appliquer le filtre de promotion
+        promotion = self.request.GET.get('promotion')
+        if promotion == 'yes':
+            queryset = queryset.filter(discount_price__isnull=False, discount_price__lt=models.F('price'))
+            print(f"Filtre promotion: oui - Produits restants: {queryset.count()}")
+        elif promotion == 'no':
+            queryset = queryset.filter(models.Q(discount_price__isnull=True) | models.Q(discount_price__gte=models.F('price')))
+            print(f"Filtre promotion: non - Produits restants: {queryset.count()}")
+
+        # Appliquer le filtre de livraison
+        shipping = self.request.GET.get('shipping')
+        if shipping:
+            queryset = queryset.filter(shipping_methods__name=shipping)
+            print(f"Filtre livraison: {shipping} - Produits restants: {queryset.count()}")
+
+        # Appliquer les filtres spécifiques aux tissus
         queryset = self.apply_fabric_filters(queryset)
-        return self.get_price_filters(queryset)
+        
+        # Appliquer le tri global
+        sort = self.request.GET.get('sort')
+        if sort == 'price_asc':
+            queryset = queryset.order_by('price')
+        elif sort == 'price_desc':
+            queryset = queryset.order_by('-price')
+        elif sort == 'new':
+            queryset = queryset.order_by('-created_at')
+        elif sort == 'best_selling':
+            queryset = queryset.order_by('-sales_count')
+        
+        # Appliquer les filtres de prix
+        queryset = self.get_price_filters(queryset)
+        
+        print(f"Nombre final de produits tissus: {queryset.count()}")
+        return queryset
     
     def apply_fabric_filters(self, queryset):
         """Applique les filtres spécifiques aux tissus"""
@@ -835,10 +937,13 @@ class FabricCategoryView(BaseCategoryView):
         
         if fabric_type:
             queryset = queryset.filter(fabric_product__fabric_type=fabric_type)
+            print(f"Filtre type tissu: {fabric_type} - Produits restants: {queryset.count()}")
         if color:
             queryset = queryset.filter(fabric_product__color__name=color)
+            print(f"Filtre couleur: {color} - Produits restants: {queryset.count()}")
         if quality:
             queryset = queryset.filter(fabric_product__quality=quality)
+            print(f"Filtre qualité: {quality} - Produits restants: {queryset.count()}")
         return queryset
     
     def get_context_data(self, **kwargs):
@@ -869,6 +974,25 @@ class FabricCategoryView(BaseCategoryView):
             } for c in sorted(set(filter(lambda x: x[0] is not None, colors_list)))
         ]
         
+        # Récupérer les qualités disponibles
+        quality_list = list(active_products.values_list('fabric_product__quality', flat=True).distinct())
+        context['qualities'] = [{'quality': q} for q in sorted(set(filter(None, quality_list)))]
+        
+        # Ajouter les méthodes de livraison
+        context['shipping_methods'] = ShippingMethod.objects.all()
+        
+        # Persistance des sélections
+        context['selected_fabric_type'] = self.request.GET.get('fabric_type', '')
+        context['selected_color'] = self.request.GET.get('color', '')
+        context['selected_quality'] = self.request.GET.get('quality', '')
+        context['selected_price_min'] = self.request.GET.get('price_min', '')
+        context['selected_price_max'] = self.request.GET.get('price_max', '')
+        context['selected_condition'] = self.request.GET.get('condition', '')
+        context['selected_warranty'] = self.request.GET.get('warranty', '')
+        context['selected_promotion'] = self.request.GET.get('promotion', '')
+        context['selected_sort'] = self.request.GET.get('sort', '')
+        context['selected_shipping'] = self.request.GET.get('shipping', '')
+        
         return context
 
 
@@ -876,7 +1000,10 @@ class CulturalCategoryView(BaseCategoryView):
     """Vue spécialisée pour les catégories d'articles culturels"""
     
     def get_queryset(self):
+        print(f"[DEBUG] Paramètres GET reçus dans CulturalCategoryView.get_queryset : {self.request.GET}")
         queryset = self.get_base_queryset().filter(cultural_product__isnull=False)
+        
+        print(f"Nombre initial de produits culturels: {queryset.count()}")
         
         # Appliquer le filtre de garantie
         warranty = self.request.GET.get('warranty')
@@ -885,9 +1012,48 @@ class CulturalCategoryView(BaseCategoryView):
                 queryset = queryset.filter(has_warranty=True)
             elif warranty == 'no':
                 queryset = queryset.filter(has_warranty=False)
+            print(f"Filtre garantie: {warranty} - Produits restants: {queryset.count()}")
 
+        # Appliquer le filtre de condition
+        condition = self.request.GET.get('condition')
+        if condition:
+            queryset = queryset.filter(condition=condition)
+            print(f"Filtre condition: {condition} - Produits restants: {queryset.count()}")
+
+        # Appliquer le filtre de promotion
+        promotion = self.request.GET.get('promotion')
+        if promotion == 'yes':
+            queryset = queryset.filter(discount_price__isnull=False, discount_price__lt=models.F('price'))
+            print(f"Filtre promotion: oui - Produits restants: {queryset.count()}")
+        elif promotion == 'no':
+            queryset = queryset.filter(models.Q(discount_price__isnull=True) | models.Q(discount_price__gte=models.F('price')))
+            print(f"Filtre promotion: non - Produits restants: {queryset.count()}")
+
+        # Appliquer le filtre de livraison
+        shipping = self.request.GET.get('shipping')
+        if shipping:
+            queryset = queryset.filter(shipping_methods__name=shipping)
+            print(f"Filtre livraison: {shipping} - Produits restants: {queryset.count()}")
+
+        # Appliquer les filtres spécifiques aux articles culturels
         queryset = self.apply_cultural_filters(queryset)
-        return self.get_price_filters(queryset)
+        
+        # Appliquer le tri global
+        sort = self.request.GET.get('sort')
+        if sort == 'price_asc':
+            queryset = queryset.order_by('price')
+        elif sort == 'price_desc':
+            queryset = queryset.order_by('-price')
+        elif sort == 'new':
+            queryset = queryset.order_by('-created_at')
+        elif sort == 'best_selling':
+            queryset = queryset.order_by('-sales_count')
+        
+        # Appliquer les filtres de prix
+        queryset = self.get_price_filters(queryset)
+        
+        print(f"Nombre final de produits culturels: {queryset.count()}")
+        return queryset
     
     def apply_cultural_filters(self, queryset):
         """Applique les filtres spécifiques aux articles culturels"""
@@ -897,10 +1063,18 @@ class CulturalCategoryView(BaseCategoryView):
         
         if author:
             queryset = queryset.filter(cultural_product__author__icontains=author)
+            print(f"Filtre auteur: {author} - Produits restants: {queryset.count()}")
         if isbn:
             queryset = queryset.filter(cultural_product__isbn=isbn)
+            print(f"Filtre ISBN: {isbn} - Produits restants: {queryset.count()}")
         if date:
-            queryset = queryset.filter(cultural_product__date=date)
+            # Convertir la date française en format de base de données
+            db_date = convert_french_date_to_db_format(date)
+            if db_date:
+                queryset = queryset.filter(cultural_product__date=db_date)
+                print(f"Filtre date: {date} -> {db_date} - Produits restants: {queryset.count()}")
+            else:
+                print(f"Impossible de convertir la date: {date}")
         return queryset
     
     def get_context_data(self, **kwargs):
@@ -924,12 +1098,37 @@ class CulturalCategoryView(BaseCategoryView):
         
         # Récupérer les dates disponibles
         date_list = list(active_products.values_list('cultural_product__date', flat=True).distinct())
-        context['dates'] = [{'date': d} for d in sorted(set(filter(None, date_list)))]
+        # Formater les dates au format français pour l'affichage
+        formatted_dates = []
+        for date_obj in sorted(set(filter(None, date_list))):
+            if date_obj:
+                # Formater la date au format français
+                french_date = date_obj.strftime("%d %B %Y")
+                # Remplacer les mois anglais par les mois français
+                mois_mapping = {
+                    'January': 'janvier', 'February': 'février', 'March': 'mars', 'April': 'avril',
+                    'May': 'mai', 'June': 'juin', 'July': 'juillet', 'August': 'août',
+                    'September': 'septembre', 'October': 'octobre', 'November': 'novembre', 'December': 'décembre'
+                }
+                for eng, fr in mois_mapping.items():
+                    french_date = french_date.replace(eng, fr)
+                formatted_dates.append({'date': french_date})
+        context['dates'] = formatted_dates
         
-        # Filtres sélectionnés
+        # Ajouter les méthodes de livraison
+        context['shipping_methods'] = ShippingMethod.objects.all()
+        
+        # Persistance des sélections
         context['selected_author'] = self.request.GET.get('author', '')
         context['selected_isbn'] = self.request.GET.get('isbn', '')
         context['selected_date'] = self.request.GET.get('date', '')
+        context['selected_price_min'] = self.request.GET.get('price_min', '')
+        context['selected_price_max'] = self.request.GET.get('price_max', '')
+        context['selected_condition'] = self.request.GET.get('condition', '')
+        context['selected_warranty'] = self.request.GET.get('warranty', '')
+        context['selected_promotion'] = self.request.GET.get('promotion', '')
+        context['selected_sort'] = self.request.GET.get('sort', '')
+        context['selected_shipping'] = self.request.GET.get('shipping', '')
         
         return context
 
@@ -938,6 +1137,7 @@ class GenericCategoryView(BaseCategoryView):
     """Vue spécialisée pour les catégories génériques comme 'Tous les produits' et 'Bricolage'"""
     
     def get_queryset(self):
+        print(f"[DEBUG] Paramètres GET reçus dans GenericCategoryView.get_queryset : {self.request.GET}")
         category = self.get_category()
         queryset = self.get_base_queryset()
         
@@ -953,6 +1153,17 @@ class GenericCategoryView(BaseCategoryView):
                 is_available=True
             )
             print(f"Nombre de produits après filtres de base: {queryset.count()}")
+            
+            # Appliquer le filtre de catégorie principale
+            main_category = self.request.GET.get('main_category')
+            if main_category:
+                cat = Category.objects.filter(slug=main_category).first()
+                print(f"[DEBUG] main_category param: {main_category}, cat found: {cat}")
+                if cat:
+                    all_ids = cat.get_all_children_ids()
+                    print(f"[DEBUG] IDs filtrés pour la catégorie '{cat.name}': {all_ids}")
+                    queryset = queryset.filter(category_id__in=all_ids)
+                    print(f"Nombre de produits après filtre main_category: {queryset.count()}")
         else:
             print("Cas 2: Catégorie générique (ex: Bricolage)")
             # Pour les autres catégories génériques, on inclut la catégorie et ses enfants
@@ -1004,11 +1215,10 @@ class GenericCategoryView(BaseCategoryView):
         
         # Récupérer les catégories principales avec leurs sous-catégories
         main_categories = Category.objects.filter(
-            parent__isnull=True,
-            is_main=True
-        ).prefetch_related(
-            'children',
-            'children__children'
+            is_main=True,
+            parent__isnull=True
+        ).annotate(
+            available_products_count=Count('products', filter=Q(products__is_available=True))
         ).order_by('order', 'name')
         
         # Construire la hiérarchie des catégories
@@ -1064,7 +1274,7 @@ class GenericCategoryView(BaseCategoryView):
         context['selected_condition'] = self.request.GET.get('condition', '')
         context['selected_warranty'] = self.request.GET.get('warranty', '')
         context['selected_promotion'] = self.request.GET.get('promotion', '')
-        context['selected_popularity'] = self.request.GET.get('popularity', '')
+        context['selected_sort'] = self.request.GET.get('sort', '')
         
         # Ajouter les sous-catégories si c'est une catégorie principale
         if category.is_main:
@@ -1078,6 +1288,11 @@ class GenericCategoryView(BaseCategoryView):
             })
             print("Mode: Tous les produits ou sous-catégorie")
             print("Filtres disponibles: catégorie principale")
+        
+        context['shipping_methods'] = ShippingMethod.objects.all()
+        context['selected_shipping'] = self.request.GET.get('shipping', '')
+        context['main_categories'] = Category.objects.filter(is_main=True, parent__isnull=True).exclude(slug='tous-les-produits')
+        context['selected_main_category'] = self.request.GET.get('main_category', '')
         
         print("=== FIN DEBUG CONTEXT DATA ===\n")
         return context

@@ -3157,12 +3157,20 @@ body {
   height: 100vh;
 }
 
+.max-h-48 {
+  max-height: 12rem;
+}
+
 .max-h-60 {
   max-height: 15rem;
 }
 
 .max-h-72 {
   max-height: 18rem;
+}
+
+.max-h-\[60vh\] {
+  max-height: 60vh;
 }
 
 .max-h-\[80vh\] {

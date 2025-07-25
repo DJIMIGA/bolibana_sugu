@@ -152,14 +152,14 @@ class CulturalItemAdmin(admin.ModelAdmin):
         verbose_name_plural = 'Livres et Culture'
 
 class ProductAdmin(admin.ModelAdmin):
-    list_display = ('title', 'category', 'brand', 'price', 'get_stock_display', 'sku', 'is_available', 'is_salam', 'created_at', 'discount_price')
-    list_filter = ('is_available', 'is_salam', 'category', 'brand', 'created_at')
+    list_display = ('title', 'category', 'brand', 'price', 'get_stock_display', 'sku', 'is_available', 'is_salam', 'created_at', 'discount_price', 'condition')
+    list_filter = ('is_available', 'is_salam', 'category', 'brand', 'created_at', 'condition')
     search_fields = ('title', 'sku', 'brand', 'description')
     readonly_fields = ('created_at', 'updated_at')
     
     fieldsets = (
         ('Informations de base', {
-            'fields': ('title', 'description', 'category', 'supplier', 'brand')
+            'fields': ('title', 'description', 'category', 'supplier', 'brand', 'condition')
         }),
         ('Prix et stock classique', {
             'fields': ('price', 'stock', 'sku', 'is_available', 'discount_price')
