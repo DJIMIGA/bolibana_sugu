@@ -374,6 +374,7 @@ class BrandDetailView(TemplateView):
         ram = self.request.GET.get('ram')
         price_min = self.request.GET.get('price_min')
         price_max = self.request.GET.get('price_max')
+        promotion = self.request.GET.get('promotion')
         sort = self.request.GET.get('sort')
         if model:
             queryset = queryset.filter(phone__model=model)
@@ -390,6 +391,12 @@ class BrandDetailView(TemplateView):
         if price_max:
             queryset = queryset.filter(price__lte=price_max)
             logger.info(f"Filtre par prix maximum: {price_max}")
+        if promotion == 'yes':
+            queryset = queryset.filter(discount_price__isnull=False)
+            logger.info("Filtre par promotion: oui")
+        elif promotion == 'no':
+            queryset = queryset.filter(discount_price__isnull=True)
+            logger.info("Filtre par promotion: non")
         # Tri global
         if sort == 'price_asc':
             queryset = queryset.order_by('price')
@@ -451,15 +458,14 @@ class BrandDetailView(TemplateView):
             # Filtres sélectionnés
             context['selected_brand'] = brand
             context['selected_model'] = self.request.GET.get('model', '')
-            context['selected_storage'] = self.request.GET.get('storage', '')
-            context['selected_ram'] = self.request.GET.get('ram', '')
+            context['selected_storage'] = str(self.request.GET.get('storage', ''))
+            context['selected_ram'] = str(self.request.GET.get('ram', ''))
             context['selected_price_min'] = self.request.GET.get('price_min', '')
             context['selected_price_max'] = self.request.GET.get('price_max', '')
+            context['selected_promotion'] = self.request.GET.get('promotion', '')
             context['selected_sort'] = self.request.GET.get('sort', '')
 
-            # Message si aucun produit trouvé
-            if not products.exists():
-                context['no_products_message'] = "Aucun produit trouvé pour cette marque et ces filtres."
+
 
             logger.info("Contexte préparé avec succès")
             

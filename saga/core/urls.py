@@ -1,5 +1,10 @@
 from django.urls import path
 from . import views
+from .views import (
+    test_404_view,
+    test_500_view,
+    test_403_view,
+)
 
 app_name = 'core'
 
@@ -22,4 +27,9 @@ urlpatterns = [
     path('help/returns/', views.HelpReturnsView.as_view(), name='help_returns'),
     path('help/warranty/', views.HelpWarrantyView.as_view(), name='help_warranty'),
     path('api/cookie-consent/', views.save_cookie_consent, name='save_cookie_consent'),
+    
+    # URLs de test pour les pages d'erreur (uniquement en développement)
+    path('test/404/', test_404_view, name='test_404'),
+    path('test/500/', test_500_view, name='test_500'),
+    path('test/403/', test_403_view, name='test_403'),
 ] 

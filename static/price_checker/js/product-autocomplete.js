@@ -8,6 +8,7 @@ class ProductAutocomplete {
         this.resultsContainer = null;
         this.debounceTimer = null;
         this.selectedIndex = -1;
+        this.isResultsVisible = false;
         
         if (this.searchInput) {
             this.init();
@@ -21,8 +22,8 @@ class ProductAutocomplete {
         // Événements
         this.searchInput.addEventListener('input', (e) => this.handleInput(e));
         this.searchInput.addEventListener('keydown', (e) => this.handleKeydown(e));
-        this.searchInput.addEventListener('focus', () => this.showResults());
-        this.searchInput.addEventListener('blur', () => this.hideResults());
+        this.searchInput.addEventListener('focus', () => this.handleFocus());
+        this.searchInput.addEventListener('blur', () => this.handleBlur());
         
         // Fermer les résultats en cliquant ailleurs
         document.addEventListener('click', (e) => {
@@ -91,8 +92,35 @@ class ProductAutocomplete {
                 
             case 'Escape':
                 this.hideResults();
+                this.searchInput.blur();
                 break;
         }
+    }
+    
+    handleFocus() {
+        // Afficher les résultats si il y a une valeur et des résultats précédents
+        if (this.searchInput.value.trim().length >= 2 && this.isResultsVisible) {
+            this.showResults();
+        }
+        
+        // Ajouter la classe de focus
+        this.searchInput.classList.add('ring-2', 'ring-green-500', 'border-green-500');
+    }
+    
+    handleBlur() {
+        // Retirer la classe de focus
+        this.searchInput.classList.remove('ring-2', 'ring-green-500', 'border-green-500');
+        
+        // Masquer les résultats avec un délai plus long pour permettre le clic
+        setTimeout(() => {
+            // Vérifier si le focus est toujours sur un élément de la liste
+            const activeElement = document.activeElement;
+            const isInResults = this.resultsContainer.contains(activeElement);
+            
+            if (!isInResults && activeElement !== this.searchInput) {
+                this.hideResults();
+            }
+        }, 200);
     }
     
     updateSelection(results) {
@@ -133,11 +161,12 @@ class ProductAutocomplete {
             this.resultsContainer.innerHTML = results.map((product, index) => `
                 <div class="product-result-item cursor-pointer p-3 border-b border-gray-100 hover:bg-gray-50 transition-colors duration-150 ${index === 0 ? 'rounded-t-lg' : ''} ${index === results.length - 1 ? 'rounded-b-lg border-b-0' : ''}" 
                      data-product-id="${product.id}" 
-                     data-product-title="${product.title}">
+                     data-product-title="${product.title}"
+                     onclick="this.dispatchEvent(new CustomEvent('productClick', {detail: {productId: '${product.id}', productTitle: '${product.title}'}}))">
                     <div class="flex items-center justify-between">
                         <div class="flex-1">
                             <div class="font-medium text-gray-900">${product.title}</div>
-                            <div class="text-sm text-gray-500">${product.category} • ${product.supplier}</div>
+                            <div class="text-sm text-gray-500">${product.category}</div>
                         </div>
                         <div class="ml-2">
                             <svg class="w-5 h-5 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -148,9 +177,28 @@ class ProductAutocomplete {
                 </div>
             `).join('');
             
-            // Ajouter les événements de clic
+            // Ajouter les événements de clic avec plusieurs méthodes
             this.resultsContainer.querySelectorAll('.product-result-item').forEach(item => {
-                item.addEventListener('click', () => this.selectProduct(item));
+                // Méthode 1: addEventListener
+                item.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    this.selectProduct(item);
+                });
+                
+                // Méthode 2: Événement personnalisé
+                item.addEventListener('productClick', (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    this.selectProduct(item);
+                });
+                
+                // Méthode 3: Gestion du mousedown pour éviter les conflits
+                item.addEventListener('mousedown', (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    this.selectProduct(item);
+                });
             });
         }
         
@@ -170,12 +218,25 @@ class ProductAutocomplete {
     }
     
     selectProduct(item) {
+        console.log('selectProduct appelé avec:', item);
+        
         const productId = item.dataset.productId;
         const productTitle = item.dataset.productTitle;
+        
+        console.log('Product ID:', productId);
+        console.log('Product Title:', productTitle);
+        
+        if (!productId || !productTitle) {
+            console.error('Données de produit manquantes');
+            return;
+        }
         
         // Mettre à jour les champs
         this.searchInput.value = productTitle;
         this.productIdInput.value = productId;
+        
+        console.log('Champs mis à jour - Search Input:', this.searchInput.value);
+        console.log('Champs mis à jour - Product ID Input:', this.productIdInput.value);
         
         // Ajouter une classe pour indiquer la sélection
         this.searchInput.classList.add('border-green-500', 'ring-2', 'ring-green-200');
@@ -187,6 +248,15 @@ class ProductAutocomplete {
         this.searchInput.dispatchEvent(new CustomEvent('productSelected', {
             detail: { productId, productTitle }
         }));
+        
+        // Focus sur le champ suivant (prix)
+        const priceInput = document.querySelector('input[name="price"]');
+        if (priceInput) {
+            priceInput.focus();
+            console.log('Focus déplacé vers le champ prix');
+        } else {
+            console.warn('Champ prix non trouvé');
+        }
     }
     
     clearProductId() {
@@ -196,17 +266,18 @@ class ProductAutocomplete {
     
     showResults() {
         this.resultsContainer.classList.remove('hidden');
+        this.isResultsVisible = true;
     }
     
     hideResults() {
-        // Délai pour permettre le clic sur les résultats
-        setTimeout(() => {
-            this.resultsContainer.classList.add('hidden');
-        }, 150);
+        this.resultsContainer.classList.add('hidden');
+        this.isResultsVisible = false;
     }
 }
 
 // Initialiser l'autocomplétion quand le DOM est chargé
 document.addEventListener('DOMContentLoaded', function() {
-    new ProductAutocomplete();
+    console.log('DOM chargé, initialisation de ProductAutocomplete...');
+    const autocomplete = new ProductAutocomplete();
+    console.log('ProductAutocomplete initialisé:', autocomplete);
 }); 

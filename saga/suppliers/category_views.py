@@ -758,7 +758,7 @@ class PhoneCategoryView(BaseCategoryView):
         promotion = self.request.GET.get('promotion')
         shipping = self.request.GET.get('shipping')
         sort = self.request.GET.get('sort')
-
+        
         if brand:
             queryset = queryset.filter(phone__brand=brand)
         if model:

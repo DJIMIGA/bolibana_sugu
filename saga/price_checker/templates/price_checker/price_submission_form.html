@@ -259,6 +259,12 @@ document.addEventListener('DOMContentLoaded', function() {
     const productSearchInput = document.getElementById('product-search');
     const productIdInput = document.getElementById('product-id');
 
+    // Test de l'autocomplétion
+    console.log('Test de l\'autocomplétion:');
+    console.log('- Product Search Input:', productSearchInput);
+    console.log('- Product ID Input:', productIdInput);
+    console.log('- Form:', form);
+
     // Validation du formulaire
     form.addEventListener('submit', function(e) {
         // Vérifier que un produit a été sélectionné
@@ -282,6 +288,46 @@ document.addEventListener('DOMContentLoaded', function() {
     // Événement quand un produit est sélectionné
     productSearchInput.addEventListener('productSelected', function(e) {
         console.log('Produit sélectionné:', e.detail);
+        console.log('Valeur du champ recherche:', productSearchInput.value);
+        console.log('Valeur du champ ID:', productIdInput.value);
+    });
+    
+    // Gestion du focus pour améliorer l'accessibilité
+    const focusableElements = form.querySelectorAll('input, select, textarea, button, [tabindex]:not([tabindex="-1"])');
+    
+    // Ajouter des attributs d'accessibilité
+    focusableElements.forEach((element, index) => {
+        if (!element.hasAttribute('tabindex')) {
+            element.setAttribute('tabindex', index + 1);
+        }
+        
+        // Ajouter des attributs ARIA pour les champs requis
+        if (element.hasAttribute('required')) {
+            element.setAttribute('aria-required', 'true');
+        }
+    });
+    
+    // Gestion du focus avec Tab
+    form.addEventListener('keydown', function(e) {
+        if (e.key === 'Tab') {
+            const activeElement = document.activeElement;
+            const focusableArray = Array.from(focusableElements);
+            const currentIndex = focusableArray.indexOf(activeElement);
+            
+            if (e.shiftKey) {
+                // Tab vers l'arrière
+                if (currentIndex <= 0) {
+                    e.preventDefault();
+                    focusableArray[focusableArray.length - 1].focus();
+                }
+            } else {
+                // Tab vers l'avant
+                if (currentIndex >= focusableArray.length - 1) {
+                    e.preventDefault();
+                    focusableArray[0].focus();
+                }
+            }
+        }
     });
 });
 </script>

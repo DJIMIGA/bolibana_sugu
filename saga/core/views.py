@@ -6,6 +6,7 @@ from django.db import models
 from django.views.decorators.csrf import csrf_exempt
 from django.http import JsonResponse
 from .models import CookieConsent
+from django.http import Http404
 
 class TermsConditionsView(TemplateView):
     """Vue pour la page 'Mentions légales'"""
@@ -182,3 +183,16 @@ def save_cookie_consent(request):
         response_data = {'success': True, 'message': 'Consentement enregistré'}
         return JsonResponse(response_data)
     return JsonResponse({'error': 'Méthode non autorisée'}, status=405) 
+
+def test_404_view(request):
+    """Vue de test pour la page 404"""
+    raise Http404("Page de test 404")
+
+def test_500_view(request):
+    """Vue de test pour la page 500"""
+    raise Exception("Erreur de test 500")
+
+def test_403_view(request):
+    """Vue de test pour la page 403"""
+    from django.core.exceptions import PermissionDenied
+    raise PermissionDenied("Accès interdit de test") 

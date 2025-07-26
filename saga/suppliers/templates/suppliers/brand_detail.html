@@ -14,18 +14,353 @@
             <div class="absolute -bottom-2 left-0 w-32 h-1.5 bg-gradient-to-r from-green-600 via-yellow-500 to-red-500 rounded-full"></div>
         </div>
 
-        <!-- Filtres -->
-        {% include "suppliers/components/_phone_brand_filters.html" with is_detail=True slug=brand|slugify %}
+        <!-- Barre de filtres mobile -->
+        <div class="mt-4 mb-4 md:hidden">
+            <form method="get" id="mobileFiltersForm">
+                <!-- Champs cachés pour préserver les autres filtres -->
+                {% if selected_price_min %}
+                <input type="hidden" name="price_min" value="{{ selected_price_min }}">
+                {% endif %}
+                {% if selected_price_max %}
+                <input type="hidden" name="price_max" value="{{ selected_price_max }}">
+                {% endif %}
+                {% if selected_brand %}
+                <input type="hidden" name="brand" value="{{ selected_brand }}">
+                {% endif %}
+                {% if selected_model %}
+                <input type="hidden" name="model" value="{{ selected_model }}">
+                {% endif %}
+                {% if selected_storage %}
+                <input type="hidden" name="storage" value="{{ selected_storage }}">
+                {% endif %}
+                {% if selected_ram %}
+                <input type="hidden" name="ram" value="{{ selected_ram }}">
+                {% endif %}
+                {% if selected_sort %}
+                <input type="hidden" name="sort" value="{{ selected_sort }}">
+                {% endif %}
+                
+                <div class="bg-white border border-gray-200 rounded-lg shadow-sm">
+                    <div class="flex items-center justify-around py-3 px-4">
+                        <!-- Section Promo -->
+                        <div class="flex items-center space-x-2">
+                            <input type="checkbox" name="promotion" id="promo_quick" value="yes" 
+                                   {% if selected_promotion == 'yes' %}checked{% endif %}
+                                   class="w-4 h-4 text-green-600 focus:ring-green-500 border-gray-300 rounded"
+                                   onchange="submitMobileForm()">
+                            <label for="promo_quick" class="text-sm text-gray-700 font-medium">Promo</label>
+                            <svg class="w-4 h-4 text-red-500" fill="currentColor" viewBox="0 0 20 20">
+                                <path fill-rule="evenodd" d="M12.395 2.553a1 1 0 00-1.45-.385c-.345.23-.614.558-.822.88-.214.33-.403.713-.57 1.116-.334.804-.614 1.768-.84 2.734a31.365 31.365 0 00-.613 3.58 2.64 2.64 0 01-.945-1.067c-.328-.68-.398-1.534-.398-2.654A1 1 0 005.05 6.05 6.981 6.981 0 003 11a7 7 0 1011.95-4.95c-.592-.591-.98-.985-1.348-1.467-.363-.476-.724-1.063-1.207-2.03zM12.12 15.12A3 3 0 017 13s.879.5 2.5.5c0-1 .5-4 1.25-4.5.5 1 .786 1.293 1.371 1.879A2.99 2.99 0 0113 13a2.99 2.99 0 01-.879 2.121z" clip-rule="evenodd"/>
+                            </svg>
+                        </div>
 
-        <!-- Message si aucun produit trouvé -->
-        {% if no_products_message %}
-        <div class="my-8 p-4 rounded-lg bg-yellow-100 text-yellow-800 text-center font-semibold">
-            {{ no_products_message }}
+                        <!-- Séparateur -->
+                        <div class="w-px h-6 bg-gray-300"></div>
+
+                        <!-- Section Filtrer -->
+                        <button type="button" onclick="toggleFilters()" class="flex items-center space-x-2 text-gray-700">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"/>
+                            </svg>
+                            <span class="text-sm font-medium">Filtrer</span>
+                        </button>
+                    </div>
+                </div>
+            </form>
         </div>
-        {% endif %}
+
+
 
         <!-- Grille des produits -->
-        {% include "suppliers/components/_product_grid.html" %}
+        <div id="phone-grid">
+            {% include "suppliers/components/_product_grid.html" %}
+        </div>
     </div>
 </div>
+
+<!-- Panneau de filtres mobile -->
+<div id="filtersPanel" class="fixed inset-0 z-40 bg-black bg-opacity-40 flex items-end md:items-center justify-center transition-all duration-300 hidden">
+    <div class="bg-white w-full md:w-80 rounded-t-2xl md:rounded-xl p-3 max-h-[80vh] overflow-y-auto shadow-xl">
+        <div class="flex items-center justify-between mb-2">
+            <h2 class="text-base font-bold text-gray-900 font-bitter">Filtres</h2>
+            <button onclick="toggleFilters()" class="text-gray-400 hover:text-gray-700 transition-colors duration-200">
+                <span class="sr-only">Fermer</span>
+                <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                </svg>
+            </button>
+        </div>
+
+        <form method="get" class="space-y-1.5">
+            <!-- Prix -->
+            <div class="bg-gray-50 rounded-lg p-2 sm:p-3">
+                <button type="button" class="w-full px-2 sm:px-3 py-1 sm:py-1.5 flex items-center justify-between text-sm font-medium text-gray-900 font-bitter" onclick="toggleSection('priceSection')">
+                    <span class="flex-1 text-left">Prix</span>
+                    <svg class="h-4 w-4 flex-shrink-0 ml-2 transform transition-transform duration-200" id="priceSectionIcon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+                    </svg>
+                </button>
+                <div id="priceSection" class="mt-2 space-y-2 sm:space-y-3">
+                    <div class="grid grid-cols-2 gap-2 sm:gap-3">
+                        <div>
+                            <label for="price_min" class="block text-xs sm:text-sm text-gray-600 mb-1 font-bitter">Min</label>
+                            <input type="number" name="price_min" id="price_min" value="{{ selected_price_min }}" 
+                                   class="w-full px-2 sm:px-3 py-1 sm:py-1.5 text-sm border border-gray-300 rounded-md focus:ring-green-500 focus:border-green-500"
+                                   placeholder="Min">
+                        </div>
+                        <div>
+                            <label for="price_max" class="block text-xs sm:text-sm text-gray-600 mb-1 font-bitter">Max</label>
+                            <input type="number" name="price_max" id="price_max" value="{{ selected_price_max }}" 
+                                   class="w-full px-2 sm:px-3 py-1 sm:py-1.5 text-sm border border-gray-300 rounded-md focus:ring-green-500 focus:border-green-500"
+                                   placeholder="Max">
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Marque -->
+            {% if brands %}
+            <div class="bg-gray-50 rounded-lg p-2 sm:p-3">
+                <button type="button" class="w-full px-2 sm:px-3 py-1 sm:py-1.5 flex items-center justify-between text-sm font-medium text-gray-900 font-bitter" onclick="toggleSection('brandSection')">
+                    <span class="flex-1 text-left">Marque</span>
+                    <svg class="h-4 w-4 flex-shrink-0 ml-2 transform transition-transform duration-200" id="brandSectionIcon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+                    </svg>
+                </button>
+                <div id="brandSection" class="mt-2 space-y-1.5 sm:space-y-2 max-h-48 overflow-y-auto">
+                    <div class="flex items-center">
+                        <input type="radio" name="brand" id="brand_all" value="" 
+                               {% if not selected_brand %}checked{% endif %}
+                               class="h-3.5 w-3.5 sm:h-4 sm:w-4 text-green-600 focus:ring-green-500">
+                        <label for="brand_all" class="ml-2 text-xs sm:text-sm text-gray-700">Toutes</label>
+                    </div>
+                    {% for brand in brands %}
+                    <div class="flex items-center">
+                        <input type="radio" name="brand" id="brand_{{ brand.phone__brand|slugify }}" value="{{ brand.phone__brand }}" 
+                               {% if selected_brand == brand.phone__brand %}checked{% endif %}
+                               class="h-3.5 w-3.5 sm:h-4 sm:w-4 text-green-600 focus:ring-green-500">
+                        <label for="brand_{{ brand.phone__brand|slugify }}" class="ml-2 text-xs sm:text-sm text-gray-700">
+                            {{ brand.phone__brand|default:"Marque inconnue" }}
+                        </label>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Modèle -->
+            {% if models %}
+            <div class="bg-gray-50 rounded-lg p-2 sm:p-3">
+                <button type="button" class="w-full px-2 sm:px-3 py-1 sm:py-1.5 flex items-center justify-between text-sm font-medium text-gray-900 font-bitter" onclick="toggleSection('modelSection')">
+                    <span class="flex-1 text-left">Modèle</span>
+                    <svg class="h-4 w-4 flex-shrink-0 ml-2 transform transition-transform duration-200" id="modelSectionIcon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+                    </svg>
+                </button>
+                <div id="modelSection" class="mt-2 space-y-1.5 sm:space-y-2 max-h-48 overflow-y-auto">
+                    <div class="flex items-center">
+                        <input type="radio" name="model" id="model_all" value="" 
+                               {% if not selected_model %}checked{% endif %}
+                               class="h-3.5 w-3.5 sm:h-4 sm:w-4 text-green-600 focus:ring-green-500">
+                        <label for="model_all" class="ml-2 text-xs sm:text-sm text-gray-700">Tous</label>
+                    </div>
+                    {% for model in models %}
+                    <div class="flex items-center">
+                        <input type="radio" name="model" id="model_{{ model.phone__model|slugify }}" value="{{ model.phone__model }}" 
+                               {% if selected_model == model.phone__model %}checked{% endif %}
+                               class="h-3.5 w-3.5 sm:h-4 sm:w-4 text-green-600 focus:ring-green-500">
+                        <label for="model_{{ model.phone__model|slugify }}" class="ml-2 text-xs sm:text-sm text-gray-700">{{ model.phone__model }}</label>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Stockage -->
+            {% if storages %}
+            <div class="bg-gray-50 rounded-lg p-2 sm:p-3">
+                <button type="button" class="w-full px-2 sm:px-3 py-1 sm:py-1.5 flex items-center justify-between text-sm font-medium text-gray-900 font-bitter" onclick="toggleSection('storageSection')">
+                    <span class="flex-1 text-left">Stockage</span>
+                    <svg class="h-4 w-4 flex-shrink-0 ml-2 transform transition-transform duration-200" id="storageSectionIcon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+                    </svg>
+                </button>
+                <div id="storageSection" class="mt-2 space-y-1.5 sm:space-y-2 max-h-48 overflow-y-auto">
+                    <div class="flex items-center">
+                        <input type="radio" name="storage" id="storage_all" value="" 
+                               {% if not selected_storage %}checked{% endif %}
+                               class="h-3.5 w-3.5 sm:h-4 sm:w-4 text-green-600 focus:ring-green-500">
+                        <label for="storage_all" class="ml-2 text-xs sm:text-sm text-gray-700">Tous</label>
+                    </div>
+                    {% for storage in storages %}
+                    <div class="flex items-center">
+                        <input type="radio" name="storage" id="storage_{{ storage.phone__storage|slugify }}" value="{{ storage.phone__storage }}" 
+                               {% if selected_storage == storage.phone__storage %}checked{% endif %}
+                               class="h-3.5 w-3.5 sm:h-4 sm:w-4 text-green-600 focus:ring-green-500">
+                        <label for="storage_{{ storage.phone__storage|slugify }}" class="ml-2 text-xs sm:text-sm text-gray-700">{{ storage.phone__storage }} GB</label>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- RAM -->
+            {% if rams %}
+            <div class="bg-gray-50 rounded-lg p-2 sm:p-3">
+                <button type="button" class="w-full px-2 sm:px-3 py-1 sm:py-1.5 flex items-center justify-between text-sm font-medium text-gray-900 font-bitter" onclick="toggleSection('ramSection')">
+                    <span class="flex-1 text-left">RAM</span>
+                    <svg class="h-4 w-4 flex-shrink-0 ml-2 transform transition-transform duration-200" id="ramSectionIcon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+                    </svg>
+                </button>
+                <div id="ramSection" class="mt-2 space-y-1.5 sm:space-y-2 max-h-48 overflow-y-auto">
+                    <div class="flex items-center">
+                        <input type="radio" name="ram" id="ram_all" value="" 
+                               {% if not selected_ram %}checked{% endif %}
+                               class="h-3.5 w-3.5 sm:h-4 sm:w-4 text-green-600 focus:ring-green-500">
+                        <label for="ram_all" class="ml-2 text-xs sm:text-sm text-gray-700">Toutes</label>
+                    </div>
+                    {% for ram in rams %}
+                    <div class="flex items-center">
+                        <input type="radio" name="ram" id="ram_{{ ram.phone__ram|slugify }}" value="{{ ram.phone__ram }}" 
+                               {% if selected_ram == ram.phone__ram %}checked{% endif %}
+                               class="h-3.5 w-3.5 sm:h-4 sm:w-4 text-green-600 focus:ring-green-500">
+                        <label for="ram_{{ ram.phone__ram|slugify }}" class="ml-2 text-xs sm:text-sm text-gray-700">{{ ram.phone__ram }} GB</label>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Trier par -->
+            <div class="bg-gray-50 rounded-lg p-2 sm:p-3">
+                <button type="button" class="w-full px-2 sm:px-3 py-1 sm:py-1.5 flex items-center justify-between text-sm font-medium text-gray-900 font-bitter" onclick="toggleSection('sortSection')">
+                    <span class="flex-1 text-left">Trier par</span>
+                    <svg class="h-4 w-4 flex-shrink-0 ml-2 transform transition-transform duration-200" id="sortSectionIcon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+                    </svg>
+                </button>
+                <div id="sortSection" class="mt-2 space-y-1.5 sm:space-y-2">
+                    <div class="flex items-center">
+                        <input type="radio" name="sort" id="sort_default" value="" 
+                               {% if not selected_sort %}checked{% endif %}
+                               class="h-3.5 w-3.5 sm:h-4 sm:w-4 text-green-600 focus:ring-green-500">
+                        <label for="sort_default" class="ml-2 text-xs sm:text-sm text-gray-700">Par défaut</label>
+                    </div>
+                    <div class="flex items-center">
+                        <input type="radio" name="sort" id="sort_price_asc" value="price_asc" 
+                               {% if selected_sort == 'price_asc' %}checked{% endif %}
+                               class="h-3.5 w-3.5 sm:h-4 sm:w-4 text-green-600 focus:ring-green-500">
+                        <label for="sort_price_asc" class="ml-2 text-xs sm:text-sm text-gray-700">Prix croissant</label>
+                    </div>
+                    <div class="flex items-center">
+                        <input type="radio" name="sort" id="sort_price_desc" value="price_desc" 
+                               {% if selected_sort == 'price_desc' %}checked{% endif %}
+                               class="h-3.5 w-3.5 sm:h-4 sm:w-4 text-green-600 focus:ring-green-500">
+                        <label for="sort_price_desc" class="ml-2 text-xs sm:text-sm text-gray-700">Prix décroissant</label>
+                    </div>
+                    <div class="flex items-center">
+                        <input type="radio" name="sort" id="sort_new" value="new" 
+                               {% if selected_sort == 'new' %}checked{% endif %}
+                               class="h-3.5 w-3.5 sm:h-4 sm:w-4 text-green-600 focus:ring-green-500">
+                        <label for="sort_new" class="ml-2 text-xs sm:text-sm text-gray-700">Nouveautés</label>
+                    </div>
+                    <div class="flex items-center">
+                        <input type="radio" name="sort" id="sort_best_selling" value="best_selling" 
+                               {% if selected_sort == 'best_selling' %}checked{% endif %}
+                               class="h-3.5 w-3.5 sm:h-4 sm:w-4 text-green-600 focus:ring-green-500">
+                        <label for="sort_best_selling" class="ml-2 text-xs sm:text-sm text-gray-700">Meilleures ventes</label>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Promo -->
+            <div class="bg-gray-50 rounded-lg p-2 sm:p-3">
+                <button type="button" class="w-full px-2 sm:px-3 py-1 sm:py-1.5 flex items-center justify-between text-sm font-medium text-gray-900 font-bitter" onclick="toggleSection('promoSection')">
+                    <span class="flex-1 text-left">Promo</span>
+                    <svg class="h-4 w-4 flex-shrink-0 ml-2 transform transition-transform duration-200" id="promoSectionIcon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+                    </svg>
+                </button>
+                <div id="promoSection" class="mt-2 space-y-1.5 sm:space-y-2">
+                    <div class="flex items-center">
+                        <input type="radio" name="promotion" id="promo_all" value="" 
+                               {% if not selected_promotion %}checked{% endif %}
+                               class="h-3.5 w-3.5 sm:h-4 sm:w-4 text-green-600 focus:ring-green-500">
+                        <label for="promo_all" class="ml-2 text-xs sm:text-sm text-gray-700">Tous</label>
+                    </div>
+                    <div class="flex items-center">
+                        <input type="radio" name="promotion" id="promo_yes" value="yes" 
+                               {% if selected_promotion == 'yes' %}checked{% endif %}
+                               class="h-3.5 w-3.5 sm:h-4 sm:w-4 text-green-600 focus:ring-green-500">
+                        <label for="promo_yes" class="ml-2 text-xs sm:text-sm text-gray-700">En promo</label>
+                    </div>
+                    <div class="flex items-center">
+                        <input type="radio" name="promotion" id="promo_no" value="no" 
+                               {% if selected_promotion == 'no' %}checked{% endif %}
+                               class="h-3.5 w-3.5 sm:h-4 sm:w-4 text-green-600 focus:ring-green-500">
+                        <label for="promo_no" class="ml-2 text-xs sm:text-sm text-gray-700">Sans promo</label>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Boutons d'action -->
+            <div class="flex gap-3 pt-4">
+                <button type="submit" 
+                        class="flex-1 bg-green-600 text-white px-4 py-3 rounded-lg font-medium text-sm hover:bg-green-700 transition-colors duration-200">
+                    Appliquer les filtres
+                </button>
+                <a href="{% url 'suppliers:brand_detail' brand|slugify %}" 
+                   class="flex-1 bg-gray-100 text-gray-700 px-4 py-3 rounded-lg font-medium text-sm hover:bg-gray-200 transition-colors duration-200 text-center">
+                    Reset
+                </a>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+// Fonctions pour les filtres mobile
+function toggleFilters() {
+    const panel = document.getElementById('filtersPanel');
+    panel.classList.toggle('hidden');
+}
+
+function toggleSection(sectionId) {
+    const section = document.getElementById(sectionId);
+    const icon = document.getElementById(sectionId + 'Icon');
+    
+    if (section.style.display === 'none') {
+        section.style.display = 'block';
+        icon.style.transform = 'rotate(180deg)';
+    } else {
+        section.style.display = 'none';
+        icon.style.transform = 'rotate(0deg)';
+    }
+}
+
+function submitMobileForm() {
+    document.getElementById('mobileFiltersForm').submit();
+}
+
+// Fermer le panneau en cliquant à l'extérieur
+document.getElementById('filtersPanel').addEventListener('click', function(e) {
+    if (e.target === this) {
+        toggleFilters();
+    }
+});
+
+// Auto-dérouler les sections
+const sections = ['priceSection', 'brandSection', 'modelSection', 'storageSection', 'ramSection', 'sortSection', 'promoSection'];
+sections.forEach(sectionId => {
+    const section = document.getElementById(sectionId);
+    if (section) {
+        section.style.display = 'block';
+        const icon = document.getElementById(sectionId + 'Icon');
+        if (icon) {
+            icon.style.transform = 'rotate(180deg)';
+        }
+    }
+});
+</script>
 {% endblock %} 
