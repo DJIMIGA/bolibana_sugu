@@ -55,7 +55,7 @@ class PriceCheckForm(forms.Form):
         label='Nom du produit',
         max_length=255,
         widget=forms.TextInput(attrs={
-            'class': 'w-full rounded-lg border border-gray-200 px-4 py-2 text-gray-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500',
+            'class': 'w-full rounded-lg border border-gray-200 px-4 py-2 text-base sm:text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500',
             'placeholder': 'Ex: iPhone 13, Samsung Galaxy S21...',
             'hx-get': '/prix/check_price/',
             'hx-trigger': 'keyup changed delay:500ms',
@@ -69,7 +69,7 @@ class PriceCheckForm(forms.Form):
         label='Ville',
         queryset=City.objects.filter(is_active=True),
         widget=forms.Select(attrs={
-            'class': 'w-full rounded-lg border border-gray-200 px-4 py-2 text-gray-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500',
+            'class': 'w-full rounded-lg border border-gray-200 px-4 py-2 text-base sm:text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500',
             'hx-get': '/price_checker/check/',
             'hx-trigger': 'change',
             'hx-target': '#price-results'
@@ -83,7 +83,7 @@ class PriceSubmissionForm(forms.ModelForm):
         max_length=255,
         required=False,
         widget=forms.TextInput(attrs={
-            'class': 'w-full rounded-lg border border-gray-200 px-4 py-2 text-gray-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500',
+            'class': 'w-full rounded-lg border border-gray-200 px-4 py-2 text-base sm:text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500',
             'placeholder': 'Tapez le nom du produit (ex: iPhone 13, Samsung Galaxy...)',
             'autocomplete': 'off',
             'id': 'product-search'
@@ -95,32 +95,32 @@ class PriceSubmissionForm(forms.ModelForm):
         fields = ['price', 'city', 'product', 'supplier_name', 'supplier_phone', 'supplier_address', 'proof_image']
         widgets = {
             'price': forms.NumberInput(attrs={
-                'class': 'w-full rounded-lg border border-gray-200 px-4 py-2 text-gray-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500',
+                'class': 'w-full rounded-lg border border-gray-200 px-4 py-2 text-base sm:text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500',
                 'placeholder': 'Entrez le prix',
                 'min': '0',
                 'step': '100'
             }),
             'city': forms.Select(attrs={
-                'class': 'w-full rounded-lg border border-gray-200 px-4 py-2 text-gray-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500'
+                'class': 'w-full rounded-lg border border-gray-200 px-4 py-2 text-base sm:text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500'
             }),
             'product': forms.HiddenInput(attrs={
                 'id': 'product-id'
             }),
             'supplier_name': forms.TextInput(attrs={
-                'class': 'w-full rounded-lg border border-gray-200 px-4 py-2 text-gray-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500',
+                'class': 'w-full rounded-lg border border-gray-200 px-4 py-2 text-base sm:text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500',
                 'placeholder': 'Nom du fournisseur (ex: Magasin ABC, Boutique XYZ)'
             }),
             'supplier_phone': forms.TextInput(attrs={
-                'class': 'w-full rounded-lg border border-gray-200 px-4 py-2 text-gray-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500',
+                'class': 'w-full rounded-lg border border-gray-200 px-4 py-2 text-base sm:text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500',
                 'placeholder': 'Téléphone du fournisseur (optionnel)'
             }),
             'supplier_address': forms.Textarea(attrs={
-                'class': 'w-full rounded-lg border border-gray-200 px-4 py-2 text-gray-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500',
+                'class': 'w-full rounded-lg border border-gray-200 px-4 py-2 text-base sm:text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500',
                 'placeholder': 'Adresse du fournisseur (optionnel)',
                 'rows': '3'
             }),
             'proof_image': forms.FileInput(attrs={
-                'class': 'w-full rounded-lg border border-gray-200 px-4 py-2 text-gray-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500',
+                'class': 'w-full rounded-lg border border-gray-200 px-4 py-2 text-base sm:text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500',
                 'accept': 'image/*'
             }),
         }

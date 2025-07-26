@@ -84,18 +84,21 @@ class PriceSubmission(models.Model):
         self.save()
         
         # Créer un PriceEntry à partir de la soumission
-        PriceEntry.objects.create(
+        price_entry = PriceEntry.objects.create(
             product=self.product,
             city=self.city,
             price=self.price,
-            supplier_name=self.supplier_name,
+            supplier_name=self.supplier_name or 'Non spécifié',
             supplier_phone=self.supplier_phone,
             supplier_address=self.supplier_address,
             proof_image=self.proof_image,
             user=self.user,
             submission=self,
-            validated_by=admin_user
+            validated_by=admin_user,
+            notes=notes if notes else ""
         )
+        
+        return price_entry
 
     def reject(self, admin_user, notes=None):
         """Rejette la soumission"""

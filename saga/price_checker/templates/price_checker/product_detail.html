@@ -122,7 +122,7 @@
                                     </a>
                                     
                                     <!-- Bouton Ajouter un prix -->
-                                    <a href="{% url 'price_checker:price_submission_create' %}?product_name={{ product.title|urlencode }}" 
+                                    <a href="{% url 'price_checker:price_submission_create_with_product' product.slug %}" 
                                        class="inline-flex items-center justify-center px-3 sm:px-4 py-2.5 sm:py-2 bg-red-600 text-white text-xs sm:text-sm font-medium rounded-lg hover:bg-red-700 transition-colors duration-200 shadow-sm hover:shadow-md">
                                         <svg class="w-3.5 h-3.5 sm:w-4 sm:h-4 mr-1.5 sm:mr-2 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/>
@@ -143,21 +143,31 @@
             <div class="lg:col-span-2">
                 <div class="bg-white rounded-xl shadow-lg overflow-hidden">
                     <div class="bg-gradient-to-r from-green-600 to-green-700 px-4 sm:px-6 py-4">
-                        <div class="flex items-center justify-between">
-                            <div>
+                        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-3 sm:space-y-0">
+                            <div class="flex-1">
                                 <h2 class="text-lg sm:text-xl font-bold text-white">Comparaison des prix</h2>
                                 <p class="text-green-100 mt-1 text-sm">
                                     {{ cities_count }} ville{{ cities_count|pluralize:"s" }} • {{ total_prices }} prix collecté{{ total_prices|pluralize:"s" }}
                                 </p>
                             </div>
-                            <div class="flex items-center space-x-3">
+                            <div class="flex items-center space-x-2 sm:space-x-3">
                                 <a href="{% url 'price_checker:check_price' %}" 
-                                   class="inline-flex items-center px-3 py-2 bg-white bg-opacity-20 text-white text-sm font-medium rounded-lg hover:bg-opacity-30 transition-colors duration-200">
-                                    <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                   class="inline-flex items-center px-2 sm:px-3 py-2 bg-white bg-opacity-20 text-white text-xs sm:text-sm font-medium rounded-lg hover:bg-opacity-30 transition-colors duration-200">
+                                    <svg class="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/>
                                     </svg>
                                     <span class="hidden sm:inline">Nouvelle recherche</span>
                                     <span class="sm:hidden">Retour</span>
+                                </a>
+                                
+                                <!-- Bouton Ajouter un prix -->
+                                <a href="{% url 'price_checker:price_submission_create_with_product' product.slug %}" 
+                                   class="inline-flex items-center px-2 sm:px-3 py-2 bg-green-600 text-white text-xs sm:text-sm font-medium rounded-lg hover:bg-green-700 transition-colors duration-200">
+                                    <svg class="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/>
+                                    </svg>
+                                    <span class="hidden sm:inline">Ajouter un prix</span>
+                                    <span class="sm:hidden">Ajouter</span>
                                 </a>
                             </div>
                         </div>
@@ -195,7 +205,7 @@
                                                 </div>
                                                 
                                                 <!-- Informations du fournisseur en ligne -->
-                                                {% if price_info.supplier_name %}
+                                                {% if price_info.supplier_name and price_info.supplier_name != 'Non spécifié' %}
                                                 <div class="flex flex-col sm:flex-row sm:items-center space-y-2 sm:space-y-0 sm:space-x-4 text-xs sm:text-sm text-gray-600">
                                                     {% if price_info.supplier_phone %}
                                                     <span class="flex items-center">
@@ -220,7 +230,7 @@
                                                     <button onclick="openImageModal('{{ price_info.proof_image }}')" 
                                                             class="inline-flex items-center text-xs text-blue-600 hover:text-blue-800 transition-colors duration-200">
                                                         <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+                                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 002 2z"/>
                                                         </svg>
                                                         Preuve
                                                     </button>
@@ -228,9 +238,22 @@
                                                 </div>
                                                 {% endif %}
                                                 
-                                                <p class="text-xs sm:text-sm text-gray-500 mt-2">
-                                                    Mis à jour le {{ price_info.updated_at|date:"d/m/Y à H:i" }}
-                                                </p>
+                                                <!-- Notes du prix -->
+                                                {% if price_info.notes %}
+                                                <div class="mt-2 p-2 bg-yellow-50 border border-yellow-200 rounded-md">
+                                                    <p class="text-xs text-yellow-800">{{ price_info.notes }}</p>
+                                                </div>
+                                                {% endif %}
+                                                
+                                                <!-- Informations de fraîcheur discrètes -->
+                                                <div class="mt-2 flex items-center justify-between text-xs text-gray-400">
+                                                    <span>Prix vérifié le {{ price_info.updated_at|date:"d/m/Y" }}</span>
+                                                    {% if price_info.source and price_info.source != 'Utilisateur' %}
+                                                    <span class="bg-blue-100 text-blue-800 px-2 py-1 rounded-full text-xs">
+                                                        {{ price_info.source }}
+                                                    </span>
+                                                    {% endif %}
+                                                </div>
                                             </div>
                                         </div>
                                         {% endfor %}

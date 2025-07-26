@@ -62,7 +62,7 @@ class Command(BaseCommand):
                     submission=submission,
                     validated_by=admin_user,
                     is_active=True,
-                    notes=f"Converti automatiquement depuis la soumission #{submission.id}"
+                    notes=""
                 )
                 created_count += 1
                 self.stdout.write(

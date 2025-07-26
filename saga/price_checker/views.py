@@ -161,9 +161,43 @@ class PriceSubmissionCreateView(LoginRequiredMixin, CreateView):
 
     def get_form_kwargs(self):
         kwargs = super().get_form_kwargs()
-        kwargs['initial'] = {
+        initial = {
             'user': self.request.user
         }
+        
+        # Vérifier si un produit est présélectionné via l'URL (slug)
+        product_slug = self.kwargs.get('product_slug')
+        
+        # Vérifier si un produit est présélectionné via les paramètres GET
+        product_id = self.request.GET.get('product_id')
+        product_slug_get = self.request.GET.get('product_slug')
+        
+        if product_slug:
+            try:
+                from product.models import Product as ProductModel
+                product = ProductModel.objects.get(slug=product_slug)
+                initial['product_search'] = product.title
+                initial['product'] = product
+            except ProductModel.DoesNotExist:
+                pass
+        elif product_slug_get:
+            try:
+                from product.models import Product as ProductModel
+                product = ProductModel.objects.get(slug=product_slug_get)
+                initial['product_search'] = product.title
+                initial['product'] = product
+            except ProductModel.DoesNotExist:
+                pass
+        elif product_id:
+            try:
+                from product.models import Product as ProductModel
+                product = ProductModel.objects.get(id=product_id)
+                initial['product_search'] = product.title
+                initial['product'] = product
+            except ProductModel.DoesNotExist:
+                pass
+        
+        kwargs['initial'] = initial
         return kwargs
 
     def form_valid(self, form):
@@ -206,6 +240,31 @@ class PriceSubmissionCreateView(LoginRequiredMixin, CreateView):
         
         context['cities'] = City.objects.filter(is_active=True)
         context['is_update'] = False
+        
+        # Ajouter le produit présélectionné au contexte
+        product_slug = self.kwargs.get('product_slug')
+        product_id = self.request.GET.get('product_id')
+        product_slug_get = self.request.GET.get('product_slug')
+        
+        if product_slug:
+            try:
+                from product.models import Product as ProductModel
+                context['preselected_product'] = ProductModel.objects.get(slug=product_slug)
+            except ProductModel.DoesNotExist:
+                pass
+        elif product_slug_get:
+            try:
+                from product.models import Product as ProductModel
+                context['preselected_product'] = ProductModel.objects.get(slug=product_slug_get)
+            except ProductModel.DoesNotExist:
+                pass
+        elif product_id:
+            try:
+                from product.models import Product as ProductModel
+                context['preselected_product'] = ProductModel.objects.get(id=product_id)
+            except ProductModel.DoesNotExist:
+                pass
+        
         return context
 
 class PriceSubmissionDeleteView(LoginRequiredMixin, DeleteView):
@@ -376,20 +435,11 @@ def approve_price_submission(request, pk):
         messages.error(request, 'Soumission non trouvée ou déjà traitée.')
         return HttpResponseRedirect(reverse_lazy('price_checker:admin_price_submission_list'))
     
-    submission.status = 'APPROVED'
-    submission.validated_by = request.user
-    submission.save()
+    # Utiliser la méthode approve du modèle qui gère tout automatiquement
+    notes = request.POST.get('notes', '') if request.method == 'POST' else None
+    price_entry = submission.approve(request.user, notes)
     
-    # Créer une entrée de prix
-    PriceEntry.objects.create(
-        product=submission.product,
-        city=submission.city,
-        price=submission.price,
-        user=submission.user,
-        validated_by=request.user
-    )
-    
-    messages.success(request, 'La soumission a été approuvée avec succès.')
+    messages.success(request, f'La soumission a été approuvée avec succès. Prix créé: {price_entry.product.title} - {price_entry.price} FCFA')
     return HttpResponseRedirect(reverse_lazy('price_checker:admin_price_submission_list'))
 
 def reject_price_submission(request, pk):
@@ -715,13 +765,20 @@ def get_product_prices(request):
     except ProductModel.DoesNotExist:
         return JsonResponse({'prices': []}) 
 
-def product_detail(request, product_id):
+def product_detail(request, product_id=None, product_slug=None):
     """Vue pour afficher les détails d'un produit avec comparaison des prix"""
     try:
-        product = ProductModel.objects.get(id=product_id)
+        if product_slug:
+            product = ProductModel.objects.get(slug=product_slug)
+        elif product_id:
+            product = ProductModel.objects.get(id=product_id)
+        else:
+            raise ProductModel.DoesNotExist
         
         # Récupérer tous les prix individuels pour ce produit, triés par prix croissant
-        price_entries = product.price_entries.all().order_by('price')
+        price_entries = product.price_entries.filter(is_active=True).select_related(
+            'city', 'user', 'validated_by'
+        ).order_by('price')
         
         # Grouper les prix par ville avec les détails de chaque entrée
         prices_by_city = {}
@@ -730,15 +787,25 @@ def product_detail(request, product_id):
             if city not in prices_by_city:
                 prices_by_city[city] = []
             
+            # Déterminer la source du prix
+            source = 'Utilisateur'
+            if not price_entry.user:
+                source = 'Admin'
+            elif price_entry.validated_by and price_entry.validated_by != price_entry.user:
+                source = 'Validé par Admin'
+            
             prices_by_city[city].append({
                 'price': price_entry.price,
-                'source': price_entry.source if hasattr(price_entry, 'source') else 'BoliBana',
+                'source': source,
                 'updated_at': price_entry.created_at,
                 'is_active': price_entry.is_active,
-                'supplier_name': price_entry.supplier_name,
+                'supplier_name': price_entry.supplier_name or 'Non spécifié',
                 'supplier_phone': price_entry.supplier_phone,
                 'supplier_address': price_entry.supplier_address,
-                'proof_image': price_entry.proof_image.url if price_entry.proof_image else None
+                'proof_image': price_entry.proof_image.url if price_entry.proof_image else None,
+                'user': price_entry.user,
+                'validated_by': price_entry.validated_by,
+                'notes': price_entry.notes
             })
         
         context = {
