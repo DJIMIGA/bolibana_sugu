@@ -3157,6 +3157,14 @@ body {
   height: 100vh;
 }
 
+.h-72 {
+  height: 18rem;
+}
+
+.h-96 {
+  height: 24rem;
+}
+
 .max-h-48 {
   max-height: 12rem;
 }
@@ -3183,10 +3191,6 @@ body {
 
 .max-h-full {
   max-height: 100%;
-}
-
-.max-h-\[90vh\] {
-  max-height: 90vh;
 }
 
 .min-h-80 {
@@ -3358,6 +3362,10 @@ body {
   min-width: max-content;
 }
 
+.max-w-20 {
+  max-width: 5rem;
+}
+
 .max-w-2xl {
   max-width: 42rem;
 }
@@ -3429,10 +3437,6 @@ body {
 
 .max-w-xs {
   max-width: 20rem;
-}
-
-.max-w-20 {
-  max-width: 5rem;
 }
 
 .flex-1 {
@@ -5583,6 +5587,11 @@ body {
 .py-8 {
   padding-top: 2rem;
   padding-bottom: 2rem;
+}
+
+.px-16 {
+  padding-left: 4rem;
+  padding-right: 4rem;
 }
 
 .pb-0 {
@@ -7809,6 +7818,10 @@ body {
     height: 16rem;
   }
 
+  .sm\:h-72 {
+    height: 18rem;
+  }
+
   .sm\:h-screen {
     height: 100vh;
   }
@@ -8306,6 +8319,10 @@ body {
     grid-column: span 7 / span 7;
   }
 
+  .lg\:col-span-3 {
+    grid-column: span 3 / span 3;
+  }
+
   .lg\:mb-0 {
     margin-bottom: 0px;
   }
@@ -8342,8 +8359,8 @@ body {
     display: none;
   }
 
-  .lg\:h-80 {
-    height: 20rem;
+  .lg\:h-96 {
+    height: 24rem;
   }
 
   .lg\:h-\[calc\(100vh-300px\)\] {
@@ -8509,6 +8526,10 @@ body {
     grid-column: span 3 / span 3;
   }
 
+  .xl\:max-w-full {
+    max-width: 100%;
+  }
+
   .xl\:grid-cols-3 {
     grid-template-columns: repeat(3, minmax(0, 1fr));
   }
@@ -8531,8 +8552,42 @@ body {
          column-gap: 2rem;
   }
 
+  .xl\:p-6 {
+    padding: 1.5rem;
+  }
+
+  .xl\:px-8 {
+    padding-left: 2rem;
+    padding-right: 2rem;
+  }
+
+  .xl\:px-16 {
+    padding-left: 4rem;
+    padding-right: 4rem;
+  }
+
   .xl\:pr-16 {
     padding-right: 4rem;
+  }
+
+  .xl\:text-base {
+    font-size: 1rem;
+    line-height: 1.5rem;
+  }
+
+  .xl\:text-xl {
+    font-size: 1.25rem;
+    line-height: 1.75rem;
+  }
+}
+
+@media (min-width: 1536px) {
+  .\32xl\:grid-cols-6 {
+    grid-template-columns: repeat(6, minmax(0, 1fr));
+  }
+
+  .\32xl\:grid-cols-5 {
+    grid-template-columns: repeat(5, minmax(0, 1fr));
   }
 }
 

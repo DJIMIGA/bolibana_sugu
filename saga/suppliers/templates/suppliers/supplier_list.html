@@ -411,7 +411,7 @@
 </div>
 
 
-    <div class="mx-auto max-w-4xl px-4 sm:px-6 py-8 sm:py-16 lg:max-w-7xl lg:px-8">
+    <div class="mx-auto max-w-6xl px-4 sm:px-6 py-8 sm:py-16 lg:max-w-8xl xl:max-w-full xl:px-8">
        
 
         <!-- Section Nos Catégories -->
@@ -423,7 +423,7 @@
                     </h1>
                     <div class="absolute -bottom-1 left-0 w-24 h-1 bg-gradient-to-r from-green-600 via-yellow-500 to-red-500 rounded-full"></div>
                 </div>
-                {% if main_categories|length > 4 %}
+                {% if main_categories|length > 5 %}
                 <a href="{% url 'suppliers:category_list' %}" 
                    class="inline-flex items-center justify-center w-full sm:w-auto px-4 py-2 border border-transparent text-sm font-medium rounded-md text-green-700 bg-green-100 hover:bg-green-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-all duration-300">
                     Voir toutes les catégories
@@ -440,7 +440,7 @@
                 <div class="swiper categoriesSwiper sm:hidden">
                     <div class="swiper-wrapper">
                         {% if main_categories %}
-                            {% for category in main_categories|slice:":4" %}
+                            {% for category in main_categories|slice:":5" %}
                             <div class="swiper-slide">
                                 <a href="{% url 'suppliers:category_detail' category.slug %}" 
                                    class="group bg-white rounded-xl shadow-lg overflow-hidden transition-all duration-300 hover:shadow-xl hover:-translate-y-1 block">
@@ -463,11 +463,11 @@
                                             </div>
                                         {% endif %}
                                     </div>
-                                    <div class="p-6">
-                                        <h3 class="text-xl font-semibold font-bitter text-gray-900 group-hover:text-{{ category.color }}-600 transition-colors duration-300">
+                                    <div class="p-4 xl:p-6">
+                                        <h3 class="text-lg xl:text-xl font-semibold font-bitter text-gray-900 group-hover:text-{{ category.color }}-600 transition-colors duration-300">
                                             {{ category.name }}
                                         </h3>
-                                        <p class="mt-2 text-gray-600 line-clamp-2 font-bitter">{{ category.description }}</p>
+                                        <p class="mt-2 text-sm xl:text-base text-gray-600 line-clamp-2 font-bitter">{{ category.description }}</p>
                                     </div>
                                 </a>
                             </div>
@@ -487,10 +487,10 @@
                     <div class="swiper-button-next"></div>
                 </div>
 
-                <!-- Grille pour desktop -->
-                <div class="hidden sm:grid sm:grid-cols-2 lg:grid-cols-4 gap-8">
+                <!-- Grille pour desktop - Optimisée pour 5 éléments -->
+                <div class="hidden sm:grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-6">
                 {% if main_categories %}
-                    {% for category in main_categories|slice:":4" %}
+                    {% for category in main_categories|slice:":5" %}
                         <div>
                     <a href="{% url 'suppliers:category_detail' category.slug %}" 
                                class="group bg-white rounded-xl shadow-lg overflow-hidden transition-all duration-300 hover:shadow-xl hover:-translate-y-1 block">
@@ -513,11 +513,11 @@
                                 </div>
                             {% endif %}
                         </div>
-                        <div class="p-6">
-                            <h3 class="text-xl font-semibold font-bitter text-gray-900 group-hover:text-{{ category.color }}-600 transition-colors duration-300">
+                        <div class="p-4 xl:p-6">
+                            <h3 class="text-lg xl:text-xl font-semibold font-bitter text-gray-900 group-hover:text-{{ category.color }}-600 transition-colors duration-300">
                                 {{ category.name }}
                             </h3>
-                            <p class="mt-2 text-gray-600 line-clamp-2 font-bitter">{{ category.description }}</p>
+                            <p class="mt-2 text-sm xl:text-base text-gray-600 line-clamp-2 font-bitter">{{ category.description }}</p>
                         </div>
                     </a>
                         </div>
@@ -527,6 +527,17 @@
                     <p class="text-gray-500 text-xl">Aucune catégorie disponible pour le moment.</p>
                 </div>
                 {% endif %}
+                </div>
+                
+                <!-- Bouton Voir plus en bas de la section -->
+                <div class="mt-8 text-center">
+                    <a href="{% url 'suppliers:category_list' %}" 
+                       class="inline-flex items-center justify-center px-6 py-3 border border-transparent text-base font-medium rounded-md text-white bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-all duration-300 transform hover:scale-105 shadow-lg">
+                        Voir plus de catégories
+                        <svg class="ml-2 w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8l4 4m0 0l-4 4m4-4H3" />
+                        </svg>
+                    </a>
                 </div>
             </div>
         </div>
@@ -558,7 +569,7 @@
                 <!-- Swiper container -->
                 <div class="swiper promotionsSwiper sm:hidden">
                     <div class="swiper-wrapper">
-                        {% for product in promotional_products|slice:":4" %}
+                        {% for product in promotional_products|slice:":5" %}
                             <div class="swiper-slide">
                                 {% if product.phone %}
                                     {% render_phone_card product %}
@@ -587,9 +598,9 @@
                     <div class="swiper-button-next"></div>
                 </div>
 
-                <!-- Grille pour desktop -->
-                <div class="hidden sm:grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-                {% for product in promotional_products|slice:":4" %}
+                <!-- Grille pour desktop - Optimisée pour plus d'éléments -->
+                <div class="hidden sm:grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-4">
+                {% for product in promotional_products|slice:":5" %}
                     {% if product.phone %}
                         {% render_phone_card product %}
                     {% elif product.clothing_product %}
@@ -641,7 +652,7 @@
                 <!-- Swiper container -->
                 <div class="swiper phonesSwiper sm:hidden">
                     <div class="swiper-wrapper">
-                        {% for product in products|slice:":4" %}
+                        {% for product in products|slice:":5" %}
                             {% if product.phone %}
                                 <div class="swiper-slide">
                                     {% render_phone_card product %}
@@ -656,9 +667,9 @@
                     <div class="swiper-button-next"></div>
                 </div>
 
-                <!-- Grille pour desktop -->
-                <div class="hidden sm:grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-                {% for product in products|slice:":4" %}
+                <!-- Grille pour desktop - Optimisée pour plus d'éléments -->
+                <div class="hidden sm:grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-4">
+                {% for product in products|slice:":5" %}
                     {% if product.phone %}
                         {% render_phone_card product %}
                     {% endif %}
@@ -701,7 +712,7 @@
                 <!-- Swiper container -->
                 <div class="swiper clothingSwiper sm:hidden">
                     <div class="swiper-wrapper">
-                        {% for product in clothing_products|slice:":4" %}
+                        {% for product in clothing_products|slice:":5" %}
                             <div class="swiper-slide">
                                 {% render_clothing_card product %}
                             </div>
@@ -720,9 +731,9 @@
                     <div class="swiper-button-next"></div>
                 </div>
 
-                <!-- Grille pour desktop -->
-                <div class="hidden sm:grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-                {% for product in clothing_products|slice:":4" %}
+                <!-- Grille pour desktop - Optimisée pour plus d'éléments -->
+                <div class="hidden sm:grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-4">
+                {% for product in clothing_products|slice:":5" %}
                     {% render_clothing_card product %}
                 {% empty %}
                 <div class="col-span-full text-center py-12">
@@ -763,7 +774,7 @@
                 <!-- Swiper container -->
                 <div class="swiper fabricSwiper sm:hidden">
                     <div class="swiper-wrapper">
-                        {% for product in fabric_products|slice:":4" %}
+                        {% for product in fabric_products|slice:":5" %}
                             <div class="swiper-slide">
                                 {% render_fabric_card product %}
                             </div>
@@ -776,9 +787,9 @@
                     <div class="swiper-button-next"></div>
                 </div>
 
-                <!-- Grille pour desktop -->
-                <div class="hidden sm:grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-                {% for product in fabric_products|slice:":4" %}
+                <!-- Grille pour desktop - Optimisée pour plus d'éléments -->
+                <div class="hidden sm:grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-4">
+                {% for product in fabric_products|slice:":5" %}
                     {% render_fabric_card product %}
                 {% empty %}
                 <div class="col-span-full text-center py-12">
@@ -819,7 +830,7 @@
                 <!-- Swiper container -->
                 <div class="swiper culturalSwiper sm:hidden">
                     <div class="swiper-wrapper">
-                        {% for product in cultural_products|slice:":4" %}
+                        {% for product in cultural_products|slice:":5" %}
                             <div class="swiper-slide">
                                 {% render_cultural_card product %}
                             </div>
@@ -832,9 +843,9 @@
                     <div class="swiper-button-next"></div>
                 </div>
 
-                <!-- Grille pour desktop -->
-                <div class="hidden sm:grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-                {% for product in cultural_products|slice:":4" %}
+                <!-- Grille pour desktop - Optimisée pour plus d'éléments -->
+                <div class="hidden sm:grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-4">
+                {% for product in cultural_products|slice:":5" %}
                     {% render_cultural_card product %}
                 {% empty %}
                 <div class="col-span-full text-center py-12">
@@ -851,6 +862,8 @@
                 </div>
             </div>
         </div>
+
+
     </div>
 </div>
 {% endblock %}

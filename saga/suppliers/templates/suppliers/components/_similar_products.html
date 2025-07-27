@@ -108,16 +108,24 @@ Paramètres :
         transition: opacity 0.2s;
     }
 
+    .swiper-button-next {
+        right: -5px !important;
+    }
+
+    .swiper-button-prev {
+        left: -5px !important;
+    }
+
+    .swiper-button-next:after,
+    .swiper-button-prev:after {
+        font-size: 20px !important; 
+    }
+
     .swiper-button-next:hover,
     .swiper-button-prev:hover {
         color: #047857 !important; /* green-700 */
         background-color: #f3f4f6;
         opacity: 0.9 !important;
-    }
-
-    .swiper-button-next:after,
-    .swiper-button-prev:after {
-        font-size: 20px !important;
     }
 
     .swiper-button-disabled {
@@ -126,6 +134,7 @@ Paramètres :
         pointer-events: none !important;
     }
 
+    /* Style des indicateurs */
     .swiper-pagination {
         position: relative !important;
         margin-top: 24px !important;
@@ -156,6 +165,7 @@ Paramètres :
         opacity: 0.7 !important;
     }
 
+    /* Ajustement de l'espacement pour les slides */
     .swiper-slide {
         height: auto !important;
         display: flex !important;
@@ -167,8 +177,42 @@ Paramètres :
         height: 100% !important;
     }
 
+    /* Ajustement du conteneur pour les flèches */
     .swiper {
         padding: 0 5px !important;
+    }
+
+    /* Amélioration de l'expérience tactile */
+    .swiper-wrapper {
+        touch-action: pan-x !important;
+        -webkit-overflow-scrolling: touch !important;
+        will-change: transform !important;
+    }
+
+    .swiper-slide {
+        touch-action: pan-x !important;
+        -webkit-user-select: none !important;
+        -moz-user-select: none !important;
+        -ms-user-select: none !important;
+        user-select: none !important;
+        will-change: transform !important;
+    }
+
+    /* Amélioration du curseur sur mobile */
+    @media (max-width: 640px) {
+        .swiper-slide {
+            cursor: grab !important;
+        }
+        
+        .swiper-slide:active {
+            cursor: grabbing !important;
+        }
+        
+        /* Amélioration de la réactivité tactile */
+        .similarProductsSwiper {
+            touch-action: pan-x !important;
+            -webkit-overflow-scrolling: touch !important;
+        }
     }
 </style>
 {% endblock %}
@@ -180,6 +224,30 @@ document.addEventListener('DOMContentLoaded', function() {
     new Swiper('.similarProductsSwiper', {
         slidesPerView: 1,
         spaceBetween: 24,
+        centeredSlides: false,
+        loop: false,
+        effect: 'slide',
+        speed: 300,
+        // Configuration tactile optimisée
+        touchRatio: 1,
+        touchAngle: 45,
+        grabCursor: true,
+        allowTouchMove: true,
+        resistance: true,
+        resistanceRatio: 0.85,
+        // Configuration pour mobile
+        touchStartPreventDefault: false,
+        touchMoveStopPropagation: false,
+        // Amélioration de la sensibilité
+        threshold: 10,
+        shortSwipes: true,
+        longSwipes: true,
+        longSwipesRatio: 0.5,
+        longSwipesMs: 300,
+        followFinger: true,
+        // Désactiver les animations qui peuvent interférer
+        watchSlidesProgress: false,
+        watchSlidesVisibility: false,
         pagination: {
             el: '.swiper-pagination',
             clickable: true,
@@ -187,16 +255,23 @@ document.addEventListener('DOMContentLoaded', function() {
         navigation: {
             nextEl: '.swiper-button-next',
             prevEl: '.swiper-button-prev',
+            disabledClass: 'swiper-button-disabled',
         },
         breakpoints: {
             640: {
                 slidesPerView: 2,
+                spaceBetween: 24,
+                centeredSlides: false,
             },
             1024: {
                 slidesPerView: 3,
+                spaceBetween: 32,
+                centeredSlides: false,
             },
             1280: {
                 slidesPerView: 4,
+                spaceBetween: 32,
+                centeredSlides: false,
             },
         },
     });

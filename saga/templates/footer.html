@@ -15,9 +15,10 @@
 </head>
 <body>
 
+<!-- Section Services - Optimisée pour plus d'espace -->
 <div class="py-8 border border-gray-200 rounded-xl m-2">
-  <div class="mx-auto max-w-screen-xl px-4 sm:px-6 lg:px-8">
-    <div class="grid grid-cols-1 gap-8 sm:grid-cols-2 lg:grid-cols-4">
+  <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 xl:max-w-full xl:px-16">
+    <div class="grid grid-cols-1 gap-8 sm:grid-cols-2 lg:grid-cols-5">
       <div class="flex items-center">
         <svg xmlns="http://www.w3.org/2000/svg" class="h-10 w-10 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />
@@ -58,21 +59,33 @@
           <p class="text-sm text-gray-600">{{ site_opening_hours_detailed }}</p>
         </div>
       </div>
+
+      <!-- Nouveau service ajouté pour mieux utiliser l'espace -->
+      <div class="flex items-center">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-10 w-10 text-purple-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1" />
+        </svg>
+        <div class="ml-4">
+          <h3 class="text-lg font-semibold font-bitter text-gray-900">Prix garantis</h3>
+          <p class="mt-1 text-sm text-gray-600">Comparaison et meilleurs prix</p>
+        </div>
+      </div>
     </div>
   </div>
 </div>
 
-<footer class="bg-gray-50 ">
-  <div class="mx-auto max-w-screen-xl px-6 py-12 sm:px-8 lg:px-12 lg:py-16">
-    <div class="grid grid-cols-1 gap-12 lg:grid-cols-3">
+<!-- Footer principal - Optimisé pour plus d'espace -->
+<footer class="bg-gray-50">
+  <div class="mx-auto max-w-7xl px-6 py-12 sm:px-8 lg:px-12 lg:py-16 xl:max-w-full xl:px-16">
+    <div class="grid grid-cols-1 gap-12 lg:grid-cols-5">
       <!-- Logo & Description -->
-      <div class="text-center sm:text-left">
+      <div class="text-center sm:text-left lg:col-span-2">
         <a href="{% url 'suppliers:supplier_index' %}" class="inline-block">
           {% if site_logo_url %}
-            <img class="h-16 w-auto transition-all duration-300 hover:scale-110 hover:drop-shadow-lg"
+            <img class="h-20 w-auto transition-all duration-300 hover:scale-110 hover:drop-shadow-lg"
                  src="{{ site_logo_url }}" alt="Logo de {{ company_name }}">
           {% else %}
-            <img class="h-16 w-auto transition-all duration-300 hover:scale-110 hover:drop-shadow-lg"
+            <img class="h-20 w-auto transition-all duration-300 hover:scale-110 hover:drop-shadow-lg"
                  src="{% static 'icons/bolibana.png' %}" alt="Logo de {{ company_name }}">
           {% endif %}
         </a>
@@ -80,45 +93,16 @@
           Votre intermédiaire expert du marché. Nous comparons les prix, sélectionnons les fournisseurs les moins chers et fiables, gérons la livraison et vous garantissons le meilleur prix. Paiement à la commande.
         </p>
 
-
         <!-- Réseaux sociaux -->
-        <div class="social-container p-8 rounded-xl shadow-lg">
-          <h2 class="text-4xl font-extrabold font-bitter text-transparent bg-clip-text bg-gradient-to-r from-green-400 via-yellow-400 to-red-400 mb-6 text-center">
+        <div class="social-container p-6 rounded-xl shadow-lg mt-8">
+          <h2 class="text-3xl font-extrabold font-bitter text-transparent bg-clip-text bg-gradient-to-r from-green-400 via-yellow-400 to-red-400 mb-4 text-center">
             Suivez-nous</h2>
-          <div class="flex justify-center space-x-6">
+          <div class="flex justify-center space-x-4">
           <!-- WhatsApp -->
           {% if site_whatsapp %}
           <a href="https://wa.me/{{ site_whatsapp }}" class="social-icon whatsapp">
-            <svg xmlns="http://www.w3.org/2000/svg" x="0px" y="0px" width="50" height="50" viewBox="0,0,256,256">
-              <defs>
-                <linearGradient x1="32" y1="5.25" x2="32" y2="58.834" gradientUnits="userSpaceOnUse"
-                                id="color-1_43677_gr1">
-                  <stop offset="0" stop-color="#94d82d"></stop>
-                  <stop offset="1" stop-color="#fcc419"></stop>
-                </linearGradient>
-                <linearGradient x1="32.305" y1="17.5" x2="32.305" y2="46.527" gradientUnits="userSpaceOnUse"
-                                id="color-2_43677_gr2">
-                  <stop offset="0" stop-color="#fa5252"></stop>
-                  <stop offset="1" stop-color="#fa5252"></stop>
-                </linearGradient>
-              </defs>
-              <g fill-opacity="0" fill="#dddddd" fill-rule="nonzero" stroke="none" stroke-width="1"
-                 stroke-linecap="butt" stroke-linejoin="miter" stroke-miterlimit="10" stroke-dasharray=""
-                 stroke-dashoffset="0" font-family="none" font-weight="none" font-size="none" text-anchor="none"
-                 style="mix-blend-mode: normal">
-                <path d="M0,256v-256h256v256z" id="bgRectangle"></path>
-              </g>
-              <g fill="none" fill-rule="none" stroke="none" stroke-width="1" stroke-linecap="butt"
-                 stroke-linejoin="miter" stroke-miterlimit="10" stroke-dasharray="" stroke-dashoffset="0"
-                 font-family="none" font-weight="none" font-size="none" text-anchor="none"
-                 style="mix-blend-mode: normal">
-                <g transform="scale(4,4)">
-                  <path d="M6.399,57.699l3.792,-13.847c-2.076,-3.74 -3.17,-7.975 -3.168,-12.272c0.005,-13.939 11.35,-25.279 25.289,-25.279c6.762,0.003 13.115,2.636 17.889,7.414c4.774,4.778 7.402,11.151 7.4,17.944c-0.006,13.974 -11.351,25.341 -25.289,25.341c-4.024,0 -8.073,-1.019 -11.744,-2.95zM20.828,51.918l0.346,0.188c3.471,1.893 7.318,2.894 11.128,2.894c12.846,0 23.293,-10.471 23.299,-23.341c0.002,-6.26 -2.418,-12.13 -6.814,-16.53c-4.396,-4.4 -10.249,-6.825 -16.475,-6.828c-12.836,0 -23.283,10.443 -23.288,23.279c-0.002,4.089 1.072,8.113 3.107,11.639l0.209,0.361l-3.101,11.322zM32.312,53c-3.686,0 -7.415,-1.06 -10.793,-3.063l-0.437,-0.318l-8.854,2.323l2.382,-8.691l-0.244,-0.387c-2.123,-3.376 -3.243,-7.271 -3.241,-11.269c0.004,-11.67 9.513,-21.165 21.195,-21.165c5.642,0.002 10.961,2.218 14.979,6.239c4,4.003 6.202,9.345 6.2,15.039c-0.004,11.74 -9.509,21.292 -21.187,21.292zM22.583,48.242c3.058,1.805 6.418,2.758 9.721,2.758c10.584,0 19.191,-8.654 19.195,-19.292c0.002,-5.161 -1.992,-10 -5.614,-13.625c-3.642,-3.644 -8.459,-5.651 -13.565,-5.653c-10.581,0 -19.191,8.598 -19.195,19.166c-0.002,3.619 1.012,7.146 2.933,10.201l0.715,1.131l-1.698,6.199l6.429,-1.687z"
-                        fill="url(#color-1_43677_gr1)" fill-rule="nonzero"></path>
-                  <path d="M26.12,21.219c-0.464,-1.031 -0.952,-1.052 -1.394,-1.07c-0.361,-0.015 -0.774,-0.015 -1.187,-0.015c-0.413,0 -1.084,0.155 -1.651,0.775c-0.568,0.62 -2.168,2.118 -2.168,5.164c0,3.047 2.219,5.991 2.529,6.405c0.31,0.413 4.284,6.865 10.579,9.347c5.231,2.063 6.296,1.653 7.431,1.549c1.135,-0.103 3.664,-1.498 4.18,-2.944c0.516,-1.446 0.516,-2.685 0.361,-2.944c-0.155,-0.258 -0.568,-0.413 -1.187,-0.723c-0.619,-0.31 -3.664,-1.808 -4.232,-2.014c-0.568,-0.206 -0.981,-0.31 -1.394,0.31c-0.413,0.619 -1.599,2.014 -1.96,2.427c-0.361,0.414 -0.723,0.465 -1.342,0.156c-0.619,-0.311 -2.614,-0.964 -4.98,-3.074c-1.841,-1.641 -3.084,-3.668 -3.445,-4.288c-0.361,-0.619 -0.039,-0.955 0.272,-1.264c0.278,-0.277 0.619,-0.723 0.929,-1.085c0.309,-0.362 0.412,-0.62 0.619,-1.033c0.206,-0.414 0.103,-0.775 -0.052,-1.085c-0.155,-0.31 -1.358,-3.37 -1.908,-4.594z"
-                        fill="url(#color-2_43677_gr2)" fill-rule="evenodd"></path>
-                </g>
-              </g>
+            <svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 24 24" fill="#25D366">
+              <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893A11.821 11.821 0 0020.885 3.488"/>
             </svg>
           </a>
           {% endif %}
@@ -126,31 +110,8 @@
           <!-- Facebook -->
           {% if site_facebook %}
           <a href="{{ site_facebook }}" class="social-icon facebook">
-            <svg xmlns="http://www.w3.org/2000/svg" x="0px" y="0px" width="50" height="50" viewBox="0,0,256,256">
-              <defs>
-                <linearGradient x1="34.083" y1="4.872" x2="29.773" y2="57.75" gradientUnits="userSpaceOnUse"
-                                id="color-1_123741_gr1">
-                  <stop offset="0" stop-color="#5da560"></stop>
-                  <stop offset="1" stop-color="#ffd405"></stop>
-                </linearGradient>
-                <linearGradient x1="32.247" y1="10.462" x2="32.247" y2="54.005" gradientUnits="userSpaceOnUse"
-                                id="color-2_123741_gr2">
-                  <stop offset="0" stop-color="#c73832"></stop>
-                  <stop offset="1" stop-color="#c73832"></stop>
-                </linearGradient>
-              </defs>
-              <g fill="none" fill-rule="nonzero" stroke="none" stroke-width="1" stroke-linecap="butt"
-                 stroke-linejoin="miter" stroke-miterlimit="10" stroke-dasharray="" stroke-dashoffset="0"
-                 font-family="none" font-weight="none" font-size="none" text-anchor="none"
-                 style="mix-blend-mode: normal">
-                <g transform="scale(4,4)">
-                  <path d="M37,58h-9c-0.552,0 -1,-0.448 -1,-1v-22h-7c-1.105,0 -2,-0.895 -2,-2v-7c0,-1.105 0.895,-2 2,-2h7v-5.494c0,-7.831 4.397,-12.506 11.763,-12.506c2.737,0 4.511,0.172 5.685,0.286v0c0.879,0.079 1.552,0.816 1.552,1.699v7.31c0,0.941 -0.763,1.705 -1.705,1.705l-3.684,0.002c-1.121,0 -1.859,0.17 -2.195,0.505c-0.422,0.422 -0.42,1.38 -0.417,2.594l0.001,3.899h6.721c1.196,0 2.125,1.044 1.987,2.232l-0.934,7c-0.118,1.008 -0.972,1.768 -1.987,1.768h-5.787v22c0,0.552 -0.448,1 -1,1zM29,56h7v-23h7.808l0.934,-7h-8.7l-0.042,-5.885c-0.004,-1.547 -0.008,-3.008 1.002,-4.02c0.744,-0.747 1.892,-1.095 3.611,-1.095l3.387,0.042v-6.812c-1.18,-0.114 -2.777,-0.252 -5.237,-0.252c-6.296,0 -9.763,3.731 -9.763,10.506v7.516h-9v7h9z"
-                        fill="url(#color-1_123741_gr1)"></path>
-                  <g fill="url(#color-2_123741_gr2)">
-                    <path d="M31,54v-23h-9v-3h9v-9.494c0,-5.644 2.612,-8.506 7.763,-8.506c1.307,0 2.362,0.041 3.237,0.096v2.034h-1.398c-1.434,0 -3.517,0.174 -5.019,1.68c-1.593,1.598 -1.588,3.722 -1.583,5.43v8.76h8.495l-0.467,3h-8.028v23z"></path>
-                  </g>
-                </g>
-              </g>
+            <svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 24 24" fill="#1877F2">
+              <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/>
             </svg>
           </a>
           {% endif %}
@@ -158,34 +119,17 @@
           <!-- TikTok -->
           {% if site_tiktok %}
           <a href="{{ site_tiktok }}" class="social-icon tiktok">
-            <svg xmlns="http://www.w3.org/2000/svg" x="0px" y="0px" width="50" height="50" viewBox="0,0,256,256">
-              <g fill="none" fill-rule="nonzero" stroke="none" stroke-width="1" stroke-linecap="butt"
-                 stroke-linejoin="miter" stroke-miterlimit="10" stroke-dasharray="" stroke-dashoffset="0"
-                 font-family="none" font-weight="none" font-size="none" text-anchor="none"
-                 style="mix-blend-mode: normal">
-                <g transform="scale(5.12,5.12)">
-                  <path d="M18.5,45c-6.893,0 -12.5,-5.607 -12.5,-12.5c0,-6.893 5.607,-12.5 12.5,-12.5v4c-4.687,0 -8.5,3.813 -8.5,8.5c0,4.687 3.813,8.5 8.5,8.5c4.687,0 8.5,-3.813 8.5,-8.5v-27.5h4v27.5c0,6.893 -5.607,12.5 -12.5,12.5z"
-                        fill="#c73832"></path>
-                  <path d="M41,19c-6.113,0 -14,-6.789 -14,-14h4c0,4.732 5.961,10 10,10z" fill="#c73832"></path>
-                  <path d="M23.5,47c-6.893,0 -12.5,-5.607 -12.5,-12.5c0,-6.893 5.607,-12.5 12.5,-12.5v4c-4.687,0 -8.5,3.813 -8.5,8.5c0,4.687 3.813,8.5 8.5,8.5c4.687,0 8.5,-3.813 8.5,-8.5v-27.5h4v27.5c0,6.893 -5.607,12.5 -12.5,12.5z"
-                        fill="#ffd405"></path>
-                  <path d="M46,21c-6.113,0 -14,-6.789 -14,-14h4c0,4.732 5.961,10 10,10z" fill="#ffd405"></path>
-                  <path d="M20.5,47c-6.893,0 -12.5,-5.607 -12.5,-12.5c0,-6.893 5.607,-12.5 12.5,-12.5v4c-4.687,0 -8.5,3.813 -8.5,8.5c0,4.687 3.813,8.5 8.5,8.5c4.687,0 8.5,-3.813 8.5,-8.5v-27.5h4v27.5c0,6.893 -5.607,12.5 -12.5,12.5z"
-                        fill="#6eb208"></path>
-                  <path d="M43,21c-6.113,0 -14,-6.789 -14,-14h4c0,4.732 5.961,10 10,10z" fill="#6eb208"></path>
-                </g>
-              </g>
+            <svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 24 24" fill="#000000">
+              <path d="M12.525.02c1.31-.02 2.61-.01 3.91-.02.08 1.53.63 3.09 1.75 4.17 1.12 1.11 2.7 1.62 4.24 1.79v4.03c-1.44-.05-2.89-.35-4.2-.97-.57-.26-1.1-.59-1.62-.93-.01 2.92.01 5.84-.02 8.75-.08 1.4-.54 2.79-1.35 3.94-1.31 1.92-3.58 3.17-5.91 3.21-1.43.08-2.86-.31-4.08-1.03-2.02-1.19-3.44-3.37-3.65-5.71-.02-.5-.03-1-.01-1.49.18-1.9 1.12-3.72 2.58-4.96 1.66-1.44 3.98-2.13 6.15-1.72.02 1.48-.04 2.96-.04 4.44-.99-.32-2.15-.23-3.02.37-.63.41-1.11 1.04-1.36 1.75-.21.51-.15 1.07-.14 1.61.24 1.64 1.82 3.02 3.5 2.87 1.12-.01 2.19-.66 2.77-1.61.19-.33.4-.67.41-1.06.1-1.79.06-3.57.07-5.36.01-4.03-.01-8.05.02-12.07z"/>
             </svg>
           </a>
           {% endif %}
           </div>
         </div>
-
-
       </div>
 
-      <!-- Liens rapides -->
-      <div class="grid grid-cols-2 gap-2 md:grid-cols-4 lg:col-span-2">
+      <!-- Liens rapides - Optimisés pour plus d'espace -->
+      <div class="grid grid-cols-2 gap-8 md:grid-cols-4 lg:col-span-3">
         <div>
           <h3 class="text-xl font-semibold font-bitter text-gray-900 mb-4">À propos</h3>
           <ul class="space-y-3 text-base">
@@ -203,6 +147,7 @@
           <ul class="space-y-3 text-base">
             <li><a href="{% url 'core:service_loyalty' %}" class="text-gray-600 hover:text-green-600 transition-colors duration-300">{{ service_loyalty_title|default:"Fidélité" }}</a></li>
             <li><a href="{% url 'core:service_express' %}" class="text-gray-600 hover:text-green-600 transition-colors duration-300">{{ service_express_title|default:"Livraisons" }}</a></li>
+            <li><a href="{% url 'price_checker:check_price' %}" class="text-gray-600 hover:text-green-600 transition-colors duration-300">Comparateur de prix</a></li>
           </ul>
         </div>
         <div>
@@ -221,21 +166,21 @@
         </div>
         <div>
           <h3 class="text-xl font-semibold font-bitter text-gray-900 mb-4">Contact</h3>
-          <ul class="space-y-3 text-base">
+          <ul class="space-y-3 text-sm">
             <li class="flex items-center gap-3">
-              <svg class="h-6 w-6 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <svg class="h-5 w-5 text-green-600 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/>
               </svg>
-              <a href="mailto:{{ site_email }}" class="text-gray-600 ">{{ site_email }}</a>
+              <a href="mailto:{{ site_email }}" class="text-gray-600 break-all hover:text-green-600 transition-colors duration-300 text-xs">{{ site_email }}</a>
             </li>
             <li class="flex items-center gap-3">
-              <svg class="h-6 w-6 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <svg class="h-6 w-6 text-green-600 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"/>
               </svg>
               <span class="text-gray-600">{{ site_phone }}</span>
             </li>
-            <li class="flex items-center gap-3">
-              <svg class="h-6 w-6 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <li class="flex items-start gap-3">
+              <svg class="h-6 w-6 text-green-600 flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/>
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/>
               </svg>
