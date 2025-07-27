@@ -10,8 +10,8 @@ def fix_pythonpath():
     BASE_DIR = Path(__file__).resolve().parent.parent
     print(f"\nRépertoire de base du projet : {BASE_DIR}")
     
-    # Chemins à ajouter
-    paths_to_add = [
+    # Chemins du projet à ajouter
+    project_paths = [
         str(BASE_DIR),
         str(BASE_DIR / 'saga'),
         str(BASE_DIR / 'saga' / 'product'),
@@ -25,14 +25,27 @@ def fix_pythonpath():
     current_paths = set(sys.path)
     new_paths = []
     
-    # Ajouter les nouveaux chemins
-    for path in paths_to_add:
+    # Ajouter les chemins du projet en premier
+    for path in project_paths:
         if path not in current_paths:
             new_paths.append(path)
     
-    # Ajouter les chemins existants qui ne sont pas dans les nouveaux chemins
+    # Ajouter les chemins de l'environnement virtuel et les chemins système essentiels
     for path in current_paths:
-        if path not in paths_to_add and os.path.exists(path):
+        # Inclure TOUS les chemins de l'environnement virtuel (priorité absolue)
+        if '.env' in path or 'venv' in path or 'virtualenv' in path:
+            new_paths.append(path)
+        # Inclure les chemins système essentiels (mais pas Python 3.9)
+        elif 'site-packages' in path and 'Python39' not in path:
+            new_paths.append(path)
+        # Inclure les chemins DLLs essentiels (mais pas Python 3.9)
+        elif 'DLLs' in path and 'Python39' not in path:
+            new_paths.append(path)
+        # Inclure les chemins lib essentiels (mais pas Python 3.9)
+        elif 'lib' in path and 'Python39' not in path and os.path.exists(path):
+            new_paths.append(path)
+        # Inclure les autres chemins existants (mais pas Python 3.9)
+        elif os.path.exists(path) and 'Python39' not in path:
             new_paths.append(path)
     
     # Mettre à jour sys.path

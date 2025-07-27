@@ -658,13 +658,24 @@ def get_product_details(request):
 @login_required
 @user_passes_test(lambda u: u.is_staff)
 def toggle_salam(request, product_id):
+    if not request.user.is_staff:
+        return HttpResponseRedirect(reverse_lazy('price_checker:admin_product_status_list'))
+    
+    # Vérification de sécurité : s'assurer que le produit existe
     try:
         product = ProductModel.objects.get(pk=product_id)
-        product.is_salam = not product.is_salam
-        product.save()
-        return redirect('price_checker:admin_product_status_list')
     except ProductModel.DoesNotExist:
-        return redirect('price_checker:admin_product_status_list')
+        messages.error(request, 'Produit non trouvé.')
+        return HttpResponseRedirect(reverse_lazy('price_checker:admin_product_status_list'))
+    
+    # Log de sécurité pour tracer les modifications
+    print(f"🔒 Modification du statut Salam du produit {product_id} par l'utilisateur {request.user.email[:3]}***")
+    
+    product.is_salam = not product.is_salam
+    product.save()
+    
+    messages.success(request, f'Le statut Salam du produit a été {"activé" if product.is_salam else "désactivé"} avec succès.')
+    return HttpResponseRedirect(reverse_lazy('price_checker:admin_product_status_list'))
 
 class PriceEntryListView(ListView):
     model = PriceEntry
@@ -725,7 +736,7 @@ def add_price_entry(request):
             price_entry = form.save(commit=False)
             price_entry.user = request.user
             price_entry.save()
-                messages.success(request, 'Prix ajouté avec succès.')
+            messages.success(request, 'Prix ajouté avec succès.')
             return redirect('price_checker:price_entry_list')
     else:
         form = PriceEntryForm()

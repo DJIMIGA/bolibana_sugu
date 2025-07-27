@@ -196,3 +196,16 @@ def test_403_view(request):
     """Vue de test pour la page 403"""
     from django.core.exceptions import PermissionDenied
     raise PermissionDenied("Accès interdit de test") 
+
+# Vues d'erreur personnalisées
+def custom_404(request, exception):
+    """Vue personnalisée pour l'erreur 404"""
+    return render(request, '404.html', status=404)
+
+def custom_500(request):
+    """Vue personnalisée pour l'erreur 500"""
+    return render(request, '500.html', status=500)
+
+def custom_403(request, exception):
+    """Vue personnalisée pour l'erreur 403"""
+    return render(request, '403.html', status=403) 

@@ -466,7 +466,7 @@ class BrandDetailView(TemplateView):
             context['selected_sort'] = self.request.GET.get('sort', '')
 
 
-
+            
             logger.info("Contexte préparé avec succès")
             
         except Exception as e:

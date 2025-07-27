@@ -703,4 +703,19 @@ LOGGING = {
 #     STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 #     MIDDLEWARE.insert(1, 'whitenoise.middleware.WhiteNoiseMiddleware') 
 
+# Configuration des templates d'erreur personnalisés
+if not DEBUG:
+    # Templates d'erreur personnalisés pour la production
+    TEMPLATES[0]['DIRS'].append(BASE_DIR / 'saga' / 'templates')
+    
+    # Configuration des gestionnaires d'erreur
+    HANDLER404 = 'core.views.custom_404'
+    HANDLER500 = 'core.views.custom_500'
+    HANDLER403 = 'core.views.custom_403'
+
 REVIEW_PRODUCT_MODEL = 'product.Product' 
+
+if not DEBUG:
+    HANDLER404 = 'core.views.custom_404'
+    HANDLER500 = 'core.views.custom_500'
+    HANDLER403 = 'core.views.custom_403'
