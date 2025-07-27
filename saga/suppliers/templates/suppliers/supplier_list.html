@@ -94,16 +94,18 @@
 
     /* Amélioration de l'expérience tactile */
     .swiper-wrapper {
-        touch-action: pan-y pinch-zoom !important;
+        touch-action: pan-x !important;
         -webkit-overflow-scrolling: touch !important;
+        will-change: transform !important;
     }
 
     .swiper-slide {
-        touch-action: pan-y !important;
+        touch-action: pan-x !important;
         -webkit-user-select: none !important;
         -moz-user-select: none !important;
         -ms-user-select: none !important;
         user-select: none !important;
+        will-change: transform !important;
     }
 
     /* Amélioration du curseur sur mobile */
@@ -114,6 +116,12 @@
         
         .swiper-slide:active {
             cursor: grabbing !important;
+        }
+        
+        /* Amélioration de la réactivité tactile */
+        .categoriesSwiper {
+            touch-action: pan-x !important;
+            -webkit-overflow-scrolling: touch !important;
         }
     }
 </style>
@@ -126,12 +134,12 @@
         // Configuration commune pour tous les Swipers
         const defaultSwiperConfig = {
             slidesPerView: 1,
-            spaceBetween: 32,
-            centeredSlides: true,
-            loop: true,
+            spaceBetween: 24,
+            centeredSlides: false,
+            loop: false,
             effect: 'slide',
-            speed: 400,
-            // Amélioration du glissement tactile
+            speed: 300,
+            // Configuration tactile optimisée
             touchRatio: 1,
             touchAngle: 45,
             grabCursor: true,
@@ -142,12 +150,15 @@
             touchStartPreventDefault: false,
             touchMoveStopPropagation: false,
             // Amélioration de la sensibilité
-            threshold: 5,
+            threshold: 10,
             shortSwipes: true,
             longSwipes: true,
             longSwipesRatio: 0.5,
             longSwipesMs: 300,
             followFinger: true,
+            // Désactiver les animations qui peuvent interférer
+            watchSlidesProgress: false,
+            watchSlidesVisibility: false,
             pagination: {
                 clickable: true,
             },
@@ -160,11 +171,15 @@
         const swiperConfigs = {
             categories: {
                 ...defaultSwiperConfig,
+                slidesPerView: 1,
+                spaceBetween: 16,
+                centeredSlides: false,
+                loop: false,
                 navigation: {
                     ...defaultSwiperConfig.navigation,
                     nextEl: '.categoriesSwiper .swiper-button-next',
                     prevEl: '.categoriesSwiper .swiper-button-prev',
-            },
+                },
                 pagination: {
                     ...defaultSwiperConfig.pagination,
                     el: '.categoriesSwiper .swiper-pagination',
@@ -172,10 +187,12 @@
                 breakpoints: {
                     640: {
                         slidesPerView: 2,
+                        spaceBetween: 24,
                         centeredSlides: false,
                     },
                     1024: {
                         slidesPerView: 3,
+                        spaceBetween: 32,
                         centeredSlides: false,
                     }
                 }
@@ -277,7 +294,28 @@
             const container = document.querySelector(containerClass);
             if (container) {
                 console.log(`Initializing ${containerClass}`);
-                return new Swiper(containerClass, config);
+                const swiper = new Swiper(containerClass, config);
+                
+                // Ajouter des événements de débogage pour les catégories
+                if (containerClass === '.categoriesSwiper') {
+                    swiper.on('slideChange', function () {
+                        console.log('Categories slide changed to:', swiper.activeIndex);
+                    });
+                    
+                    swiper.on('touchStart', function () {
+                        console.log('Categories touch started');
+                    });
+                    
+                    swiper.on('touchMove', function () {
+                        console.log('Categories touch moving');
+                    });
+                    
+                    swiper.on('touchEnd', function () {
+                        console.log('Categories touch ended');
+                    });
+                }
+                
+                return swiper;
             }
             console.error(`${containerClass} not found`);
             return null;
