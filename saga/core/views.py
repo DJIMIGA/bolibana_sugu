@@ -184,28 +184,29 @@ def save_cookie_consent(request):
         return JsonResponse(response_data)
     return JsonResponse({'error': 'Méthode non autorisée'}, status=405) 
 
-def test_404_view(request):
-    """Vue de test pour la page 404"""
-    raise Http404("Page de test 404")
-
-def test_500_view(request):
-    """Vue de test pour la page 500"""
-    raise Exception("Erreur de test 500")
-
-def test_403_view(request):
-    """Vue de test pour la page 403"""
-    from django.core.exceptions import PermissionDenied
-    raise PermissionDenied("Accès interdit de test") 
+ 
 
 # Vues d'erreur personnalisées
 def custom_404(request, exception):
     """Vue personnalisée pour l'erreur 404"""
-    return render(request, '404.html', status=404)
+    from .models import SiteConfiguration
+    context = {
+        'config': SiteConfiguration.get_config()
+    }
+    return render(request, '404.html', context, status=404)
 
 def custom_500(request):
     """Vue personnalisée pour l'erreur 500"""
-    return render(request, '500.html', status=500)
+    from .models import SiteConfiguration
+    context = {
+        'config': SiteConfiguration.get_config()
+    }
+    return render(request, '500.html', context, status=500)
 
 def custom_403(request, exception):
     """Vue personnalisée pour l'erreur 403"""
-    return render(request, '403.html', status=403) 
+    from .models import SiteConfiguration
+    context = {
+        'config': SiteConfiguration.get_config()
+    }
+    return render(request, '403.html', context, status=403) 

@@ -43,6 +43,24 @@
             </div>
         </div>
         
+        <!-- Message de contact -->
+        {% if config.email or config.phone_number or config.whatsapp_number %}
+        <div class="mt-8 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+            <p class="text-sm text-yellow-800">
+                <strong>Besoin d'aide ?</strong><br>
+                {% if config.email %}
+                    Contactez-nous à <a href="mailto:{{ config.email }}" class="text-green-600 hover:text-green-700">{{ config.email }}</a>
+                {% endif %}
+                {% if config.phone_number %}
+                    <br>Ou appelez-nous au <a href="tel:+223{{ config.phone_number }}" class="text-green-600 hover:text-green-700">+223 {{ config.phone_number }}</a>
+                {% endif %}
+                {% if config.whatsapp_number %}
+                    <br>WhatsApp : <a href="https://wa.me/223{{ config.whatsapp_number }}" target="_blank" class="text-green-600 hover:text-green-700">+223 {{ config.whatsapp_number }}</a>
+                {% endif %}
+            </p>
+        </div>
+        {% endif %}
+        
         <!-- Illustration -->
         <div class="mt-12">
             <div class="w-32 h-32 mx-auto bg-yellow-100 rounded-full flex items-center justify-center">

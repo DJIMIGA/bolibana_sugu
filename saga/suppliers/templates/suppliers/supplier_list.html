@@ -9,26 +9,26 @@
     .swiper-button-prev {
         color: #059669 !important; /* green-600 */
         background-color: white;
-        width: 40px !important;
-        height: 40px !important;
+        width: 32px !important;
+        height: 32px !important;
         border-radius: 50%;
         box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-        top: 10.5rem !important;
-        opacity: 0.6 !important;
-        transition: opacity 0.2s;
+        top: 8rem !important;
+        opacity: 0.7 !important;
+        transition: all 0.2s ease;
     }
 
     .swiper-button-next {
-        right: -5px !important;
+        right: -8px !important;
     }
 
     .swiper-button-prev {
-        left: -5px !important;
+        left: -8px !important;
     }
 
     .swiper-button-next:after,
     .swiper-button-prev:after {
-        font-size: 20px !important; 
+        font-size: 16px !important; 
     }
 
     .swiper-button-next:hover,
@@ -52,27 +52,36 @@
         justify-content: center !important;
         align-items: center !important;
         gap: 8px !important;
+        bottom: 0 !important;
+        left: 0 !important;
+        width: 100% !important;
+        z-index: 10 !important;
     }
 
     .swiper-pagination-bullet {
-        width: 8px !important;
-        height: 8px !important;
-        background: #E5E7EB !important; /* gray-200 */
-        opacity: 1 !important;
+        width: 10px !important;
+        height: 10px !important;
+        background: #d1d5db !important; /* gray-300 */
+        opacity: 0.6 !important;
         transition: all 0.3s ease !important;
-        margin: 0 !important;
+        margin: 0 4px !important;
+        border-radius: 50% !important;
+        cursor: pointer !important;
+        display: inline-block !important;
     }
     
     .swiper-pagination-bullet-active {
-        background: #059669 !important; /* green-600 */
-        transform: scale(1.2) !important;
-        width: 10px !important;
-        height: 10px !important;
+        background: #10b981 !important; /* green-500 */
+        opacity: 1 !important;
+        transform: scale(1.3) !important;
+        width: 12px !important;
+        height: 12px !important;
     }
     
     .swiper-pagination-bullet:hover {
-        background: #059669 !important; /* green-600 */
-        opacity: 0.7 !important;
+        background: #10b981 !important; /* green-500 */
+        opacity: 0.8 !important;
+        transform: scale(1.1) !important;
     }
 
     /* Ajustement de l'espacement pour les slides */
@@ -99,6 +108,106 @@
         will-change: transform !important;
     }
 
+    /* Garantir l'affichage de 5 éléments sur une ligne */
+    .grid-5-cols {
+        display: grid !important;
+        grid-template-columns: repeat(5, minmax(0, 1fr)) !important;
+        gap: 1rem !important;
+    }
+
+    /* Responsive pour les grilles de 5 éléments */
+    @media (max-width: 640px) {
+        .grid-5-cols {
+            grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+        }
+    }
+
+    @media (min-width: 640px) and (max-width: 1024px) {
+        .grid-5-cols {
+            grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+        }
+    }
+
+    @media (min-width: 1024px) and (max-width: 1280px) {
+        .grid-5-cols {
+            grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+        }
+    }
+
+    @media (min-width: 1280px) {
+        .grid-5-cols {
+            grid-template-columns: repeat(5, minmax(0, 1fr)) !important;
+        }
+    }
+
+    /* Garantir que les cartes de produits s'affichent correctement */
+    .grid-5-cols > * {
+        min-width: 0 !important;
+        max-width: 100% !important;
+    }
+
+    /* Contraintes spécifiques pour les cartes de produits */
+    .product-card {
+        width: 100% !important;
+        min-width: 200px !important;
+        max-width: 300px !important;
+    }
+
+    /* Responsive pour les cartes */
+    @media (max-width: 640px) {
+        .product-card {
+            min-width: 150px !important;
+            max-width: 200px !important;
+        }
+    }
+
+    @media (min-width: 640px) and (max-width: 1024px) {
+        .product-card {
+            min-width: 180px !important;
+            max-width: 250px !important;
+        }
+    }
+
+    /* Garantir la séparation mobile/desktop pour toutes les sections */
+    .promotionsSwiper,
+    .phonesSwiper,
+    .clothingSwiper,
+    .fabricSwiper,
+    .culturalSwiper {
+        display: block !important;
+    }
+    
+    @media (min-width: 640px) {
+        .promotionsSwiper,
+        .phonesSwiper,
+        .clothingSwiper,
+        .fabricSwiper,
+        .culturalSwiper {
+            display: none !important;
+        }
+    }
+    
+    .promotions-desktop-grid,
+    .phones-desktop-grid,
+    .clothing-desktop-grid,
+    .fabric-desktop-grid,
+    .cultural-desktop-grid {
+        display: none !important;
+    }
+    
+    @media (min-width: 640px) {
+        .promotions-desktop-grid,
+        .phones-desktop-grid,
+        .clothing-desktop-grid,
+        .fabric-desktop-grid,
+        .cultural-desktop-grid {
+            display: grid !important;
+        }
+    }
+
+
+
+    /* Amélioration de la navigation tactile */
     .swiper-slide {
         touch-action: pan-x !important;
         -webkit-user-select: none !important;
@@ -117,9 +226,9 @@
         .swiper-slide:active {
             cursor: grabbing !important;
         }
-        
+
         /* Amélioration de la réactivité tactile */
-        .categoriesSwiper {
+        .swiper {
             touch-action: pan-x !important;
             -webkit-overflow-scrolling: touch !important;
         }
@@ -133,13 +242,13 @@
     document.addEventListener('DOMContentLoaded', function() {
         // Configuration commune pour tous les Swipers
         const defaultSwiperConfig = {
-            slidesPerView: 1,
-            spaceBetween: 24,
+            slidesPerView: 2,
+            spaceBetween: 16,
             centeredSlides: false,
             loop: false,
             effect: 'slide',
             speed: 300,
-            // Configuration tactile optimisée
+            // Configuration tactile optimisée pour mobile
             touchRatio: 1,
             touchAngle: 45,
             grabCursor: true,
@@ -150,20 +259,40 @@
             touchStartPreventDefault: false,
             touchMoveStopPropagation: false,
             // Amélioration de la sensibilité
-            threshold: 10,
+            threshold: 5,
             shortSwipes: true,
             longSwipes: true,
             longSwipesRatio: 0.5,
             longSwipesMs: 300,
             followFinger: true,
-            // Désactiver les animations qui peuvent interférer
-            watchSlidesProgress: false,
-            watchSlidesVisibility: false,
+            // Amélioration de la réactivité tactile
+            watchSlidesProgress: true,
+            watchSlidesVisibility: true,
+            // Pagination améliorée - calculée dynamiquement
             pagination: {
                 clickable: true,
+                dynamicBullets: false,
+                renderBullet: function (index, className) {
+                    return '<span class="' + className + '"></span>';
+                },
             },
             navigation: {
                 disabledClass: 'swiper-button-disabled',
+            },
+            // Masquer la navigation si pas assez de slides
+            on: {
+                init: function() {
+                    const totalSlides = this.slides.length;
+                    const slidesPerView = this.params.slidesPerView;
+                    const totalPages = Math.ceil(totalSlides / slidesPerView);
+                    
+                    // Masquer la navigation si moins de 2 pages
+                    if (totalPages <= 1) {
+                        this.navigation.nextEl.style.display = 'none';
+                        this.navigation.prevEl.style.display = 'none';
+                        this.pagination.el.style.display = 'none';
+                    }
+                }
             }
         };
 
@@ -199,6 +328,8 @@
             },
             phones: {
                 ...defaultSwiperConfig,
+                slidesPerView: 2,
+                spaceBetween: 16,
                 navigation: {
                     ...defaultSwiperConfig.navigation,
                     nextEl: '.phonesSwiper .swiper-button-next',
@@ -207,16 +338,46 @@
                 pagination: {
                     ...defaultSwiperConfig.pagination,
                     el: '.phonesSwiper .swiper-pagination',
+                    clickable: true,
+                    dynamicBullets: false,
                 },
                 breakpoints: {
                     640: {
                         slidesPerView: 2,
+                        spaceBetween: 24,
                         centeredSlides: false,
+                    },
+                    1024: {
+                        slidesPerView: 3,
+                        spaceBetween: 32,
+                        centeredSlides: false,
+                    }
+                },
+                // Configuration spéciale pour les téléphones
+                on: {
+                    init: function() {
+                        const totalSlides = this.slides.length;
+                        const slidesPerView = this.params.slidesPerView;
+                        const totalPages = Math.ceil(totalSlides / slidesPerView);
+                        
+                        // Masquer la navigation si moins de 2 pages
+                        if (totalPages <= 1) {
+                            this.navigation.nextEl.style.display = 'none';
+                            this.navigation.prevEl.style.display = 'none';
+                            this.pagination.el.style.display = 'none';
+                        }
+                        
+                        // Ajuster la pagination pour 5 produits max
+                        if (totalSlides <= 4) {
+                            this.pagination.el.style.display = 'none';
+                        }
                     }
                 }
             },
             clothing: {
                 ...defaultSwiperConfig,
+                slidesPerView: 2,
+                spaceBetween: 16,
                 navigation: {
                     ...defaultSwiperConfig.navigation,
                     nextEl: '.clothingSwiper .swiper-button-next',
@@ -225,16 +386,46 @@
                 pagination: {
                     ...defaultSwiperConfig.pagination,
                     el: '.clothingSwiper .swiper-pagination',
+                    clickable: true,
+                    dynamicBullets: false,
                 },
                 breakpoints: {
                     640: {
                         slidesPerView: 2,
+                        spaceBetween: 24,
                         centeredSlides: false,
+                    },
+                    1024: {
+                        slidesPerView: 3,
+                        spaceBetween: 32,
+                        centeredSlides: false,
+                    }
+                },
+                // Configuration spéciale pour les vêtements
+                on: {
+                    init: function() {
+                        const totalSlides = this.slides.length;
+                        const slidesPerView = this.params.slidesPerView;
+                        const totalPages = Math.ceil(totalSlides / slidesPerView);
+                        
+                        // Masquer la navigation si moins de 2 pages
+                        if (totalPages <= 1) {
+                            this.navigation.nextEl.style.display = 'none';
+                            this.navigation.prevEl.style.display = 'none';
+                            this.pagination.el.style.display = 'none';
+                        }
+                        
+                        // Ajuster la pagination pour 5 produits max
+                        if (totalSlides <= 4) {
+                            this.pagination.el.style.display = 'none';
+                        }
                     }
                 }
             },
             fabric: {
                 ...defaultSwiperConfig,
+                slidesPerView: 2,
+                spaceBetween: 16,
                 navigation: {
                     ...defaultSwiperConfig.navigation,
                     nextEl: '.fabricSwiper .swiper-button-next',
@@ -243,16 +434,46 @@
                 pagination: {
                     ...defaultSwiperConfig.pagination,
                     el: '.fabricSwiper .swiper-pagination',
+                    clickable: true,
+                    dynamicBullets: false,
                 },
                 breakpoints: {
                     640: {
                         slidesPerView: 2,
+                        spaceBetween: 24,
                         centeredSlides: false,
+                    },
+                    1024: {
+                        slidesPerView: 3,
+                        spaceBetween: 32,
+                        centeredSlides: false,
+                    }
+                },
+                // Configuration spéciale pour les tissus
+                on: {
+                    init: function() {
+                        const totalSlides = this.slides.length;
+                        const slidesPerView = this.params.slidesPerView;
+                        const totalPages = Math.ceil(totalSlides / slidesPerView);
+                        
+                        // Masquer la navigation si moins de 2 pages
+                        if (totalPages <= 1) {
+                            this.navigation.nextEl.style.display = 'none';
+                            this.navigation.prevEl.style.display = 'none';
+                            this.pagination.el.style.display = 'none';
+                        }
+                        
+                        // Ajuster la pagination pour 5 produits max
+                        if (totalSlides <= 4) {
+                            this.pagination.el.style.display = 'none';
+                        }
                     }
                 }
             },
             cultural: {
                 ...defaultSwiperConfig,
+                slidesPerView: 2,
+                spaceBetween: 16,
                 navigation: {
                     ...defaultSwiperConfig.navigation,
                     nextEl: '.culturalSwiper .swiper-button-next',
@@ -261,16 +482,48 @@
                 pagination: {
                     ...defaultSwiperConfig.pagination,
                     el: '.culturalSwiper .swiper-pagination',
+                    clickable: true,
+                    dynamicBullets: false,
                 },
                 breakpoints: {
                     640: {
                         slidesPerView: 2,
+                        spaceBetween: 24,
                         centeredSlides: false,
+                    },
+                    1024: {
+                        slidesPerView: 3,
+                        spaceBetween: 32,
+                        centeredSlides: false,
+                    }
+                },
+                // Configuration spéciale pour les articles culturels
+                on: {
+                    init: function() {
+                        const totalSlides = this.slides.length;
+                        const slidesPerView = this.params.slidesPerView;
+                        const totalPages = Math.ceil(totalSlides / slidesPerView);
+                        
+                        // Masquer la navigation si moins de 2 pages
+                        if (totalPages <= 1) {
+                            this.navigation.nextEl.style.display = 'none';
+                            this.navigation.prevEl.style.display = 'none';
+                            this.pagination.el.style.display = 'none';
+                        }
+                        
+                        // Ajuster la pagination pour 5 produits max
+                        if (totalSlides <= 4) {
+                            this.pagination.el.style.display = 'none';
+                        }
                     }
                 }
             },
             promotions: {
                 ...defaultSwiperConfig,
+                slidesPerView: 2,
+                spaceBetween: 16,
+                centeredSlides: false,
+                loop: false,
                 navigation: {
                     ...defaultSwiperConfig.navigation,
                     nextEl: '.promotionsSwiper .swiper-button-next',
@@ -279,11 +532,39 @@
                 pagination: {
                     ...defaultSwiperConfig.pagination,
                     el: '.promotionsSwiper .swiper-pagination',
+                    clickable: true,
+                    dynamicBullets: false,
                 },
                 breakpoints: {
                     640: {
                         slidesPerView: 2,
+                        spaceBetween: 24,
                         centeredSlides: false,
+                    },
+                    1024: {
+                        slidesPerView: 3,
+                        spaceBetween: 32,
+                        centeredSlides: false,
+                    }
+                },
+                // Configuration spéciale pour les promotions (max 5 produits)
+                on: {
+                    init: function() {
+                        const totalSlides = this.slides.length;
+                        const slidesPerView = this.params.slidesPerView;
+                        const totalPages = Math.ceil(totalSlides / slidesPerView);
+                        
+                        // Masquer la navigation si moins de 2 pages
+                        if (totalPages <= 1) {
+                            this.navigation.nextEl.style.display = 'none';
+                            this.navigation.prevEl.style.display = 'none';
+                            this.pagination.el.style.display = 'none';
+                        }
+                        
+                        // Ajuster la pagination pour 5 produits max (3 slides max)
+                        if (totalSlides <= 4) {
+                            this.pagination.el.style.display = 'none';
+                        }
                     }
                 }
             }
@@ -566,8 +847,8 @@
 
             <!-- Swiper sur mobile, grille sur desktop -->
             <div class="mt-12 relative">
-                <!-- Swiper container -->
-                <div class="swiper promotionsSwiper sm:hidden">
+                <!-- Swiper container - Visible uniquement sur mobile -->
+                <div class="swiper promotionsSwiper block sm:hidden">
                     <div class="swiper-wrapper">
                         {% for product in promotional_products|slice:":5" %}
                             <div class="swiper-slide">
@@ -584,22 +865,29 @@
                                 {% endif %}
                             </div>
                         {% empty %}
-                            <div class="swiper-slide">
-                                <div class="text-center py-12">
-                                    <p class="text-gray-500 text-xl">Aucune promotion disponible pour le moment.</p>
-                                </div>
+                        <div class="swiper-slide">
+                            <div class="text-center py-12">
+                                <p class="text-gray-500 text-xl">Aucune promotion disponible pour le moment.</p>
+                                <a href="{% url 'suppliers:category_detail' 'tous-les-produits' %}" class="mt-4 inline-flex items-center px-6 py-3 text-sm text-green-700 bg-green-50 hover:bg-green-100 transition-colors duration-200 rounded-lg">
+                                    <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                                    </svg>
+                                    Découvrir tous nos produits
+                                </a>
                             </div>
+                        </div>
                         {% endfor %}
                     </div>
-                    <!-- Add Pagination -->
-                    <div class="swiper-pagination"></div>
-                    <!-- Add Navigation -->
-                    <div class="swiper-button-prev"></div>
+                    <!-- Navigation -->
                     <div class="swiper-button-next"></div>
+                    <div class="swiper-button-prev"></div>
+                    <!-- Pagination -->
+                    <div class="swiper-pagination"></div>
                 </div>
 
-                <!-- Grille pour desktop - Optimisée pour plus d'éléments -->
-                <div class="hidden sm:grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-4">
+                <!-- Grille pour desktop - Visible uniquement sur desktop -->
+                <div class="hidden sm:grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4 grid-5-cols promotions-desktop-grid">
                 {% for product in promotional_products|slice:":5" %}
                     {% if product.phone %}
                         {% render_phone_card product %}
@@ -627,6 +915,9 @@
                 </div>
             </div>
         </div>
+        {% else %}
+        <!-- Espacement quand pas de promotions -->
+        <div class="mb-24"></div>
         {% endif %}
 
         <!-- Section Téléphones -->
@@ -649,8 +940,8 @@
 
             <!-- Swiper sur mobile, grille sur desktop -->
             <div class="mt-12 relative">
-                <!-- Swiper container -->
-                <div class="swiper phonesSwiper sm:hidden">
+                <!-- Swiper container - Visible uniquement sur mobile -->
+                <div class="swiper phonesSwiper block sm:hidden">
                     <div class="swiper-wrapper">
                         {% for product in products|slice:":5" %}
                             {% if product.phone %}
@@ -667,13 +958,14 @@
                     <div class="swiper-button-next"></div>
                 </div>
 
-                <!-- Grille pour desktop - Optimisée pour plus d'éléments -->
-                <div class="hidden sm:grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-4">
+                <!-- Grille pour desktop - Visible uniquement sur desktop -->
+                <div class="hidden sm:grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4 grid-5-cols phones-desktop-grid">
                 {% for product in products|slice:":5" %}
                     {% if product.phone %}
                         {% render_phone_card product %}
                     {% endif %}
-                {% empty %}
+                {% endfor %}
+                {% if not products %}
                 <div class="col-span-full text-center py-12">
                     <p class="text-gray-500 text-xl">Aucun téléphone disponible pour le moment.</p>
                     <a href="{% url 'suppliers:category_detail' 'tous-les-produits' %}" class="mt-4 inline-flex items-center px-6 py-3 text-sm text-green-700 bg-green-50 hover:bg-green-100 transition-colors duration-200 rounded-lg">
@@ -684,7 +976,7 @@
                         Découvrir tous nos produits
                     </a>
                 </div>
-                {% endfor %}
+                {% endif %}
                 </div>
             </div>
         </div>
@@ -709,8 +1001,8 @@
 
             <!-- Swiper sur mobile, grille sur desktop -->
             <div class="mt-12 relative">
-                <!-- Swiper container -->
-                <div class="swiper clothingSwiper sm:hidden">
+                <!-- Swiper container - Visible uniquement sur mobile -->
+                <div class="swiper clothingSwiper block sm:hidden">
                     <div class="swiper-wrapper">
                         {% for product in clothing_products|slice:":5" %}
                             <div class="swiper-slide">
@@ -731,11 +1023,12 @@
                     <div class="swiper-button-next"></div>
                 </div>
 
-                <!-- Grille pour desktop - Optimisée pour plus d'éléments -->
-                <div class="hidden sm:grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-4">
+                <!-- Grille pour desktop - Visible uniquement sur desktop -->
+                <div class="hidden sm:grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4 grid-5-cols clothing-desktop-grid">
                 {% for product in clothing_products|slice:":5" %}
                     {% render_clothing_card product %}
-                {% empty %}
+                {% endfor %}
+                {% if not clothing_products %}
                 <div class="col-span-full text-center py-12">
                     <p class="text-gray-500 text-xl">Aucun vêtement disponible pour le moment.</p>
                     <a href="{% url 'suppliers:category_detail' 'tous-les-produits' %}" class="mt-4 inline-flex items-center px-6 py-3 text-sm text-green-700 bg-green-50 hover:bg-green-100 transition-colors duration-200 rounded-lg">
@@ -746,7 +1039,7 @@
                         Découvrir tous nos produits
                     </a>
                 </div>
-                {% endfor %}
+                {% endif %}
                 </div>
             </div>
         </div>
@@ -771,8 +1064,8 @@
 
             <!-- Swiper sur mobile, grille sur desktop -->
             <div class="mt-12 relative">
-                <!-- Swiper container -->
-                <div class="swiper fabricSwiper sm:hidden">
+                <!-- Swiper container - Visible uniquement sur mobile -->
+                <div class="swiper fabricSwiper block sm:hidden">
                     <div class="swiper-wrapper">
                         {% for product in fabric_products|slice:":5" %}
                             <div class="swiper-slide">
@@ -787,11 +1080,12 @@
                     <div class="swiper-button-next"></div>
                 </div>
 
-                <!-- Grille pour desktop - Optimisée pour plus d'éléments -->
-                <div class="hidden sm:grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-4">
+                <!-- Grille pour desktop - Visible uniquement sur desktop -->
+                <div class="hidden sm:grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4 grid-5-cols fabric-desktop-grid">
                 {% for product in fabric_products|slice:":5" %}
                     {% render_fabric_card product %}
-                {% empty %}
+                {% endfor %}
+                {% if not fabric_products %}
                 <div class="col-span-full text-center py-12">
                     <p class="text-gray-500 text-xl">Aucun tissu disponible pour le moment.</p>
                     <a href="{% url 'suppliers:category_detail' 'tous-les-produits' %}" class="mt-4 inline-flex items-center px-6 py-3 text-sm text-green-700 bg-green-50 hover:bg-green-100 transition-colors duration-200 rounded-lg">
@@ -802,7 +1096,7 @@
                         Découvrir tous nos produits
                     </a>
                 </div>
-                {% endfor %}
+                {% endif %}
                 </div>
             </div>
         </div>
@@ -827,8 +1121,8 @@
 
             <!-- Swiper sur mobile, grille sur desktop -->
             <div class="mt-12 relative">
-                <!-- Swiper container -->
-                <div class="swiper culturalSwiper sm:hidden">
+                <!-- Swiper container - Visible uniquement sur mobile -->
+                <div class="swiper culturalSwiper block sm:hidden">
                     <div class="swiper-wrapper">
                         {% for product in cultural_products|slice:":5" %}
                             <div class="swiper-slide">
@@ -843,11 +1137,12 @@
                     <div class="swiper-button-next"></div>
                 </div>
 
-                <!-- Grille pour desktop - Optimisée pour plus d'éléments -->
-                <div class="hidden sm:grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-4">
+                <!-- Grille pour desktop - Visible uniquement sur desktop -->
+                <div class="hidden sm:grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4 grid-5-cols cultural-desktop-grid">
                 {% for product in cultural_products|slice:":5" %}
                     {% render_cultural_card product %}
-                {% empty %}
+                {% endfor %}
+                {% if not cultural_products %}
                 <div class="col-span-full text-center py-12">
                     <p class="text-gray-500 text-xl">Aucun article culturel disponible pour le moment.</p>
                     <a href="{% url 'suppliers:category_detail' 'tous-les-produits' %}" class="mt-4 inline-flex items-center px-6 py-3 text-sm text-green-700 bg-green-50 hover:bg-green-100 transition-colors duration-200 rounded-lg">
@@ -858,7 +1153,7 @@
                         Découvrir tous nos produits
                     </a>
                 </div>
-                {% endfor %}
+                {% endif %}
                 </div>
             </div>
         </div>

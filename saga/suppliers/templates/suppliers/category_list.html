@@ -133,11 +133,11 @@
                     <div class="swiper-slide">
                         <a href="{% url 'suppliers:category_detail' category.slug %}" 
                            class="group bg-white rounded-xl shadow-lg overflow-hidden transition-all duration-300 hover:shadow-xl hover:-translate-y-1 block h-full">
-                            <div class="aspect-w-1 aspect-h-1 w-full overflow-hidden bg-gray-200 xl:aspect-w-7 xl:aspect-h-8">
+                            <div class="aspect-w-1 aspect-h-1 w-full overflow-hidden bg-gray-200 xl:aspect-w-7 xl:aspect-h-8 rounded-lg">
                                 {% if category.image %}
-                                    <img src="{{ category.image.url }}" alt="{{ category.name }}" class="w-full h-full object-cover">
+                                    <img src="{{ category.image.url }}" alt="{{ category.name }}" class="w-full h-full object-cover rounded-lg">
                                 {% else %}
-                                    <div class="w-full h-full flex items-center justify-center bg-{{ category.color }}-100">
+                                    <div class="w-full h-full flex items-center justify-center bg-{{ category.color }}-100 rounded-lg">
                                         <svg class="w-24 h-24 text-{{ category.color }}-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             {% if category.slug == 'telephones' %}
                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z" />
@@ -178,11 +178,11 @@
             {% for category in sub_categories %}
             <a href="{% url 'suppliers:category_detail' category.slug %}" 
                class="group bg-white rounded-xl shadow-lg overflow-hidden transition-all duration-300 hover:shadow-xl hover:-translate-y-1">
-                <div class="aspect-w-1 aspect-h-1 w-full overflow-hidden bg-gray-200 xl:aspect-w-7 xl:aspect-h-8">
+                <div class="aspect-w-1 aspect-h-1 w-full overflow-hidden bg-gray-200 xl:aspect-w-7 xl:aspect-h-8 rounded-lg">
                     {% if category.image %}
-                        <img src="{{ category.image.url }}" alt="{{ category.name }}" class="w-full h-full object-cover">
+                        <img src="{{ category.image.url }}" alt="{{ category.name }}" class="w-full h-full object-cover rounded-lg">
                     {% else %}
-                        <div class="w-full h-full flex items-center justify-center bg-{{ category.color }}-100">
+                        <div class="w-full h-full flex items-center justify-center bg-{{ category.color }}-100 rounded-lg">
                             <svg class="w-24 h-24 text-{{ category.color }}-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 {% if category.slug == 'telephones' %}
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z" />

@@ -47,7 +47,15 @@
         <div class="mt-8 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
             <p class="text-sm text-yellow-800">
                 <strong>Besoin d'aide ?</strong><br>
-                Contactez-nous à <a href="mailto:support@bolibana.com" class="text-green-600 hover:text-green-700">support@bolibana.com</a>
+                {% if config.email %}
+                    Contactez-nous à <a href="mailto:{{ config.email }}" class="text-green-600 hover:text-green-700">{{ config.email }}</a>
+                {% endif %}
+                {% if config.phone_number %}
+                    <br>Ou appelez-nous au <a href="tel:+223{{ config.phone_number }}" class="text-green-600 hover:text-green-700">+223 {{ config.phone_number }}</a>
+                {% endif %}
+                {% if config.whatsapp_number %}
+                    <br>WhatsApp : <a href="https://wa.me/223{{ config.whatsapp_number }}" target="_blank" class="text-green-600 hover:text-green-700">+223 {{ config.whatsapp_number }}</a>
+                {% endif %}
             </p>
         </div>
         
