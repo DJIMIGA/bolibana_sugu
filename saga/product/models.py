@@ -518,16 +518,41 @@ class Product(models.Model):
         
         return f"{prefix}-{str(new_number).zfill(4)}"
 
+    def generate_unique_slug(self):
+        """Génère un slug unique pour le produit"""
+        # Générer un slug de base
+        base_slug = slugify(self.title)
+        
+        # Ajouter des éléments distinctifs pour éviter les conflits
+        distinctive_elements = []
+        
+        # Ajouter la marque si disponible
+        if self.brand:
+            distinctive_elements.append(slugify(self.brand))
+        
+        # Ajouter la catégorie si disponible
+        if self.category:
+            distinctive_elements.append(slugify(self.category.name))
+        
+        # Construire le slug avec éléments distinctifs
+        if distinctive_elements:
+            # Utiliser le premier élément distinctif
+            slug_candidate = f"{base_slug}-{distinctive_elements[0]}"
+        else:
+            slug_candidate = base_slug
+        
+        # Vérifier si le slug existe déjà et ajouter un suffixe numérique
+        if Product.objects.filter(slug=slug_candidate).exists():
+            counter = 1
+            while Product.objects.filter(slug=f"{slug_candidate}-{counter}").exists():
+                counter += 1
+            return f"{slug_candidate}-{counter}"
+        
+        return slug_candidate
+
     def save(self, *args, **kwargs):
         if not self.slug:
-            self.slug = slugify(self.title)
-            # Vérifier si le slug existe déjà
-            if Product.objects.filter(slug=self.slug).exists():
-                # Ajouter un suffixe numérique unique
-                counter = 1
-                while Product.objects.filter(slug=f"{self.slug}-{counter}").exists():
-                    counter += 1
-                self.slug = f"{self.slug}-{counter}"
+            self.slug = self.generate_unique_slug()
         
         # Générer le SKU si nécessaire
         if not self.sku or self.sku == 'SKU-0000':
