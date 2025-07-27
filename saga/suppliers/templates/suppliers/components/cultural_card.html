@@ -9,7 +9,7 @@
     </div>
 
     <!-- Image principale avec lien -->
-    <a href="{% url 'suppliers:cultural_detail' product.slug %}" class="block h-48 sm:h-64 w-full overflow-hidden bg-gray-100 relative" aria-label="Voir les détails de {{ product.title }}">
+    <a href="{% url 'suppliers:cultural_detail' product.slug %}" class="block h-56 sm:h-72 w-full overflow-hidden bg-gray-100 relative" aria-label="Voir les détails de {{ product.title }}">
         {% if product.image %}
             <img src="{{ product.image.url }}" 
                  alt="Photo de {{ product.title }}" 
@@ -22,6 +22,8 @@
                 </svg>
             </div>
         {% endif %}
+        
+        <!-- Overlay au survol -->
         <div class="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-10 transition-all duration-300"></div>
     </a>
 

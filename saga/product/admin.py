@@ -133,8 +133,10 @@ class PhoneAdmin(admin.ModelAdmin):
         super().save_model(request, obj, form, change)
         if not change and hasattr(obj, 'product'):
             product = obj.product
-            product.title = f"{obj.brand} {obj.model}"
-            product.save()
+            # Ne générer le titre automatiquement que s'il est vide ou par défaut
+            if not product.title or product.title == f"{obj.brand} {obj.model}":
+                product.title = f"{obj.brand} {obj.model}"
+                product.save()
 
 @admin.register(CulturalItem)
 class CulturalItemAdmin(admin.ModelAdmin):

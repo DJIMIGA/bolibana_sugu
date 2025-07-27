@@ -91,6 +91,31 @@
     .swiper {
         padding: 0 5px !important;
     }
+
+    /* Amélioration de l'expérience tactile */
+    .swiper-wrapper {
+        touch-action: pan-y pinch-zoom !important;
+        -webkit-overflow-scrolling: touch !important;
+    }
+
+    .swiper-slide {
+        touch-action: pan-y !important;
+        -webkit-user-select: none !important;
+        -moz-user-select: none !important;
+        -ms-user-select: none !important;
+        user-select: none !important;
+    }
+
+    /* Amélioration du curseur sur mobile */
+    @media (max-width: 640px) {
+        .swiper-slide {
+            cursor: grab !important;
+        }
+        
+        .swiper-slide:active {
+            cursor: grabbing !important;
+        }
+    }
 </style>
 {% endblock %}
 
@@ -106,6 +131,23 @@
             loop: true,
             effect: 'slide',
             speed: 400,
+            // Amélioration du glissement tactile
+            touchRatio: 1,
+            touchAngle: 45,
+            grabCursor: true,
+            allowTouchMove: true,
+            resistance: true,
+            resistanceRatio: 0.85,
+            // Configuration pour mobile
+            touchStartPreventDefault: false,
+            touchMoveStopPropagation: false,
+            // Amélioration de la sensibilité
+            threshold: 5,
+            shortSwipes: true,
+            longSwipes: true,
+            longSwipesRatio: 0.5,
+            longSwipesMs: 300,
+            followFinger: true,
             pagination: {
                 clickable: true,
             },

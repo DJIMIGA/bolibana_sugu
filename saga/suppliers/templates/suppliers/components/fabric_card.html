@@ -9,11 +9,11 @@
     </div>
 
     <!-- Image principale avec lien -->
-    <a href="{% url 'suppliers:fabric_detail' product.slug %}" class="block h-48 sm:h-64 w-full overflow-hidden bg-gray-100" aria-label="Voir les détails de {{ product.title }}">
+    <a href="{% url 'suppliers:fabric_detail' product.slug %}" class="block h-56 sm:h-72 w-full overflow-hidden bg-gray-100 relative" aria-label="Voir les détails de {{ product.title }}">
         {% if product.image %}
             <img src="{{ product.image.url }}" 
                  alt="Photo de {{ product.title }}" 
-                 class="h-full w-full object-cover transition-transform duration-300 hover:scale-105"
+                 class="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
                  loading="lazy">
         {% else %}
             <div class="h-full w-full flex items-center justify-center">
@@ -22,6 +22,9 @@
                 </svg>
             </div>
         {% endif %}
+        
+        <!-- Overlay au survol -->
+        <div class="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-10 transition-all duration-300"></div>
     </a>
 
     <!-- Contenu -->

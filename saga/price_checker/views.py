@@ -725,7 +725,7 @@ def add_price_entry(request):
             price_entry = form.save(commit=False)
             price_entry.user = request.user
             price_entry.save()
-            messages.success(request, 'Prix ajouté avec succès.')
+                messages.success(request, 'Prix ajouté avec succès.')
             return redirect('price_checker:price_entry_list')
     else:
         form = PriceEntryForm()

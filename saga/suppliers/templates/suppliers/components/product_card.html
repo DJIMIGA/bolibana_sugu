@@ -18,7 +18,7 @@
     </div>
 
     <!-- Image principale avec lien -->
-    <a href="{% url 'suppliers:product_detail' product.slug %}" class="block h-48 sm:h-64 rounded w-full overflow-hidden bg-gray-100 relative" aria-label="Voir les détails de {{ product.title }}">
+    <a href="{% url 'suppliers:product_detail' product.slug %}" class="block h-56 sm:h-72 rounded w-full overflow-hidden bg-gray-100 relative" aria-label="Voir les détails de {{ product.title }}">
         {% if product.image %}
             <img src="{{ product.image.url }}" 
                  alt="Photo de {{ product.title }}" 

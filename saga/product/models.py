@@ -862,6 +862,7 @@ class Phone(models.Model):
     model = models.CharField(max_length=100, default='Inconnu')
     operating_system = models.CharField(max_length=50, default='Android')
     screen_size = models.DecimalField(max_digits=4, decimal_places=2, default=6.0)
+    resolution = models.CharField(max_length=50, default='1920x1080', help_text="Résolution de l'écran (ex: 1920x1080)")
     processor = models.CharField(max_length=100, default='Inconnu')
     battery_capacity = models.IntegerField(help_text="Capacité de la batterie en mAh", default=3000)
     camera_main = models.CharField(max_length=100, verbose_name="Caméra principale", default='Inconnue')
