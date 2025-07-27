@@ -551,7 +551,8 @@ class Product(models.Model):
         return slug_candidate
 
     def save(self, *args, **kwargs):
-        if not self.slug:
+        # Générer un slug unique si pas de slug ou si c'est un nouveau produit
+        if not self.slug or not self.pk:
             self.slug = self.generate_unique_slug()
         
         # Générer le SKU si nécessaire
