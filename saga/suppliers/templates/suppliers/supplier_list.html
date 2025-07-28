@@ -282,18 +282,26 @@
 
     /* Amélioration du curseur sur mobile */
     @media (max-width: 640px) {
-        .swiper-slide {
-            cursor: grab !important;
+        /* DÉSACTIVER COMPLÈTEMENT LE SWIPER EN MOBILE */
+        .swiper {
+            display: none !important;
         }
         
-        .swiper-slide:active {
-            cursor: grabbing !important;
+        /* UTILISER UNE GRILLE SIMPLE À LA PLACE */
+        .mobile-grid {
+            display: grid !important;
+            grid-template-columns: repeat(2, 1fr) !important;
+            gap: 16px !important;
+            width: 100% !important;
+            max-width: 100vw !important;
+            overflow-x: hidden !important;
         }
-
-        /* Amélioration de la réactivité tactile - CORRIGÉE */
-        .swiper {
-            touch-action: pan-x !important; /* Seulement pan-x */
-            -webkit-overflow-scrolling: touch !important;
+        
+        .mobile-grid .product-card {
+            width: 100% !important;
+            max-width: 100% !important;
+            min-width: 0 !important;
+            overflow: hidden !important;
         }
         
         /* Empêcher le scroll horizontal sur le body en mobile */
@@ -1094,24 +1102,15 @@
                 </a>
             </div>
 
-            <!-- Swiper sur mobile, grille sur desktop -->
+            <!-- Grille sur mobile, grille sur desktop -->
             <div class="mt-12 relative">
-                <!-- Swiper container - Visible uniquement sur mobile -->
-                <div class="swiper phonesSwiper block sm:hidden">
-                    <div class="swiper-wrapper">
-                        {% for product in products|slice:":5" %}
-                            {% if product.phone %}
-                                <div class="swiper-slide">
-                                    {% render_phone_card product %}
-                                </div>
-                            {% endif %}
-                        {% endfor %}
-                    </div>
-                    <!-- Add Pagination -->
-                    <div class="swiper-pagination"></div>
-                    <!-- Add Navigation -->
-                    <div class="swiper-button-prev"></div>
-                    <div class="swiper-button-next"></div>
+                <!-- Grille mobile - Visible uniquement sur mobile -->
+                <div class="mobile-grid block sm:hidden">
+                    {% for product in products|slice:":4" %}
+                        {% if product.phone %}
+                            {% render_phone_card product %}
+                        {% endif %}
+                    {% endfor %}
                 </div>
 
                 <!-- Grille pour desktop - Visible uniquement sur desktop -->
@@ -1155,28 +1154,17 @@
                 </a>
             </div>
 
-            <!-- Swiper sur mobile, grille sur desktop -->
+            <!-- Grille sur mobile, grille sur desktop -->
             <div class="mt-12 relative">
-                <!-- Swiper container - Visible uniquement sur mobile -->
-                <div class="swiper clothingSwiper block sm:hidden">
-                    <div class="swiper-wrapper">
-                        {% for product in clothing_products|slice:":5" %}
-                            <div class="swiper-slide">
-                                {% render_clothing_card product %}
-                            </div>
-                        {% empty %}
-                            <div class="swiper-slide">
-                                <div class="text-center py-12">
-                                    <p class="text-gray-500 text-xl">Aucun vêtement disponible pour le moment.</p>
-                                </div>
-                            </div>
-                        {% endfor %}
-                    </div>
-                    <!-- Add Pagination -->
-                    <div class="swiper-pagination"></div>
-                    <!-- Add Navigation -->
-                    <div class="swiper-button-prev"></div>
-                    <div class="swiper-button-next"></div>
+                <!-- Grille mobile - Visible uniquement sur mobile -->
+                <div class="mobile-grid block sm:hidden">
+                    {% for product in clothing_products|slice:":4" %}
+                        {% render_clothing_card product %}
+                    {% empty %}
+                        <div class="text-center py-12">
+                            <p class="text-gray-500 text-xl">Aucun vêtement disponible pour le moment.</p>
+                        </div>
+                    {% endfor %}
                 </div>
 
                 <!-- Grille pour desktop - Visible uniquement sur desktop -->
@@ -1218,22 +1206,13 @@
                 </a>
             </div>
 
-            <!-- Swiper sur mobile, grille sur desktop -->
+            <!-- Grille sur mobile, grille sur desktop -->
             <div class="mt-12 relative">
-                <!-- Swiper container - Visible uniquement sur mobile -->
-                <div class="swiper fabricSwiper block sm:hidden">
-                    <div class="swiper-wrapper">
-                        {% for product in fabric_products|slice:":5" %}
-                            <div class="swiper-slide">
-                                {% render_fabric_card product %}
-                            </div>
-                        {% endfor %}
-                    </div>
-                    <!-- Add Pagination -->
-                    <div class="swiper-pagination"></div>
-                    <!-- Add Navigation -->
-                    <div class="swiper-button-prev"></div>
-                    <div class="swiper-button-next"></div>
+                <!-- Grille mobile - Visible uniquement sur mobile -->
+                <div class="mobile-grid block sm:hidden">
+                    {% for product in fabric_products|slice:":4" %}
+                        {% render_fabric_card product %}
+                    {% endfor %}
                 </div>
 
                 <!-- Grille pour desktop - Visible uniquement sur desktop -->
@@ -1275,22 +1254,13 @@
                 </a>
             </div>
 
-            <!-- Swiper sur mobile, grille sur desktop -->
+            <!-- Grille sur mobile, grille sur desktop -->
             <div class="mt-12 relative">
-                <!-- Swiper container - Visible uniquement sur mobile -->
-                <div class="swiper culturalSwiper block sm:hidden">
-                    <div class="swiper-wrapper">
-                        {% for product in cultural_products|slice:":5" %}
-                            <div class="swiper-slide">
-                                {% render_cultural_card product %}
-                            </div>
-                        {% endfor %}
-                    </div>
-                    <!-- Add Pagination -->
-                    <div class="swiper-pagination"></div>
-                    <!-- Add Navigation -->
-                    <div class="swiper-button-prev"></div>
-                    <div class="swiper-button-next"></div>
+                <!-- Grille mobile - Visible uniquement sur mobile -->
+                <div class="mobile-grid block sm:hidden">
+                    {% for product in cultural_products|slice:":4" %}
+                        {% render_cultural_card product %}
+                    {% endfor %}
                 </div>
 
                 <!-- Grille pour desktop - Visible uniquement sur desktop -->
