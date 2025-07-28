@@ -3370,6 +3370,10 @@ body {
   max-width: 42rem;
 }
 
+.max-w-32 {
+  max-width: 8rem;
+}
+
 .max-w-3xl {
   max-width: 48rem;
 }
@@ -7886,6 +7890,10 @@ body {
     width: 100%;
   }
 
+  .sm\:max-w-48 {
+    max-width: 12rem;
+  }
+
   .sm\:max-w-lg {
     max-width: 32rem;
   }
@@ -8079,6 +8087,11 @@ body {
     padding-bottom: 0.625rem;
   }
 
+  .sm\:py-20 {
+    padding-top: 5rem;
+    padding-bottom: 5rem;
+  }
+
   .sm\:py-24 {
     padding-top: 6rem;
     padding-bottom: 6rem;
@@ -8102,11 +8115,6 @@ body {
   .sm\:py-8 {
     padding-top: 2rem;
     padding-bottom: 2rem;
-  }
-
-  .sm\:py-20 {
-    padding-top: 5rem;
-    padding-bottom: 5rem;
   }
 
   .sm\:pb-16 {
@@ -8246,6 +8254,10 @@ body {
 
   .md\:w-80 {
     width: 20rem;
+  }
+
+  .md\:max-w-none {
+    max-width: none;
   }
 
   .md\:grid-cols-2 {

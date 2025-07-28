@@ -82,9 +82,13 @@
                 </a>
             </div>
 
-            {% include 'components/_search_desktop.html' %}
+            <!-- Barre de recherche centrée -->
+            <div class="flex-1 max-w-2xl mx-8">
+                {% include 'components/_search_desktop.html' %}
+            </div>
 
-            <div class="flex items-center space-x-6 mx-auto">
+            <!-- Numéro de téléphone -->
+            <div class="flex items-center space-x-6">
                 <a href="tel:{{ site_phone }}"
                    class="inline-flex items-center gap-2 px-3 py-1.5 rounded-full shadow-md bg-gradient-to-r from-yellow-400 to-yellow-500 text-green-900 font-semibold hover:from-yellow-300 hover:to-yellow-400 hover:shadow-lg transition-all duration-300 group">
                     <svg class="w-6 h-6 text-green-900 group-hover:text-green-700 transition-colors duration-300"
