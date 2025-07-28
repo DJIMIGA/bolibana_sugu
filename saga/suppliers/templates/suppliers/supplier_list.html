@@ -13,7 +13,8 @@
         height: 32px !important;
         border-radius: 50%;
         box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-        top: 8rem !important;
+        top: 50% !important; /* Centré verticalement */
+        transform: translateY(-50%) !important; /* Centré parfaitement */
         opacity: 0.7 !important;
         transition: all 0.2s ease;
     }
@@ -47,15 +48,15 @@
     /* Style des indicateurs */
     .swiper-pagination {
         position: relative !important;
-        margin-top: 24px !important;
+        margin-top: 16px !important;
+        margin-bottom: 8px !important;
         display: flex !important;
         justify-content: center !important;
         align-items: center !important;
         gap: 8px !important;
-        bottom: 0 !important;
-        left: 0 !important;
         width: 100% !important;
         z-index: 10 !important;
+        overflow: visible !important;
     }
 
     .swiper-pagination-bullet {
@@ -89,16 +90,27 @@
         height: auto !important;
         display: flex !important;
         align-items: stretch !important;
+        touch-action: auto !important;
     }
 
     .swiper-slide > * {
         width: 100% !important;
         height: 100% !important;
+        touch-action: auto !important;
+    }
+
+    /* Permettre le scroll vertical sur les cartes dans les slides */
+    .swiper-slide .product-card {
+        touch-action: auto !important;
+        overflow-y: auto !important;
+        -webkit-overflow-scrolling: touch !important;
     }
 
     /* Ajustement du conteneur pour les flèches */
     .swiper {
         padding: 0 5px !important;
+        margin-bottom: 16px !important;
+        overflow: visible !important;
     }
 
     /* Amélioration de l'expérience tactile */
@@ -106,6 +118,32 @@
         touch-action: pan-x !important;
         -webkit-overflow-scrolling: touch !important;
         will-change: transform !important;
+    }
+
+    /* Permettre le scroll vertical sur les cartes de produits */
+    .product-card,
+    .product-card * {
+        touch-action: auto !important;
+        -webkit-overflow-scrolling: touch !important;
+    }
+
+    /* Permettre le scroll vertical sur le contenu des cartes */
+    .product-card .card-body,
+    .product-card .card-content,
+    .product-card .p-4,
+    .product-card .p-3,
+    .product-card .p-2 {
+        touch-action: auto !important;
+        overflow-y: auto !important;
+        -webkit-overflow-scrolling: touch !important;
+    }
+
+    /* S'assurer que les liens et boutons dans les cartes sont cliquables */
+    .product-card a,
+    .product-card button,
+    .product-card .btn {
+        touch-action: manipulation !important;
+        -webkit-tap-highlight-color: rgba(0,0,0,0.1) !important;
     }
 
     /* Garantir l'affichage de 5 éléments sur une ligne */
@@ -175,6 +213,8 @@
     .fabricSwiper,
     .culturalSwiper {
         display: block !important;
+        margin-bottom: 24px !important;
+        padding-bottom: 8px !important;
     }
     
     @media (min-width: 640px) {

@@ -408,6 +408,24 @@ class BrandDetailView(TemplateView):
             queryset = queryset.order_by('-sales_count')
         return queryset.order_by('-created_at') if not sort else queryset
 
+    def get_breadcrumbs(self, brand):
+        """Génère les breadcrumbs pour la page de marque"""
+        breadcrumbs = [
+            {
+                'name': 'Accueil',
+                'url': reverse('suppliers:supplier_index')
+            },
+            {
+                'name': 'Marques',
+                'url': reverse('suppliers:supplier_index')
+            },
+            {
+                'name': brand,
+                'url': None  # Page actuelle
+            }
+        ]
+        return breadcrumbs
+
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         brand = self.kwargs.get('brand')
@@ -430,6 +448,9 @@ class BrandDetailView(TemplateView):
             context['products'] = page_obj
             context['brand'] = brand
             context['page_title'] = f"Téléphones {brand}"
+            
+            # Ajouter les breadcrumbs
+            context['breadcrumbs'] = self.get_breadcrumbs(brand)
 
             # Préparation des filtres pour le template
             active_products = Product.objects.filter(

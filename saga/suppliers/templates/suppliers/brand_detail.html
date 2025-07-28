@@ -6,9 +6,14 @@
 
 {% block content %}
 <div class="bg-gray-50">
-    <div class="mx-auto max-w-4xl px-4 sm:px-6 py-8 sm:py-16 lg:max-w-7xl lg:px-8">
+    <div class="mx-auto max-w-4xl px-4 sm:px-6 py-12 sm:py-20 lg:max-w-7xl lg:px-8">
+        <!-- Breadcrumb -->
+        <div class="mb-8">
+            {% include "suppliers/components/breadcrumb.html" %}
+        </div>
+
         <!-- En-tête -->
-        <div class="relative mb-12">
+        <div class="relative mb-16">
             <h1 class="text-3xl sm:text-4xl md:text-5xl font-extrabold font-bitter bg-gradient-to-r from-gray-900 to-gray-700 bg-clip-text text-transparent drop-shadow-sm mb-2">
                 {{ brand }}
             </h1>
@@ -16,7 +21,7 @@
         </div>
 
         <!-- Barre de filtres mobile -->
-        <div class="mt-4 mb-4 md:hidden">
+        <div class="mt-8 mb-8 md:hidden">
             <form method="get" id="mobileFiltersForm">
                 <!-- Champs cachés pour préserver les autres filtres -->
                 {% if selected_price_min %}
@@ -71,9 +76,9 @@
         </div>
 
         <!-- Filtres Desktop -->
-        <div class="hidden md:block mb-8">
-            <div class="bg-white rounded-xl shadow-lg p-3 sm:p-4 mx-2 sm:mx-0">
-                <form class="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-6 gap-2 sm:gap-3"
+        <div class="hidden md:block mb-12">
+            <div class="bg-white rounded-xl shadow-lg p-4 sm:p-6 mx-2 sm:mx-0">
+                <form class="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-6 gap-3 sm:gap-4"
                       method="get"
                       id="filtersForm">
                     <!-- Filtres de prix -->
@@ -201,11 +206,11 @@
 
 
         <!-- Grille des produits -->
-        <div id="phone-grid" class="grid grid-cols-2 gap-2 sm:gap-4 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-4">
+        <div id="phone-grid" class="grid grid-cols-2 gap-3 sm:gap-6 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-4">
             {% for product in products %}
                 {% render_product_card product %}
             {% empty %}
-            <div class="col-span-full text-center py-12">
+            <div class="col-span-full text-center py-16">
                 <p class="text-gray-500 text-xl">Aucun produit disponible pour le moment.</p>
                 <a href="{% url 'suppliers:category_detail' 'tous-les-produits' %}" class="mt-4 inline-flex items-center px-6 py-3 text-sm text-green-700 bg-green-50 hover:bg-green-100 transition-colors duration-200 rounded-lg">
                     <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -220,7 +225,7 @@
 
         <!-- Pagination -->
         {% if products.has_other_pages %}
-        <div class="mt-8 flex justify-center">
+        <div class="mt-12 flex justify-center">
             <nav class="relative z-0 inline-flex rounded-md shadow-sm -space-x-px" aria-label="Pagination">
                 {% if products.has_previous %}
                 <a href="?page={{ products.previous_page_number }}" 
@@ -262,8 +267,8 @@
 
 <!-- Panneau de filtres mobile -->
 <div id="filtersPanel" class="fixed inset-0 z-40 bg-black bg-opacity-40 flex items-end md:items-center justify-center transition-all duration-300 hidden">
-    <div class="bg-white w-full md:w-80 rounded-t-2xl md:rounded-xl p-3 max-h-[80vh] overflow-y-auto shadow-xl">
-        <div class="flex items-center justify-between mb-2">
+    <div class="bg-white w-full md:w-80 rounded-t-2xl md:rounded-xl p-4 max-h-[80vh] overflow-y-auto shadow-xl">
+        <div class="flex items-center justify-between mb-4">
             <h2 class="text-base font-bold text-gray-900 font-bitter">Filtres</h2>
             <button onclick="toggleFilters()" class="text-gray-400 hover:text-gray-700 transition-colors duration-200">
                 <span class="sr-only">Fermer</span>
@@ -273,9 +278,9 @@
             </button>
         </div>
 
-        <form method="get" class="space-y-1.5">
+        <form method="get" class="space-y-3">
             <!-- Prix -->
-            <div class="bg-gray-50 rounded-lg p-2 sm:p-3">
+            <div class="bg-gray-50 rounded-lg p-3 sm:p-4">
                 <button type="button" class="w-full px-2 sm:px-3 py-1 sm:py-1.5 flex items-center justify-between text-sm font-medium text-gray-900 font-bitter" onclick="toggleSection('priceSection')">
                     <span class="flex-1 text-left">Prix</span>
                     <svg class="h-4 w-4 flex-shrink-0 ml-2 transform transition-transform duration-200" id="priceSectionIcon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
