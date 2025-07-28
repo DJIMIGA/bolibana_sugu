@@ -5,6 +5,31 @@
 {% block extra_head %}
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.css" />
 <style>
+    /* STYLES GLOBAUX POUR EMPÊCHER LE SCROLL HORIZONTAL */
+    html, body {
+        overflow-x: hidden !important;
+        max-width: 100vw !important;
+        width: 100% !important;
+    }
+    
+    * {
+        box-sizing: border-box !important;
+    }
+    
+    /* Empêcher le débordement sur tous les conteneurs */
+    .container, .mx-auto, .max-w-7xl, .max-w-6xl, .max-w-5xl, .max-w-4xl, .max-w-3xl, .max-w-2xl {
+        overflow-x: hidden !important;
+        max-width: 100vw !important;
+        width: 100% !important;
+    }
+    
+    /* Forcer la largeur des grilles */
+    .grid {
+        overflow-x: hidden !important;
+        max-width: 100vw !important;
+        width: 100% !important;
+    }
+    
     .swiper-button-next,
     .swiper-button-prev {
         color: #059669 !important; /* green-600 */
@@ -265,7 +290,7 @@
             cursor: grabbing !important;
         }
 
-        /* Amélioration de la réactivité tactile - CORRIGÉ */
+        /* Amélioration de la réactivité tactile - CORRIGÉE */
         .swiper {
             touch-action: pan-x !important; /* Seulement pan-x */
             -webkit-overflow-scrolling: touch !important;
@@ -279,6 +304,54 @@
         /* S'assurer que les conteneurs ne débordent pas */
         .container, .mx-auto {
             overflow-x: hidden !important;
+            max-width: 100vw !important;
+        }
+        
+        /* CACHER COMPLÈTEMENT LA PARTIE HORS SLIDE */
+        .swiper-container {
+            overflow: hidden !important;
+            width: 100% !important;
+            max-width: 100vw !important;
+        }
+        
+        .swiper-wrapper {
+            overflow: hidden !important;
+            width: 100% !important;
+            max-width: 100vw !important;
+        }
+        
+        /* Forcer la largeur des slides */
+        .swiper-slide {
+            width: calc(50% - 8px) !important; /* 2 slides par vue avec espacement */
+            max-width: calc(50% - 8px) !important;
+            min-width: calc(50% - 8px) !important;
+            overflow: hidden !important;
+        }
+        
+        /* Cacher les boutons de navigation qui peuvent déborder */
+        .swiper-button-next,
+        .swiper-button-prev {
+            display: none !important;
+        }
+        
+        /* S'assurer que le contenu principal ne déborde pas */
+        .bg-white {
+            overflow-x: hidden !important;
+            max-width: 100vw !important;
+        }
+        
+        /* Forcer la largeur des cartes de produits */
+        .product-card {
+            width: 100% !important;
+            max-width: 100% !important;
+            min-width: 0 !important;
+            overflow: hidden !important;
+        }
+        
+        /* Cacher les éléments qui peuvent déborder */
+        .swiper-pagination {
+            overflow: visible !important;
+            width: 100% !important;
             max-width: 100vw !important;
         }
     }
@@ -341,6 +414,20 @@
                         this.navigation.prevEl.style.display = 'none';
                         this.pagination.el.style.display = 'none';
                     }
+                    
+                    // FORCER LES DIMENSIONS DES SLIDES EN MOBILE
+                    if (window.innerWidth <= 640) {
+                        this.slides.forEach(slide => {
+                            slide.style.width = 'calc(50% - 8px)';
+                            slide.style.maxWidth = 'calc(50% - 8px)';
+                            slide.style.minWidth = 'calc(50% - 8px)';
+                            slide.style.overflow = 'hidden';
+                        });
+                        
+                        // Masquer les boutons de navigation en mobile
+                        if (this.navigation.nextEl) this.navigation.nextEl.style.display = 'none';
+                        if (this.navigation.prevEl) this.navigation.prevEl.style.display = 'none';
+                    }
                 },
                 // Ajouter des événements pour mieux gérer le tactile
                 touchStart: function() {
@@ -350,6 +437,17 @@
                 touchEnd: function() {
                     // Restaurer le scroll de la page
                     document.body.style.overflow = '';
+                },
+                // Forcer les dimensions lors du redimensionnement
+                resize: function() {
+                    if (window.innerWidth <= 640) {
+                        this.slides.forEach(slide => {
+                            slide.style.width = 'calc(50% - 8px)';
+                            slide.style.maxWidth = 'calc(50% - 8px)';
+                            slide.style.minWidth = 'calc(50% - 8px)';
+                            slide.style.overflow = 'hidden';
+                        });
+                    }
                 }
             }
         };
