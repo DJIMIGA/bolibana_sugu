@@ -87,12 +87,12 @@
 
     /* Amélioration de l'expérience tactile */
     .swiper-wrapper {
-        touch-action: pan-y pinch-zoom !important;
+        touch-action: pan-x !important; /* Seulement pan-x pour le swiper */
         -webkit-overflow-scrolling: touch !important;
     }
 
     .swiper-slide {
-        touch-action: pan-y !important;
+        touch-action: pan-x !important; /* Seulement pan-x pour le swiper */
         -webkit-user-select: none !important;
         -moz-user-select: none !important;
         -ms-user-select: none !important;
@@ -107,6 +107,17 @@
         
         .swiper-slide:active {
             cursor: grabbing !important;
+        }
+        
+        /* Empêcher le scroll horizontal sur le body en mobile */
+        body {
+            overflow-x: hidden !important;
+        }
+        
+        /* S'assurer que les conteneurs ne débordent pas */
+        .container, .mx-auto {
+            overflow-x: hidden !important;
+            max-width: 100vw !important;
         }
     }
 </style>
@@ -222,18 +233,18 @@ document.addEventListener('DOMContentLoaded', function() {
     new Swiper('.categoriesSwiper', {
         slidesPerView: 1,
         spaceBetween: 24,
-        // Amélioration du glissement tactile
+        // Amélioration du glissement tactile - CORRIGÉE
         touchRatio: 1,
         touchAngle: 45,
         grabCursor: true,
         allowTouchMove: true,
         resistance: true,
         resistanceRatio: 0.85,
-        // Configuration pour mobile
+        // Configuration pour mobile - CORRIGÉE
         touchStartPreventDefault: false,
-        touchMoveStopPropagation: false,
-        // Amélioration de la sensibilité
-        threshold: 5,
+        touchMoveStopPropagation: true, // Changé à true
+        // Amélioration de la sensibilité - CORRIGÉE
+        threshold: 10, // Augmenté de 5 à 10
         shortSwipes: true,
         longSwipes: true,
         longSwipesRatio: 0.5,
@@ -258,6 +269,17 @@ document.addEventListener('DOMContentLoaded', function() {
                 slidesPerView: 4,
             },
         },
+        // Ajouter des événements pour mieux gérer le tactile
+        on: {
+            touchStart: function() {
+                // Empêcher le scroll de la page pendant le swipe
+                document.body.style.overflow = 'hidden';
+            },
+            touchEnd: function() {
+                // Restaurer le scroll de la page
+                document.body.style.overflow = '';
+            }
+        }
     });
 });
 </script>
