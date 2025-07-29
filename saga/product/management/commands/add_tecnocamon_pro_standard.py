@@ -1,5 +1,5 @@
 from django.core.management.base import BaseCommand
-from product.models import Phone, Color, Category
+from product.models import Phone, Color, Category, Product
 from django.utils.text import slugify
 import logging
 
@@ -70,56 +70,70 @@ class Command(BaseCommand):
                 # Créer ou récupérer la couleur
                 color, color_created = Color.objects.get_or_create(
                     name=phone_data['color_name'],
-                    defaults={'hex_code': phone_data['color_hex']}
+                    defaults={'code': phone_data['color_hex']}
                 )
                 
                 if color_created:
-                    self.stdout.write(f'✅ Couleur créée: {color.name} ({color.hex_code})')
+                    self.stdout.write(f'✅ Couleur créée: {color.name} ({color.code})')
                 
-                # Créer ou mettre à jour le téléphone
-                phone, created = Phone.objects.get_or_create(
+                # Créer ou mettre à jour le produit
+                product, product_created = Product.objects.get_or_create(
                     title=phone_data['title'],
                     defaults={
                         'category': category,
-                        'color': color,
-                        'rom': phone_data['rom'],
-                        'ram': phone_data['ram'],
                         'price': phone_data['price'],
                         'stock': phone_data['stock'],
                         'sku': phone_data['sku'],
                         'slug': slugify(phone_data['title']),
                         'brand': 'TECNO',
-                        'model': 'CAMON 40 Pro',
-                        'operating_system': 'Android 15',
-                        'processor': 'MediaTek Helio G100 Ultimate Processor',
-                        'network': '2G, 3G, 4G',
-                        'dimensions': '164.44 x 74.32 x 7.31 mm',
-                        'display': '6.78" AMOLED 120 Hz',
-                        'resolution': '1080 x 2436',
-                        'camera_front': '50 MP AF',
-                        'camera_rear': '50 MP 1/1.56" OIS + 8 MP Wide-angle, Dual Flash, Flicker Sensor',
-                        'connectivity': 'Wi-Fi, BT, FM, GPS, NFC, Type-C Port, OTG',
-                        'sensors': 'Geomagnetic Sensor, A+G Sensor, Ambient light and distance sensor, Infrared Remote Control, Electronic compass',
-                        'battery': '5200 mAh, 45W Super Charge',
-                        'loudspeaker': 'Dual Speakers, Dolby Atmos',
                         'is_available': True,
                         'condition': 'new'
                     }
                 )
                 
-                if created:
-                    self.stdout.write(f'✅ Téléphone créé: {phone.title}')
+                if product_created:
+                    self.stdout.write(f'✅ Produit créé: {product.title}')
+                else:
+                    # Mettre à jour les informations existantes
+                    product.price = phone_data['price']
+                    product.stock = phone_data['stock']
+                    product.sku = phone_data['sku']
+                    product.save()
+                    self.stdout.write(f'🔄 Produit mis à jour: {product.title}')
+                
+                # Créer ou mettre à jour le téléphone
+                phone, phone_created = Phone.objects.get_or_create(
+                    product=product,
+                    defaults={
+                        'brand': 'TECNO',
+                        'model': 'CAMON 40 Pro',
+                        'operating_system': 'Android 15',
+                        'processor': 'MediaTek Helio G100 Ultimate Processor',
+                        'network': '2G, 3G, 4G',
+                        'screen_size': 6.78,
+                        'resolution': '1080 x 2436',
+                        'camera_front': '50 MP AF',
+                        'camera_main': '50 MP 1/1.56" OIS + 8 MP Wide-angle, Dual Flash, Flicker Sensor',
+                        'battery_capacity': 5200,
+                        'storage': phone_data['rom'],
+                        'ram': phone_data['ram'],
+                        'color': color,
+                        'is_new': True,
+                        'box_included': True,
+                        'accessories': 'Chargeur 45W, Câble Type-C, Coque de protection, Écouteurs'
+                    }
+                )
+                
+                if phone_created:
+                    self.stdout.write(f'✅ Téléphone créé: {phone.product.title}')
                     created_count += 1
                 else:
                     # Mettre à jour les informations existantes
                     phone.color = color
-                    phone.rom = phone_data['rom']
+                    phone.storage = phone_data['rom']
                     phone.ram = phone_data['ram']
-                    phone.price = phone_data['price']
-                    phone.stock = phone_data['stock']
-                    phone.sku = phone_data['sku']
                     phone.save()
-                    self.stdout.write(f'🔄 Téléphone mis à jour: {phone.title}')
+                    self.stdout.write(f'🔄 Téléphone mis à jour: {phone.product.title}')
                     updated_count += 1
                     
             except Exception as e:
