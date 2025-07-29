@@ -113,7 +113,7 @@
         overflow: hidden !important; /* Changé de visible à hidden */
     }
 
-    /* Amélioration de l'expérience tactile - CORRIGÉ */
+    /* Amélioration de l'expérience tactile - CORRIGÉE */
     .swiper-wrapper {
         touch-action: pan-x !important; /* Seulement pan-x pour le swiper */
         -webkit-overflow-scrolling: touch !important;
@@ -184,14 +184,14 @@
         max-width: 100% !important;
     }
 
-    /* Contraintes spécifiques pour les cartes de produits - CORRIGÉ */
+    /* Contraintes spécifiques pour les cartes de produits - CORRIGÉE */
     .product-card {
         width: 100% !important;
         min-width: 0 !important; /* Changé de 200px à 0 */
         max-width: 100% !important; /* Changé de 300px à 100% */
     }
 
-    /* Responsive pour les cartes - CORRIGÉ */
+    /* Responsive pour les cartes - CORRIGÉE */
     @media (max-width: 640px) {
         .product-card {
             min-width: 0 !important; /* Changé de 150px à 0 */
@@ -245,7 +245,7 @@
         }
     }
 
-    /* Amélioration de la navigation tactile - CORRIGÉ */
+    /* Amélioration de la navigation tactile - CORRIGÉE */
     .swiper-slide {
         touch-action: pan-x !important; /* Seulement pan-x pour le swiper */
         -webkit-user-select: none !important;
@@ -265,7 +265,7 @@
             cursor: grabbing !important;
         }
 
-        /* Amélioration de la réactivité tactile - CORRIGÉ */
+        /* Amélioration de la réactivité tactile - CORRIGÉE */
         .swiper {
             touch-action: pan-x !important; /* Seulement pan-x */
             -webkit-overflow-scrolling: touch !important;
@@ -280,6 +280,12 @@
         .container, .mx-auto {
             overflow-x: hidden !important;
             max-width: 100vw !important;
+        }
+        
+        /* Permettre le scroll vertical sur la page */
+        html, body {
+            overflow-y: auto !important;
+            -webkit-overflow-scrolling: touch !important;
         }
     }
 </style>
@@ -306,17 +312,17 @@
             resistanceRatio: 0.85,
             // Configuration pour mobile - CORRIGÉE
             touchStartPreventDefault: false,
-            touchMoveStopPropagation: true, // Changé à true pour éviter la propagation
+            touchMoveStopPropagation: false, // Changé à false pour permettre le scroll
             // Amélioration de la sensibilité - CORRIGÉE
-            threshold: 10, // Augmenté de 5 à 10
+            threshold: 5, // Réduit de 10 à 5 pour plus de sensibilité
             shortSwipes: true,
             longSwipes: true,
             longSwipesRatio: 0.5,
             longSwipesMs: 300,
             followFinger: true,
             // Amélioration de la réactivité tactile - CORRIGÉE
-            watchSlidesProgress: false, // Changé à false pour éviter les conflits
-            watchSlidesVisibility: false, // Changé à false pour éviter les conflits
+            watchSlidesProgress: true, // Changé à true
+            watchSlidesVisibility: true, // Changé à true
             // Pagination améliorée - calculée dynamiquement
             pagination: {
                 clickable: true,
@@ -342,14 +348,18 @@
                         this.pagination.el.style.display = 'none';
                     }
                 },
-                // Ajouter des événements pour mieux gérer le tactile
+                // Ajouter des événements pour mieux gérer le tactile - CORRIGÉE
                 touchStart: function() {
-                    // Empêcher le scroll de la page pendant le swipe
-                    document.body.style.overflow = 'hidden';
+                    // Ne pas empêcher le scroll de la page
+                    console.log('Touch start on swiper');
+                },
+                touchMove: function() {
+                    // Permettre le mouvement tactile
+                    console.log('Touch move on swiper');
                 },
                 touchEnd: function() {
-                    // Restaurer le scroll de la page
-                    document.body.style.overflow = '';
+                    // Restaurer le comportement normal
+                    console.log('Touch end on swiper');
                 }
             }
         };
@@ -697,8 +707,35 @@
         Object.entries(swipers).forEach(([name, swiper]) => {
             if (swiper) {
                 addButtonListeners(swiper, `.${name}Swiper`);
+                
+                // Ajouter des événements de débogage pour tous les Swipers
+                swiper.on('slideChange', function () {
+                    console.log(`${name} slide changed to:`, swiper.activeIndex);
+                });
+                
+                swiper.on('touchStart', function () {
+                    console.log(`${name} touch started`);
+                });
+                
+                swiper.on('touchMove', function () {
+                    console.log(`${name} touch moving`);
+                });
+                
+                swiper.on('touchEnd', function () {
+                    console.log(`${name} touch ended`);
+                });
             }
         });
+        
+        // Debug: Vérifier si les éléments existent
+        console.log('=== DEBUG SWIPER ELEMENTS ===');
+        console.log('Categories Swiper:', document.querySelector('.categoriesSwiper'));
+        console.log('Promotions Swiper:', document.querySelector('.promotionsSwiper'));
+        console.log('Phones Swiper:', document.querySelector('.phonesSwiper'));
+        console.log('Clothing Swiper:', document.querySelector('.clothingSwiper'));
+        console.log('Fabric Swiper:', document.querySelector('.fabricSwiper'));
+        console.log('Cultural Swiper:', document.querySelector('.culturalSwiper'));
+        console.log('=== END DEBUG ===');
         });
     </script>
 {% endblock %}
@@ -882,7 +919,7 @@
         </div>
 
         <!-- Section Promotions en Cours -->
-        {% if promotional_products %}
+        {% if promotional_products or products %}
         <div id="promotions" class="mb-24">
             <div class="relative px-2 sm:px-0 flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 sm:gap-0">
                 <div class="relative">
@@ -890,13 +927,13 @@
                         <svg class="w-8 h-8 text-red-500" fill="currentColor" viewBox="0 0 20 20">
                             <path fill-rule="evenodd" d="M12.395 2.553a1 1 0 00-1.45-.385c-.345.23-.614.558-.822.88-.214.33-.403.713-.57 1.116-.334.804-.614 1.768-.84 2.734a31.365 31.365 0 00-.613 3.58 2.64 2.64 0 01-.945-1.067c-.328-.68-.398-1.534-.398-2.654A1 1 0 005.05 6.05 6.981 6.981 0 003 11a7 7 0 1011.95-4.95c-.592-.591-.98-.985-1.348-1.467-.363-.476-.724-1.063-1.207-2.03zM12.12 15.12A3 3 0 017 13s.879.5 2.5.5c0-1 .5-4 1.25-4.5.5 1 .786 1.293 1.371 1.879A2.99 2.99 0 0113 13a2.99 2.99 0 01-.879 2.121z" clip-rule="evenodd"/>
                         </svg>
-                        Promotions en Cours
+                        {% if promotional_products %}Promotions en Cours{% else %}Produits en Vedette{% endif %}
                     </h1>
                     <div class="absolute -bottom-1 left-0 w-24 h-1 bg-gradient-to-r from-red-500 via-yellow-500 to-green-500 rounded-full"></div>
                 </div>
-                <a href="{% url 'suppliers:category_detail' 'tous-les-produits' %}?promotion=yes" 
+                <a href="{% url 'suppliers:category_detail' 'tous-les-produits' %}{% if promotional_products %}?promotion=yes{% endif %}" 
                    class="inline-flex items-center justify-center w-full sm:w-auto px-4 py-2 border border-transparent text-sm font-medium rounded-md text-red-700 bg-red-100 hover:bg-red-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 transition-all duration-300">
-                    Voir toutes les promotions
+                    {% if promotional_products %}Voir toutes les promotions{% else %}Voir tous les produits{% endif %}
                     <svg class="ml-2 w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8l4 4m0 0l-4 4m4-4H3" />
                     </svg>
@@ -923,18 +960,34 @@
                                 {% endif %}
                             </div>
                         {% empty %}
-                        <div class="swiper-slide">
-                            <div class="text-center py-12">
-                                <p class="text-gray-500 text-xl">Aucune promotion disponible pour le moment.</p>
-                                <a href="{% url 'suppliers:category_detail' 'tous-les-produits' %}" class="mt-4 inline-flex items-center px-6 py-3 text-sm text-green-700 bg-green-50 hover:bg-green-100 transition-colors duration-200 rounded-lg">
-                                    <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                                    </svg>
-                                    Découvrir tous nos produits
-                                </a>
+                            {% for product in products|slice:":5" %}
+                                <div class="swiper-slide">
+                                    {% if product.phone %}
+                                        {% render_phone_card product %}
+                                    {% elif product.clothing_product %}
+                                        {% render_clothing_card product %}
+                                    {% elif product.fabric_product %}
+                                        {% render_fabric_card product %}
+                                    {% elif product.cultural_product %}
+                                        {% render_cultural_card product %}
+                                    {% else %}
+                                        {% render_product_card product %}
+                                    {% endif %}
+                                </div>
+                            {% empty %}
+                            <div class="swiper-slide">
+                                <div class="text-center py-12">
+                                    <p class="text-gray-500 text-xl">Aucun produit disponible pour le moment.</p>
+                                    <a href="{% url 'suppliers:category_detail' 'tous-les-produits' %}" class="mt-4 inline-flex items-center px-6 py-3 text-sm text-green-700 bg-green-50 hover:bg-green-100 transition-colors duration-200 rounded-lg">
+                                        <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                                        </svg>
+                                        Découvrir tous nos produits
+                                    </a>
+                                </div>
                             </div>
-                        </div>
+                            {% endfor %}
                         {% endfor %}
                     </div>
                     <!-- Navigation -->
@@ -959,16 +1012,30 @@
                         {% render_product_card product %}
                     {% endif %}
                 {% empty %}
-                <div class="col-span-full text-center py-12">
-                    <p class="text-gray-500 text-xl">Aucune promotion disponible pour le moment.</p>
-                    <a href="{% url 'suppliers:category_detail' 'tous-les-produits' %}" class="mt-4 inline-flex items-center px-6 py-3 text-sm text-green-700 bg-green-50 hover:bg-green-100 transition-colors duration-200 rounded-lg">
-                        <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                        </svg>
-                        Découvrir tous nos produits
-                    </a>
-                </div>
+                    {% for product in products|slice:":5" %}
+                        {% if product.phone %}
+                            {% render_phone_card product %}
+                        {% elif product.clothing_product %}
+                            {% render_clothing_card product %}
+                        {% elif product.fabric_product %}
+                            {% render_fabric_card product %}
+                        {% elif product.cultural_product %}
+                            {% render_cultural_card product %}
+                        {% else %}
+                            {% render_product_card product %}
+                        {% endif %}
+                    {% empty %}
+                    <div class="col-span-full text-center py-12">
+                        <p class="text-gray-500 text-xl">Aucun produit disponible pour le moment.</p>
+                        <a href="{% url 'suppliers:category_detail' 'tous-les-produits' %}" class="mt-4 inline-flex items-center px-6 py-3 text-sm text-green-700 bg-green-50 hover:bg-green-100 transition-colors duration-200 rounded-lg">
+                            <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                            </svg>
+                            Découvrir tous nos produits
+                        </a>
+                    </div>
+                    {% endfor %}
                 {% endfor %}
                 </div>
             </div>
