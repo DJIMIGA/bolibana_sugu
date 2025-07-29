@@ -236,20 +236,20 @@
                     <div class="flex justify-between">
                         <span class="text-gray-600">Auteur:</span>
                         <span class="font-medium">{{ product.cultural_product.author }}</span>
-                    </div>
-                    {% endif %}
+                </div>
+            {% endif %}
                     {% if product.cultural_product.isbn %}
                     <div class="flex justify-between">
                         <span class="text-gray-600">ISBN:</span>
                         <span class="font-medium">{{ product.cultural_product.isbn }}</span>
-                    </div>
-                    {% endif %}
+            </div>
+            {% endif %}
                     {% if product.cultural_product.publication_date %}
                     <div class="flex justify-between">
                         <span class="text-gray-600">Date de publication:</span>
                         <span class="font-medium">{{ product.cultural_product.publication_date|date:"Y" }}</span>
-                    </div>
-                    {% endif %}
+            </div>
+            {% endif %}
                 </div>
             </div>
             {% endif %}
@@ -277,17 +277,17 @@
                             </button>
                         </div>
                     </div>
-                    
+
                     <!-- Contenu du modal -->
                     <div class="px-4 sm:px-6 py-4">
                         <form id="reviewForm" method="post" action="{% url 'suppliers:add_review' product.id %}">
                             {% csrf_token %}
                             <div class="space-y-4">
                                 <!-- Note -->
-                                <div>
+                            <div>
                                     <label class="block text-sm font-medium text-gray-700 mb-2">Votre note</label>
                                     <div class="flex items-center space-x-2">
-                                        {% for i in "12345" %}
+                                    {% for i in "12345" %}
                                         <button type="button" class="text-2xl text-gray-300 hover:text-yellow-400 transition-colors" 
                                                 onclick="setRating({{ forloop.counter }})" id="star-{{ forloop.counter }}">
                                             ★
@@ -305,7 +305,7 @@
                                               placeholder="Partagez votre expérience avec ce produit..."></textarea>
                                 </div>
                             </div>
-                            
+
                             <!-- Boutons -->
                             <div class="mt-6 flex justify-end space-x-3">
                                 <button type="button" onclick="closeReviewModal()" 

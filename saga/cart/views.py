@@ -51,7 +51,7 @@ def add_to_cart(request, product_id):
             
                         # Validation de sécurité : quantité
             try:
-                quantity = int(request.POST.get('quantity', 1))
+            quantity = int(request.POST.get('quantity', 1))
             except (ValueError, TypeError):
                 quantity = 1
             
