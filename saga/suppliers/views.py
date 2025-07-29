@@ -1755,16 +1755,16 @@ def search_suggestions(request):
             if product.category:
                 normalized_category = normalize_search_term(product.category.name)
                 if normalized_query in normalized_category:
-                # Éviter les doublons de catégories
-                if not any(s['type'] == 'category' and s['text'] == product.category.name for s in suggestions):
+                    # Éviter les doublons de catégories
+                    if not any(s['type'] == 'category' and s['text'] == product.category.name for s in suggestions):
                         category_slug = slugify(product.category.name)
-                    suggestions.append({
-                        'type': 'category',
-                        'text': product.category.name,
+                        suggestions.append({
+                            'type': 'category',
+                            'text': product.category.name,
                             'url': f'/recherche/{category_slug}/',
-                        'icon': 'category',
-                        'relevance': 5  # Score de pertinence pour les catégories
-                    })
+                            'icon': 'category',
+                            'relevance': 5  # Score de pertinence pour les catégories
+                        })
         # Ajouter des suggestions populaires si pas assez de résultats
         if len(suggestions) < 5:
             popular_keywords = [
