@@ -49,9 +49,9 @@ def add_to_cart(request, product_id):
         try:
             product = get_object_or_404(Product, id=product_id)
             
-                        # Validation de sécurité : quantité
+            # Validation de sécurité : quantité
             try:
-            quantity = int(request.POST.get('quantity', 1))
+                quantity = int(request.POST.get('quantity', 1))
             except (ValueError, TypeError):
                 quantity = 1
             
