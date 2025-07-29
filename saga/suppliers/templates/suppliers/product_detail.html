@@ -161,9 +161,11 @@
             {% if images %}
       <div class="grid grid-cols-4 gap-2">
                 {% for image in images %}
+
         <button onclick="changeMainImage('{{ image.image.url }}', this)" class="w-full h-24 rounded overflow-hidden focus:outline-none focus:ring-2 focus:ring-new">
           <img src="{{ image.image.url }}" alt="{{ product.title }}" class="w-full h-full object-cover">
         </button>
+
                 {% endfor %}
             </div>
             {% endif %}
@@ -565,4 +567,5 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 });
 </script>
+{% endblock %} </script>
 {% endblock %} 

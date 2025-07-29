@@ -115,7 +115,7 @@
 
     /* Amélioration de l'expérience tactile - CORRIGÉE */
     .swiper-wrapper {
-        touch-action: pan-x !important; /* Seulement pan-x pour le swiper */
+        touch-action: pan-x pan-y !important; /* Permettre pan-x ET pan-y */
         -webkit-overflow-scrolling: touch !important;
         will-change: transform !important;
     }
@@ -288,6 +288,43 @@
             -webkit-overflow-scrolling: touch !important;
         }
     }
+
+    /* Amélioration du scroll de la page - CORRIGÉE */
+    @media (max-width: 640px) {
+        /* Permettre le scroll horizontal de la page */
+        body {
+            overflow-x: auto !important;
+            -webkit-overflow-scrolling: touch !important;
+        }
+        
+        /* S'assurer que les conteneurs permettent le scroll */
+        .container, .mx-auto {
+            overflow-x: auto !important;
+            max-width: 100vw !important;
+        }
+        
+        /* Améliorer la réactivité tactile du Swiper */
+        .swiper {
+            touch-action: pan-x pan-y !important;
+            -webkit-overflow-scrolling: touch !important;
+        }
+        
+        .swiper-slide {
+            touch-action: pan-x pan-y !important;
+            cursor: grab !important;
+        }
+        
+        .swiper-slide:active {
+            cursor: grabbing !important;
+        }
+        
+        /* Permettre le scroll de la page sur les cartes */
+        .swiper-slide .product-card {
+            touch-action: auto !important;
+            overflow-y: auto !important;
+            -webkit-overflow-scrolling: touch !important;
+        }
+    }
 </style>
 {% endblock %}
 
@@ -312,7 +349,7 @@
             resistanceRatio: 0.85,
             // Configuration pour mobile - CORRIGÉE
             touchStartPreventDefault: false,
-            touchMoveStopPropagation: false, // Changé à false pour permettre le scroll
+            touchMoveStopPropagation: false, // Changé à false pour permettre le scroll de la page
             // Amélioration de la sensibilité - CORRIGÉE
             threshold: 5, // Réduit de 10 à 5 pour plus de sensibilité
             shortSwipes: true,
@@ -323,6 +360,9 @@
             // Amélioration de la réactivité tactile - CORRIGÉE
             watchSlidesProgress: true, // Changé à true
             watchSlidesVisibility: true, // Changé à true
+            // Permettre le scroll de la page - CORRIGÉE
+            allowTouchMove: true,
+            touchEventsTarget: 'container', // Changé à container
             // Pagination améliorée - calculée dynamiquement
             pagination: {
                 clickable: true,
@@ -337,29 +377,36 @@
             // Masquer la navigation si pas assez de slides
             on: {
                 init: function() {
-                    const totalSlides = this.slides.length;
-                    const slidesPerView = this.params.slidesPerView;
-                    const totalPages = Math.ceil(totalSlides / slidesPerView);
+                    this.updateSlidesClasses();
+                    this.updateProgress();
+                    this.updateSlidesOffset();
+                    this.updateSize();
+                    this.updateSlides();
+                    this.updateProgress();
+                    this.updateSlidesClasses();
                     
-                    // Masquer la navigation si moins de 2 pages
-                    if (totalPages <= 1) {
-                        this.navigation.nextEl.style.display = 'none';
-                        this.navigation.prevEl.style.display = 'none';
-                        this.pagination.el.style.display = 'none';
+                    if (this.slides.length <= this.params.slidesPerView) {
+                        this.el.querySelector('.swiper-button-prev').style.display = 'none';
+                        this.el.querySelector('.swiper-button-next').style.display = 'none';
                     }
                 },
-                // Ajouter des événements pour mieux gérer le tactile - CORRIGÉE
-                touchStart: function() {
-                    // Ne pas empêcher le scroll de la page
-                    console.log('Touch start on swiper');
+                // Améliorer la gestion des événements tactiles - CORRIGÉE
+                touchStart: function(swiper, event) {
+                    // Permettre le scroll de la page si le mouvement est vertical
+                    const touch = event.touches[0];
+                    swiper.touchStartX = touch.clientX;
+                    swiper.touchStartY = touch.clientY;
                 },
-                touchMove: function() {
-                    // Permettre le mouvement tactile
-                    console.log('Touch move on swiper');
-                },
-                touchEnd: function() {
-                    // Restaurer le comportement normal
-                    console.log('Touch end on swiper');
+                touchMove: function(swiper, event) {
+                    const touch = event.touches[0];
+                    const deltaX = Math.abs(touch.clientX - swiper.touchStartX);
+                    const deltaY = Math.abs(touch.clientY - swiper.touchStartY);
+                    
+                    // Si le mouvement est plus vertical qu'horizontal, permettre le scroll de la page
+                    if (deltaY > deltaX && deltaY > 10) {
+                        event.stopPropagation();
+                        return;
+                    }
                 }
             }
         };
