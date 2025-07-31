@@ -1,0 +1,124 @@
+# 📱 Commandes de Gestion des Produits
+
+## 🎯 Commandes Principales
+
+### 📱 Ajout de Téléphones
+
+#### `add_phone_template.py`
+**Template générique pour ajouter des téléphones**
+```bash
+python manage.py add_phone_template --brand "MARQUE" --model "MODELE"
+```
+- **Usage :** Template réutilisable pour ajouter n'importe quel modèle de téléphone
+- **Avantages :** Évite les erreurs courantes, structure correcte (Product → Phone)
+- **Documentation :** Voir `README_PHONE_TEMPLATE.md`
+
+#### `add_tecnocamon_40.py`
+**Ajout spécifique des TECNO CAMON 40**
+```bash
+python manage.py add_tecnocamon_40
+```
+- **Usage :** Ajoute 10 variantes du TECNO CAMON 40 (256GB/128GB + 5 couleurs)
+- **Prix :** 175 000 FCFA (256GB), 165 000 FCFA (128GB)
+
+#### `add_tecnocamon_40_colors.py`
+**Ajout des couleurs spécifiques CAMON 40**
+```bash
+python manage.py add_tecnocamon_40_colors
+```
+- **Usage :** Ajoute la couleur "Vert Lueur Émeraude" (#00ff7f)
+
+## 🔧 Commandes Utilitaires
+
+### 📊 Gestion des Données
+
+#### `dump_products.py`
+**Export des produits vers JSON**
+```bash
+python manage.py dump_products
+```
+- **Usage :** Sauvegarde tous les produits dans un fichier JSON
+- **Fichier :** `products_dump.json`
+
+#### `deploy_products.py`
+**Import des produits depuis JSON**
+```bash
+python manage.py deploy_products
+```
+- **Usage :** Importe les produits depuis `products_dump.json`
+- **Utile :** Migration de données entre environnements
+
+#### `sync_products.py`
+**Synchronisation des produits**
+```bash
+python manage.py sync_products
+```
+- **Usage :** Synchronise les données entre Product et Phone
+- **Utile :** Correction des incohérences
+
+### 🧹 Maintenance
+
+#### `clean_dumps.py`
+**Nettoyage des fichiers de dump**
+```bash
+python manage.py clean_dumps
+```
+- **Usage :** Supprime les anciens fichiers de dump
+- **Utile :** Libération d'espace disque
+
+#### `generate_category_slugs.py`
+**Génération des slugs de catégories**
+```bash
+python manage.py generate_category_slugs
+```
+- **Usage :** Génère les slugs manquants pour les catégories
+- **Utile :** Correction des URLs
+
+### 🔍 Diagnostic
+
+#### `show_urls.py`
+**Affichage des URLs du projet**
+```bash
+python manage.py show_urls
+```
+- **Usage :** Liste toutes les URLs disponibles
+- **Utile :** Debug et vérification des routes
+
+## 📋 Bonnes Pratiques
+
+### ✅ Avant d'ajouter un nouveau modèle :
+1. **Vérifier les couleurs existantes** dans la base de données
+2. **Utiliser le template** `add_phone_template.py` pour éviter les erreurs
+3. **Tester en local** avant de déployer sur Heroku
+4. **Documenter** les spécifications techniques
+
+### ✅ Après l'ajout :
+1. **Vérifier l'affichage** sur le site
+2. **Tester les prix** et la disponibilité
+3. **Nettoyer** les commandes spécifiques utilisées
+4. **Sauvegarder** avec `dump_products.py` si nécessaire
+
+## 🚀 Déploiement Heroku
+
+### Ajout de couleurs :
+```bash
+heroku run python manage.py add_[MODEL]_colors
+```
+
+### Ajout de téléphones :
+```bash
+heroku run python manage.py add_[MODEL]
+```
+
+### Vérification :
+```bash
+heroku run python manage.py show_urls
+```
+
+## 📝 Notes Importantes
+
+- **Structure correcte :** Toujours créer `Product` avant `Phone`
+- **Titres uniques :** Inclure ROM, RAM et couleur dans le titre
+- **SKU uniques :** Format cohérent et descriptif
+- **Prix réalistes :** Basés sur le marché local
+- **Couleurs en français :** "Noir Galaxy" au lieu de "Galaxy Black" 

@@ -409,9 +409,9 @@ class BaseCategoryView(TemplateView):
         paginator = Paginator(queryset, 12)  # 12 produits par page
         products = paginator.get_page(page)
         
-        # Récupérer les marques pour la section téléphones
+        # Récupérer les marques pour la section téléphones (seulement si pas déjà fait par PhoneCategoryView)
         brands = []
-        if category.slug == 'telephones':
+        if category.slug == 'telephones' and not hasattr(self, 'phone_brands_processed'):
             brands = queryset.filter(phone__isnull=False).values('phone__brand').annotate(count=Count('id')).order_by('phone__brand')
         
         # Récupérer les méthodes de livraison
@@ -789,6 +789,9 @@ class PhoneCategoryView(BaseCategoryView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         
+        # Marquer que les marques ont été traitées pour éviter les doublons
+        self.phone_brands_processed = True
+        
         print("\n=== DEBUG CONTEXT DATA ===")
         
         # Récupérer les produits actifs pour les filtres avec toutes les relations nécessaires
@@ -802,7 +805,7 @@ class PhoneCategoryView(BaseCategoryView):
         
         print(f"Nombre de produits actifs: {active_products.count()}")
         
-        # Récupérer les marques disponibles
+        # Récupérer les marques disponibles (normalisées)
         brands_list = list(active_products.values_list('phone__brand', flat=True).distinct())
         context['brands'] = [{'phone__brand': b} for b in sorted(set(filter(None, brands_list)))]
         print(f"Marques disponibles: {context['brands']}")

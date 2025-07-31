@@ -144,6 +144,8 @@ def dropdown_categories_processor(request):
     Context processor pour gérer les catégories dans le menu déroulant.
     Optimisé pour charger toutes les catégories en une seule requête.
     """
+    from product.models import Phone
+    
     # Récupérer toutes les catégories principales avec leurs sous-catégories en une seule requête
     main_categories = Category.objects.filter(
         parent__isnull=True
@@ -167,12 +169,53 @@ def dropdown_categories_processor(request):
             'subcategories': []
         }
         
-        for subcat in main_cat.children.all():
-            subcategory_data = {
-                'subcategory': subcat,
-                'subsubcategories': list(subcat.children.all().order_by('order', 'name'))
-            }
-            categories_hierarchy[main_cat.id]['subcategories'].append(subcategory_data)
+        # Si c'est la catégorie Téléphones, utiliser les marques au lieu des sous-catégories
+        if main_cat.slug == 'telephones':
+            # Récupérer les marques de téléphones avec leurs modèles populaires
+            phone_brands_data = Phone.objects.values('brand', 'model').distinct().order_by('brand', 'model')
+            
+            # Grouper par marque
+            brands_dict = {}
+            for phone_data in phone_brands_data:
+                brand = phone_data['brand']
+                model = phone_data['model']
+                
+                if brand and brand != 'Inconnu':
+                    if brand not in brands_dict:
+                        brands_dict[brand] = []
+                    if model and model != 'Inconnu':
+                        brands_dict[brand].append(model)
+            
+            # Créer la structure pour chaque marque
+            for brand, models in brands_dict.items():
+                # Limiter à 5 modèles les plus populaires par marque
+                popular_models = models[:5]
+                
+                brand_data = {
+                    'subcategory': type('Brand', (), {
+                        'name': brand,
+                        'slug': brand.lower().replace(' ', '-'),
+                        'is_brand': True
+                    })(),
+                    'subsubcategories': [
+                        type('Model', (), {
+                            'name': model,
+                            'slug': f"{brand.lower().replace(' ', '-')}-{model.lower().replace(' ', '-')}",
+                            'is_model': True
+                        })() for model in popular_models
+                    ],
+                    'is_brand': True
+                }
+                categories_hierarchy[main_cat.id]['subcategories'].append(brand_data)
+        else:
+            # Pour les autres catégories, utiliser les sous-catégories normales
+            for subcat in main_cat.children.all():
+                subcategory_data = {
+                    'subcategory': subcat,
+                    'subsubcategories': list(subcat.children.all().order_by('order', 'name')),
+                    'is_brand': False
+                }
+                categories_hierarchy[main_cat.id]['subcategories'].append(subcategory_data)
 
     return {
         'dropdown_categories': main_categories,

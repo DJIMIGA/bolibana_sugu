@@ -909,6 +909,81 @@ class Phone(models.Model):
     def __str__(self):
         return f"{self.brand} {self.model}"
 
+    def save(self, *args, **kwargs):
+        # Normaliser la marque pour éviter les doublons
+        if self.brand:
+            self.brand = self.normalize_brand(self.brand)
+        
+        # Normaliser le modèle
+        if self.model:
+            self.model = self.model.strip()
+        
+        super().save(*args, **kwargs)
+
+    @staticmethod
+    def normalize_brand(brand_name):
+        """Normalise le nom de la marque pour éviter les doublons"""
+        if not brand_name:
+            return 'Inconnu'
+        
+        # Nettoyer et normaliser
+        brand = brand_name.strip()
+        
+        # Règles de normalisation spécifiques
+        brand_mappings = {
+            'tecno': 'TECNO',
+            'Tecno': 'TECNO',
+            'TECNO': 'TECNO',
+            'samsung': 'Samsung',
+            'SAMSUNG': 'Samsung',
+            'Samsung': 'Samsung',
+            'apple': 'Apple',
+            'APPLE': 'Apple',
+            'Apple': 'Apple',
+            'huawei': 'Huawei',
+            'HUAWEI': 'Huawei',
+            'Huawei': 'Huawei',
+            'xiaomi': 'Xiaomi',
+            'XIAOMI': 'Xiaomi',
+            'Xiaomi': 'Xiaomi',
+            'oppo': 'OPPO',
+            'OPPO': 'OPPO',
+            'Oppo': 'OPPO',
+            'vivo': 'Vivo',
+            'VIVO': 'Vivo',
+            'Vivo': 'Vivo',
+            'realme': 'Realme',
+            'REALME': 'Realme',
+            'Realme': 'Realme',
+            'oneplus': 'OnePlus',
+            'ONEPLUS': 'OnePlus',
+            'OnePlus': 'OnePlus',
+            'nokia': 'Nokia',
+            'NOKIA': 'Nokia',
+            'Nokia': 'Nokia',
+            'motorola': 'Motorola',
+            'MOTOROLA': 'Motorola',
+            'Motorola': 'Motorola',
+            'lg': 'LG',
+            'LG': 'LG',
+            'sony': 'Sony',
+            'SONY': 'Sony',
+            'Sony': 'Sony',
+            'google': 'Google',
+            'GOOGLE': 'Google',
+            'Google': 'Google',
+        }
+        
+        # Appliquer la normalisation
+        normalized = brand_mappings.get(brand.lower(), brand)
+        
+        # Si pas dans le mapping, appliquer une normalisation générique
+        if normalized == brand:
+            # Première lettre en majuscule, reste en minuscules
+            normalized = brand.capitalize()
+        
+        return normalized
+
 
 class Fabric(models.Model):
     product = models.OneToOneField(Product, on_delete=models.CASCADE, related_name='fabric_product')

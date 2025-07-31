@@ -35,8 +35,8 @@
 }
 
 .category-column {
-    min-height: 300px;
-    max-height: 500px;
+    min-height: 250px;
+    max-height: 400px;
     overflow-y: auto;
 }
 
@@ -72,9 +72,9 @@
 
 .subcategory-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-    gap: 0.75rem;
-    padding: 0.75rem;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 0.5rem;
+    padding: 0.5rem;
 }
 
 .subcategory-column {
@@ -84,9 +84,10 @@
 .subcategory-title {
     font-weight: 600;
     color: #1f2937;
-    padding: 0.75rem 1rem;
+    padding: 0.5rem 0.75rem;
     border-bottom: 1px solid #f3f4f6;
     background-color: #ffffff;
+    font-size: 0.875rem;
 }
 
 .subcategory-title a {
@@ -109,16 +110,17 @@
 }
 
 .subcategory-links {
-    padding: 0.5rem;
+    padding: 0.375rem;
 }
 
 .subcategory-link {
     display: flex;
     align-items: center;
-    padding: 0.5rem 0.75rem;
+    padding: 0.375rem 0.5rem;
     color: #4b5563;
     transition: all 0.2s ease;
     margin-bottom: 0.125rem;
+    font-size: 0.8rem;
 }
 
 .subcategory-link:hover {
@@ -129,8 +131,8 @@
 .subcategory-link::before {
     content: '•';
     color: #9ca3af;
-    margin-right: 0.5rem;
-    font-size: 1.25em;
+    margin-right: 0.375rem;
+    font-size: 1.1em;
 }
 
 .subcategory-link:hover::before {
@@ -141,35 +143,35 @@
 <!-- Menu déroulant principal -->
 <div class="relative group">
     <button type="button" 
-            class="group flex items-center space-x-2 py-2 px-4 text-sm font-medium text-gray-800 hover:text-green-800 focus:outline-none border border-gray-100 rounded-lg transition-all duration-200 category-dropdown">
+            class="group flex items-center space-x-1.5 py-1.5 px-3 text-sm font-medium text-gray-800 hover:text-green-800 focus:outline-none border border-gray-100 rounded-lg transition-all duration-200 category-dropdown">
         <!-- Icône menu -->
-        <svg class="w-5 h-5 text-gray-600 group-hover:text-green-600 transition-colors duration-200" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <svg class="w-4 h-4 text-gray-600 group-hover:text-green-600 transition-colors duration-200" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/>
         </svg>
         <!-- Texte du bouton -->
-        <span class="font-bitter">Toutes les catégories</span>
+        <span class="font-bitter text-sm">Toutes les catégories</span>
         <!-- Flèche dynamique -->
-        <svg id="arrow-icon" class="w-5 h-5 text-gray-600 group-hover:text-green-600 transition-colors duration-200" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <svg id="arrow-icon" class="w-4 h-4 text-gray-600 group-hover:text-green-600 transition-colors duration-200" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
         </svg>
     </button>
     
     <!-- Menu déroulant multi-colonnes -->
-    <div class="absolute left-0 w-[900px] bg-white rounded-md shadow-sm py-1 z-50 hidden group-hover:block">
+    <div class="absolute left-0 w-[800px] bg-white rounded-md shadow-sm py-1 z-50 hidden group-hover:block">
         <div class="grid grid-cols-4">
             <!-- Première colonne - Catégories principales -->
             <div class="col-span-1 border-r border-gray-50 category-column">
-                <div class="py-2">
+                <div class="py-1">
                     {% for category in dropdown_categories %}
                     {% if category.slug %}
                     <a href="{% url 'suppliers:category_detail' category.slug %}" 
-                       class="category-item block w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors duration-200"
+                       class="category-item block w-full px-3 py-1.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors duration-200"
                        data-category="{{ category.id }}"
                        onmouseover="showSubcategories('{{ category.id }}')">
                         <div class="flex items-center justify-between">
-                            <span class="font-bitter">{{ category.name }}</span>
+                            <span class="font-bitter text-sm">{{ category.name }}</span>
                             {% if category.children.exists %}
-                            <svg class="w-4 h-4 text-gray-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                            <svg class="w-3 h-3 text-gray-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
                                 <path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd"/>
                             </svg>
                             {% endif %}
@@ -182,7 +184,7 @@
 
             <!-- Deuxième section - Sous-catégories en colonnes -->
             <div class="col-span-3 category-column">
-                <div class="py-2">
+                <div class="py-1">
                     {% for category in dropdown_categories %}
                     {% if category.slug %}
                     <!-- Sous-catégories pour {{ category.name }} -->
@@ -191,22 +193,48 @@
                             {% for subcategory_data in dropdown_categories_hierarchy|get_item:category.id|get_item:'subcategories' %}
                                 {% if subcategory_data.subcategory.slug %}
                                 <div class="subcategory-column">
-                                    <!-- Titre de la sous-catégorie -->
+                                    <!-- Titre de la sous-catégorie ou marque -->
                                     <h3 class="subcategory-title font-bitter">
-                                        <a href="{% url 'suppliers:category_detail' subcategory_data.subcategory.slug %}">
-                                            {{ subcategory_data.subcategory.name }}
-                                        </a>
-                                    </h3>
-                                    <!-- Sous-sous-catégories -->
-                                    <div class="subcategory-links">
-                                        {% for subsubcategory in subcategory_data.subsubcategories %}
-                                        {% if subsubcategory.slug %}
-                                        <a href="{% url 'suppliers:category_detail' subsubcategory.slug %}" 
-                                           class="subcategory-link font-bitter">
-                                            {{ subsubcategory.name }}
-                                        </a>
+                                        {% if subcategory_data.is_brand %}
+                                            <!-- Pour les marques de téléphones -->
+                                            <a href="{% url 'suppliers:category_detail' 'telephones' %}?brand={{ subcategory_data.subcategory.name|urlencode }}">
+                                                {{ subcategory_data.subcategory.name }}
+                                            </a>
+                                        {% else %}
+                                            <!-- Pour les sous-catégories normales -->
+                                            <a href="{% url 'suppliers:category_detail' subcategory_data.subcategory.slug %}">
+                                                {{ subcategory_data.subcategory.name }}
+                                            </a>
                                         {% endif %}
-                                        {% endfor %}
+                                    </h3>
+                                    <!-- Sous-sous-catégories ou modèles de téléphones -->
+                                    <div class="subcategory-links">
+                                        {% if subcategory_data.is_brand %}
+                                            <!-- Pour les marques, afficher les modèles populaires -->
+                                            {% for subsubcategory in subcategory_data.subsubcategories %}
+                                            {% if subsubcategory.is_model %}
+                                            <a href="{% url 'suppliers:category_detail' 'telephones' %}?brand={{ subcategory_data.subcategory.name|urlencode }}&model={{ subsubcategory.name|urlencode }}" 
+                                               class="subcategory-link font-bitter">
+                                                {{ subsubcategory.name }}
+                                            </a>
+                                            {% else %}
+                                            <a href="{% url 'suppliers:category_detail' subsubcategory.slug %}" 
+                                               class="subcategory-link font-bitter">
+                                                {{ subsubcategory.name }}
+                                            </a>
+                                            {% endif %}
+                                            {% endfor %}
+                                        {% else %}
+                                            <!-- Pour les sous-catégories normales -->
+                                            {% for subsubcategory in subcategory_data.subsubcategories %}
+                                            {% if subsubcategory.slug %}
+                                            <a href="{% url 'suppliers:category_detail' subsubcategory.slug %}" 
+                                               class="subcategory-link font-bitter">
+                                                {{ subsubcategory.name }}
+                                            </a>
+                                            {% endif %}
+                                            {% endfor %}
+                                        {% endif %}
                                     </div>
                                 </div>
                                 {% endif %}
