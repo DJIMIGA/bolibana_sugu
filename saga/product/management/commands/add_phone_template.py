@@ -6,10 +6,24 @@ import logging
 logger = logging.getLogger(__name__)
 
 class Command(BaseCommand):
-    help = 'Ajoute les téléphones TECNO CAMON 40 Pro (version standard)'
+    help = 'Template pour ajouter des téléphones (exemple avec TECNO CAMON 40 Pro)'
+
+    def add_arguments(self, parser):
+        parser.add_argument(
+            '--brand',
+            type=str,
+            default='TECNO',
+            help='Marque du téléphone'
+        )
+        parser.add_argument(
+            '--model',
+            type=str,
+            default='CAMON 40 Pro',
+            help='Modèle du téléphone'
+        )
 
     def handle(self, *args, **options):
-        self.stdout.write('🚀 Début de l\'ajout des téléphones TECNO CAMON 40 Pro...')
+        self.stdout.write('🚀 Template pour ajouter des téléphones...')
         
         # Récupérer la catégorie Téléphones
         try:
@@ -18,47 +32,28 @@ class Command(BaseCommand):
             self.stdout.write(self.style.ERROR('❌ Catégorie "Téléphones" non trouvée'))
             return
         
-        # Données des téléphones TECNO CAMON 40 Pro
+        # EXEMPLE : Données des téléphones TECNO CAMON 40 Pro
+        # Modifiez cette section selon vos besoins
         phones_data = [
             {
-                'title': 'TECNO CAMON 40 Pro 256GB 16GB Noir Galaxy',
+                'title': f'{options["brand"]} {options["model"]} 256GB 16GB Noir Galaxy',
                 'rom': 256,
                 'ram': 16,
                 'color_name': 'Noir Galaxy',
                 'color_hex': '#000000',
                 'price': 185000,
                 'stock': 15,
-                'sku': 'TECNO-CAMON40PRO-256-16-BLACK'
+                'sku': f'{options["brand"].upper()}-{options["model"].replace(" ", "")}-256-16-BLACK'
             },
             {
-                'title': 'TECNO CAMON 40 Pro 256GB 16GB Vert Émeraude',
+                'title': f'{options["brand"]} {options["model"]} 256GB 16GB Vert Émeraude',
                 'rom': 256,
                 'ram': 16,
                 'color_name': 'Vert Émeraude',
                 'color_hex': '#00a86b',
                 'price': 185000,
                 'stock': 12,
-                'sku': 'TECNO-CAMON40PRO-256-16-GREEN'
-            },
-            {
-                'title': 'TECNO CAMON 40 Pro 256GB 16GB Blanc Glacier',
-                'rom': 256,
-                'ram': 16,
-                'color_name': 'Blanc Glacier',
-                'color_hex': '#f8f8ff',
-                'price': 185000,
-                'stock': 10,
-                'sku': 'TECNO-CAMON40PRO-256-16-WHITE'
-            },
-            {
-                'title': 'TECNO CAMON 40 Pro 256GB 16GB Titanium Sable',
-                'rom': 256,
-                'ram': 16,
-                'color_name': 'Titanium Sable',
-                'color_hex': '#c0c0c0',
-                'price': 185000,
-                'stock': 8,
-                'sku': 'TECNO-CAMON40PRO-256-16-TITANIUM'
+                'sku': f'{options["brand"].upper()}-{options["model"].replace(" ", "")}-256-16-GREEN'
             }
         ]
         
@@ -85,7 +80,7 @@ class Command(BaseCommand):
                         'stock': phone_data['stock'],
                         'sku': phone_data['sku'],
                         'slug': slugify(phone_data['title']),
-                        'brand': 'TECNO',
+                        'brand': options['brand'],
                         'is_available': True,
                         'condition': 'new'
                     }
@@ -105,8 +100,8 @@ class Command(BaseCommand):
                 phone, phone_created = Phone.objects.get_or_create(
                     product=product,
                     defaults={
-                        'brand': 'TECNO',
-                        'model': 'CAMON 40 Pro',
+                        'brand': options['brand'],
+                        'model': options['model'],
                         'operating_system': 'Android 15',
                         'processor': 'MediaTek Helio G100 Ultimate Processor',
                         'network': '2G, 3G, 4G',
@@ -140,4 +135,11 @@ class Command(BaseCommand):
                 self.stdout.write(self.style.ERROR(f'❌ Erreur avec {phone_data["title"]}: {str(e)}'))
         
         self.stdout.write(f'\n📱 Résumé: {created_count} téléphones créés, {updated_count} mis à jour')
-        self.stdout.write(self.style.SUCCESS('✅ Ajout des téléphones TECNO CAMON 40 Pro terminé !')) 
+        self.stdout.write(self.style.SUCCESS('✅ Template d\'ajout de téléphones terminé !'))
+        
+        # Instructions d'utilisation
+        self.stdout.write('\n📝 INSTRUCTIONS D\'UTILISATION :')
+        self.stdout.write('1. Modifiez la section "phones_data" selon vos besoins')
+        self.stdout.write('2. Ajustez les spécifications techniques dans les "defaults" du Phone')
+        self.stdout.write('3. Utilisez : python manage.py add_phone_template --brand "MARQUE" --model "MODELE"')
+        self.stdout.write('4. Ou copiez cette commande et renommez-la pour votre modèle spécifique') 
