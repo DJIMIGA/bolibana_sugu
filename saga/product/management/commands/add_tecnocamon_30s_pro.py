@@ -1,15 +1,35 @@
 from django.core.management.base import BaseCommand
 from product.models import Phone, Color, Category, Product
 from django.utils.text import slugify
+from django.db.models import Q
 import logging
 
 logger = logging.getLogger(__name__)
 
 class Command(BaseCommand):
-    help = 'Ajoute les téléphones TECNO CAMON 30S'
+    help = 'Ajoute les téléphones TECNO CAMON 30S Pro avec normalisation des marques'
 
     def handle(self, *args, **options):
-        self.stdout.write('🚀 Début de l\'ajout des téléphones TECNO CAMON 30S...')
+        self.stdout.write('🚀 Début de l\'ajout des téléphones TECNO CAMON 30S Pro...')
+        
+        # Normalisation des marques TECNO
+        self.stdout.write('🔧 Normalisation des marques TECNO...')
+        phones_to_update = Phone.objects.filter(
+            Q(brand__icontains='TECNO') | 
+            Q(brand__icontains='Tecno') | 
+            Q(brand__icontains='tecnocamon')
+        )
+        
+        updated_count = 0
+        for phone in phones_to_update:
+            if phone.brand != 'TECNO':
+                old_brand = phone.brand
+                phone.brand = 'TECNO'
+                phone.save()
+                self.stdout.write(f'✅ Marque normalisée: {old_brand} → TECNO')
+                updated_count += 1
+        
+        self.stdout.write(f'🔧 {updated_count} marques TECNO normalisées')
         
         try:
             category = Category.objects.get(name='Téléphones')
@@ -17,100 +37,37 @@ class Command(BaseCommand):
             self.stdout.write(self.style.ERROR('❌ Catégorie "Téléphones" non trouvée'))
             return
         
-        # Données des téléphones TECNO CAMON 30S
+        # Données des téléphones TECNO CAMON 30S Pro
         phones_data = [
-            # Variantes 256GB 16GB
             {
-                'title': 'TECNO CAMON 30S 256GB 16GB Noir Céleste',
+                'title': 'TECNO CAMON 30S Pro 256GB 16GB Gris Interstellaire',
                 'rom': 256,
                 'ram': 16,
-                'color_name': 'Noir Céleste',
-                'color_hex': '#1a1a1a',
-                'price': 165000,
-                'stock': 18,
-                'sku': 'TECNO-CAMON30S-256-16-BLACK'
-            },
-            {
-                'title': 'TECNO CAMON 30S 256GB 16GB Or Aube',
-                'rom': 256,
-                'ram': 16,
-                'color_name': 'Or Aube',
-                'color_hex': '#ffd700',
-                'price': 165000,
+                'color_name': 'Gris Interstellaire',
+                'color_hex': '#2c3e50',
+                'price': 185000,
                 'stock': 15,
-                'sku': 'TECNO-CAMON30S-256-16-GOLD'
+                'sku': 'TECNO-CAMON30SPRO-256-16-GREY'
             },
             {
-                'title': 'TECNO CAMON 30S 256GB 16GB Violet Nébuleuse',
+                'title': 'TECNO CAMON 30S Pro 256GB 16GB Or Perle',
                 'rom': 256,
                 'ram': 16,
-                'color_name': 'Violet Nébuleuse',
-                'color_hex': '#8a2be2',
-                'price': 165000,
+                'color_name': 'Or Perle',
+                'color_hex': '#f4e4bc',
+                'price': 185000,
                 'stock': 12,
-                'sku': 'TECNO-CAMON30S-256-16-PURPLE'
+                'sku': 'TECNO-CAMON30SPRO-256-16-GOLD'
             },
-            # Variantes 128GB 16GB
             {
-                'title': 'TECNO CAMON 30S 128GB 16GB Noir Céleste',
-                'rom': 128,
+                'title': 'TECNO CAMON 30S Pro 256GB 16GB Vert Argent Shim',
+                'rom': 256,
                 'ram': 16,
-                'color_name': 'Noir Céleste',
-                'color_hex': '#1a1a1a',
-                'price': 155000,
-                'stock': 20,
-                'sku': 'TECNO-CAMON30S-128-16-BLACK'
-            },
-            {
-                'title': 'TECNO CAMON 30S 128GB 16GB Or Aube',
-                'rom': 128,
-                'ram': 16,
-                'color_name': 'Or Aube',
-                'color_hex': '#ffd700',
-                'price': 155000,
-                'stock': 17,
-                'sku': 'TECNO-CAMON30S-128-16-GOLD'
-            },
-            {
-                'title': 'TECNO CAMON 30S 128GB 16GB Violet Nébuleuse',
-                'rom': 128,
-                'ram': 16,
-                'color_name': 'Violet Nébuleuse',
-                'color_hex': '#8a2be2',
-                'price': 155000,
-                'stock': 14,
-                'sku': 'TECNO-CAMON30S-128-16-PURPLE'
-            },
-            # Variantes 128GB 12GB
-            {
-                'title': 'TECNO CAMON 30S 128GB 12GB Noir Céleste',
-                'rom': 128,
-                'ram': 12,
-                'color_name': 'Noir Céleste',
-                'color_hex': '#1a1a1a',
-                'price': 145000,
-                'stock': 22,
-                'sku': 'TECNO-CAMON30S-128-12-BLACK'
-            },
-            {
-                'title': 'TECNO CAMON 30S 128GB 12GB Or Aube',
-                'rom': 128,
-                'ram': 12,
-                'color_name': 'Or Aube',
-                'color_hex': '#ffd700',
-                'price': 145000,
-                'stock': 19,
-                'sku': 'TECNO-CAMON30S-128-12-GOLD'
-            },
-            {
-                'title': 'TECNO CAMON 30S 128GB 12GB Violet Nébuleuse',
-                'rom': 128,
-                'ram': 12,
-                'color_name': 'Violet Nébuleuse',
-                'color_hex': '#8a2be2',
-                'price': 145000,
-                'stock': 16,
-                'sku': 'TECNO-CAMON30S-128-12-PURPLE'
+                'color_name': 'Vert Argent Shim',
+                'color_hex': '#90ee90',
+                'price': 185000,
+                'stock': 10,
+                'sku': 'TECNO-CAMON30SPRO-256-16-GREEN'
             }
         ]
         
@@ -154,13 +111,13 @@ class Command(BaseCommand):
                     product=product,
                     defaults={
                         'brand': 'TECNO',
-                        'model': 'CAMON 30S',
+                        'model': 'CAMON 30S Pro',
                         'operating_system': 'Android 14',
                         'processor': 'Helio G100 Octa-Core',
                         'network': '2G, 3G, 4G',
                         'screen_size': 6.78,
                         'resolution': '1080 x 2436',
-                        'camera_front': '13 MP, Front Dual Flash',
+                        'camera_front': '50 MP AF, Front Dual Flash',
                         'camera_main': '50 MP 1/1.56" OIS + 2 MP Depth + Light Sensor, Dual Flash',
                         'battery_capacity': 5000,
                         'storage': phone_data['rom'],
@@ -168,7 +125,7 @@ class Command(BaseCommand):
                         'color': color,
                         'is_new': True,
                         'box_included': True,
-                        'accessories': 'Chargeur 33W, Câble Type-C, Coque de protection, Écouteurs'
+                        'accessories': 'Chargeur 45W, Câble Type-C, Coque de protection, Écouteurs'
                     }
                 )
                 
@@ -187,13 +144,14 @@ class Command(BaseCommand):
                 self.stdout.write(self.style.ERROR(f'❌ Erreur avec {phone_data["title"]}: {str(e)}'))
         
         self.stdout.write(f'\n📱 Résumé: {created_count} téléphones créés, {updated_count} mis à jour')
-        self.stdout.write(self.style.SUCCESS('✅ Ajout des téléphones TECNO CAMON 30S terminé !'))
+        self.stdout.write(self.style.SUCCESS('✅ Ajout des téléphones TECNO CAMON 30S Pro terminé !'))
         
         self.stdout.write('\n📋 Spécifications techniques ajoutées :')
         self.stdout.write('• Système d\'exploitation : Android 14')
         self.stdout.write('• Processeur : Helio G100 Octa-Core')
         self.stdout.write('• Écran : 6.78" FHD+ AMOLED 120Hz')
-        self.stdout.write('• Caméra frontale : 13 MP avec Flash Double')
-        self.stdout.write('• Caméra principale : 50 MP OIS + 2 MP Depth')
-        self.stdout.write('• Batterie : 5000 mAh avec charge 33W')
-        self.stdout.write('• Connectivité : GNSS, WiFi, FM, OTG, GPS, NFC') 
+        self.stdout.write('• Caméra frontale : 50 MP AF avec Flash Double')
+        self.stdout.write('• Caméra principale : 50 MP OIS + 2 MP Depth + Light Sensor')
+        self.stdout.write('• Batterie : 5000 mAh avec charge 45W')
+        self.stdout.write('• Connectivité : GNSS, WiFi, FM, BT, OTG, GPS, NFC')
+        self.stdout.write('• Capteurs : G-sensor, Ambient Light, Proximity, Compass, Gyroscope, Infrared') 

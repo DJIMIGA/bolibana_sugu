@@ -171,40 +171,56 @@ def dropdown_categories_processor(request):
         
         # Si c'est la catégorie Téléphones, utiliser les marques au lieu des sous-catégories
         if main_cat.slug == 'telephones':
-            # Récupérer les marques de téléphones avec leurs modèles populaires
-            phone_brands_data = Phone.objects.values('brand', 'model').distinct().order_by('brand', 'model')
+            from django.db.models import Count
             
-            # Grouper par marque
-            brands_dict = {}
-            for phone_data in phone_brands_data:
-                brand = phone_data['brand']
-                model = phone_data['model']
-                
-                if brand and brand != 'Inconnu':
-                    if brand not in brands_dict:
-                        brands_dict[brand] = []
-                    if model and model != 'Inconnu':
-                        brands_dict[brand].append(model)
+            # Récupérer les marques avec le nombre de produits par marque
+            brands_with_count = Phone.objects.values('brand').annotate(
+                product_count=Count('product')
+            ).filter(
+                brand__isnull=False
+            ).exclude(
+                brand='Inconnu'
+            ).order_by('-product_count', 'brand')
             
-            # Créer la structure pour chaque marque
-            for brand, models in brands_dict.items():
-                # Limiter à 5 modèles les plus populaires par marque
-                popular_models = models[:5]
+            # Limiter à 8 marques les plus populaires pour éviter la surcharge
+            top_brands = brands_with_count[:8]
+            
+            for brand_data in top_brands:
+                brand = brand_data['brand']
+                product_count = brand_data['product_count']
                 
+                # Récupérer les modèles pour cette marque avec le nombre de produits
+                models_with_count = Phone.objects.filter(
+                    brand=brand
+                ).values('model').annotate(
+                    model_count=Count('product')
+                ).filter(
+                    model__isnull=False
+                ).exclude(
+                    model='Inconnu'
+                ).order_by('-model_count', 'model')
+                
+                # Limiter à 4 modèles les plus populaires par marque
+                popular_models = models_with_count[:4]
+                
+                # Créer la structure pour cette marque
                 brand_data = {
                     'subcategory': type('Brand', (), {
                         'name': brand,
                         'slug': brand.lower().replace(' ', '-'),
-                        'is_brand': True
+                        'is_brand': True,
+                        'product_count': product_count
                     })(),
                     'subsubcategories': [
                         type('Model', (), {
-                            'name': model,
-                            'slug': f"{brand.lower().replace(' ', '-')}-{model.lower().replace(' ', '-')}",
-                            'is_model': True
-                        })() for model in popular_models
+                            'name': model_data['model'],
+                            'slug': f"{brand.lower().replace(' ', '-')}-{model_data['model'].lower().replace(' ', '-')}",
+                            'is_model': True,
+                            'product_count': model_data['model_count']
+                        })() for model_data in popular_models
                     ],
-                    'is_brand': True
+                    'is_brand': True,
+                    'total_models': len(models_with_count)
                 }
                 categories_hierarchy[main_cat.id]['subcategories'].append(brand_data)
         else:

@@ -13,21 +13,6 @@ python manage.py add_phone_template --brand "MARQUE" --model "MODELE"
 - **Avantages :** Évite les erreurs courantes, structure correcte (Product → Phone)
 - **Documentation :** Voir `README_PHONE_TEMPLATE.md`
 
-#### `add_tecnocamon_40.py`
-**Ajout spécifique des TECNO CAMON 40**
-```bash
-python manage.py add_tecnocamon_40
-```
-- **Usage :** Ajoute 10 variantes du TECNO CAMON 40 (256GB/128GB + 5 couleurs)
-- **Prix :** 175 000 FCFA (256GB), 165 000 FCFA (128GB)
-
-#### `add_tecnocamon_40_colors.py`
-**Ajout des couleurs spécifiques CAMON 40**
-```bash
-python manage.py add_tecnocamon_40_colors
-```
-- **Usage :** Ajoute la couleur "Vert Lueur Émeraude" (#00ff7f)
-
 ## 🔧 Commandes Utilitaires
 
 ### 📊 Gestion des Données
@@ -84,6 +69,32 @@ python manage.py show_urls
 - **Usage :** Liste toutes les URLs disponibles
 - **Utile :** Debug et vérification des routes
 
+### 🎨 Gestion des Marques
+
+#### `fix_duplicate_brands.py`
+**Correction des marques dupliquées**
+```bash
+python manage.py fix_duplicate_brands
+```
+- **Usage :** Corrige les marques en double dans la base de données
+- **Utile :** Nettoyage des données
+
+#### `optimize_phone_dropdown.py`
+**Optimisation du dropdown des téléphones**
+```bash
+python manage.py optimize_phone_dropdown
+```
+- **Usage :** Optimise l'affichage du dropdown des téléphones
+- **Utile :** Amélioration des performances
+
+#### `test_phone_brands_dropdown.py`
+**Test du dropdown des marques**
+```bash
+python manage.py test_phone_brands_dropdown
+```
+- **Usage :** Teste le fonctionnement du dropdown des marques
+- **Utile :** Debug et validation
+
 ## 📋 Bonnes Pratiques
 
 ### ✅ Avant d'ajouter un nouveau modèle :
@@ -100,14 +111,9 @@ python manage.py show_urls
 
 ## 🚀 Déploiement Heroku
 
-### Ajout de couleurs :
+### Utilisation du template générique :
 ```bash
-heroku run python manage.py add_[MODEL]_colors
-```
-
-### Ajout de téléphones :
-```bash
-heroku run python manage.py add_[MODEL]
+heroku run python manage.py add_phone_template --brand "TECNO" --model "CAMON 40"
 ```
 
 ### Vérification :
@@ -121,4 +127,14 @@ heroku run python manage.py show_urls
 - **Titres uniques :** Inclure ROM, RAM et couleur dans le titre
 - **SKU uniques :** Format cohérent et descriptif
 - **Prix réalistes :** Basés sur le marché local
-- **Couleurs en français :** "Noir Galaxy" au lieu de "Galaxy Black" 
+- **Couleurs en français :** "Noir Galaxy" au lieu de "Galaxy Black"
+
+## 🧹 Nettoyage Effectué
+
+Les commandes suivantes ont été supprimées après utilisation :
+- `add_tecnocamon_30s_colors.py` - Couleurs CAMON 30S ajoutées
+- `add_tecnocamon_30s.py` - Téléphones CAMON 30S ajoutés
+- `add_tecnocamon_40_colors.py` - Couleurs CAMON 40 ajoutées
+- `add_tecnocamon_40.py` - Téléphones CAMON 40 ajoutés
+
+**✅ Seul le template générique `add_phone_template.py` est conservé pour les futurs ajouts.** 

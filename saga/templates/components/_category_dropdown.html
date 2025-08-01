@@ -216,6 +216,9 @@
                                             <a href="{% url 'suppliers:category_detail' 'telephones' %}?brand={{ subcategory_data.subcategory.name|urlencode }}&model={{ subsubcategory.name|urlencode }}" 
                                                class="subcategory-link font-bitter">
                                                 {{ subsubcategory.name }}
+                                                {% if subsubcategory.product_count %}
+                                                <span class="text-xs text-gray-400 ml-1">({{ subsubcategory.product_count }})</span>
+                                                {% endif %}
                                             </a>
                                             {% else %}
                                             <a href="{% url 'suppliers:category_detail' subsubcategory.slug %}" 
@@ -224,6 +227,14 @@
                                             </a>
                                             {% endif %}
                                             {% endfor %}
+                                            
+                                            <!-- Indicateur "Voir plus" si beaucoup de modèles -->
+                                            {% if subcategory_data.total_models and subcategory_data.total_models > 4 %}
+                                            <a href="{% url 'suppliers:category_detail' 'telephones' %}?brand={{ subcategory_data.subcategory.name|urlencode }}" 
+                                               class="subcategory-link font-bitter text-green-600 hover:text-green-700">
+                                                <span class="text-xs">Voir {{ subcategory_data.total_models }} modèles →</span>
+                                            </a>
+                                            {% endif %}
                                         {% else %}
                                             <!-- Pour les sous-catégories normales -->
                                             {% for subsubcategory in subcategory_data.subsubcategories %}
