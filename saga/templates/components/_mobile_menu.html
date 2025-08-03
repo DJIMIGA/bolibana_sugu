@@ -70,8 +70,19 @@ class="group relative focus:outline-none"
                 </a>
 
                 <!-- Catégories -->
-                <div>
-                    {% include "components/_subcategories_menu.html" %}
+                <div id="subcategoriesContainer">
+                    <button type="button"
+                            class="flex items-center p-3 rounded-lg hover:bg-green-50 hover:text-green-700 transition-colors duration-200 w-full"
+                            hx-get="{% url 'suppliers:category_tree' %}"
+                            hx-target="#subcategoriesMenu"
+                            hx-swap="innerHTML"
+                            hx-trigger="click"
+                            hx-push-url="false">
+                        <svg class="w-5 h-5 mr-3 text-gray-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
+                        </svg>
+                        <span class="text-gray-700 font-bitter">Catégories</span>
+                    </button>
                 </div>
 
                 <!-- Navigation -->

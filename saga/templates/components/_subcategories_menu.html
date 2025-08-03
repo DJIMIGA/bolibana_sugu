@@ -1,16 +1,11 @@
 {% load static %}
-<div id="subcategoriesMenu" class="flex h-full flex-col overflow-y-auto bg-white shadow-xl transform transition-transform duration-300 ease-in-out">
+<div class="flex h-full flex-col overflow-y-auto bg-white shadow-xl transform transition-transform duration-300 ease-in-out">
     <!-- En-tête du menu -->
     <div class="flex items-center justify-between px-4 py-6 border-b border-gray-100 bg-gradient-to-r from-green-50/50 to-white">
         <div class="flex items-center space-x-4">
-            {% if category %}
             <button type="button" 
                     class="text-gray-500 hover:text-green-600 transition-colors duration-200"
-                    hx-get="{% url 'suppliers:category_tree' %}"
-                    hx-target="#subcategoriesMenu"
-                    hx-swap="innerHTML"
-                    hx-trigger="click"
-                    hx-push-url="false">
+                    onclick="closeSubcategoriesMenu()">
                 <span class="sr-only">Retour</span>
                 <svg class="h-8 w-8" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                     <path d="M15 19l-7-7 7-7" 
@@ -20,7 +15,6 @@
                           stroke-linejoin="round"/>
                 </svg>
             </button>
-            {% endif %}
             <h2 class="text-lg font-medium font-bitter text-gray-700">
                 {% if category %}
                     {{ category.name }}
@@ -39,53 +33,93 @@
                 {% for category in dropdown_categories %}
                 <div class="flex flex-col space-y-2">
                     <div class="flex items-center justify-between w-full bg-white rounded-lg shadow-sm border border-gray-100 hover:border-green-100 transition-colors duration-200 p-2">
-                <button type="button"
+                        <button type="button"
                                 class="flex-1 text-left px-4 py-3 text-sm text-gray-600 hover:text-green-700 transition-colors duration-200 rounded-lg flex items-center"
-                        hx-get="{% url 'suppliers:category_subcategories' category.id %}"
-                        hx-target="#subcategoriesMenu"
-                        hx-swap="innerHTML"
-                        hx-trigger="click"
+                                hx-get="{% url 'suppliers:category_subcategories' category.id %}"
+                                hx-target="#subcategoriesMenu"
+                                hx-swap="innerHTML"
+                                hx-trigger="click"
                                 hx-push-url="false">
                             <svg class="w-5 h-5 mr-2 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
                             </svg>
-                        <span class="font-medium font-bitter">{{ category.name }}</span>
+                            <span class="font-medium font-bitter">{{ category.name }}</span>
                         </button>
                         <a href="{% url 'suppliers:category_detail' category.slug %}"
-                           class="flex items-center px-4 py-3 text-sm text-green-700 bg-green-50 hover:bg-green-100 transition-colors duration-200 rounded-lg">
+                           class="flex items-center px-4 py-3 text-sm text-green-700 bg-green-50 hover:bg-green-100 transition-colors duration-200 rounded-lg"
+                           onclick="closeMobileMenu()">
                             <svg class="w-5 h-5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                        </svg>
+                            </svg>
                             Produits
                         </a>
                     </div>
                 </div>
                 {% endfor %}
             {% else %}
-                <!-- Sous-catégories -->
-                {% if subcategories %}
+                <!-- Sous-catégories ou Marques pour Téléphones -->
+                {% if category.slug == 'telephones' and subcategories %}
+                    <!-- Afficher les marques de téléphones -->
+                    {% for subcategory_data in subcategories %}
+                    <div class="flex flex-col space-y-2">
+                        <div class="flex items-center justify-between w-full bg-white rounded-lg shadow-sm border border-gray-100 hover:border-green-100 transition-colors duration-200 p-2">
+                            <div class="flex-1 px-4 py-3">
+                                <div class="flex items-center justify-between">
+                                    <span class="font-medium font-bitter text-gray-700">{{ subcategory_data.subcategory.name }}</span>
+                                    {% if subcategory_data.total_models > 4 %}
+                                    <span class="text-xs text-gray-400">+{{ subcategory_data.total_models|add:"-4" }} autres</span>
+                                    {% endif %}
+                                </div>
+                                <!-- Modèles populaires -->
+                                {% if subcategory_data.subsubcategories %}
+                                <div class="mt-2 space-y-1">
+                                    {% for model in subcategory_data.subsubcategories %}
+                                    <a href="{% url 'suppliers:category_detail' 'telephones' %}?brand={{ subcategory_data.subcategory.name|urlencode }}&model={{ model.name|urlencode }}"
+                                       class="block text-xs text-gray-500 hover:text-green-600 transition-colors duration-200"
+                                       onclick="closeMobileMenu()">
+                                        • {{ model.name }}
+                                    </a>
+                                    {% endfor %}
+                                </div>
+                                {% endif %}
+                            </div>
+                            <a href="{% url 'suppliers:category_detail' 'telephones' %}?brand={{ subcategory_data.subcategory.name|urlencode }}"
+                               class="flex items-center px-4 py-3 text-sm text-green-700 bg-green-50 hover:bg-green-100 transition-colors duration-200 rounded-lg"
+                               onclick="closeMobileMenu()">
+                                <svg class="w-5 h-5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                                </svg>
+                                Voir
+                            </a>
+                        </div>
+                    </div>
+                    {% endfor %}
+                {% elif subcategories %}
+                    <!-- Sous-catégories normales pour les autres catégories -->
                     {% for subcategory in subcategories %}
                     <div class="flex flex-col space-y-2">
                         <div class="flex items-center justify-between w-full bg-white rounded-lg shadow-sm border border-gray-100 hover:border-green-100 transition-colors duration-200 p-2">
-                    <button type="button"
+                            <button type="button"
                                     class="flex-1 text-left px-4 py-3 text-sm text-gray-600 hover:text-green-700 transition-colors duration-200 rounded-lg flex items-center"
-                            hx-get="{% url 'suppliers:category_subcategories' subcategory.id %}"
-                            hx-target="#subcategoriesMenu"
-                            hx-swap="innerHTML"
-                            hx-trigger="click"
+                                    hx-get="{% url 'suppliers:category_subcategories' subcategory.id %}"
+                                    hx-target="#subcategoriesMenu"
+                                    hx-swap="innerHTML"
+                                    hx-trigger="click"
                                     hx-push-url="false">
                                 <svg class="w-5 h-5 mr-2 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
                                 </svg>
-                            <span class="font-medium font-bitter">{{ subcategory.name }}</span>
+                                <span class="font-medium font-bitter">{{ subcategory.name }}</span>
                             </button>
                             <a href="{% url 'suppliers:category_detail' subcategory.slug %}"
-                               class="flex items-center px-4 py-3 text-sm text-green-700 bg-green-50 hover:bg-green-100 transition-colors duration-200 rounded-lg">
+                               class="flex items-center px-4 py-3 text-sm text-green-700 bg-green-50 hover:bg-green-100 transition-colors duration-200 rounded-lg"
+                               onclick="closeMobileMenu()">
                                 <svg class="w-5 h-5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                            </svg>
+                                </svg>
                                 Produits
                             </a>
                         </div>
@@ -98,7 +132,8 @@
                         </svg>
                         <p class="mt-2 text-sm text-gray-400">Aucune sous-catégorie disponible.</p>
                         <a href="{% url 'suppliers:category_detail' category.slug %}"
-                           class="mt-4 inline-flex items-center px-6 py-3 text-sm text-green-700 bg-green-50 hover:bg-green-100 transition-colors duration-200 rounded-lg">
+                           class="mt-4 inline-flex items-center px-6 py-3 text-sm text-green-700 bg-green-50 hover:bg-green-100 transition-colors duration-200 rounded-lg"
+                           onclick="closeMobileMenu()">
                             <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />

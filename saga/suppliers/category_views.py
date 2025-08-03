@@ -1,6 +1,6 @@
 from django.views.generic import TemplateView
 from django.shortcuts import get_object_or_404
-from django.core.paginator import Paginator
+from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 from django.urls import reverse
 from django.db.models import Count, Q
 from product.models import Category, Product, Clothing, ShippingMethod
@@ -867,8 +867,23 @@ class PhoneCategoryView(BaseCategoryView):
                 'product': product,
                 'phone': product.phone
             })
-        context['products'] = formatted_products
+        
+        # Pagination
+        paginator = Paginator(formatted_products, 20)  # 20 produits par page
+        page = self.request.GET.get('page')
+        try:
+            products_page = paginator.page(page)
+        except PageNotAnInteger:
+            products_page = paginator.page(1)
+        except EmptyPage:
+            products_page = paginator.page(paginator.num_pages)
+        
+        context['products'] = products_page
+        context['is_paginated'] = paginator.num_pages > 1
+        context['page_obj'] = products_page
+        
         print(f"Nombre de produits formatés pour le template : {len(formatted_products)}")
+        print(f"Pagination : page {products_page.number} sur {paginator.num_pages}")
         print("=== FIN DEBUG CONTEXT DATA ===\n")
         return context
 

@@ -264,26 +264,22 @@ def is_favorite(user, product):
 
 @register.filter
 def format_dimension(value):
-    """
-    Formate une dimension en supprimant les zéros inutiles.
-    Ex: 3.00 devient 3, 1.50 devient 1.5
-    """
+    """Formate une dimension avec l'unité appropriée."""
     if value is None:
-        return ""
-    
-    # Convertir en string et remplacer le point par une virgule
-    str_value = str(value).replace('.', ',')
-    
-    # Supprimer les zéros inutiles à la fin
-    if ',' in str_value:
-        # Supprimer les zéros à la fin après la virgule
-        while str_value.endswith('0') and ',' in str_value:
-            str_value = str_value[:-1]
-        
-        # Si on se retrouve avec juste une virgule, la supprimer
-        if str_value.endswith(','):
-            str_value = str_value[:-1]
-    
-    return str_value
+        return "Non spécifié"
+    return f"{value} cm"
+
+@register.simple_tag
+def get_phone_colors():
+    """
+    Retourne un dictionnaire des couleurs de téléphones disponibles.
+    """
+    try:
+        from product.models import PhoneColor
+        colors = PhoneColor.objects.all()
+        return {color.name: color.code for color in colors}
+    except Exception as e:
+        logger.error(f"Erreur lors de la récupération des couleurs: {str(e)}")
+        return {}
 
 

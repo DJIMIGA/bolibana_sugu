@@ -1,0 +1,160 @@
+/* Styles standardisés pour les menus déroulants avec scroll */
+
+/* Conteneur principal des filtres avec scroll */
+.filter-dropdown-container {
+    max-height: 200px;
+    overflow-y: auto;
+    border: 1px solid #e5e7eb;
+    border-radius: 0.5rem;
+    background-color: #ffffff;
+}
+
+/* Scrollbar personnalisée pour les filtres */
+.filter-dropdown-container::-webkit-scrollbar {
+    width: 4px;
+}
+
+.filter-dropdown-container::-webkit-scrollbar-track {
+    background: #f9fafb;
+    border-radius: 2px;
+}
+
+.filter-dropdown-container::-webkit-scrollbar-thumb {
+    background: #d1d5db;
+    border-radius: 2px;
+    transition: background-color 0.2s ease;
+}
+
+.filter-dropdown-container::-webkit-scrollbar-thumb:hover {
+    background: #9ca3af;
+}
+
+/* Styles pour les sections de filtres mobiles */
+.mobile-filter-section {
+    max-height: 12rem; /* 192px */
+    overflow-y: auto;
+    padding: 0.5rem;
+}
+
+.mobile-filter-section::-webkit-scrollbar {
+    width: 3px;
+}
+
+.mobile-filter-section::-webkit-scrollbar-track {
+    background: #f3f4f6;
+    border-radius: 1.5px;
+}
+
+.mobile-filter-section::-webkit-scrollbar-thumb {
+    background: #d1d5db;
+    border-radius: 1.5px;
+}
+
+.mobile-filter-section::-webkit-scrollbar-thumb:hover {
+    background: #9ca3af;
+}
+
+/* Styles pour les selects avec scroll */
+.select-with-scroll {
+    max-height: 200px;
+    overflow-y: auto;
+}
+
+.select-with-scroll::-webkit-scrollbar {
+    width: 4px;
+}
+
+.select-with-scroll::-webkit-scrollbar-track {
+    background: #f9fafb;
+    border-radius: 2px;
+}
+
+.select-with-scroll::-webkit-scrollbar-thumb {
+    background: #d1d5db;
+    border-radius: 2px;
+}
+
+.select-with-scroll::-webkit-scrollbar-thumb:hover {
+    background: #9ca3af;
+}
+
+/* Animation pour l'ouverture/fermeture des sections */
+.filter-section-content {
+    transition: max-height 0.3s ease-in-out;
+    overflow: hidden;
+}
+
+.filter-section-content.collapsed {
+    max-height: 0;
+}
+
+.filter-section-content.expanded {
+    max-height: 200px;
+}
+
+/* Indicateur visuel pour les sections avec beaucoup d'options */
+.filter-section-indicator {
+    position: relative;
+}
+
+.filter-section-indicator::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 20px;
+    background: linear-gradient(transparent, rgba(255, 255, 255, 0.9));
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.2s ease;
+}
+
+.filter-section-indicator.has-overflow::after {
+    opacity: 1;
+}
+
+/* Styles pour les options de filtres */
+.filter-option {
+    padding: 0.5rem 0.75rem;
+    transition: background-color 0.2s ease;
+    border-radius: 0.25rem;
+    margin-bottom: 0.125rem;
+}
+
+.filter-option:hover {
+    background-color: #f3f4f6;
+}
+
+.filter-option.selected {
+    background-color: #ecfdf5;
+    color: #059669;
+    font-weight: 500;
+}
+
+/* Responsive design */
+@media (max-width: 768px) {
+    .mobile-filter-section {
+        max-height: 10rem; /* 160px sur mobile */
+    }
+    
+    .filter-dropdown-container {
+        max-height: 180px;
+    }
+}
+
+/* Support pour Firefox */
+.filter-dropdown-container {
+    scrollbar-width: thin;
+    scrollbar-color: #d1d5db #f9fafb;
+}
+
+.mobile-filter-section {
+    scrollbar-width: thin;
+    scrollbar-color: #d1d5db #f3f4f6;
+}
+
+.select-with-scroll {
+    scrollbar-width: thin;
+    scrollbar-color: #d1d5db #f9fafb;
+} 

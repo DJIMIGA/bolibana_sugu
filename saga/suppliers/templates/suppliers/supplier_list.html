@@ -201,10 +201,128 @@
 
     @media (min-width: 640px) and (max-width: 1024px) {
         .product-card {
-            min-width: 0 !important; /* Changé de 180px à 0 */
-            max-width: 100% !important; /* Changé de 250px à 100% */
+            min-width: 180px !important;
+            max-width: 250px !important;
         }
     }
+
+    /* Styles pour les cartes de téléphone colorisées */
+    .phone-card-colorized {
+        position: relative;
+        overflow: hidden;
+    }
+
+    .phone-card-colorized::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 3px;
+        background: linear-gradient(90deg, var(--phone-color) 0%, var(--phone-color-light) 50%, var(--phone-color) 100%);
+        transform: scaleX(0);
+        transform-origin: left;
+        transition: transform 0.3s ease;
+    }
+
+    .phone-card-colorized:hover::before {
+        transform: scaleX(1);
+    }
+
+    /* Effet de brillance au survol */
+    .phone-card-colorized::after {
+        content: '';
+        position: absolute;
+        top: -50%;
+        left: -50%;
+        width: 200%;
+        height: 200%;
+        background: linear-gradient(45deg, transparent 30%, rgba(255,255,255,0.1) 50%, transparent 70%);
+        transform: rotate(45deg) translateX(-100%);
+        transition: transform 0.6s ease;
+        pointer-events: none;
+    }
+
+    .phone-card-colorized:hover::after {
+        transform: rotate(45deg) translateX(100%);
+    }
+
+    /* Animation des badges avec la couleur */
+    .phone-card-colorized .badge {
+        transition: all 0.3s ease;
+    }
+
+    .phone-card-colorized:hover .badge {
+        transform: scale(1.05);
+        box-shadow: 0 4px 12px var(--phone-color-light);
+    }
+
+    /* Effet de pulsation pour l'indicateur de couleur */
+    .phone-card-colorized .color-indicator {
+        animation: colorPulse 2s ease-in-out infinite;
+    }
+
+    @keyframes colorPulse {
+        0%, 100% {
+            transform: scale(1);
+            opacity: 1;
+        }
+        50% {
+            transform: scale(1.1);
+            opacity: 0.8;
+        }
+    }
+
+    /* Amélioration des transitions pour les prix */
+    .phone-card-colorized .price {
+        transition: all 0.3s ease;
+    }
+
+    .phone-card-colorized:hover .price {
+        transform: translateY(-2px);
+        text-shadow: 0 2px 4px var(--phone-color-light);
+    }
+
+    /* Effet de profondeur pour les boutons d'action */
+    .phone-card-colorized .action-buttons button {
+        transition: all 0.3s ease;
+    }
+
+    .phone-card-colorized:hover .action-buttons button {
+        transform: translateY(-1px);
+        box-shadow: 0 4px 8px var(--phone-color-light);
+    }
+
+    /* Gradient subtil pour l'arrière-plan de la carte */
+    .phone-card-colorized {
+        background: linear-gradient(135deg, #ffffff 0%, var(--phone-color-light) 100%);
+    }
+
+    /* Effet de bordure animée */
+    .phone-card-colorized .border-animated {
+        position: relative;
+    }
+
+    .phone-card-colorized .border-animated::before {
+        content: '';
+        position: absolute;
+        inset: 0;
+        border-radius: inherit;
+        padding: 2px;
+        background: linear-gradient(45deg, var(--phone-color), var(--phone-color-light), var(--phone-color));
+        mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+        mask-composite: exclude;
+        opacity: 0;
+        transition: opacity 0.3s ease;
+    }
+
+    .phone-card-colorized:hover .border-animated::before {
+        opacity: 1;
+    }
+
+
+
+
 
     /* Garantir la séparation mobile/desktop pour toutes les sections */
     .promotionsSwiper,
@@ -1331,6 +1449,11 @@
         </div>
 
 
+
+
     </div>
 </div>
+
+
+
 {% endblock %}

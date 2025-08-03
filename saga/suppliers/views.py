@@ -23,6 +23,7 @@ import re
 import unicodedata
 from core.utils import track_search, track_view_content
 from core.facebook_conversions import facebook_conversions
+from product.context_processors import dropdown_categories_processor
 
 logger = logging.getLogger(__name__)
 
@@ -2033,12 +2034,84 @@ def category_subcategories(request, category_id):
     """Vue pour récupérer les sous-catégories d'une catégorie (pour le menu mobile)"""
     try:
         category = Category.objects.get(id=category_id)
-        subcategories = category.children.all().order_by('order', 'name')
         
-        context = {
-            'category': category,
-            'subcategories': subcategories,
-        }
+        # Si c'est la catégorie téléphones, utiliser les marques
+        if category.slug == 'telephones':
+            from product.models import Phone
+            from django.db.models import Count
+            
+            # Récupérer les marques avec le nombre de produits par marque
+            brands_with_count = Phone.objects.values('brand').annotate(
+                product_count=Count('product')
+            ).filter(
+                brand__isnull=False
+            ).exclude(
+                brand='Inconnu'
+            ).order_by('-product_count', 'brand')
+            
+            # Limiter à 8 marques les plus populaires
+            top_brands = brands_with_count[:8]
+            
+            # Créer la structure pour les marques
+            subcategories_data = []
+            for brand_data in top_brands:
+                brand = brand_data['brand']
+                product_count = brand_data['product_count']
+                
+                # Récupérer les modèles pour cette marque
+                models_with_count = Phone.objects.filter(
+                    brand=brand
+                ).values('model').annotate(
+                    model_count=Count('product')
+                ).filter(
+                    model__isnull=False
+                ).exclude(
+                    model='Inconnu'
+                ).order_by('-model_count', 'model')
+                
+                # Limiter à 4 modèles les plus populaires par marque
+                popular_models = models_with_count[:4]
+                
+                # Créer la structure pour cette marque
+                brand_obj = type('Brand', (), {
+                    'name': brand,
+                    'slug': brand.lower().replace(' ', '-'),
+                    'is_brand': True,
+                    'product_count': product_count
+                })()
+                
+                subcategory_data = {
+                    'subcategory': brand_obj,
+                    'subsubcategories': [
+                        type('Model', (), {
+                            'name': model_data['model'],
+                            'slug': f"{brand.lower().replace(' ', '-')}-{model_data['model'].lower().replace(' ', '-')}",
+                            'is_model': True,
+                            'product_count': model_data['model_count']
+                        })() for model_data in popular_models
+                    ],
+                    'is_brand': True,
+                    'total_models': len(models_with_count)
+                }
+                subcategories_data.append(subcategory_data)
+            
+            context = {
+                'category': category,
+                'subcategories': subcategories_data,
+                'dropdown_categories_hierarchy': {
+                    category.id: {
+                        'subcategories': subcategories_data
+                    }
+                }
+            }
+        else:
+            # Pour les autres catégories, utiliser les sous-catégories normales
+            subcategories = category.children.all().order_by('order', 'name')
+            
+            context = {
+                'category': category,
+                'subcategories': subcategories,
+            }
         
         return render(request, 'components/_subcategories_menu.html', context)
     except Category.DoesNotExist:
@@ -2047,18 +2120,14 @@ def category_subcategories(request, category_id):
 
 def category_tree(request):
     """Vue pour récupérer l'arbre des catégories (pour le menu mobile)"""
-    categories = Category.objects.filter(
-        parent__isnull=True,
-        is_main=True
-    ).prefetch_related('children').order_by('order', 'name')
+    from product.context_processors import dropdown_categories_processor
+    
+    # Utiliser le même context processor que le dropdown desktop
+    context_data = dropdown_categories_processor(request)
     
     context = {
-        'categories': categories,
+        'dropdown_categories': context_data['dropdown_categories'],
+        'dropdown_categories_hierarchy': context_data['dropdown_categories_hierarchy']
     }
     
     return render(request, 'components/_subcategories_menu.html', context)
-
-
-
-
-
