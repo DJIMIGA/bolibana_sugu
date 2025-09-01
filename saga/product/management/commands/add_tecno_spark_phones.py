@@ -1,7 +1,11 @@
 from django.core.management.base import BaseCommand
 from django.db import transaction
 from product.models import Product, Phone, Color, Category, Supplier
+from product.utils import normalize_phone_brand
 from decimal import Decimal
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 class Command(BaseCommand):
@@ -22,25 +26,40 @@ class Command(BaseCommand):
         
         self.stdout.write('📱 Début de l\'ajout des téléphones TECNO SPARK...')
         
+        # Normaliser automatiquement la marque
+        brand = 'TECNO'
+        normalized_brand = normalize_phone_brand(brand)
+        
+        self.stdout.write(f'🏷️  Marque originale: {brand}')
+        self.stdout.write(f'✅ Marque normalisée: {normalized_brand}')
+        
         # Récupérer ou créer la catégorie Téléphones
-        phone_category, created = Category.objects.get_or_create(
-            slug='telephones',
-            defaults={
-                'name': 'Téléphones',
-                'is_main': True,
-                'order': 1
-            }
-        )
+        try:
+            phone_category = Category.objects.get(slug='telephones')
+        except Category.DoesNotExist:
+            phone_category, created = Category.objects.get_or_create(
+                slug='telephones',
+                defaults={
+                    'name': 'Téléphones',
+                    'is_main': True,
+                    'order': 1
+                }
+            )
         
         # Récupérer ou créer le fournisseur TECNO
-        tecno_supplier, created = Supplier.objects.get_or_create(
-            name='TECNO',
-            defaults={
-                'description': 'Fabricant de téléphones mobiles',
-                'contact_email': 'contact@tecno-mobile.com',
-                'is_active': True
-            }
-        )
+        try:
+            tecno_supplier = Supplier.objects.get(company_name=normalized_brand)
+            self.stdout.write(f'✅ Fournisseur existant trouvé: {tecno_supplier.company_name}')
+        except Supplier.DoesNotExist:
+            # Créer un nouveau fournisseur avec un slug unique
+            tecno_supplier = Supplier.objects.create(
+                company_name=normalized_brand,
+                description='Fabricant de téléphones mobiles',
+                email='contact@tecno-mobile.com',
+                is_verified=True,
+                slug=f'{normalized_brand.lower()}-mobile'  # Slug unique
+            )
+            self.stdout.write(f'✅ Nouveau fournisseur créé: {tecno_supplier.company_name}')
         
         # Spécifications de tous les modèles SPARK (mise à jour avec données exactes)
         spark_models = [
@@ -449,7 +468,7 @@ class Command(BaseCommand):
                         '128GB ROM+8GB RAM'
                     ]
                 },
-                'colors': ['Black', 'White', 'Blue'],
+                'colors': ['Noir', 'Blanc', 'Bleu'],
                 'storage_options': [64, 128],
                 'ram_options': [4, 8]
             },
@@ -475,7 +494,7 @@ class Command(BaseCommand):
                         '128GB ROM+8GB RAM'
                     ]
                 },
-                'colors': ['Black', 'White', 'Green'],
+                'colors': ['Noir', 'Blanc', 'Vert'],
                 'storage_options': [64, 128],
                 'ram_options': [4, 8]
             },
@@ -501,7 +520,7 @@ class Command(BaseCommand):
                         '256GB ROM+8GB RAM'
                     ]
                 },
-                'colors': ['Black', 'White', 'Blue'],
+                'colors': ['Noir', 'Blanc', 'Bleu'],
                 'storage_options': [128, 256],
                 'ram_options': [8]
             },
@@ -528,7 +547,7 @@ class Command(BaseCommand):
                         '256GB ROM+8GB RAM'
                     ]
                 },
-                'colors': ['Black', 'White', 'Blue', 'Green'],
+                'colors': ['Noir', 'Blanc', 'Bleu', 'Vert'],
                 'storage_options': [128, 256],
                 'ram_options': [8]
             },
@@ -553,7 +572,7 @@ class Command(BaseCommand):
                         '128GB ROM+8GB RAM'
                     ]
                 },
-                'colors': ['Black', 'White', 'Blue'],
+                'colors': ['Noir', 'Blanc', 'Bleu'],
                 'storage_options': [128],
                 'ram_options': [8]
             },
@@ -578,7 +597,7 @@ class Command(BaseCommand):
                         '256GB ROM+8GB RAM'
                     ]
                 },
-                'colors': ['Black', 'White', 'Blue', 'Green'],
+                'colors': ['Noir', 'Blanc', 'Bleu', 'Vert'],
                 'storage_options': [256],
                 'ram_options': [8]
             },
@@ -604,7 +623,7 @@ class Command(BaseCommand):
                         '256GB ROM+8GB RAM'
                     ]
                 },
-                'colors': ['Black', 'White', 'Blue'],
+                'colors': ['Noir', 'Blanc', 'Bleu'],
                 'storage_options': [128, 256],
                 'ram_options': [8]
             },
@@ -629,7 +648,7 @@ class Command(BaseCommand):
                         '256GB ROM+8GB RAM'
                     ]
                 },
-                'colors': ['Black', 'White', 'Blue'],
+                'colors': ['Noir', 'Blanc', 'Bleu'],
                 'storage_options': [256],
                 'ram_options': [8]
             },
@@ -654,7 +673,7 @@ class Command(BaseCommand):
                         '256GB ROM+8GB RAM'
                     ]
                 },
-                'colors': ['Black', 'White', 'Blue'],
+                'colors': ['Noir', 'Blanc', 'Bleu'],
                 'storage_options': [256],
                 'ram_options': [8]
             },
@@ -681,7 +700,7 @@ class Command(BaseCommand):
                         '256GB ROM+8GB RAM'
                     ]
                 },
-                'colors': ['Black', 'White', 'Blue'],
+                'colors': ['Noir', 'Blanc', 'Bleu'],
                 'storage_options': [128, 256],
                 'ram_options': [8]
             },
@@ -706,7 +725,7 @@ class Command(BaseCommand):
                         '256GB ROM+8GB RAM'
                     ]
                 },
-                'colors': ['Black', 'White', 'Blue'],
+                'colors': ['Noir', 'Blanc', 'Bleu'],
                 'storage_options': [256],
                 'ram_options': [8]
             },
@@ -731,7 +750,7 @@ class Command(BaseCommand):
                         '256GB ROM+8GB RAM'
                     ]
                 },
-                'colors': ['Black', 'White', 'Blue'],
+                'colors': ['Noir', 'Blanc', 'Bleu'],
                 'storage_options': [256],
                 'ram_options': [8]
             },
@@ -756,7 +775,7 @@ class Command(BaseCommand):
                         '256GB ROM+8GB RAM'
                     ]
                 },
-                'colors': ['Black', 'White', 'Blue'],
+                'colors': ['Noir', 'Blanc', 'Bleu'],
                 'storage_options': [256],
                 'ram_options': [8]
             },
@@ -781,7 +800,7 @@ class Command(BaseCommand):
                         '256GB ROM+8GB RAM'
                     ]
                 },
-                'colors': ['Black', 'White', 'Blue'],
+                'colors': ['Noir', 'Blanc', 'Bleu'],
                 'storage_options': [256],
                 'ram_options': [8]
             }
@@ -797,67 +816,74 @@ class Command(BaseCommand):
                 for storage in model_data['storage_options']:
                     for ram in model_data['ram_options']:
                         for color_name in model_data['colors']:
-                            # Récupérer la couleur
                             try:
-                                color = Color.objects.get(name__iexact=color_name)
-                            except Color.DoesNotExist:
-                                self.stdout.write(f'  ⚠️ Couleur "{color_name}" non trouvée, utilisation de la couleur par défaut')
-                                color = Color.objects.first()  # Couleur par défaut
-                            
-                            # Créer le titre avec les spécifications
-                            title = f"{model_data['title']} {storage}GB/{ram}GB {color_name}"
-                            slug = f"tecno-spark-{model_data['model'].lower().replace(' ', '-')}-{storage}gb-{ram}gb-{color_name.lower().replace(' ', '-')}"
-                            
-                            # Vérifier si le produit existe déjà
-                            existing_product = Product.objects.filter(slug=slug).first()
-                            
-                            if existing_product:
-                                self.stdout.write(f'  ℹ️ Produit déjà existant: {title}')
-                                total_existing += 1
+                                # Récupérer la couleur
+                                try:
+                                    color = Color.objects.get(name__iexact=color_name)
+                                except Color.DoesNotExist:
+                                    self.stdout.write(f'  ⚠️ Couleur "{color_name}" non trouvée, utilisation de la couleur par défaut')
+                                    color = Color.objects.first()  # Couleur par défaut
+                                
+                                # Créer le titre avec les spécifications
+                                title = f"{model_data['title']} {storage}GB/{ram}GB {color_name}"
+                                slug = f"tecno-spark-{model_data['model'].lower().replace(' ', '-')}-{storage}gb-{ram}gb-{color_name.lower().replace(' ', '-')}"
+                                
+                                # Vérifier si le produit existe déjà
+                                existing_product = Product.objects.filter(slug=slug).first()
+                                
+                                if existing_product:
+                                    self.stdout.write(f'  ℹ️ Produit déjà existant: {title}')
+                                    total_existing += 1
+                                    continue
+                                
+                                if not dry_run:
+                                    # Créer le produit
+                                    product = Product.objects.create(
+                                        title=title,
+                                        slug=slug,
+                                        description=model_data['description'],
+                                        price=Decimal(model_data['price']),
+                                        category=phone_category,
+                                        supplier=tecno_supplier,
+                                        brand=normalized_brand,
+                                        is_available=True,
+                                        stock=10,
+                                        specifications=model_data['specifications'],
+                                        weight=Decimal('0.18'),  # 180g approximatif
+                                        dimensions='165x75x8.5mm'
+                                    )
+                                    
+                                    # Créer le téléphone
+                                    phone = Phone.objects.create(
+                                        product=product,
+                                        brand=normalized_brand,
+                                        model=model_data['model'],
+                                        operating_system=model_data['specifications']['operating_system'],
+                                        screen_size=Decimal('6.6'),
+                                        resolution=model_data['specifications']['resolution'],
+                                        processor=model_data['specifications']['processor'],
+                                        battery_capacity=5000,
+                                        camera_main=model_data['specifications']['camera_main'],
+                                        camera_front=model_data['specifications']['camera_front'],
+                                        network=model_data['specifications']['network'][-1],  # Prendre le plus récent
+                                        storage=storage,
+                                        ram=ram,
+                                        color=color,
+                                        is_new=True,
+                                        box_included=True,
+                                        accessories='Chargeur Type-C, Câble USB, Coque de protection, Écouteurs'
+                                    )
+                                    
+                                    self.stdout.write(f'  ✅ Créé: {title} ({color_name})')
+                                    total_created += 1
+                                else:
+                                    self.stdout.write(f'  📋 [DRY-RUN] Serait créé: {title} ({color_name})')
+                                    total_created += 1
+                                    
+                            except Exception as e:
+                                self.stdout.write(self.style.ERROR(f'  ❌ Erreur avec {title}: {str(e)}'))
+                                logger.error(f'Erreur lors de la création du téléphone {title}: {str(e)}')
                                 continue
-                            
-                            if not dry_run:
-                                # Créer le produit
-                                product = Product.objects.create(
-                                    title=title,
-                                    slug=slug,
-                                    description=model_data['description'],
-                                    price=Decimal(model_data['price']),
-                                    category=phone_category,
-                                    supplier=tecno_supplier,
-                                    brand='TECNO',
-                                    is_available=True,
-                                    stock=10,
-                                    specifications=model_data['specifications'],
-                                    weight=Decimal('0.18'),  # 180g approximatif
-                                    dimensions='165x75x8.5mm'
-                                )
-                                
-                                # Créer le téléphone
-                                phone = Phone.objects.create(
-                                    product=product,
-                                    brand='TECNO',
-                                    model=model_data['model'],
-                                    operating_system=model_data['specifications']['operating_system'],
-                                    screen_size=Decimal('6.6'),
-                                    resolution=model_data['specifications']['resolution'],
-                                    processor=model_data['specifications']['processor'],
-                                    battery_capacity=5000,
-                                    camera_main=model_data['specifications']['camera_main'],
-                                    camera_front=model_data['specifications']['camera_front'],
-                                    network=model_data['specifications']['network'][-1],  # Prendre le plus récent
-                                    storage=storage,
-                                    ram=ram,
-                                    color=color,
-                                    is_new=True,
-                                    box_included=True
-                                )
-                                
-                                self.stdout.write(f'  ✅ Créé: {title} ({color_name})')
-                                total_created += 1
-                            else:
-                                self.stdout.write(f'  📋 [DRY-RUN] Serait créé: {title} ({color_name})')
-                                total_created += 1
         
         self.stdout.write('\n' + '='*50)
         if dry_run:

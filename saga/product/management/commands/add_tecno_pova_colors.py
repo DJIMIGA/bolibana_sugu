@@ -3,16 +3,16 @@ from product.models import Color
 
 
 class Command(BaseCommand):
-    help = 'Ajoute toutes les couleurs pour les téléphones TECNO POP'
+    help = 'Ajoute toutes les couleurs pour les téléphones TECNO POVA'
 
     def handle(self, *args, **options):
-        self.stdout.write('🎨 Début de l\'ajout des couleurs TECNO POP...')
+        self.stdout.write('🎨 Début de l\'ajout des couleurs TECNO POVA...')
         
         # Normalisation des marques TECNO
         self.stdout.write('🔧 Normalisation des marques TECNO...')
         
         colors_data = [
-            # POP 8
+            # POVA 7 Pro 5G
             {
                 'name': 'Noir Mystérieux',
                 'code': '#1a1a1a'  # Noir profond
@@ -25,11 +25,7 @@ class Command(BaseCommand):
                 'name': 'Vert Émeraude',
                 'code': '#00a86b'  # Vert émeraude
             },
-            {
-                'name': 'Or Doré',
-                'code': '#ffd700'  # Or doré
-            },
-            # POP 7
+            # POVA 7 5G
             {
                 'name': 'Noir Infini',
                 'code': '#000000'  # Noir pur
@@ -42,20 +38,16 @@ class Command(BaseCommand):
                 'name': 'Vert Ice Lake',
                 'code': '#90ee90'  # Vert ice lake
             },
-            # POP 6
-            {
-                'name': 'Noir Minuit',
-                'code': '#191970'  # Noir minuit
-            },
-            {
-                'name': 'Bleu Cyan',
-                'code': '#00ffff'  # Bleu cyan
-            },
-            {
-                'name': 'Violet Étoilé',
-                'code': '#8a2be2'  # Violet étoilé
-            },
-            # POP 5
+                         # POVA 7 Ultra 5G
+             {
+                 'name': 'Blanc Geek',
+                 'code': '#ffffff'  # Blanc geek
+             },
+             {
+                 'name': 'Noir Geek',
+                 'code': '#1a1a1a'  # Noir geek
+             },
+            # POVA 7
             {
                 'name': 'Noir Obsidien',
                 'code': '#1a1a1a'  # Noir obsidien
@@ -68,58 +60,67 @@ class Command(BaseCommand):
                 'name': 'Vert Ice',
                 'code': '#90ee90'  # Vert ice
             },
-            # POP 4
-            {
-                'name': 'Noir Gravité',
-                'code': '#2f2f2f'  # Noir gravité
-            },
-            {
-                'name': 'Bleu Ville',
-                'code': '#4169e1'  # Bleu ville
-            },
-            {
-                'name': 'Magic Skin (Vert)',
-                'code': '#32cd32'  # Magic skin vert
-            },
-            # POP 3
-            {
-                'name': 'Or Alpenglow',
-                'code': '#ffd700'  # Or alpenglow
-            },
-            {
-                'name': 'Blanc Mystère',
-                'code': '#f5f5f5'  # Blanc mystère
-            },
-            {
-                'name': 'Violet Étoilé',
-                'code': '#8a2be2'  # Violet étoilé
-            },
-            # POP 2
-            {
-                'name': 'Bleu Océan',
-                'code': '#0066cc'  # Bleu océan
-            },
-            {
-                'name': 'Noir Brillant',
-                'code': '#1a1a1a'  # Noir brillant
-            },
-            {
-                'name': 'Bleu Uyuni',
-                'code': '#87ceeb'  # Bleu uyuni
-            },
-            # POP 1
-            {
-                'name': 'Violet Nébuleuse',
-                'code': '#8a2be2'  # Violet nébuleuse
-            },
-            {
-                'name': 'Bleu Capri',
-                'code': '#1e90ff'  # Bleu capri
-            },
-            {
-                'name': 'Gris Argent',
-                'code': '#c0c0c0'  # Gris argent
-            }
+                         # POVA Curve 5G
+             {
+                 'name': 'Noir Geek',
+                 'code': '#1a1a1a'  # Noir geek
+             },
+             {
+                 'name': 'Argent Magique',
+                 'code': '#c0c0c0'  # Argent magique
+             },
+             {
+                 'name': 'Cyan Néon',
+                 'code': '#00ffff'  # Cyan néon
+             },
+             # POVA 7
+             {
+                 'name': 'Titanium Hyper',
+                 'code': '#b8860b'  # Titanium hyper
+             },
+             {
+                 'name': 'Argent Magique',
+                 'code': '#c0c0c0'  # Argent magique
+             },
+             {
+                 'name': 'Noir Geek',
+                 'code': '#1a1a1a'  # Noir geek
+             },
+                         # POVA 6 Pro 5G
+             {
+                 'name': 'Vert Comète',
+                 'code': '#00a86b'  # Vert comète
+             },
+             {
+                 'name': 'Gris Météorite',
+                 'code': '#696969'  # Gris météorite
+             },
+                         # POVA 6 NEO
+             {
+                 'name': 'Argent Étoilé',
+                 'code': '#c0c0c0'  # Argent étoilé
+             },
+             {
+                 'name': 'Noir Vitesse',
+                 'code': '#1a1a1a'  # Noir vitesse
+             },
+             {
+                 'name': 'Vert Comète',
+                 'code': '#00a86b'  # Vert comète
+             },
+                         # POVA 6
+             {
+                 'name': 'Vert Comète',
+                 'code': '#00ff7f'  # Vert comète
+             },
+             {
+                 'name': 'Gris Météorite',
+                 'code': '#696969'  # Gris météorite
+             },
+             {
+                 'name': 'Bleu Interstellaire',
+                 'code': '#4169e1'  # Bleu interstellaire
+             }
         ]
         
         created_count = 0
@@ -160,6 +161,8 @@ class Command(BaseCommand):
         
         self.stdout.write('')
         self.stdout.write(f'🎨 Résumé: {created_count} couleurs créées, {existing_count} déjà existantes')
-        self.stdout.write('✅ Ajout des couleurs TECNO POP terminé !')
+        self.stdout.write('✅ Ajout des couleurs TECNO POVA terminé !')
         self.stdout.write('')
-        self.stdout.write('📝 Note: Vous pouvez maintenant exécuter la commande d\'ajout des téléphones TECNO POP') 
+        self.stdout.write('📝 Note: Vous pouvez maintenant exécuter la commande d\'ajout des téléphones TECNO POVA')
+        self.stdout.write('')
+        self.stdout.write('💡 Gamme POVA : Smartphones gaming et performance TECNO avec batteries haute capacité') 

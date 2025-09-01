@@ -8505,12 +8505,12 @@ body {
     gap: 3rem;
   }
 
-  .lg\:gap-8 {
-    gap: 2rem;
-  }
-
   .lg\:gap-4 {
     gap: 1rem;
+  }
+
+  .lg\:gap-8 {
+    gap: 2rem;
   }
 
   .lg\:gap-x-12 {
@@ -8630,6 +8630,11 @@ body {
     padding: 1.5rem;
   }
 
+  .xl\:px-12 {
+    padding-left: 3rem;
+    padding-right: 3rem;
+  }
+
   .xl\:px-16 {
     padding-left: 4rem;
     padding-right: 4rem;
@@ -8638,11 +8643,6 @@ body {
   .xl\:px-8 {
     padding-left: 2rem;
     padding-right: 2rem;
-  }
-
-  .xl\:px-12 {
-    padding-left: 3rem;
-    padding-right: 3rem;
   }
 
   .xl\:pr-16 {
