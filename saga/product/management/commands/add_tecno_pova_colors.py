@@ -12,32 +12,32 @@ class Command(BaseCommand):
         self.stdout.write('🔧 Normalisation des marques TECNO...')
         
         colors_data = [
-            # POVA 7 Pro 5G
-            {
-                'name': 'Noir Mystérieux',
-                'code': '#1a1a1a'  # Noir profond
-            },
-            {
-                'name': 'Bleu Océan',
-                'code': '#0066cc'  # Bleu océan
-            },
-            {
-                'name': 'Vert Émeraude',
-                'code': '#00a86b'  # Vert émeraude
-            },
-            # POVA 7 5G
-            {
-                'name': 'Noir Infini',
-                'code': '#000000'  # Noir pur
-            },
-            {
-                'name': 'Bleu Capri',
-                'code': '#1e90ff'  # Bleu capri
-            },
-            {
-                'name': 'Vert Ice Lake',
-                'code': '#90ee90'  # Vert ice lake
-            },
+                         # POVA 7 Pro 5G
+             {
+                 'name': 'Noir Geek',
+                 'code': '#1a1a1a'  # Noir geek
+             },
+             {
+                 'name': 'Gris Dynamique',
+                 'code': '#696969'  # Gris dynamique
+             },
+             {
+                 'name': 'Cyan Néon',
+                 'code': '#00ffff'  # Cyan néon
+             },
+                         # POVA 7 5G
+             {
+                 'name': 'Noir Geek',
+                 'code': '#1a1a1a'  # Noir geek
+             },
+             {
+                 'name': 'Argent Magique',
+                 'code': '#c0c0c0'  # Argent magique
+             },
+             {
+                 'name': 'Vert Oasis',
+                 'code': '#32cd32'  # Vert oasis
+             },
                          # POVA 7 Ultra 5G
              {
                  'name': 'Blanc Geek',

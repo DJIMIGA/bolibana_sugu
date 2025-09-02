@@ -328,8 +328,15 @@ class SupplierListView(ListView):
         
         logger.info(f"Nombre de produits en promotion: {promotional_products.count()}")
 
+        # Récupérer les produits pilotes (5 premiers produits disponibles)
+        pilot_products = active_products.order_by('-created_at')[:5]
+        logger.info(f"Nombre de produits pilotes: {pilot_products.count()}")
+        for product in pilot_products:
+            logger.info(f"Produit pilote: {product.title} (ID: {product.id})")
+
         # Ajouter les produits par type au contexte
         context['products'] = products  # Tous les produits
+        context['pilot_products'] = pilot_products  # Produits pilotes pour le tunnel de vente
         context['phone_products'] = products.filter(phone__isnull=False)[:4]
         context['clothing_products'] = products.filter(clothing_product__isnull=False)[:4]
         context['fabric_products'] = products.filter(fabric_product__isnull=False)[:4]

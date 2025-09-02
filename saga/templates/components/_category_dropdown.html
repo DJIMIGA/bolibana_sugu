@@ -1,5 +1,6 @@
 {% load static %}
 {% load category_tags %}
+{% load product_filters %}
 
 <style>
 @keyframes rotateArrow {
@@ -196,10 +197,17 @@
                                     <!-- Titre de la sous-catégorie ou marque -->
                                     <h3 class="subcategory-title font-bitter">
                                         {% if subcategory_data.is_brand %}
-                                            <!-- Pour les marques de téléphones -->
-                                            <a href="{% url 'suppliers:category_detail' 'telephones' %}?brand={{ subcategory_data.subcategory.name|urlencode }}">
-                                                {{ subcategory_data.subcategory.name }}
-                                            </a>
+                                            {% if subcategory_data.is_series %}
+                                                <!-- Pour les séries de téléphones -->
+                                                <a href="{% url 'suppliers:category_detail' 'telephones' %}?brand={{ subcategory_data.subcategory.name|get_brand_name|urlencode }}&series={{ subcategory_data.subcategory.name|get_series_name|urlencode }}">
+                                                    {{ subcategory_data.subcategory.name }}
+                                                </a>
+                                            {% else %}
+                                                <!-- Pour les marques de téléphones (fallback) -->
+                                                <a href="{% url 'suppliers:category_detail' 'telephones' %}?brand={{ subcategory_data.subcategory.name|urlencode }}">
+                                                    {{ subcategory_data.subcategory.name }}
+                                                </a>
+                                            {% endif %}
                                         {% else %}
                                             <!-- Pour les sous-catégories normales -->
                                             <a href="{% url 'suppliers:category_detail' subcategory_data.subcategory.slug %}">
@@ -210,30 +218,58 @@
                                     <!-- Sous-sous-catégories ou modèles de téléphones -->
                                     <div class="subcategory-links">
                                         {% if subcategory_data.is_brand %}
-                                            <!-- Pour les marques, afficher les modèles populaires -->
-                                            {% for subsubcategory in subcategory_data.subsubcategories %}
-                                            {% if subsubcategory.is_model %}
-                                            <a href="{% url 'suppliers:category_detail' 'telephones' %}?brand={{ subcategory_data.subcategory.name|urlencode }}&model={{ subsubcategory.name|urlencode }}" 
-                                               class="subcategory-link font-bitter">
-                                                {{ subsubcategory.name }}
-                                                {% if subsubcategory.product_count %}
-                                                <span class="text-xs text-gray-400 ml-1">({{ subsubcategory.product_count }})</span>
+                                            {% if subcategory_data.is_series %}
+                                                <!-- Pour les séries, afficher le nombre de modèles -->
+                                                <div class="subcategory-link font-bitter text-green-600">
+                                                    <span class="text-sm font-medium">{{ subcategory_data.total_models }} modèles</span>
+                                                </div>
+                                                
+                                                <!-- Afficher quelques modèles populaires -->
+                                                {% for subsubcategory in subcategory_data.subsubcategories %}
+                                                {% if subsubcategory.is_model %}
+                                                <a href="{% url 'suppliers:category_detail' 'telephones' %}?brand={{ subcategory_data.subcategory.name|get_brand_name|urlencode }}&model={{ subsubcategory.name|urlencode }}" 
+                                                   class="subcategory-link font-bitter">
+                                                    {{ subsubcategory.name }}
+                                                    {% if subsubcategory.product_count %}
+                                                    <span class="text-xs text-gray-400 ml-1">({{ subsubcategory.product_count }})</span>
+                                                    {% endif %}
+                                                </a>
                                                 {% endif %}
-                                            </a>
+                                                {% endfor %}
+                                                
+                                                <!-- Indicateur "Voir plus" si beaucoup de modèles -->
+                                                {% if subcategory_data.total_models and subcategory_data.total_models > 4 %}
+                                                <a href="{% url 'suppliers:category_detail' 'telephones' %}?brand={{ subcategory_data.subcategory.name|get_brand_name|urlencode }}&series={{ subcategory_data.subcategory.name|get_series_name|urlencode }}" 
+                                                   class="subcategory-link font-bitter text-green-600 hover:text-green-700">
+                                                    <span class="text-xs">Voir tous les modèles →</span>
+                                                </a>
+                                                {% endif %}
                                             {% else %}
-                                            <a href="{% url 'suppliers:category_detail' subsubcategory.slug %}" 
-                                               class="subcategory-link font-bitter">
-                                                {{ subsubcategory.name }}
-                                            </a>
-                                            {% endif %}
-                                            {% endfor %}
-                                            
-                                            <!-- Indicateur "Voir plus" si beaucoup de modèles -->
-                                            {% if subcategory_data.total_models and subcategory_data.total_models > 4 %}
-                                            <a href="{% url 'suppliers:category_detail' 'telephones' %}?brand={{ subcategory_data.subcategory.name|urlencode }}" 
-                                               class="subcategory-link font-bitter text-green-600 hover:text-green-700">
-                                                <span class="text-xs">Voir {{ subcategory_data.total_models }} modèles →</span>
-                                            </a>
+                                                <!-- Pour les marques (fallback), afficher les modèles populaires -->
+                                                {% for subsubcategory in subcategory_data.subsubcategories %}
+                                                {% if subsubcategory.is_model %}
+                                                <a href="{% url 'suppliers:category_detail' 'telephones' %}?brand={{ subcategory_data.subcategory.name|urlencode }}&model={{ subsubcategory.name|urlencode }}" 
+                                                   class="subcategory-link font-bitter">
+                                                    {{ subsubcategory.name }}
+                                                    {% if subsubcategory.product_count %}
+                                                    <span class="text-xs text-gray-400 ml-1">({{ subsubcategory.product_count }})</span>
+                                                    {% endif %}
+                                                </a>
+                                                {% else %}
+                                                <a href="{% url 'suppliers:category_detail' subsubcategory.slug %}" 
+                                                   class="subcategory-link font-bitter">
+                                                    {{ subsubcategory.name }}
+                                                </a>
+                                                {% endif %}
+                                                {% endfor %}
+                                                
+                                                <!-- Indicateur "Voir plus" si beaucoup de modèles -->
+                                                {% if subcategory_data.total_models and subcategory_data.total_models > 4 %}
+                                                <a href="{% url 'suppliers:category_detail' 'telephones' %}?brand={{ subcategory_data.subcategory.name|urlencode }}" 
+                                                   class="subcategory-link font-bitter text-green-600 hover:text-green-700">
+                                                    <span class="text-xs">Voir {{ subcategory_data.total_models }} modèles →</span>
+                                                </a>
+                                                {% endif %}
                                             {% endif %}
                                         {% else %}
                                             <!-- Pour les sous-catégories normales -->

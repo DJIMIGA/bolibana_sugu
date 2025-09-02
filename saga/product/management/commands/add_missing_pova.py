@@ -45,40 +45,41 @@ class Command(BaseCommand):
         # Configuration des modèles POVA à ajouter
         # NOTE: Les spécifications seront mises à jour avec les vraies données
         pova_configs = {
-            'POVA 7 Pro 5G': {
-                'colors': ['Noir Mystérieux', 'Bleu Océan', 'Vert Émeraude'],
-                'specs': {
-                    'operating_system': 'Android 14',
-                    'processor': 'MediaTek Dimensity 7200',
-                    'network': '2G, 3G, 4G, 5G',
-                    'screen_size': 6.78,
-                    'resolution': '1080 x 2436',
-                    'camera_front': '16 MP',
-                    'camera_main': '108 MP + 8 MP + 2 MP + 2 MP',
-                    'battery_capacity': 7000,
-                    'memory_variants': [
-                        {'rom': 128, 'ram': 8, 'price': 180000, 'stock': 15},
-                        {'rom': 256, 'ram': 12, 'price': 220000, 'stock': 10}
-                    ]
-                }
-            },
-            'POVA 7 5G': {
-                'colors': ['Noir Infini', 'Bleu Capri', 'Vert Ice Lake'],
-                'specs': {
-                    'operating_system': 'Android 14',
-                    'processor': 'MediaTek Dimensity 6100+',
-                    'network': '2G, 3G, 4G, 5G',
-                    'screen_size': 6.78,
-                    'resolution': '1080 x 2436',
-                    'camera_front': '16 MP',
-                    'camera_main': '50 MP + 8 MP + 2 MP + 2 MP',
-                    'battery_capacity': 6000,
-                    'memory_variants': [
-                        {'rom': 128, 'ram': 8, 'price': 150000, 'stock': 15},
-                        {'rom': 256, 'ram': 12, 'price': 180000, 'stock': 10}
-                    ]
-                }
-            },
+                         'POVA 7 Pro 5G': {
+                 'colors': ['Noir Geek', 'Gris Dynamique', 'Cyan Néon'],
+                 'specs': {
+                     'operating_system': 'Android 15',
+                     'processor': 'MediaTek Dimensity 7300 Ultimate',
+                     'network': 'GSM, GPRS, FULL EDGE, WCDMA, HSPA+, FDD LTE, TDD LTE, 5G NR',
+                     'screen_size': 6.78,
+                     'resolution': '2720 x 1224',
+                     'camera_front': '13 MP',
+                     'camera_main': '64 MP + 8 MP avec Dual Flash',
+                     'battery_capacity': 6000,
+                     'memory_variants': [
+                         {'rom': 128, 'ram': 16, 'price': 160000, 'stock': 15},
+                         {'rom': 256, 'ram': 16, 'price': 190000, 'stock': 10},
+                         {'rom': 256, 'ram': 24, 'price': 230000, 'stock': 8}
+                     ]
+                 }
+             },
+                         'POVA 7 5G': {
+                 'colors': ['Noir Geek', 'Argent Magique', 'Vert Oasis'],
+                 'specs': {
+                     'operating_system': 'Android 15',
+                     'processor': 'MediaTek Dimensity 7300 Ultimate',
+                     'network': 'GSM, GPRS, FULL EDGE, WCDMA, HSPA+, FDD LTE, TDD LTE, 5G NR',
+                     'screen_size': 6.78,
+                     'resolution': '2460 x 1080',
+                     'camera_front': '13 MP',
+                     'camera_main': '50 MP + Light Sensor avec Dual Flash',
+                     'battery_capacity': 6000,
+                     'memory_variants': [
+                         {'rom': 128, 'ram': 16, 'price': 140000, 'stock': 15},
+                         {'rom': 256, 'ram': 16, 'price': 170000, 'stock': 10}
+                     ]
+                 }
+             },
             'POVA 7 Ultra 5G': {
                 'colors': ['Noir Minuit', 'Bleu Cyan', 'Violet Étoilé'],
                 'specs': {

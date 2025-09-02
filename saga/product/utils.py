@@ -87,3 +87,52 @@ def normalize_phone_brand(brand_name):
         normalized = brand.capitalize()
     
     return normalized 
+
+def extract_phone_series(model_name):
+    """
+    Extrait la série d'un modèle de téléphone.
+    Exemples:
+    - "POVA 7 Pro 5G" -> "POVA"
+    - "CAMON 30 Premier 5G" -> "CAMON"
+    - "SPARK 10 Pro" -> "SPARK"
+    - "POP 8" -> "POP"
+    """
+    if not model_name:
+        return None
+    
+    # Liste des séries connues
+    known_series = ['POVA', 'CAMON', 'SPARK', 'POP', 'GALAXY', 'IPHONE', 'REDMI', 'POCO']
+    
+    # Essayer de trouver une série connue au début du nom
+    for series in known_series:
+        if model_name.upper().startswith(series.upper()):
+            return series
+    
+    # Si aucune série connue n'est trouvée, prendre le premier mot
+    words = model_name.strip().split()
+    if words:
+        return words[0].upper()
+    
+    return None
+
+def normalize_phone_series(series_name):
+    """
+    Normalise le nom d'une série de téléphone.
+    """
+    if not series_name:
+        return None
+    
+    # Normalisations spécifiques
+    normalizations = {
+        'GALAXY': 'Samsung Galaxy',
+        'IPHONE': 'iPhone',
+        'REDMI': 'Redmi',
+        'POCO': 'POCO',
+        'POVA': 'POVA',
+        'CAMON': 'CAMON',
+        'SPARK': 'SPARK',
+        'POP': 'POP'
+    }
+    
+    normalized = series_name.upper()
+    return normalizations.get(normalized, series_name.title()) 

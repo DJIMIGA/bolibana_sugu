@@ -145,6 +145,7 @@ def dropdown_categories_processor(request):
     Optimisé pour charger toutes les catégories en une seule requête.
     """
     from product.models import Phone
+    from product.utils import extract_phone_series, normalize_phone_series
     
     # Récupérer toutes les catégories principales avec leurs sous-catégories en une seule requête
     main_categories = Category.objects.filter(
@@ -169,7 +170,7 @@ def dropdown_categories_processor(request):
             'subcategories': []
         }
         
-        # Si c'est la catégorie Téléphones, utiliser les marques au lieu des sous-catégories
+        # Si c'est la catégorie Téléphones, utiliser les séries au lieu des modèles individuels
         if main_cat.slug == 'telephones':
             from django.db.models import Count
             
@@ -189,40 +190,61 @@ def dropdown_categories_processor(request):
                 brand = brand_data['brand']
                 product_count = brand_data['product_count']
                 
-                # Récupérer les modèles pour cette marque avec le nombre de produits
-                models_with_count = Phone.objects.filter(
+                # Récupérer tous les modèles pour cette marque
+                all_models = Phone.objects.filter(
                     brand=brand
-                ).values('model').annotate(
-                    model_count=Count('product')
-                ).filter(
+                ).values('model').filter(
                     model__isnull=False
                 ).exclude(
                     model='Inconnu'
-                ).order_by('-model_count', 'model')
+                )
                 
-                # Limiter à 4 modèles les plus populaires par marque
-                popular_models = models_with_count[:4]
+                # Grouper les modèles par série
+                series_groups = {}
+                for model_data in all_models:
+                    model_name = model_data['model']
+                    series = extract_phone_series(model_name)
+                    
+                    if series:
+                        if series not in series_groups:
+                            series_groups[series] = []
+                        series_groups[series].append(model_name)
                 
-                # Créer la structure pour cette marque
-                brand_data = {
-                    'subcategory': type('Brand', (), {
-                        'name': brand,
-                        'slug': brand.lower().replace(' ', '-'),
+                # Créer la structure pour chaque série de cette marque
+                for series_name, models in series_groups.items():
+                    normalized_series = normalize_phone_series(series_name)
+                    
+                    # Compter le nombre total de produits pour cette série
+                    series_product_count = Phone.objects.filter(
+                        brand=brand,
+                        model__in=models
+                    ).count()
+                    
+                    # Créer la structure pour cette série
+                    series_data = {
+                        'subcategory': type('Series', (), {
+                            'name': f"{brand} {normalized_series}",
+                            'slug': f"{brand.lower().replace(' ', '-')}-{series_name.lower()}",
+                            'is_brand': True,
+                            'is_series': True,
+                            'product_count': series_product_count
+                        })(),
+                        'subsubcategories': [
+                            type('Model', (), {
+                                'name': model_name,
+                                'slug': f"{brand.lower().replace(' ', '-')}-{model_name.lower().replace(' ', '-')}",
+                                'is_model': True,
+                                'product_count': Phone.objects.filter(
+                                    brand=brand,
+                                    model=model_name
+                                ).count()
+                            })() for model_name in sorted(models)[:4]  # Limiter à 4 modèles par série
+                        ],
                         'is_brand': True,
-                        'product_count': product_count
-                    })(),
-                    'subsubcategories': [
-                        type('Model', (), {
-                            'name': model_data['model'],
-                            'slug': f"{brand.lower().replace(' ', '-')}-{model_data['model'].lower().replace(' ', '-')}",
-                            'is_model': True,
-                            'product_count': model_data['model_count']
-                        })() for model_data in popular_models
-                    ],
-                    'is_brand': True,
-                    'total_models': len(models_with_count)
-                }
-                categories_hierarchy[main_cat.id]['subcategories'].append(brand_data)
+                        'is_series': True,
+                        'total_models': len(models)
+                    }
+                    categories_hierarchy[main_cat.id]['subcategories'].append(series_data)
         else:
             # Pour les autres catégories, utiliser les sous-catégories normales
             for subcat in main_cat.children.all():

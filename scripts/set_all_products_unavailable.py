@@ -136,6 +136,11 @@ def main():
     if args.force:
         args.confirm = True
     
+    # Si aucun flag n'est spécifié, exécuter directement
+    if not args.dry_run and not args.confirm and not args.force:
+        print("🚀 Exécution automatique sans confirmation...")
+        args.confirm = True
+    
     success = set_all_products_unavailable(
         dry_run=args.dry_run,
         confirm=args.confirm

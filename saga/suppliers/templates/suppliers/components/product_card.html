@@ -18,7 +18,11 @@
     </div>
 
     <!-- Image principale avec lien -->
-    <a href="{% url 'suppliers:product_detail' product.slug %}" class="block h-56 sm:h-72 rounded-lg w-full overflow-hidden bg-gray-100 relative" aria-label="Voir les détails de {{ product.title }}">
+    {% if product.slug %}
+        <a href="{% url 'suppliers:product_detail' product.slug %}" class="block h-56 sm:h-72 rounded-lg w-full overflow-hidden bg-gray-100 relative" aria-label="Voir les détails de {{ product.title }}">
+    {% else %}
+        <div class="block h-56 sm:h-72 rounded-lg w-full overflow-hidden bg-gray-100 relative" aria-label="Produit sans lien (slug manquant)">
+    {% endif %}
         {% if product.image %}
             <img src="{{ product.image.url }}" 
                  alt="Photo de {{ product.title }}" 
@@ -37,7 +41,11 @@
     <!-- Contenu -->
     <div class="p-1 sm:p-3 flex flex-col flex-1">
         <!-- Titre et catégorie avec lien -->
-        <a href="{% url 'suppliers:product_detail' product.slug %}" class="flex-grow group/title" aria-label="Voir les détails de {{ product.title }}">
+        {% if product.slug %}
+            <a href="{% url 'suppliers:product_detail' product.slug %}" class="flex-grow group/title" aria-label="Voir les détails de {{ product.title }}">
+        {% else %}
+            <div class="flex-grow group/title">
+        {% endif %}
             <div class="flex items-start gap-2 mb-1">
                 <div class="flex-1 min-w-0">
                     <h3 class="text-xs sm:text-lg font-semibold font-bitter text-green-600 group-hover/title:text-green-700 transition-colors duration-200 line-clamp-2">
@@ -51,7 +59,11 @@
                     {% endif %}
                 </div>
             </div>
+        {% if product.slug %}
         </a>
+        {% else %}
+        </div>
+        {% endif %}
 
         <!-- Description -->
         {% if product.description %}

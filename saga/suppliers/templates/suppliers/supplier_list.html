@@ -325,6 +325,7 @@
 
 
     /* Garantir la séparation mobile/desktop pour toutes les sections */
+    .pilotProductsSwiper,
     .promotionsSwiper,
     .phonesSwiper,
     .clothingSwiper,
@@ -336,6 +337,7 @@
     }
     
     @media (min-width: 640px) {
+        .pilotProductsSwiper,
         .promotionsSwiper,
         .phonesSwiper,
         .clothingSwiper,
@@ -345,6 +347,7 @@
         }
     }
     
+    .pilot-products-desktop-grid,
     .promotions-desktop-grid,
     .phones-desktop-grid,
     .clothing-desktop-grid,
@@ -354,6 +357,7 @@
     }
     
     @media (min-width: 640px) {
+        .pilot-products-desktop-grid,
         .promotions-desktop-grid,
         .phones-desktop-grid,
         .clothing-desktop-grid,
@@ -531,6 +535,54 @@
 
         // Configuration spécifique pour chaque Swiper
         const swiperConfigs = {
+            pilotProducts: {
+                ...defaultSwiperConfig,
+                slidesPerView: 2,
+                spaceBetween: 16,
+                navigation: {
+                    ...defaultSwiperConfig.navigation,
+                    nextEl: '.pilotProductsSwiper .swiper-button-next',
+                    prevEl: '.pilotProductsSwiper .swiper-button-prev',
+                },
+                pagination: {
+                    ...defaultSwiperConfig.pagination,
+                    el: '.pilotProductsSwiper .swiper-pagination',
+                    clickable: true,
+                    dynamicBullets: false,
+                },
+                breakpoints: {
+                    640: {
+                        slidesPerView: 2,
+                        spaceBetween: 24,
+                        centeredSlides: false,
+                    },
+                    1024: {
+                        slidesPerView: 3,
+                        spaceBetween: 32,
+                        centeredSlides: false,
+                    }
+                },
+                // Configuration spéciale pour les produits pilotes
+                on: {
+                    init: function() {
+                        const totalSlides = this.slides.length;
+                        const slidesPerView = this.params.slidesPerView;
+                        const totalPages = Math.ceil(totalSlides / slidesPerView);
+                        
+                        // Masquer la navigation si moins de 2 pages
+                        if (totalPages <= 1) {
+                            this.navigation.nextEl.style.display = 'none';
+                            this.navigation.prevEl.style.display = 'none';
+                            this.pagination.el.style.display = 'none';
+                        }
+                        
+                        // Ajuster la pagination pour 5 produits max
+                        if (totalSlides <= 4) {
+                            this.pagination.el.style.display = 'none';
+                        }
+                    }
+                }
+            },
             categories: {
                 ...defaultSwiperConfig,
                 slidesPerView: 1,
@@ -837,6 +889,7 @@
 
         // Initialisation de tous les Swipers
         const swipers = {
+            pilotProducts: initSwiper('.pilotProductsSwiper', swiperConfigs.pilotProducts),
             categories: initSwiper('.categoriesSwiper', swiperConfigs.categories),
             phones: initSwiper('.phonesSwiper', swiperConfigs.phones),
             clothing: initSwiper('.clothingSwiper', swiperConfigs.clothing),
@@ -894,6 +947,7 @@
         
         // Debug: Vérifier si les éléments existent
         console.log('=== DEBUG SWIPER ELEMENTS ===');
+        console.log('Pilot Products Swiper:', document.querySelector('.pilotProductsSwiper'));
         console.log('Categories Swiper:', document.querySelector('.categoriesSwiper'));
         console.log('Promotions Swiper:', document.querySelector('.promotionsSwiper'));
         console.log('Phones Swiper:', document.querySelector('.phonesSwiper'));
@@ -949,11 +1003,13 @@
         </div>
     </section>
     {% endif %}
-</div>
+    </div>
 
 
     <div class="mx-auto max-w-6xl px-4 sm:px-6 py-8 sm:py-16 lg:max-w-8xl xl:max-w-full xl:px-8">
        
+        <!-- Section Produits Pilotes - Tunnel de Vente -->
+        {% include "suppliers/components/_pilot_products.html" %}       
 
         <!-- Section Nos Catégories -->
         <div class="mb-24">
