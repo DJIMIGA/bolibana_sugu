@@ -69,7 +69,39 @@ def set_all_products_unavailable(dry_run=False, confirm=False):
         print("Exemple: set_all_products_unavailable(confirm=True)")
         return False
     
-    # Confirmation finale
+    # Si confirm=True, exécuter directement sans confirmation supplémentaire
+    if confirm:
+        print("🚀 Exécution automatique confirmée...")
+        print(f"   • {stats['available']} produits vont être mis is_available=False")
+        print("   • Cette action est IRREVERSIBLE!")
+        print()
+        
+        try:
+            with transaction.atomic():
+                # Mettre à jour tous les produits
+                updated_count = Product.objects.filter(
+                    is_available=True
+                ).update(is_available=False)
+                
+                print()
+                print(f"✅ SUCCÈS: {updated_count} produits ont été mis is_available=False")
+                
+                # Vérifier le résultat
+                new_stats = get_product_statistics()
+                
+                print()
+                print("📊 Nouvelles statistiques:")
+                print(f"   • Produits disponibles: {new_stats['available']}")
+                print(f"   • Produits non disponibles: {new_stats['unavailable']}")
+                
+                return True
+                
+        except Exception as e:
+            print()
+            print(f"❌ ERREUR lors de la mise à jour: {str(e)}")
+            return False
+    
+    # Confirmation finale (ancienne logique - ne sera plus utilisée)
     print("🚨 CONFIRMATION FINALE:")
     print(f"   • {stats['available']} produits vont être mis is_available=False")
     print("   • Cette action est IRREVERSIBLE!")
