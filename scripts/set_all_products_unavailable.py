@@ -124,8 +124,17 @@ def main():
         action='store_true',
         help='Exécute sans demander de confirmation'
     )
+    parser.add_argument(
+        '--force',
+        action='store_true',
+        help='Force l\'exécution sans confirmation (compatible Heroku)'
+    )
     
     args = parser.parse_args()
+    
+    # Si --force est utilisé, traiter comme --confirm
+    if args.force:
+        args.confirm = True
     
     success = set_all_products_unavailable(
         dry_run=args.dry_run,
