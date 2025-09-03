@@ -107,6 +107,15 @@ class FacebookConversionsAPI:
         
         return self.send_event("Lead", user_data, custom_data)
     
+    def send_login_event(self, user_data, content_name=None):
+        """Événement de connexion"""
+        custom_data = {"content_type": "service"}
+        
+        if content_name:
+            custom_data["content_name"] = content_name
+        
+        return self.send_event("Login", user_data, custom_data)
+    
     def send_pageview_event(self, user_data=None, content_name=None, content_category=None):
         """Événement de visite de page"""
         custom_data = {"content_type": "website"}
