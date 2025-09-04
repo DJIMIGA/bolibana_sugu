@@ -243,6 +243,10 @@ def checkout(request):
     else:
         cart_items = cart.cart_items.all()
     
+    # Vérifier s'il y a des produits Salam dans le panier (pour tous les cas)
+    salam_items_in_cart = cart.cart_items.filter(product__is_salam=True)
+    has_salam_products = salam_items_in_cart.exists()
+    
     # Déterminer les méthodes de paiement disponibles selon le type
     if payment_type == 'immediate':
         # Pour le paiement immédiat : toutes les méthodes sauf paiement à la livraison
@@ -253,13 +257,19 @@ def checkout(request):
         available_payment_methods = [method for method in get_available_payment_methods() if method != 'cash_on_delivery']
         payment_required = True
     elif product_type == 'classic' or payment_type == 'flexible':
-        # Pour les produits classiques ou paiement flexible : toutes les méthodes incluant paiement à la livraison
-        available_payment_methods = get_available_payment_methods()
-        payment_required = False
+        # Pour les produits classiques ou paiement flexible : vérifier s'il y a des produits Salam
+        if has_salam_products:
+            # S'il y a des produits Salam dans le panier, pas de paiement à la livraison
+            available_payment_methods = [method for method in get_available_payment_methods() if method != 'cash_on_delivery']
+            payment_required = True
+            messages.warning(request, "⚠️ **Attention** : Votre panier contient des produits Salam qui nécessitent un paiement immédiat. Le paiement à la livraison n'est pas disponible.")
+        else:
+            # Sinon, toutes les méthodes incluant paiement à la livraison
+            available_payment_methods = get_available_payment_methods()
+            payment_required = False
     else:
         # Par défaut : vérifier s'il y a des produits Salam dans le panier
-        salam_items = cart.cart_items.filter(product__is_salam=True)
-        if salam_items.exists():
+        if has_salam_products:
             # S'il y a des produits Salam, pas de paiement à la livraison
             available_payment_methods = [method for method in get_available_payment_methods() if method != 'cash_on_delivery']
             payment_required = True
@@ -299,6 +309,7 @@ def checkout(request):
         'available_payment_methods': available_payment_methods,  # Méthodes de paiement disponibles
         'payment_required': payment_required,  # Si le paiement est obligatoire
         'is_mixed_cart': is_mixed_cart,  # Si le panier est mixte
+        'has_salam_products': has_salam_products,  # Si le panier contient des produits Salam
     }
     
     # Tracking du début de commande
@@ -610,18 +621,20 @@ def payment_online(request):
         debug_log("📋 Préparation des items pour Stripe...")
         line_items = []
         for item in cart.cart_items.all():
+            # Utiliser le prix promotionnel si disponible, sinon le prix normal
+            unit_price = item.product.discount_price if hasattr(item.product, 'discount_price') and item.product.discount_price else item.product.price
             line_item = {
                 'price_data': {
                     'currency': 'xof',
                     'product_data': {
                         'name': item.product.title,
                     },
-                    'unit_amount': int(item.product.price),  # CFA n'a pas de centimes
+                    'unit_amount': int(unit_price),  # CFA n'a pas de centimes
                 },
                 'quantity': item.quantity,
             }
             line_items.append(line_item)
-            debug_log(f"📋 Added line item: {item.product.title} x{item.quantity} = {item.product.price} FCFA")
+            debug_log(f"📋 Added line item: {item.product.title} x{item.quantity} = {unit_price} FCFA")
         
         debug_log(f"📋 Total line items: {len(line_items)}")
         
@@ -1041,7 +1054,7 @@ def payment_delivery(request):
                         order=order,
                         product=item.product,
                         quantity=item.quantity,
-                        price=item.product.price
+                        price=item.product.discount_price if hasattr(item.product, 'discount_price') and item.product.discount_price else item.product.price
                     )
                     if item.colors.exists():
                         print(f"  - Couleurs: {', '.join(c.name for c in item.colors.all())}")
@@ -1437,7 +1450,7 @@ def stripe_webhook(request):
                         order=order,
                         product=item.product,
                         quantity=item.quantity,
-                        price=item.product.price
+                        price=item.product.discount_price if hasattr(item.product, 'discount_price') and item.product.discount_price else item.product.price
                     )
                     if item.colors.exists():
                         order_item.colors.set(item.colors.all())
@@ -1456,7 +1469,7 @@ def stripe_webhook(request):
                         order=order,
                         product=item.product,
                         quantity=item.quantity,
-                        price=item.product.price
+                        price=item.product.discount_price if hasattr(item.product, 'discount_price') and item.product.discount_price else item.product.price
                     )
                     if item.colors.exists():
                         order_item.colors.set(item.colors.all())
@@ -1475,7 +1488,7 @@ def stripe_webhook(request):
                         order=order,
                         product=item.product,
                         quantity=item.quantity,
-                        price=item.product.price
+                        price=item.product.discount_price if hasattr(item.product, 'discount_price') and item.product.discount_price else item.product.price
                     )
                     if item.colors.exists():
                         order_item.colors.set(item.colors.all())
@@ -1625,7 +1638,7 @@ def payment_success(request):
                         order=order,
                         product=item.product,
                         quantity=item.quantity,
-                        price=item.product.price
+                        price=item.product.discount_price if hasattr(item.product, 'discount_price') and item.product.discount_price else item.product.price
                     )
                     if item.colors.exists():
                         order_item.colors.set(item.colors.all())
@@ -1644,7 +1657,7 @@ def payment_success(request):
                         order=order,
                         product=item.product,
                         quantity=item.quantity,
-                        price=item.product.price
+                        price=item.product.discount_price if hasattr(item.product, 'discount_price') and item.product.discount_price else item.product.price
                     )
                     if item.colors.exists():
                         order_item.colors.set(item.colors.all())
@@ -1663,7 +1676,7 @@ def payment_success(request):
                         order=order,
                         product=item.product,
                         quantity=item.quantity,
-                        price=item.product.price
+                        price=item.product.discount_price if hasattr(item.product, 'discount_price') and item.product.discount_price else item.product.price
                     )
                     if item.colors.exists():
                         order_item.colors.set(item.colors.all())
@@ -1864,7 +1877,9 @@ def create_checkout_session(request):
                 
                 # Ajouter les produits Salam
                 for item in salam_order.items.all():
-                    item_amount = int(item.product.price * 100)
+                    # Utiliser le prix promotionnel si disponible, sinon le prix normal
+                    unit_price = item.product.discount_price if hasattr(item.product, 'discount_price') and item.product.discount_price else item.product.price
+                    item_amount = int(unit_price * 100)
                     total_amount += item_amount
                     
                     if total_amount > max_amount:
@@ -1884,7 +1899,9 @@ def create_checkout_session(request):
                 
                 # Ajouter les produits classiques
                 for item in classic_order.items.all():
-                    item_amount = int(item.product.price * 100)
+                    # Utiliser le prix promotionnel si disponible, sinon le prix normal
+                    unit_price = item.product.discount_price if hasattr(item.product, 'discount_price') and item.product.discount_price else item.product.price
+                    item_amount = int(unit_price * 100)
                     total_amount += item_amount
                     
                     if total_amount > max_amount:
@@ -1947,18 +1964,20 @@ def create_checkout_session(request):
             
             # Toujours envoyer tous les produits à Stripe pour l'affichage
             for item in cart.cart_items.all():
+                # Utiliser le prix promotionnel si disponible, sinon le prix normal
+                unit_price = item.product.discount_price if hasattr(item.product, 'discount_price') and item.product.discount_price else item.product.price
                 line_item = {
                     'price_data': {
                         'currency': 'xof',
                         'product_data': {
                             'name': item.product.title,
                         },
-                        'unit_amount': int(item.product.price),  # CFA n'a pas de centimes
+                        'unit_amount': int(unit_price),  # CFA n'a pas de centimes
                     },
                     'quantity': item.quantity,
                 }
                 line_items.append(line_item)
-                debug_log(f"📋 Added line item: {item.product.title} x{item.quantity} = {item.product.price} FCFA")
+                debug_log(f"📋 Added line item: {item.product.title} x{item.quantity} = {unit_price} FCFA")
             
             shipping_cost = shipping_summary['summary']['shipping_cost']
             display_name = "Livraison multi-zones" if len(shipping_summary['suppliers']) > 1 else "Livraison"
