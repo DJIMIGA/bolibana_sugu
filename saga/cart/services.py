@@ -365,7 +365,7 @@ class CartService:
                         order=salam_order,
                         product=item.product,
                         quantity=item.quantity,
-                        price=item.product.price
+                        price=item.product.discount_price if hasattr(item.product, 'discount_price') and item.product.discount_price else item.product.price
                     )
                 
                 # Créer la commande Classique
@@ -390,7 +390,7 @@ class CartService:
                         order=classic_order,
                         product=item.product,
                         quantity=item.quantity,
-                        price=item.product.price
+                        price=item.product.discount_price if hasattr(item.product, 'discount_price') and item.product.discount_price else item.product.price
                     )
                     
                     # Ajouter les couleurs et tailles si présentes

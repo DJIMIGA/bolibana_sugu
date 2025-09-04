@@ -251,18 +251,21 @@ def get_cart_suppliers_breakdown(cart):
                 'delivery_time': None
             }
         
+        # Utiliser le prix promotionnel si disponible, sinon le prix normal
+        unit_price = product.discount_price if hasattr(product, 'discount_price') and product.discount_price else product.price
+        
         # Ajouter le produit
         product_data = {
             'product': product,
             'quantity': item.quantity,
-            'unit_price': product.price,
-            'total_price': product.price * item.quantity,
+            'unit_price': unit_price,
+            'total_price': unit_price * item.quantity,
             'is_salam': product.is_salam
         }
         
         suppliers_data[supplier_key]['products'].append(product_data)
         suppliers_data[supplier_key]['total_items'] += item.quantity
-        suppliers_data[supplier_key]['subtotal'] += product.price * item.quantity
+        suppliers_data[supplier_key]['subtotal'] += unit_price * item.quantity
         
         # Ajouter les méthodes de livraison du produit
         if product.shipping_methods.exists():

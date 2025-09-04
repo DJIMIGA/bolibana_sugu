@@ -54,7 +54,7 @@
                                     <div class="flex-1">
                                         <div class="flex items-center space-x-4 text-sm">
                                             <span class="text-gray-600">
-                                                <span class="font-medium">{{ item.quantity }}</span> × {{ item.price|format_price }}
+                                                <span class="font-medium">{{ item.quantity }}</span> × {{ item.get_unit_price|format_price }}
                                             </span>
                                         </div>
                                     </div>

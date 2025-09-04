@@ -42,12 +42,7 @@
                         <div class="flex-1">
                             <div class="flex items-center space-x-4 text-sm">
                                 <span class="text-gray-600">
-                                    <span class="font-medium">{{ item.quantity }}</span> × 
-                                    {% if item.product.discount_price %}
-                                        {{ item.product.discount_price|format_price }}
-                                    {% else %}
-                                        {{ item.product.price|format_price }}
-                                    {% endif %}
+                                    <span class="font-medium">{{ item.quantity }}</span> × {{ item.get_unit_price|format_price }}
                                 </span>
                             </div>
                         </div>

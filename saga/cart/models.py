@@ -123,6 +123,12 @@ class CartItem(models.Model):
         price = self.product.discount_price if hasattr(self.product, 'discount_price') and self.product.discount_price else self.product.price
         return price * self.quantity
     
+    def get_unit_price(self):
+        """Retourne le prix unitaire (promo si disponible)"""
+        if self.variant:
+            return self.variant.discount_price if hasattr(self.variant, 'discount_price') and self.variant.discount_price else self.variant.price
+        return self.product.discount_price if hasattr(self.product, 'discount_price') and self.product.discount_price else self.product.price
+    
 
 
 
@@ -269,7 +275,9 @@ class OrderItem(models.Model):
         return f"{self.quantity} of {self.product.title} in Order {self.order.id}"
     
     def get_total_price(self):
-        return self.product.price * self.quantity
+        # Utiliser le prix promotionnel si disponible, sinon le prix normal
+        price = self.product.discount_price if hasattr(self.product, 'discount_price') and self.product.discount_price else self.product.price
+        return price * self.quantity
 
     def save(self, *args, **kwargs):
         self.total_price = self.price * self.quantity
