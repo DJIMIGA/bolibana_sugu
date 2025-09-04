@@ -1,3 +1,4 @@
+{% if product and product.id and product.id != '' and product.id != None %}
 <form hx-post="{% url 'add_to_cart' product.id %}"
       hx-target="#cart-count"
       hx-swap="none"
@@ -82,4 +83,10 @@ document.addEventListener('htmx:afterRequest', function(evt) {
         }
     }
 });
-</script> 
+</script>
+{% else %}
+<!-- Produit invalide -->
+<div class="text-center text-gray-500 py-4">
+    <p>Produit non disponible</p>
+</div>
+{% endif %} 

@@ -1,5 +1,6 @@
 {% load static %}
 
+{% if product and product.id and product.id != '' and product.id != None %}
 <div class="add-to-cart-component" id="add-to-cart-{{ product.id }}" data-product-name="{{ product.title }}">
     <form hx-post="{% url 'cart:add_to_cart' product.id %}" 
           hx-target="#cart-content"
@@ -194,4 +195,10 @@ document.addEventListener('DOMContentLoaded', function() {
 .add-to-cart-component form:focus-within {
     @apply outline-none;
 }
-</style> 
+</style>
+{% else %}
+<!-- Produit invalide - ne pas afficher le bouton -->
+<div class="text-center text-gray-400 text-sm py-2">
+    Produit non disponible
+</div>
+{% endif %} 

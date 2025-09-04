@@ -153,6 +153,14 @@ def render_product_card(context, product):
     """
     Template tag pour afficher une carte produit avec le bon template selon le type
     """
+    # Vérifier que le produit existe et a un ID valide
+    if not product or not hasattr(product, 'id') or not product.id or product.id == '' or product.id is None:
+        return {
+            'product': None,
+            'request': context['request'],
+            'user': context['request'].user
+        }
+    
     # Si c'est un dictionnaire
     if isinstance(product, dict):
         if 'product' in product:

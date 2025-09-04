@@ -58,8 +58,8 @@
             {% if products %}
             <div class="mb-12">
                 <div class="grid grid-cols-2 gap-2 sm:gap-4 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
-                    {% for product_item in products %}
-                        {% render_product_card product_item.product %}
+                    {% for product in products %}
+                        {% render_product_card product %}
                     {% endfor %}
                 </div>
             </div>
@@ -68,8 +68,8 @@
             {% if products %}
             <div class="mb-12">
                 <div class="grid grid-cols-2 gap-2 sm:gap-4 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
-                    {% for product_item in products %}
-                        {% render_product_card product_item.product %}
+                    {% for product in products %}
+                        {% render_product_card product %}
                     {% endfor %}
                 </div>
             </div>

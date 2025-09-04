@@ -19,7 +19,7 @@
         </div>
     </div>
     {% endif %}
-    {% if product and product.id %}
+    {% if product and product.id and product.id != '' and product.id != None %}
     <!-- Formulaire d'options -->
     <form id="add-to-cart-form-{{ product.id }}"
           hx-post="{% url 'cart:add_to_cart' product_id=product.id %}"
