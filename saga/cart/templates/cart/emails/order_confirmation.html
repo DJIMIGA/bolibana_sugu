@@ -66,6 +66,12 @@
             {% endif %}
             <p style="margin: 5px 0;">{{ order.shipping_address.city }}</p>
             <p style="margin: 10px 0 0 0;"><strong>Méthode de livraison :</strong> {{ order.shipping_method.name }}</p>
+            {% if order.shipping_method.description %}
+            <p style="margin: 5px 0 0 0; color: #666; font-size: 14px;">{{ order.shipping_method.description }}</p>
+            {% endif %}
+            <p style="margin: 5px 0 0 0; color: #28a745; font-weight: bold; font-size: 14px;">
+                Délai estimé : {{ order.shipping_method.min_delivery_days }}-{{ order.shipping_method.max_delivery_days }} jours ouvrés
+            </p>
         </div>
 
         <div class="items">
@@ -118,6 +124,31 @@
         <div class="footer">
             <p>Pour toute question concernant votre commande, n'hésitez pas à nous contacter.</p>
             <p>L'équipe Boli Bana Sugu</p>
+            
+            <!-- Informations de contact -->
+            <div style="margin-top: 20px; padding-top: 15px; border-top: 1px solid #e9ecef;">
+                <h4 style="color: #28a745; margin-bottom: 10px; font-size: 16px;">📞 Contactez-nous</h4>
+                <div style="display: flex; flex-direction: column; gap: 8px; font-size: 14px; color: #666;">
+                    {% if site_phone %}
+                    <div style="display: flex; align-items: center; gap: 8px;">
+                        <span style="color: #28a745;">📞</span>
+                        <span><strong>Téléphone :</strong> {{ site_phone }}</span>
+                    </div>
+                    {% endif %}
+                    {% if site_email %}
+                    <div style="display: flex; align-items: center; gap: 8px;">
+                        <span style="color: #28a745;">📧</span>
+                        <span><strong>Email :</strong> <a href="mailto:{{ site_email }}" style="color: #28a745; text-decoration: none;">{{ site_email }}</a></span>
+                    </div>
+                    {% endif %}
+                    {% if site_address %}
+                    <div style="display: flex; align-items: flex-start; gap: 8px;">
+                        <span style="color: #28a745; margin-top: 2px;">📍</span>
+                        <span><strong>Adresse :</strong> {{ site_address }}</span>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
         </div>
     </div>
 </body>

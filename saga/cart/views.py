@@ -818,9 +818,24 @@ def send_order_confirmation_email(order, request=None):
         )
     ).get(id=order.id)
     
+    # Récupérer la configuration du site
+    from core.models import SiteConfiguration
+    try:
+        site_config = SiteConfiguration.get_config()
+        site_phone = site_config.phone_number
+        site_email = site_config.email
+        site_address = site_config.address
+    except:
+        site_phone = None
+        site_email = None
+        site_address = None
+    
     context = {
         'order': order_with_items,
-        'domain_url': domain_url
+        'domain_url': domain_url,
+        'site_phone': site_phone,
+        'site_email': site_email,
+        'site_address': site_address
     }
     
     try:
@@ -1138,8 +1153,10 @@ def payment_delivery(request):
     # Calculer le total des produits classiques seulement
     order_total = sum(item.get_total_price() for item in cart_items)
     
-    # Récupérer la première méthode de livraison disponible
-    default_shipping_method = ShippingMethod.objects.first()
+    # Récupérer les méthodes de livraison compatibles avec les produits du panier
+    from .payment_config import get_common_shipping_methods_for_cart
+    common_methods = get_common_shipping_methods_for_cart(cart_items)
+    default_shipping_method = common_methods[0] if common_methods else ShippingMethod.objects.first()
     if default_shipping_method:
         shipping_cost = default_shipping_method.price
     else:
@@ -1157,7 +1174,7 @@ def payment_delivery(request):
         'order_total': order_total,
         'shipping_cost': shipping_cost,
         'total_with_shipping': total_with_shipping,
-        'shipping_methods': ShippingMethod.objects.all(),
+        'shipping_methods': get_common_shipping_methods_for_cart(cart_items),
         'default_shipping_method': default_shipping_method,
         'form': form,
         'default_address': default_address,
@@ -1358,7 +1375,11 @@ def stripe_webhook(request):
             cart = Cart.objects.get(id=cart_id)
             debug_log(f"✅ Cart trouvé: {cart.id}")
             
-            shipping_method = ShippingMethod.objects.first()
+            # Récupérer la méthode de livraison compatible avec les produits classiques
+            from .payment_config import get_common_shipping_methods_for_cart
+            classic_cart_items = cart.cart_items.filter(product__is_salam=False)
+            common_methods = get_common_shipping_methods_for_cart(classic_cart_items)
+            shipping_method = common_methods[0] if common_methods else ShippingMethod.objects.first()
             debug_log(f"📋 Shipping method: {shipping_method.id if shipping_method else None}")
             
             # Récupérer le type de produits depuis les métadonnées
@@ -1564,8 +1585,11 @@ def payment_success(request):
             # Récupérer le type de produits depuis les métadonnées
             product_type = session.metadata.get('product_type', 'all')
             
-            # Récupérer la méthode de livraison
-            shipping_method = ShippingMethod.objects.first()
+            # Récupérer la méthode de livraison compatible avec les produits Salam
+            from .payment_config import get_common_shipping_methods_for_cart
+            salam_cart_items = cart.cart_items.filter(product__is_salam=True)
+            common_methods = get_common_shipping_methods_for_cart(salam_cart_items)
+            shipping_method = common_methods[0] if common_methods else ShippingMethod.objects.first()
             
             # Calculer le total selon le type de produits
             if product_type == 'salam':
