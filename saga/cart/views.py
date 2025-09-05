@@ -1207,7 +1207,7 @@ def remove_from_cart(request, cartitem_id):
         
         # Log de sécurité pour tracer les suppressions
         if hasattr(request, 'user') and request.user.is_authenticated:
-            print(f"🔒 Suppression d'article {cart_item_id} par l'utilisateur {request.user.email[:3]}***")
+            print(f"🔒 Suppression d'article {cartitem_id} par l'utilisateur {request.user.email[:3]}***")
         
         cart_item.delete()
         
