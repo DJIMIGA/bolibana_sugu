@@ -36,7 +36,7 @@
         }
         .item-details { flex: 1; }
         .total { margin-top: 20px; text-align: right; background: #f8f9fa; padding: 15px; border-radius: 5px; }
-        .footer { text-align: center; margin-top: 30px; font-size: 0.9em; color: #666; border-top: 1px solid #eee; padding-top: 20px; }
+        .footer { margin-top: 0; font-size: 0.9em; color: #666; }
         .logo { max-width: 200px; height: auto; margin: 20px auto; }
         .delivery-info { background: #e3f2fd; padding: 15px; margin: 20px 0; border-radius: 5px; border-left: 4px solid #2196f3; }
     </style>
@@ -121,33 +121,64 @@
             <h3 style="margin: 15px 0 0 0; color: #dc3545; font-size: 18px;">Total : {{ order.total|format_price }}</h3>
         </div>
 
+        <!-- Séparateur principal -->
+        <div style="margin: 30px 0; height: 2px; background: linear-gradient(90deg, #28a745, #20c997, #28a745); border-radius: 1px;"></div>
+        
         <div class="footer">
-            <p>Pour toute question concernant votre commande, n'hésitez pas à nous contacter.</p>
-            <p>L'équipe Boli Bana Sugu</p>
+            <!-- Message principal -->
+            <div style="text-align: center; margin-bottom: 25px; padding: 20px; background: linear-gradient(135deg, #f8f9fa, #e9ecef); border-radius: 8px; border: 1px solid #dee2e6;">
+                <h3 style="color: #28a745; margin: 0 0 10px 0; font-size: 18px; font-weight: bold;">🎉 Merci pour votre confiance !</h3>
+                <p style="margin: 8px 0; color: #495057; font-size: 16px; line-height: 1.5;">Pour toute question concernant votre commande, n'hésitez pas à nous contacter.</p>
+                <p style="margin: 8px 0 0 0; color: #28a745; font-weight: bold; font-size: 16px;">L'équipe Boli Bana Sugu</p>
+            </div>
             
             <!-- Informations de contact -->
-            <div style="margin-top: 20px; padding-top: 15px; border-top: 1px solid #e9ecef;">
-                <h4 style="color: #28a745; margin-bottom: 10px; font-size: 16px;">📞 Contactez-nous</h4>
-                <div style="display: flex; flex-direction: column; gap: 8px; font-size: 14px; color: #666;">
+            <div style="background: #ffffff; border: 2px solid #28a745; border-radius: 12px; padding: 25px; margin-top: 20px; box-shadow: 0 4px 12px rgba(40, 167, 69, 0.1);">
+                <div style="text-align: center; margin-bottom: 20px;">
+                    <h4 style="color: #28a745; margin: 0; font-size: 20px; font-weight: bold; display: inline-flex; align-items: center; gap: 8px;">
+                        <span style="background: #28a745; color: white; padding: 8px; border-radius: 50%; font-size: 16px;">📞</span>
+                        Contactez-nous
+                    </h4>
+                </div>
+                
+                <div style="display: grid; grid-template-columns: 1fr; gap: 15px; font-size: 15px;">
                     {% if site_phone %}
-                    <div style="display: flex; align-items: center; gap: 8px;">
-                        <span style="color: #28a745;">📞</span>
-                        <span><strong>Téléphone :</strong> {{ site_phone }}</span>
+                    <div style="display: flex; align-items: center; gap: 12px; padding: 12px; background: #f8f9fa; border-radius: 8px; border-left: 4px solid #28a745;">
+                        <span style="color: #28a745; font-size: 18px; min-width: 24px;">📞</span>
+                        <div>
+                            <strong style="color: #495057; display: block; margin-bottom: 2px;">Téléphone</strong>
+                            <span style="color: #28a745; font-weight: bold; font-size: 16px;">{{ site_phone }}</span>
+                        </div>
                     </div>
                     {% endif %}
+                    
                     {% if site_email %}
-                    <div style="display: flex; align-items: center; gap: 8px;">
-                        <span style="color: #28a745;">📧</span>
-                        <span><strong>Email :</strong> <a href="mailto:{{ site_email }}" style="color: #28a745; text-decoration: none;">{{ site_email }}</a></span>
+                    <div style="display: flex; align-items: center; gap: 12px; padding: 12px; background: #f8f9fa; border-radius: 8px; border-left: 4px solid #28a745;">
+                        <span style="color: #28a745; font-size: 18px; min-width: 24px;">📧</span>
+                        <div>
+                            <strong style="color: #495057; display: block; margin-bottom: 2px;">Email</strong>
+                            <a href="mailto:{{ site_email }}" style="color: #28a745; text-decoration: none; font-weight: bold; font-size: 16px;">{{ site_email }}</a>
+                        </div>
                     </div>
                     {% endif %}
+                    
                     {% if site_address %}
-                    <div style="display: flex; align-items: flex-start; gap: 8px;">
-                        <span style="color: #28a745; margin-top: 2px;">📍</span>
-                        <span><strong>Adresse :</strong> {{ site_address }}</span>
+                    <div style="display: flex; align-items: flex-start; gap: 12px; padding: 12px; background: #f8f9fa; border-radius: 8px; border-left: 4px solid #28a745;">
+                        <span style="color: #28a745; font-size: 18px; min-width: 24px; margin-top: 2px;">📍</span>
+                        <div>
+                            <strong style="color: #495057; display: block; margin-bottom: 2px;">Adresse</strong>
+                            <span style="color: #28a745; font-weight: bold; font-size: 16px; line-height: 1.4;">{{ site_address }}</span>
+                        </div>
                     </div>
                     {% endif %}
                 </div>
+            </div>
+            
+            <!-- Footer final -->
+            <div style="text-align: center; margin-top: 25px; padding: 15px; background: #f8f9fa; border-radius: 8px; border-top: 3px solid #28a745;">
+                <p style="margin: 0; color: #6c757d; font-size: 14px; font-style: italic;">
+                    © 2025 Boli Bana Sugu - Votre partenaire de confiance pour l'électronique
+                </p>
             </div>
         </div>
     </div>
