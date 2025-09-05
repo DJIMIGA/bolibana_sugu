@@ -177,13 +177,21 @@ def get_available_shipping_methods_for_cart(cart):
     
     return list(shipping_methods)
 
-def get_common_shipping_methods_for_cart(cart):
+def get_common_shipping_methods_for_cart(cart_or_items):
     """
     Récupère les méthodes de livraison communes à tous les produits du panier
+    Accepte soit un objet Cart, soit un QuerySet de cart_items
     """
     from product.models import ShippingMethod
     
-    cart_products = [item.product for item in cart.cart_items.all()]
+    # Si c'est un objet Cart, récupérer les cart_items
+    if hasattr(cart_or_items, 'cart_items'):
+        cart_items = cart_or_items.cart_items.all()
+    else:
+        # Sinon, c'est déjà un QuerySet de cart_items
+        cart_items = cart_or_items
+    
+    cart_products = [item.product for item in cart_items]
     
     if not cart_products:
         return ShippingMethod.objects.none()
