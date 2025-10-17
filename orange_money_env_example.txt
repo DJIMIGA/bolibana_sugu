@@ -19,10 +19,18 @@ ORANGE_MONEY_LANGUAGE=fr
 ORANGE_MONEY_TIMEOUT=600
 ORANGE_MONEY_MAX_RETRIES=3
 
-# URLs de callback (seront construites automatiquement)
-ORANGE_MONEY_NOTIFICATION_URL=
-ORANGE_MONEY_RETURN_URL=
-ORANGE_MONEY_CANCEL_URL=
+# URLs de callback pour le développement
+# IMPORTANT: Orange Money n'accepte pas localhost/127.0.0.1
+# Utilisez ngrok ou un service similaire pour exposer votre serveur local
+# Exemple avec ngrok: https://your-ngrok-url.ngrok.io
+ORANGE_MONEY_NOTIFICATION_URL=https://your-domain.com/cart/orange-money/webhook/
+ORANGE_MONEY_RETURN_URL=https://your-domain.com/cart/orange-money/return/
+ORANGE_MONEY_CANCEL_URL=https://your-domain.com/cart/orange-money/cancel/
+
+# Pour le développement local avec ngrok:
+# ORANGE_MONEY_NOTIFICATION_URL=https://abc123.ngrok.io/cart/orange-money/webhook/
+# ORANGE_MONEY_RETURN_URL=https://abc123.ngrok.io/cart/orange-money/return/
+# ORANGE_MONEY_CANCEL_URL=https://abc123.ngrok.io/cart/orange-money/cancel/
 
 # Clé secrète pour les webhooks (optionnel)
 ORANGE_MONEY_WEBHOOK_SECRET=your_webhook_secret_here

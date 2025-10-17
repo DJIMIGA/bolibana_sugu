@@ -2236,19 +2236,27 @@ def orange_money_payment(request):
         return redirect('cart:cart')
     
     try:
+        logger.info("DEBUG Orange Money Payment - Debut de l'initialisation")
+        
         # Calculer le total
+        logger.info("DEBUG Orange Money Payment - Calcul du total")
         total_amount = sum(item.get_total_price() for item in cart_items)
+        logger.info(f"DEBUG Orange Money Payment - Total calcule: {total_amount}")
         
         # Créer une commande temporaire
+        logger.info("DEBUG Orange Money Payment - Creation de la commande")
         order = Order.objects.create(
             user=request.user,
             subtotal=total_amount,
+            shipping_cost=0,  # Pas de frais de livraison pour Orange Money
             total=total_amount,
             payment_method=Order.MOBILE_MONEY,
             status=Order.PENDING
         )
+        logger.info(f"DEBUG Orange Money Payment - Commande creee: {order.order_number}")
         
         # Ajouter les items à la commande
+        logger.info("DEBUG Orange Money Payment - Ajout des items a la commande")
         for cart_item in cart_items:
             OrderItem.objects.create(
                 order=order,
@@ -2256,24 +2264,38 @@ def orange_money_payment(request):
                 quantity=cart_item.quantity,
                 price=cart_item.get_unit_price()
             )
+        logger.info(f"DEBUG Orange Money Payment - {cart_items.count()} items ajoutes")
         
         # Préparer les données pour Orange Money
-        base_url = request.build_absolute_uri('/')[:-1]
+        logger.info("DEBUG Orange Money Payment - Preparation des donnees Orange Money")
+        
+        # Utiliser les URLs configurées dans les variables d'environnement
+        from django.conf import settings
+        webhooks_config = settings.ORANGE_MONEY_WEBHOOKS
+        
+        # Utiliser les URLs configurées si disponibles, sinon construire les URLs complètes
+        return_url = webhooks_config.get('return_url') or request.build_absolute_uri(reverse('cart:orange_money_return'))
+        cancel_url = webhooks_config.get('cancel_url') or request.build_absolute_uri(reverse('cart:orange_money_cancel'))
+        notif_url = webhooks_config.get('notification_url') or request.build_absolute_uri(reverse('cart:orange_money_webhook'))
+        
         order_data = {
             'order_id': order.order_number,
             'amount': orange_money_service.format_amount(float(total_amount)),
-            'base_url': base_url,
-            'return_url': reverse('cart:orange_money_return'),
-            'cancel_url': reverse('cart:orange_money_cancel'),
-            'notif_url': reverse('cart:orange_money_webhook'),
+            'return_url': return_url,
+            'cancel_url': cancel_url,
+            'notif_url': notif_url,
             'reference': f'SagaKore-{order.order_number}'
         }
+        logger.info(f"DEBUG Orange Money Payment - Donnees preparees: {order_data}")
         
         # Créer la session de paiement
+        logger.info("DEBUG Orange Money Payment - Creation de la session de paiement")
         success, response_data = orange_money_service.create_payment_session(order_data)
+        logger.info(f"DEBUG Orange Money Payment - Session creee: success={success}, response={response_data}")
         
         if success:
             # Sauvegarder le token de paiement
+            logger.info("DEBUG Orange Money Payment - Sauvegarde des tokens")
             pay_token = response_data.get('pay_token')
             notif_token = response_data.get('notif_token')
             
@@ -2281,22 +2303,27 @@ def orange_money_payment(request):
             request.session['orange_money_pay_token'] = pay_token
             request.session['orange_money_notif_token'] = notif_token
             request.session['orange_money_order_id'] = order.id
+            logger.info(f"DEBUG Orange Money Payment - Tokens sauvegardes: pay_token={pay_token}")
             
             # Construire l'URL de paiement
             payment_url = orange_money_service.get_payment_url(pay_token)
+            logger.info(f"DEBUG Orange Money Payment - URL de paiement: {payment_url}")
             
             # Rediriger vers Orange Money
             return redirect(payment_url)
         else:
             # Erreur lors de la création de la session
+            logger.error(f"DEBUG Orange Money Payment - Erreur creation session: {response_data}")
             order.delete()  # Supprimer la commande temporaire
             error_msg = response_data.get('error', 'Erreur inconnue')
             messages.error(request, f"❌ Erreur lors de l'initialisation du paiement Orange Money: {error_msg}")
             return redirect('cart:checkout')
             
     except Exception as e:
-        logger.error(f"Erreur lors de l'initialisation du paiement Orange Money: {str(e)}")
-        messages.error(request, "❌ Une erreur est survenue lors de l'initialisation du paiement.")
+        logger.error(f"DEBUG Orange Money Payment - Exception: {str(e)}")
+        import traceback
+        logger.error(f"DEBUG Orange Money Payment - Traceback: {traceback.format_exc()}")
+        messages.error(request, f"❌ Une erreur est survenue lors de l'initialisation du paiement: {str(e)}")
         return redirect('cart:checkout')
 
 

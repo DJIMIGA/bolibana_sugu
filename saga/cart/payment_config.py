@@ -65,6 +65,21 @@ def get_available_payment_methods(product_type=None):
     
     for method_key, config in PAYMENT_METHODS_CONFIG.items():
         if config['enabled']:
+            # Vérification spéciale pour Orange Money
+            if method_key == 'mobile_money':
+                # Vérifier si Orange Money est réellement configuré et activé
+                try:
+                    from .orange_money_service import orange_money_service
+                    orange_money_service.refresh_config()  # Forcer le rechargement
+                    if not orange_money_service.is_enabled():
+                        continue  # Orange Money n'est pas disponible
+                except Exception as e:
+                    # En cas d'erreur, ne pas inclure Orange Money
+                    import logging
+                    logger = logging.getLogger(__name__)
+                    logger.warning(f"Orange Money non disponible: {e}")
+                    continue
+            
             if product_type is None or product_type in config['available_for']:
                 methods.append(method_key)
     
@@ -100,6 +115,16 @@ def is_payment_method_available(method, product_type=None):
     config = get_payment_method_config(method)
     if not config or not config.get('enabled'):
         return False
+    
+    # Vérification spéciale pour Orange Money
+    if method == 'mobile_money':
+        try:
+            from .orange_money_service import orange_money_service
+            orange_money_service.refresh_config()  # Forcer le rechargement
+            if not orange_money_service.is_enabled():
+                return False
+        except Exception:
+            return False
     
     if product_type and product_type not in config.get('available_for', []):
         return False

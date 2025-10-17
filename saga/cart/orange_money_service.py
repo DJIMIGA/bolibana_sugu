@@ -160,16 +160,15 @@ class OrangeMoneyService:
                 'Content-Type': 'application/json'
             }
             
-            # Construire les URLs de callback
-            base_url = order_data.get('base_url', '')
+            # Les URLs sont déjà complètes dans order_data
             payment_data = {
                 'merchant_key': self.config['merchant_key'],
                 'currency': self.config['currency'],
                 'order_id': order_data['order_id'],
                 'amount': order_data['amount'],
-                'return_url': f"{base_url}{order_data['return_url']}",
-                'cancel_url': f"{base_url}{order_data['cancel_url']}",
-                'notif_url': f"{base_url}{order_data['notif_url']}",
+                'return_url': order_data['return_url'],
+                'cancel_url': order_data['cancel_url'],
+                'notif_url': order_data['notif_url'],
                 'lang': self.config['language'],
                 'reference': order_data.get('reference', 'SagaKore')
             }
