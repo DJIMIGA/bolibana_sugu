@@ -216,6 +216,7 @@ ORANGE_MONEY_CONFIG = {
 
 # URLs Orange Money selon l'environnement
 if ORANGE_MONEY_CONFIG['environment'] == 'prod':
+    # Production - URLs corrigées selon la documentation
     ORANGE_MONEY_CONFIG.update({
         'base_url': 'https://api.orange.com',
         'payment_url': 'https://webpayment.orange-money.com',
@@ -224,6 +225,7 @@ if ORANGE_MONEY_CONFIG['environment'] == 'prod':
         'status_url': 'https://api.orange.com/orange-money-webpay/v1/transactionstatus',
     })
 else:
+    # DEV/Sandbox - URLs confirmées par la documentation
     ORANGE_MONEY_CONFIG.update({
         'base_url': 'https://api.orange.com',
         'payment_url': 'https://webpayment-qualif.orange-money.com',

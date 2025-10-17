@@ -2298,6 +2298,7 @@ def orange_money_payment(request):
             logger.info("DEBUG Orange Money Payment - Sauvegarde des tokens")
             pay_token = response_data.get('pay_token')
             notif_token = response_data.get('notif_token')
+            payment_url_from_api = response_data.get('payment_url')
             
             # Stocker les tokens dans la session
             request.session['orange_money_pay_token'] = pay_token
@@ -2305,8 +2306,8 @@ def orange_money_payment(request):
             request.session['orange_money_order_id'] = order.id
             logger.info(f"DEBUG Orange Money Payment - Tokens sauvegardes: pay_token={pay_token}")
             
-            # Construire l'URL de paiement
-            payment_url = orange_money_service.get_payment_url(pay_token)
+            # Construire l'URL de paiement (utiliser l'URL de l'API si disponible)
+            payment_url = orange_money_service.get_payment_url(pay_token, payment_url_from_api)
             logger.info(f"DEBUG Orange Money Payment - URL de paiement: {payment_url}")
             
             # Rediriger vers Orange Money

@@ -194,16 +194,20 @@ class OrangeMoneyService:
             logger.error(error_msg)
             return False, {'error': error_msg}
     
-    def get_payment_url(self, pay_token: str) -> str:
+    def get_payment_url(self, pay_token: str, payment_url_from_api: str = None) -> str:
         """
         Construit l'URL de paiement Orange Money
         
         Args:
             pay_token: Token de paiement reçu lors de la création de session
+            payment_url_from_api: URL de paiement retournée par l'API (prioritaire)
         
         Returns:
             URL complète de paiement
         """
+        # Utiliser l'URL de l'API si fournie, sinon construire l'URL
+        if payment_url_from_api:
+            return payment_url_from_api
         return f"{self.config['payment_url']}/payment/pay_token/{pay_token}"
     
     def check_transaction_status(self, order_id: str, amount: int, pay_token: str) -> Tuple[bool, Dict]:
