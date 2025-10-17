@@ -8,7 +8,7 @@
 # Configuration des méthodes de paiement
 PAYMENT_METHODS_CONFIG = {
     'mobile_money': {
-        'enabled': False,  # Désactivé temporairement - Orange Money indisponible
+        'enabled': True,  # Activé avec l'intégration Orange Money
         'display_name': 'Orange Money',
         'description': 'Paiement rapide via Orange Money, MTN Mobile Money, etc.',
         'icon': 'mobile_money',

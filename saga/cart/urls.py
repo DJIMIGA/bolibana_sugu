@@ -23,4 +23,10 @@ urlpatterns = [
     path('create-checkout-session/', views.create_checkout_session, name='create_checkout_session'),
     path('payment-cancel/', views.payment_cancel, name='payment_cancel'),
     path('test-email/', views.test_email_configuration, name='test_email'),
+    
+    # URLs Orange Money
+    path('orange-money/payment/', views.orange_money_payment, name='orange_money_payment'),
+    path('orange-money/return/', views.orange_money_return, name='orange_money_return'),
+    path('orange-money/cancel/', views.orange_money_cancel, name='orange_money_cancel'),
+    path('orange-money/webhook/', views.orange_money_webhook, name='orange_money_webhook'),
 ]

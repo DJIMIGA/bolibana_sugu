@@ -2,6 +2,7 @@
 {% load product_tags %}
 {% load product_badges %}
 
+{% if product %}
 {% if phone %}
     {% include 'suppliers/components/phone_card.html' with product=product phone=phone %}
 {% elif clothing_product %}
@@ -114,5 +115,11 @@
             </div>
         </div>
     </div>
+</div>
+{% endif %}
+{% else %}
+<!-- Produit invalide - ne pas afficher la carte -->
+<div class="bg-gray-100 rounded-xl p-4 text-center text-gray-500">
+    <p class="text-sm">Produit non disponible</p>
 </div>
 {% endif %} 

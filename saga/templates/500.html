@@ -54,7 +54,7 @@
                     <br>Ou appelez-nous au <a href="tel:+223{{ config.phone_number }}" class="text-green-600 hover:text-green-700">+223 {{ config.phone_number }}</a>
                 {% endif %}
                 {% if config.whatsapp_number %}
-                    <br>WhatsApp : <a href="https://wa.me/223{{ config.whatsapp_number }}" target="_blank" class="text-green-600 hover:text-green-700">+223 {{ config.whatsapp_number }}</a>
+                    <br>WhatsApp : <a href="https://wa.me/{{ config.whatsapp_number }}" target="_blank" class="text-green-600 hover:text-green-700">{{ config.whatsapp_number }}</a>
                 {% endif %}
             </p>
         </div>

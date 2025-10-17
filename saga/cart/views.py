@@ -38,9 +38,12 @@ from .payment_config import (
 )
 import logging
 import os
+import json
 from datetime import datetime
+from django.utils import timezone
 from core.utils import track_purchase, track_add_to_cart, track_view_cart, track_initiate_checkout
 from core.facebook_conversions import facebook_conversions
+from .orange_money_service import orange_money_service
 
 
 
@@ -2159,3 +2162,250 @@ def test_email_configuration(request):
     return render(request, 'cart/test_email_config.html', {
         'email_config': email_config
     })
+
+
+# =============================================================================
+# VUES ORANGE MONEY
+# =============================================================================
+
+@login_required
+def orange_money_payment(request):
+    """
+    Vue pour initier un paiement Orange Money
+    """
+    if not orange_money_service.is_enabled():
+        messages.error(request, "❌ Le paiement Orange Money n'est pas disponible actuellement.")
+        return redirect('cart:cart')
+    
+    try:
+        cart = Cart.objects.get(user=request.user)
+    except Cart.DoesNotExist:
+        messages.warning(request, "🛒 Votre panier est vide.")
+        return redirect('cart:cart')
+    
+    # Récupérer les paramètres de la requête
+    product_type = request.GET.get('type', 'all')
+    payment_type = request.GET.get('payment', 'flexible')
+    
+    # Filtrer les items selon le type demandé
+    if product_type == 'salam':
+        cart_items = cart.cart_items.filter(product__is_salam=True)
+    elif product_type == 'classic':
+        cart_items = cart.cart_items.filter(product__is_salam=False)
+    else:
+        cart_items = cart.cart_items.all().select_related('product')
+    
+    if not cart_items.exists():
+        messages.warning(request, "🛒 Aucun article dans votre panier pour ce type de paiement.")
+        return redirect('cart:cart')
+    
+    # Valider le panier
+    is_valid, errors = CartService.validate_cart_for_checkout(cart, product_type)
+    if not is_valid:
+        for error in errors:
+            messages.error(request, f"❌ {error}")
+        return redirect('cart:cart')
+    
+    # Vérifier la disponibilité du stock
+    stock_available, stock_errors = CartService.check_stock_availability(cart, product_type)
+    if not stock_available:
+        for error in stock_errors:
+            messages.error(request, f"❌ {error}")
+        return redirect('cart:cart')
+    
+    try:
+        # Calculer le total
+        total_amount = sum(item.get_total_price() for item in cart_items)
+        
+        # Créer une commande temporaire
+        order = Order.objects.create(
+            user=request.user,
+            subtotal=total_amount,
+            total=total_amount,
+            payment_method=Order.MOBILE_MONEY,
+            status=Order.PENDING
+        )
+        
+        # Ajouter les items à la commande
+        for cart_item in cart_items:
+            OrderItem.objects.create(
+                order=order,
+                product=cart_item.product,
+                quantity=cart_item.quantity,
+                price=cart_item.get_unit_price()
+            )
+        
+        # Préparer les données pour Orange Money
+        base_url = request.build_absolute_uri('/')[:-1]
+        order_data = {
+            'order_id': order.order_number,
+            'amount': orange_money_service.format_amount(float(total_amount)),
+            'base_url': base_url,
+            'return_url': reverse('cart:orange_money_return'),
+            'cancel_url': reverse('cart:orange_money_cancel'),
+            'notif_url': reverse('cart:orange_money_webhook'),
+            'reference': f'SagaKore-{order.order_number}'
+        }
+        
+        # Créer la session de paiement
+        success, response_data = orange_money_service.create_payment_session(order_data)
+        
+        if success:
+            # Sauvegarder le token de paiement
+            pay_token = response_data.get('pay_token')
+            notif_token = response_data.get('notif_token')
+            
+            # Stocker les tokens dans la session
+            request.session['orange_money_pay_token'] = pay_token
+            request.session['orange_money_notif_token'] = notif_token
+            request.session['orange_money_order_id'] = order.id
+            
+            # Construire l'URL de paiement
+            payment_url = orange_money_service.get_payment_url(pay_token)
+            
+            # Rediriger vers Orange Money
+            return redirect(payment_url)
+        else:
+            # Erreur lors de la création de la session
+            order.delete()  # Supprimer la commande temporaire
+            error_msg = response_data.get('error', 'Erreur inconnue')
+            messages.error(request, f"❌ Erreur lors de l'initialisation du paiement Orange Money: {error_msg}")
+            return redirect('cart:checkout')
+            
+    except Exception as e:
+        logger.error(f"Erreur lors de l'initialisation du paiement Orange Money: {str(e)}")
+        messages.error(request, "❌ Une erreur est survenue lors de l'initialisation du paiement.")
+        return redirect('cart:checkout')
+
+
+def orange_money_return(request):
+    """
+    Vue de retour après paiement Orange Money (succès ou échec)
+    """
+    order_id = request.session.get('orange_money_order_id')
+    pay_token = request.session.get('orange_money_pay_token')
+    
+    if not order_id or not pay_token:
+        messages.error(request, "❌ Session de paiement invalide.")
+        return redirect('cart:cart')
+    
+    try:
+        order = Order.objects.get(id=order_id, user=request.user)
+        
+        # Vérifier le statut de la transaction
+        success, status_data = orange_money_service.check_transaction_status(
+            order.order_number,
+            orange_money_service.format_amount(float(order.total)),
+            pay_token
+        )
+        
+        if success:
+            status = status_data.get('status')
+            if status == 'SUCCESS':
+                # Paiement réussi
+                order.is_paid = True
+                order.paid_at = timezone.now()
+                order.status = Order.CONFIRMED
+                order.save()
+                
+                # Vider le panier
+                Cart.objects.filter(user=request.user).delete()
+                
+                # Nettoyer la session
+                request.session.pop('orange_money_pay_token', None)
+                request.session.pop('orange_money_notif_token', None)
+                request.session.pop('orange_money_order_id', None)
+                
+                messages.success(request, "✅ Paiement Orange Money effectué avec succès !")
+                return redirect('cart:order_success', order_id=order.id)
+            else:
+                # Paiement échoué ou en attente
+                messages.warning(request, f"⚠️ Statut du paiement: {status}")
+                return redirect('cart:order_detail', order_id=order.id)
+        else:
+            # Erreur lors de la vérification
+            error_msg = status_data.get('error', 'Erreur inconnue')
+            messages.error(request, f"❌ Erreur lors de la vérification du paiement: {error_msg}")
+            return redirect('cart:order_detail', order_id=order.id)
+            
+    except Order.DoesNotExist:
+        messages.error(request, "❌ Commande introuvable.")
+        return redirect('cart:cart')
+    except Exception as e:
+        logger.error(f"Erreur lors du retour Orange Money: {str(e)}")
+        messages.error(request, "❌ Une erreur est survenue.")
+        return redirect('cart:cart')
+
+
+def orange_money_cancel(request):
+    """
+    Vue d'annulation du paiement Orange Money
+    """
+    order_id = request.session.get('orange_money_order_id')
+    
+    if order_id:
+        try:
+            order = Order.objects.get(id=order_id, user=request.user)
+            order.status = Order.CANCELLED
+            order.save()
+        except Order.DoesNotExist:
+            pass
+    
+    # Nettoyer la session
+    request.session.pop('orange_money_pay_token', None)
+    request.session.pop('orange_money_notif_token', None)
+    request.session.pop('orange_money_order_id', None)
+    
+    messages.info(request, "ℹ️ Paiement Orange Money annulé.")
+    return redirect('cart:cart')
+
+
+@csrf_exempt
+def orange_money_webhook(request):
+    """
+    Webhook pour recevoir les notifications Orange Money
+    """
+    if request.method != 'POST':
+        return HttpResponse('Method not allowed', status=405)
+    
+    try:
+        # Parser les données JSON
+        notification_data = json.loads(request.body)
+        
+        # Récupérer les tokens de la session (si disponibles)
+        notif_token = request.session.get('orange_money_notif_token')
+        
+        # Valider la notification
+        if not orange_money_service.validate_webhook_notification(notification_data, notif_token):
+            logger.warning("Notification Orange Money invalide reçue")
+            return HttpResponse('Invalid notification', status=400)
+        
+        # Traiter la notification
+        status = notification_data.get('status')
+        order_id = notification_data.get('txnid')
+        
+        if status == 'SUCCESS':
+            # Paiement réussi - mettre à jour la commande
+            try:
+                # Trouver la commande par order_number (pas par txnid)
+                # Le txnid est l'ID de transaction Orange Money, pas notre order_number
+                # On doit utiliser une autre méthode pour identifier la commande
+                logger.info(f"Paiement Orange Money réussi pour la transaction {order_id}")
+                
+                # Ici, vous devriez implémenter une logique pour retrouver la commande
+                # basée sur les données de la notification
+                
+            except Exception as e:
+                logger.error(f"Erreur lors du traitement de la notification de succès: {str(e)}")
+        
+        elif status == 'FAILED':
+            logger.info(f"Paiement Orange Money échoué pour la transaction {order_id}")
+        
+        return HttpResponse('OK', status=200)
+        
+    except json.JSONDecodeError:
+        logger.error("Données JSON invalides reçues dans le webhook Orange Money")
+        return HttpResponse('Invalid JSON', status=400)
+    except Exception as e:
+        logger.error(f"Erreur dans le webhook Orange Money: {str(e)}")
+        return HttpResponse('Internal error', status=500)

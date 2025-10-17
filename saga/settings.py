@@ -198,6 +198,47 @@ PAYMENT_BLACKLISTED_IPS = os.getenv('PAYMENT_BLACKLISTED_IPS', '').split(',')
 # Configuration de sécurité des sessions de paiement
 PAYMENT_SESSION_SECURE = True
 PAYMENT_SESSION_HTTPONLY = True
+
+# ==================================================
+# CONFIGURATION ORANGE MONEY WEB PAYMENT API
+# ==================================================
+ORANGE_MONEY_CONFIG = {
+    'enabled': os.getenv('ORANGE_MONEY_ENABLED', 'False').lower() == 'true',
+    'environment': os.getenv('ORANGE_MONEY_ENV', 'dev'),  # 'dev' ou 'prod'
+    'merchant_key': os.getenv('ORANGE_MONEY_MERCHANT_KEY', ''),
+    'client_id': os.getenv('ORANGE_MONEY_CLIENT_ID', ''),
+    'client_secret': os.getenv('ORANGE_MONEY_CLIENT_SECRET', ''),
+    'currency': os.getenv('ORANGE_MONEY_CURRENCY', 'OUV'),  # OUV pour dev, XOF pour prod
+    'language': os.getenv('ORANGE_MONEY_LANGUAGE', 'fr'),
+    'timeout': int(os.getenv('ORANGE_MONEY_TIMEOUT', '600')),  # 10 minutes par défaut
+    'max_retries': int(os.getenv('ORANGE_MONEY_MAX_RETRIES', '3')),
+}
+
+# URLs Orange Money selon l'environnement
+if ORANGE_MONEY_CONFIG['environment'] == 'prod':
+    ORANGE_MONEY_CONFIG.update({
+        'base_url': 'https://api.orange.com',
+        'payment_url': 'https://webpayment.orange-money.com',
+        'token_url': 'https://api.orange.com/oauth/v3/token',
+        'webpayment_url': 'https://api.orange.com/orange-money-webpay/v1/webpayment',
+        'status_url': 'https://api.orange.com/orange-money-webpay/v1/transactionstatus',
+    })
+else:
+    ORANGE_MONEY_CONFIG.update({
+        'base_url': 'https://api.orange.com',
+        'payment_url': 'https://webpayment-qualif.orange-money.com',
+        'token_url': 'https://api.orange.com/oauth/v3/token',
+        'webpayment_url': 'https://api.orange.com/orange-money-webpay/dev/v1/webpayment',
+        'status_url': 'https://api.orange.com/orange-money-webpay/dev/v1/transactionstatus',
+    })
+
+# Configuration des webhooks Orange Money
+ORANGE_MONEY_WEBHOOKS = {
+    'notification_url': os.getenv('ORANGE_MONEY_NOTIFICATION_URL', ''),
+    'return_url': os.getenv('ORANGE_MONEY_RETURN_URL', ''),
+    'cancel_url': os.getenv('ORANGE_MONEY_CANCEL_URL', ''),
+    'secret_key': os.getenv('ORANGE_MONEY_WEBHOOK_SECRET', ''),
+}
 PAYMENT_SESSION_SAMESITE = 'Strict'
 
 # Configuration des webhooks Stripe

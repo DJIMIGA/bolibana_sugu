@@ -1,0 +1,28 @@
+# Configuration Orange Money Web Payment API
+# Copiez ce contenu dans votre fichier saga/.env.secrets
+# Remplacez les valeurs par vos vraies credentials Orange Money
+
+# Activation d'Orange Money
+ORANGE_MONEY_ENABLED=True
+
+# Environnement (dev ou prod)
+ORANGE_MONEY_ENV=dev
+
+# Clés d'accès Orange Money (à remplacer par vos vraies valeurs)
+ORANGE_MONEY_MERCHANT_KEY=your_merchant_key_here
+ORANGE_MONEY_CLIENT_ID=your_client_id_here
+ORANGE_MONEY_CLIENT_SECRET=your_client_secret_here
+
+# Configuration des paiements
+ORANGE_MONEY_CURRENCY=OUV
+ORANGE_MONEY_LANGUAGE=fr
+ORANGE_MONEY_TIMEOUT=600
+ORANGE_MONEY_MAX_RETRIES=3
+
+# URLs de callback (seront construites automatiquement)
+ORANGE_MONEY_NOTIFICATION_URL=
+ORANGE_MONEY_RETURN_URL=
+ORANGE_MONEY_CANCEL_URL=
+
+# Clé secrète pour les webhooks (optionnel)
+ORANGE_MONEY_WEBHOOK_SECRET=your_webhook_secret_here
