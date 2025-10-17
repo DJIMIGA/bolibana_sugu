@@ -87,3 +87,4 @@ if enabled and has_credentials:
     print("Vous pouvez maintenant tester le paiement Orange Money dans votre application.")
 else:
     print("\n⚠️ Veuillez configurer les variables manquantes dans .env.secrets")
+

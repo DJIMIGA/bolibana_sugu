@@ -89,3 +89,4 @@ Une fois configuré, vous pouvez tester en :
 2. Allant au checkout
 3. Sélectionnant Orange Money
 4. Suivant le flux de paiement
+

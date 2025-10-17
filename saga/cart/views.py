@@ -2414,6 +2414,9 @@ def orange_money_webhook(request):
     """
     Webhook pour recevoir les notifications Orange Money
     """
+    import logging
+    logger = logging.getLogger(__name__)
+    
     if request.method != 'POST':
         return HttpResponse('Method not allowed', status=405)
     
