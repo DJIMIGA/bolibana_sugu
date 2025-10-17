@@ -2425,17 +2425,23 @@ def orange_money_webhook(request):
         # Parser les données JSON
         notification_data = json.loads(request.body)
         
-        # Récupérer les tokens de la session (si disponibles)
-        notif_token = request.session.get('orange_money_notif_token')
+        # Pour les webhooks, on ne peut pas accéder à la session utilisateur
+        # On valide seulement la structure de la notification
+        status = notification_data.get('status')
+        notif_token_from_webhook = notification_data.get('notif_token')
+        txnid = notification_data.get('txnid')
         
-        # Valider la notification
-        if not orange_money_service.validate_webhook_notification(notification_data, notif_token):
-            logger.warning("Notification Orange Money invalide reçue")
-            return HttpResponse('Invalid notification', status=400)
+        # Validation basique de la notification
+        if not status or not notif_token_from_webhook or not txnid:
+            logger.warning("Notification Orange Money invalide - données manquantes")
+            return HttpResponse('Invalid notification data', status=400)
+        
+        if status not in ['SUCCESS', 'FAILED']:
+            logger.warning(f"Statut de notification invalide: {status}")
+            return HttpResponse('Invalid status', status=400)
         
         # Traiter la notification
-        status = notification_data.get('status')
-        order_id = notification_data.get('txnid')
+        order_id = txnid
         
         if status == 'SUCCESS':
             # Paiement réussi - mettre à jour la commande
