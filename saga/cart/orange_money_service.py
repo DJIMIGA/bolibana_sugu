@@ -24,18 +24,54 @@ class OrangeMoneyService:
     """
     
     def __init__(self):
-        self.config = settings.ORANGE_MONEY_CONFIG
-        self.webhooks_config = settings.ORANGE_MONEY_WEBHOOKS
+        self._config = None
+        self._webhooks_config = None
         self.session = requests.Session()
-        self.session.timeout = self.config['timeout']
+        self.session.timeout = 600  # Valeur par défaut
+    
+    @property
+    def config(self):
+        """Récupère la configuration Orange Money (toujours à jour)"""
+        if self._config is None:
+            self._config = settings.ORANGE_MONEY_CONFIG
+            self.session.timeout = self._config.get('timeout', 600)
+        return self._config
+    
+    @property
+    def webhooks_config(self):
+        """Récupère la configuration des webhooks (toujours à jour)"""
+        if self._webhooks_config is None:
+            self._webhooks_config = settings.ORANGE_MONEY_WEBHOOKS
+        return self._webhooks_config
+    
+    def refresh_config(self):
+        """Force la relecture de la configuration depuis les settings"""
+        self._config = None
+        self._webhooks_config = None
+        logger.info("Configuration Orange Money rechargée")
     
     def is_enabled(self) -> bool:
         """Vérifie si Orange Money est activé"""
-        return self.config['enabled'] and all([
-            self.config['merchant_key'],
-            self.config['client_id'],
-            self.config['client_secret']
-        ])
+        logger.info("DEBUG OrangeMoneyService.is_enabled() - Debut de la verification")
+        logger.info(f"Configuration actuelle: {self.config}")
+        
+        enabled = self.config['enabled']
+        merchant_key = bool(self.config['merchant_key'])
+        client_id = bool(self.config['client_id'])
+        client_secret = bool(self.config['client_secret'])
+        
+        logger.info("Tests individuels:")
+        logger.info(f"  - enabled: {enabled} (type: {type(enabled)})")
+        logger.info(f"  - merchant_key: {merchant_key}")
+        logger.info(f"  - client_id: {client_id}")
+        logger.info(f"  - client_secret: {client_secret}")
+        
+        all_credentials = all([merchant_key, client_id, client_secret])
+        result = enabled and all_credentials
+        
+        logger.info(f"Resultat final: {result} (enabled={enabled} AND all_credentials={all_credentials})")
+        
+        return result
     
     def get_access_token(self) -> Optional[str]:
         """

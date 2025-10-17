@@ -2173,7 +2173,29 @@ def orange_money_payment(request):
     """
     Vue pour initier un paiement Orange Money
     """
-    if not orange_money_service.is_enabled():
+    # Debug: Log détaillé de la configuration Orange Money
+    logger = logging.getLogger(__name__)
+    logger.info("DEBUG Orange Money Payment - Debut de la verification")
+    
+    # Vérifier la configuration directement
+    from django.conf import settings
+    config = settings.ORANGE_MONEY_CONFIG
+    logger.info(f"Configuration Django: enabled={config.get('enabled')}, merchant_key={'OK' if config.get('merchant_key') else 'MANQUANT'}, client_id={'OK' if config.get('client_id') else 'MANQUANT'}, client_secret={'OK' if config.get('client_secret') else 'MANQUANT'}")
+    
+    # Forcer le rechargement de la configuration avant le test
+    orange_money_service.refresh_config()
+    
+    # Test de is_enabled avec logs détaillés
+    is_enabled_result = orange_money_service.is_enabled()
+    logger.info(f"orange_money_service.is_enabled(): {is_enabled_result}")
+    
+    if not is_enabled_result:
+        logger.error("Orange Money desactive - Details de la configuration:")
+        logger.error(f"  - config['enabled']: {config.get('enabled')}")
+        logger.error(f"  - config['merchant_key']: {bool(config.get('merchant_key'))}")
+        logger.error(f"  - config['client_id']: {bool(config.get('client_id'))}")
+        logger.error(f"  - config['client_secret']: {bool(config.get('client_secret'))}")
+        
         messages.error(request, "❌ Le paiement Orange Money n'est pas disponible actuellement.")
         return redirect('cart:cart')
     
