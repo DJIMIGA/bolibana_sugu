@@ -174,6 +174,7 @@ def checkout(request):
     product_type = request.GET.get('type', 'all')  # 'classic', 'salam', 'mixed', ou 'all'
     payment_type = request.GET.get('payment', 'flexible')  # 'flexible', 'immediate', ou 'all'
     payment_method = request.GET.get('method', '')  # 'orange_money', 'stripe', etc.
+    orange_money = request.GET.get('orange_money', '')  # 'true' pour Orange Money direct
     
     # Détecter automatiquement si le panier est mixte
     classic_items = cart.cart_items.filter(product__is_salam=False)
@@ -311,6 +312,7 @@ def checkout(request):
         'product_type': product_type,  # Type de produits sélectionné
         'payment_type': payment_type,  # Type de paiement sélectionné
         'payment_method': payment_method,  # Méthode de paiement spécifique (orange_money, etc.)
+        'orange_money': orange_money,  # Flag Orange Money direct
         'available_payment_methods': available_payment_methods,  # Méthodes de paiement disponibles
         'payment_required': payment_required,  # Si le paiement est obligatoire
         'is_mixed_cart': is_mixed_cart,  # Si le panier est mixte
@@ -2289,7 +2291,7 @@ def orange_money_payment(request):
         if not shipping_address_id:
             # Rediriger vers la page de checkout pour saisir l'adresse
             logger.info("DEBUG Orange Money Payment - Pas d'adresse, redirection vers checkout")
-            checkout_url = reverse('cart:checkout') + f'?type={product_type}&payment={payment_type}&method=orange_money'
+            checkout_url = reverse('cart:checkout') + f'?type={product_type}&payment={payment_type}&orange_money=true'
             return redirect(checkout_url)
         
         # Récupérer l'adresse de livraison
