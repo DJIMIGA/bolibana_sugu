@@ -1,24 +1,25 @@
 #!/usr/bin/env python3
 """
-Test simple des améliorations Orange Money
-Teste uniquement les nouvelles fonctionnalités sans dépendances Django
+Script de test pour les améliorations Orange Money
+Teste la validation des champs, la gestion des statuts et la gestion des erreurs
 """
 
-import sys
 import os
+import sys
+import django
+from unittest.mock import Mock, patch
 
-# Ajouter le chemin du projet
-sys.path.append(os.path.dirname(os.path.abspath(__file__)))
+# Configuration Django
+os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'saga.settings')
+django.setup()
 
-# Import direct de la classe sans Django
-from saga.cart.orange_money_service import OrangeMoneyService
+from cart.orange_money_service import OrangeMoneyService
 
 def test_validation_des_champs():
     """Test de la validation des champs"""
     print("🧪 Test 1: Validation des champs")
     print("=" * 50)
     
-    # Mock de la configuration
     service = OrangeMoneyService()
     
     # Test avec des données valides
@@ -84,20 +85,49 @@ def test_gestion_des_erreurs():
     codes_erreur = [400, 401, 403, 404, 500, 502, 503, 999]
     
     for code in codes_erreur:
-        # Mock d'une réponse HTTP
-        class MockResponse:
-            def __init__(self, status_code):
-                self.status_code = status_code
+        mock_response = Mock()
+        mock_response.status_code = code
         
-        mock_response = MockResponse(code)
         message = service.handle_api_error(mock_response)
         print(f"🚨 Code {code}: {message}")
     
     print()
 
+def test_integration_complete():
+    """Test d'intégration complète"""
+    print("🧪 Test 4: Intégration complète")
+    print("=" * 50)
+    
+    service = OrangeMoneyService()
+    
+    # Test avec des données valides
+    order_data = {
+        'order_id': 'SagaKore-TEST-001',
+        'amount': 25000,  # 250 FCFA
+        'return_url': 'https://sagakore.com/return',
+        'cancel_url': 'https://sagakore.com/cancel',
+        'notif_url': 'https://sagakore.com/webhook',
+        'reference': 'Test'
+    }
+    
+    print("📋 Données de test:")
+    for key, value in order_data.items():
+        print(f"  {key}: {value}")
+    
+    # Test de validation
+    is_valid, message = service.validate_payment_data(order_data)
+    print(f"\n✅ Validation: {is_valid} - {message}")
+    
+    if is_valid:
+        print("🎯 Données prêtes pour l'envoi à Orange Money")
+    else:
+        print("❌ Données invalides, correction nécessaire")
+    
+    print()
+
 def test_scenarios_reels():
     """Test de scénarios réels"""
-    print("🧪 Test 4: Scénarios réels")
+    print("🧪 Test 5: Scénarios réels")
     print("=" * 50)
     
     service = OrangeMoneyService()
@@ -142,6 +172,7 @@ def main():
         test_validation_des_champs()
         test_gestion_des_statuts()
         test_gestion_des_erreurs()
+        test_integration_complete()
         test_scenarios_reels()
         
         print("✅ Tous les tests sont terminés avec succès !")

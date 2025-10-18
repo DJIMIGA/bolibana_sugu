@@ -130,6 +130,49 @@ class OrangeMoneyService:
             logger.error(f"Exception lors de la récupération du token Orange Money: {str(e)}")
             return None
     
+    def validate_payment_data(self, order_data: Dict) -> Tuple[bool, str]:
+        """
+        Valide les données de paiement selon les spécifications Orange Money
+        
+        Args:
+            order_data: Données de la commande à valider
+        
+        Returns:
+            Tuple (is_valid, error_message)
+        """
+        try:
+            # Validation des longueurs selon la documentation Orange Money
+            if len(order_data['order_id']) > 30:
+                return False, "order_id trop long (max 30 caractères)"
+            
+            if len(order_data.get('reference', '')) > 30:
+                return False, "reference trop long (max 30 caractères)"
+            
+            if len(order_data['return_url']) > 120:
+                return False, "return_url trop long (max 120 caractères)"
+            
+            if len(order_data['cancel_url']) > 120:
+                return False, "cancel_url trop long (max 120 caractères)"
+            
+            if len(order_data['notif_url']) > 120:
+                return False, "notif_url trop long (max 120 caractères)"
+            
+            # Validation du montant
+            if order_data['amount'] <= 0:
+                return False, "Le montant doit être positif"
+            
+            # Validation de l'order_id (doit être unique)
+            if not order_data['order_id'] or not order_data['order_id'].strip():
+                return False, "order_id ne peut pas être vide"
+            
+            logger.info("Données de paiement validées avec succès")
+            return True, "Données valides"
+            
+        except KeyError as e:
+            return False, f"Champ manquant: {str(e)}"
+        except Exception as e:
+            return False, f"Erreur de validation: {str(e)}"
+
     def create_payment_session(self, order_data: Dict) -> Tuple[bool, Dict]:
         """
         Crée une session de paiement Orange Money
@@ -148,6 +191,12 @@ class OrangeMoneyService:
         """
         if not self.is_enabled():
             return False, {'error': 'Orange Money non configuré'}
+        
+        # Validation des données avant envoi
+        is_valid, error_message = self.validate_payment_data(order_data)
+        if not is_valid:
+            logger.error(f"Données de paiement invalides: {error_message}")
+            return False, {'error': f'Données invalides: {error_message}'}
         
         access_token = self.get_access_token()
         if not access_token:
@@ -185,8 +234,9 @@ class OrangeMoneyService:
                 logger.info(f"Session de paiement créée: {response_data.get('pay_token', 'N/A')}")
                 return True, response_data
             else:
-                error_msg = f"Erreur création session: {response.status_code} - {response.text}"
-                logger.error(error_msg)
+                # Utiliser la nouvelle gestion d'erreurs
+                error_msg = self.handle_api_error(response)
+                logger.error(f"Erreur création session: {error_msg}")
                 return False, {'error': error_msg}
                 
         except Exception as e:
@@ -210,6 +260,95 @@ class OrangeMoneyService:
             return payment_url_from_api
         return f"{self.config['payment_url']}/payment/pay_token/{pay_token}"
     
+    def handle_api_error(self, response) -> str:
+        """
+        Gère les erreurs spécifiques de l'API Orange Money
+        
+        Args:
+            response: Réponse HTTP de l'API Orange Money
+        
+        Returns:
+            Message d'erreur explicite
+        """
+        error_codes = {
+            400: "Requête invalide - Vérifiez vos données de paiement",
+            401: "Token d'accès invalide ou expiré - Reconnexion en cours",
+            403: "Accès refusé - Vérifiez vos identifiants Orange Money",
+            404: "Service non trouvé - Orange Money temporairement indisponible",
+            500: "Erreur serveur Orange Money - Réessayez plus tard",
+            502: "Service Orange Money temporairement indisponible",
+            503: "Service Orange Money en maintenance"
+        }
+        
+        status_code = response.status_code
+        error_message = error_codes.get(status_code, f"Erreur inconnue ({status_code})")
+        
+        # Actions spécifiques selon l'erreur
+        if status_code == 401:
+            # Token expiré, on en demande un nouveau automatiquement
+            logger.info("Token expiré, tentative de renouvellement automatique")
+            cache.delete('orange_money_access_token')
+        
+        elif status_code in [500, 502, 503]:
+            # Orange Money a un problème
+            logger.warning(f"Orange Money indisponible (code {status_code})")
+            # Ici on pourrait envoyer une alerte à l'équipe
+        
+        logger.error(f"Erreur API Orange Money {status_code}: {error_message}")
+        return error_message
+
+    def handle_transaction_status(self, status: str, order_id: str, response_data: Dict = None) -> Tuple[bool, str]:
+        """
+        Gère tous les statuts de transaction Orange Money
+        
+        Args:
+            status: Statut de la transaction
+            order_id: ID de la commande
+            response_data: Données complètes de la réponse
+        
+        Returns:
+            Tuple (success, message)
+        """
+        status_handlers = {
+            'INITIATED': self._handle_initiated,
+            'PENDING': self._handle_pending,
+            'EXPIRED': self._handle_expired,
+            'SUCCESS': self._handle_success,
+            'FAILED': self._handle_failed
+        }
+        
+        handler = status_handlers.get(status)
+        if handler:
+            return handler(order_id, response_data)
+        else:
+            logger.warning(f"Statut de transaction inconnu: {status}")
+            return False, f"Statut inconnu: {status}"
+
+    def _handle_initiated(self, order_id: str, response_data: Dict = None) -> Tuple[bool, str]:
+        """Gère le statut INITIATED - Client n'a pas encore agi"""
+        logger.info(f"Transaction {order_id} en attente d'action du client")
+        return False, "Paiement en attente - Veuillez finaliser sur Orange Money"
+
+    def _handle_pending(self, order_id: str, response_data: Dict = None) -> Tuple[bool, str]:
+        """Gère le statut PENDING - Client a confirmé, paiement en cours"""
+        logger.info(f"Transaction {order_id} en cours de traitement")
+        return False, "Paiement en cours de traitement - Veuillez patienter"
+
+    def _handle_expired(self, order_id: str, response_data: Dict = None) -> Tuple[bool, str]:
+        """Gère le statut EXPIRED - Session expirée"""
+        logger.warning(f"Transaction {order_id} expirée")
+        return False, "Session de paiement expirée - Veuillez recommencer"
+
+    def _handle_success(self, order_id: str, response_data: Dict = None) -> Tuple[bool, str]:
+        """Gère le statut SUCCESS - Paiement réussi"""
+        logger.info(f"Transaction {order_id} réussie")
+        return True, "Paiement effectué avec succès"
+
+    def _handle_failed(self, order_id: str, response_data: Dict = None) -> Tuple[bool, str]:
+        """Gère le statut FAILED - Paiement échoué"""
+        logger.warning(f"Transaction {order_id} échouée")
+        return False, "Paiement échoué - Veuillez réessayer ou utiliser une autre méthode"
+
     def check_transaction_status(self, order_id: str, amount: int, pay_token: str) -> Tuple[bool, Dict]:
         """
         Vérifie le statut d'une transaction Orange Money
@@ -251,11 +390,19 @@ class OrangeMoneyService:
             
             if response.status_code == 201:
                 response_data = response.json()
-                logger.info(f"Statut récupéré: {response_data.get('status', 'N/A')}")
+                status = response_data.get('status', 'UNKNOWN')
+                logger.info(f"Statut récupéré: {status}")
+                
+                # Utiliser la nouvelle gestion des statuts
+                success, message = self.handle_transaction_status(status, order_id, response_data)
+                response_data['handled_status'] = success
+                response_data['status_message'] = message
+                
                 return True, response_data
             else:
-                error_msg = f"Erreur vérification statut: {response.status_code} - {response.text}"
-                logger.error(error_msg)
+                # Utiliser la nouvelle gestion d'erreurs
+                error_msg = self.handle_api_error(response)
+                logger.error(f"Erreur vérification statut: {error_msg}")
                 return False, {'error': error_msg}
                 
         except Exception as e:
@@ -281,9 +428,10 @@ class OrangeMoneyService:
                 logger.warning(f"Token de notification invalide: {notif_token} != {expected_token}")
                 return False
             
-            # Vérifier le statut
+            # Vérifier le statut (maintenant on accepte tous les statuts valides)
             status = notification_data.get('status')
-            if status not in ['SUCCESS', 'FAILED']:
+            valid_statuses = ['INITIATED', 'PENDING', 'EXPIRED', 'SUCCESS', 'FAILED']
+            if status not in valid_statuses:
                 logger.warning(f"Statut de notification invalide: {status}")
                 return False
             
