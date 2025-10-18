@@ -173,6 +173,7 @@ def checkout(request):
     # Récupérer le type de produits et le type de paiement demandés
     product_type = request.GET.get('type', 'all')  # 'classic', 'salam', 'mixed', ou 'all'
     payment_type = request.GET.get('payment', 'flexible')  # 'flexible', 'immediate', ou 'all'
+    payment_method = request.GET.get('method', '')  # 'orange_money', 'stripe', etc.
     
     # Détecter automatiquement si le panier est mixte
     classic_items = cart.cart_items.filter(product__is_salam=False)
@@ -309,6 +310,7 @@ def checkout(request):
         'is_checkout': True,  # Flag pour indiquer qu'on est sur la page de commande
         'product_type': product_type,  # Type de produits sélectionné
         'payment_type': payment_type,  # Type de paiement sélectionné
+        'payment_method': payment_method,  # Méthode de paiement spécifique (orange_money, etc.)
         'available_payment_methods': available_payment_methods,  # Méthodes de paiement disponibles
         'payment_required': payment_required,  # Si le paiement est obligatoire
         'is_mixed_cart': is_mixed_cart,  # Si le panier est mixte
@@ -499,6 +501,45 @@ def payment_online(request):
         payment_method = request.POST.get('payment_method', 'online_payment')
         product_type = request.POST.get('product_type', 'classic')
         address_choice = request.POST.get('address_choice', 'default')
+        
+        # Vérifier si c'est un paiement Orange Money
+        if payment_method == 'orange_money':
+            debug_log("📋 Orange Money payment detected, redirecting to Orange Money payment")
+            # Récupérer l'adresse de livraison d'abord
+            address = None
+            if address_choice == 'default':
+                address_id = request.POST.get('shipping_address_id')
+                if address_id:
+                    try:
+                        address = ShippingAddress.objects.get(id=address_id, user=request.user)
+                        debug_log(f"✅ Found address for Orange Money: {address.id}")
+                    except ShippingAddress.DoesNotExist:
+                        debug_log(f"❌ ERROR: Address {address_id} not found!")
+                        messages.error(request, "❌ **Erreur** : Adresse de livraison introuvable")
+                        return redirect('cart:checkout')
+            elif address_choice == 'new':
+                # Créer une nouvelle adresse
+                address = ShippingAddress.objects.create(
+                    user=request.user,
+                    full_name=request.POST.get('full_name'),
+                    phone_number=request.POST.get('phone_number'),
+                    address_line1=request.POST.get('address_line1'),
+                    address_line2=request.POST.get('address_line2', ''),
+                    city=request.POST.get('city'),
+                    postal_code=request.POST.get('postal_code', ''),
+                    country=request.POST.get('country', 'Mali'),
+                    is_default=False
+                )
+                debug_log(f"✅ Created new address for Orange Money: {address.id}")
+            
+            if not address:
+                debug_log("❌ ERROR: No address found for Orange Money!")
+                messages.error(request, "❌ **Erreur** : Adresse de livraison requise")
+                return redirect('cart:checkout')
+            
+            # Rediriger vers Orange Money avec l'adresse de livraison
+            orange_money_url = reverse('cart:orange_money_payment') + f'?type={product_type}&payment=flexible&shipping_address_id={address.id}'
+            return redirect(orange_money_url)
         
         debug_log(f"📋 Payment method: {payment_method}")
         debug_log(f"📋 Product type: {product_type}")
@@ -2243,13 +2284,37 @@ def orange_money_payment(request):
         total_amount = sum(item.get_total_price() for item in cart_items)
         logger.info(f"DEBUG Orange Money Payment - Total calcule: {total_amount}")
         
+        # Vérifier si on a une adresse de livraison (depuis GET ou POST)
+        shipping_address_id = request.GET.get('shipping_address_id') or request.POST.get('shipping_address_id')
+        if not shipping_address_id:
+            # Rediriger vers la page de checkout pour saisir l'adresse
+            logger.info("DEBUG Orange Money Payment - Pas d'adresse, redirection vers checkout")
+            checkout_url = reverse('cart:checkout') + f'?type={product_type}&payment={payment_type}&method=orange_money'
+            return redirect(checkout_url)
+        
+        # Récupérer l'adresse de livraison
+        try:
+            from product.models import ShippingAddress
+            shipping_address = ShippingAddress.objects.get(id=shipping_address_id, user=request.user)
+            logger.info(f"DEBUG Orange Money Payment - Adresse trouvee: {shipping_address.id}")
+        except ShippingAddress.DoesNotExist:
+            logger.error(f"DEBUG Orange Money Payment - Adresse introuvable: {shipping_address_id}")
+            messages.error(request, "❌ Adresse de livraison introuvable.")
+            checkout_url = reverse('cart:checkout') + f'?type={product_type}&payment={payment_type}&method=orange_money'
+            return redirect(checkout_url)
+        
+        # Calculer les frais de livraison
+        shipping_cost = 0  # Pour l'instant, pas de frais de livraison pour Orange Money
+        total_with_shipping = total_amount + shipping_cost
+        
         # Créer une commande temporaire
         logger.info("DEBUG Orange Money Payment - Creation de la commande")
         order = Order.objects.create(
             user=request.user,
+            shipping_address=shipping_address,
             subtotal=total_amount,
-            shipping_cost=0,  # Pas de frais de livraison pour Orange Money
-            total=total_amount,
+            shipping_cost=shipping_cost,
+            total=total_with_shipping,
             payment_method=Order.MOBILE_MONEY,
             status=Order.PENDING
         )
