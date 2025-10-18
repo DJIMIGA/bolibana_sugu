@@ -333,12 +333,16 @@
                                         <p class="text-sm font-medium text-gray-900">
                                             {% if selected_payment_method == 'mobile_money' %}
                                                 Paiement via Mobile Money
+                                            {% elif selected_payment_method == 'orange_money' %}
+                                                Paiement via Orange Money
                                             {% else %}
                                                 Paiement par carte bancaire
                                             {% endif %}
                                         </p>
                                         <p class="text-sm text-gray-600">
-                                            {% if product_type == 'salam' %}
+                                            {% if selected_payment_method == 'orange_money' %}
+                                                Vous serez redirigé vers Orange Money pour finaliser votre paiement
+                                            {% elif product_type == 'salam' %}
                                                 Vous serez redirigé vers Stripe pour le paiement immédiat
                                             {% else %}
                                                 Vous serez redirigé vers Stripe pour finaliser votre paiement

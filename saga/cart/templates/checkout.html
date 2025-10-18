@@ -157,22 +157,16 @@
                   </li>
                 </ul>
                 <div class="rounded-md shadow mt-auto">
-                  <form method="post" action="{% url 'cart:payment_online' %}" class="w-full">
-                    {% csrf_token %}
-                    <input type="hidden" name="payment_method" value="orange_money">
-                    <input type="hidden" name="product_type" value="{{ product_type }}">
-                    <input type="hidden" name="address_choice" value="default">
-                    <button type="submit" class="w-full flex items-center justify-center px-5 py-3 border border-transparent text-base font-medium rounded-md text-white bg-gradient-to-r from-orange-600 to-orange-500 hover:from-orange-700 hover:to-orange-600 transform hover:scale-[1.02] transition-all duration-300" aria-describedby="tier-mobile">
-                      <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
-                      </svg>
-                      {% if product_type == 'salam' %}
-                        Payer avec Mobile Money
-                      {% else %}
-                        Choisir Orange Money
-                      {% endif %}
-                    </button>
-                  </form>
+                  <a href="{% url 'cart:checkout' %}?type={{ product_type }}&payment={{ payment_type }}&orange_money=true" class="flex items-center justify-center px-5 py-3 border border-transparent text-base font-medium rounded-md text-white bg-gradient-to-r from-orange-600 to-orange-500 hover:from-orange-700 hover:to-orange-600 transform hover:scale-[1.02] transition-all duration-300" aria-describedby="tier-mobile">
+                    <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+                    </svg>
+                    {% if product_type == 'salam' %}
+                      Payer avec Mobile Money
+                    {% else %}
+                      Choisir Orange Money
+                    {% endif %}
+                  </a>
                 </div>
               </div>
             </div>

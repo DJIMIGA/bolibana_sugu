@@ -181,6 +181,11 @@ def checkout(request):
     salam_items = cart.cart_items.filter(product__is_salam=True)
     is_mixed_cart = classic_items.exists() and salam_items.exists()
     
+    # Si Orange Money est demandé, rediriger vers payment_online
+    if orange_money == 'true':
+        payment_online_url = reverse('cart:payment_online') + f'?payment_method=orange_money&type={product_type}&payment={payment_type}'
+        return redirect(payment_online_url)
+    
     # Si c'est un panier mixte et qu'aucun type n'est spécifié, ou si type=mixed est demandé
     if (is_mixed_cart and product_type == 'all' and payment_type == 'flexible') or product_type == 'mixed':
         # Calculer les totaux correctement en utilisant get_total_price()
