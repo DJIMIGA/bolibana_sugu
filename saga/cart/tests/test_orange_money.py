@@ -11,7 +11,7 @@ from django.conf import settings
 from django.core.cache import cache
 from cart.models import Cart, CartItem, Order, OrderItem
 from product.models import Product
-from .orange_money_service import OrangeMoneyService
+from cart.orange_money_service import OrangeMoneyService
 
 User = get_user_model()
 
@@ -142,7 +142,7 @@ class OrangeMoneyServiceTest(TestCase):
     def test_validate_webhook_notification_invalid_status(self):
         """Test de validation échouée avec un statut invalide"""
         notification_data = {
-            'status': 'PENDING',
+            'status': 'INVALID_STATUS',
             'notif_token': 'test_token',
             'txnid': 'MP150709.1341.A00073'
         }
@@ -166,7 +166,6 @@ class OrangeMoneyViewsTest(TestCase):
         self.product = Product.objects.create(
             title='Test Product',
             price=1000.00,
-            stock_quantity=10,
             is_salam=False
         )
         
@@ -291,14 +290,12 @@ class OrangeMoneyIntegrationTest(TestCase):
         self.product1 = Product.objects.create(
             title='Product 1',
             price=1000.00,
-            stock_quantity=10,
             is_salam=False
         )
         
         self.product2 = Product.objects.create(
             title='Product 2 (Salam)',
             price=2000.00,
-            stock_quantity=5,
             is_salam=True
         )
     

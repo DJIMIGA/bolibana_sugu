@@ -2442,6 +2442,47 @@ def orange_money_return(request):
         return redirect('cart:cart')
 
 
+@login_required
+def order_success(request, order_id):
+    """
+    Vue de succès de commande après paiement réussi
+    """
+    logger = logging.getLogger(__name__)
+    logger.info(f"DEBUG Order Success - Commande {order_id}")
+    
+    try:
+        # Récupérer la commande
+        order = Order.objects.get(id=order_id, user=request.user)
+        logger.info(f"DEBUG Order Success - Commande trouvée: {order.order_number}")
+        
+        # Vérifier que la commande est bien payée
+        if not order.is_paid:
+            logger.warning(f"DEBUG Order Success - Commande non payée: {order.order_number}")
+            messages.warning(request, "⚠️ Cette commande n'est pas encore payée.")
+            return redirect('cart:order_detail', order_id=order.id)
+        
+        # Récupérer les articles de la commande
+        order_items = OrderItem.objects.filter(order=order)
+        
+        context = {
+            'order': order,
+            'order_items': order_items,
+            'total_items': sum(item.quantity for item in order_items),
+        }
+        
+        logger.info(f"DEBUG Order Success - Affichage de la page de succès pour {order.order_number}")
+        return render(request, 'cart/order_success.html', context)
+        
+    except Order.DoesNotExist:
+        logger.error(f"DEBUG Order Success - Commande introuvable: {order_id}")
+        messages.error(request, "❌ Commande introuvable.")
+        return redirect('cart:my_orders')
+    except Exception as e:
+        logger.error(f"DEBUG Order Success - Erreur: {str(e)}")
+        messages.error(request, "❌ Une erreur est survenue.")
+        return redirect('cart:my_orders')
+
+
 def orange_money_cancel(request):
     """
     Vue d'annulation du paiement Orange Money

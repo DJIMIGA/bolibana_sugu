@@ -20,6 +20,7 @@ urlpatterns = [
     path('my-orders/', views.my_orders, name='my_orders'),
     path('stripe/webhook/', views.stripe_webhook, name='stripe_webhook'),
     path('payment-success/', views.payment_success, name='payment_success'),
+    path('order-success/<int:order_id>/', views.order_success, name='order_success'),
     path('create-checkout-session/', views.create_checkout_session, name='create_checkout_session'),
     path('payment-cancel/', views.payment_cancel, name='payment_cancel'),
     path('test-email/', views.test_email_configuration, name='test_email'),
