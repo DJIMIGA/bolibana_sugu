@@ -21,6 +21,20 @@ PAYMENT_METHODS_CONFIG = {
             'icon': '⚠️'
         }
     },
+    'orange_money': {
+        'enabled': True,  # Alias pour mobile_money
+        'display_name': 'Orange Money',
+        'description': 'Paiement rapide via Orange Money',
+        'icon': 'mobile_money',
+        'color': 'orange',
+        'available_for': ['salam', 'classic', 'mixed'],
+        'requires_immediate_payment': True,
+        'disabled_message': {
+            'title': 'Orange Money Temporairement Indisponible',
+            'message': 'Le service Orange Money est temporairement indisponible. Veuillez utiliser une autre méthode de paiement.',
+            'icon': '⚠️'
+        }
+    },
     'online_payment': {
         'enabled': True,  # Carte bancaire disponible
         'display_name': 'Carte bancaire',
@@ -66,7 +80,7 @@ def get_available_payment_methods(product_type=None):
     for method_key, config in PAYMENT_METHODS_CONFIG.items():
         if config['enabled']:
             # Vérification spéciale pour Orange Money
-            if method_key == 'mobile_money':
+            if method_key in ['mobile_money', 'orange_money']:
                 # Vérifier si Orange Money est réellement configuré et activé
                 try:
                     from .orange_money_service import orange_money_service
@@ -117,7 +131,7 @@ def is_payment_method_available(method, product_type=None):
         return False
     
     # Vérification spéciale pour Orange Money
-    if method == 'mobile_money':
+    if method in ['mobile_money', 'orange_money']:
         try:
             from .orange_money_service import orange_money_service
             orange_money_service.refresh_config()  # Forcer le rechargement
