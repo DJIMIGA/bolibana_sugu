@@ -529,12 +529,10 @@ def payment_online(request):
                 address = ShippingAddress.objects.create(
                     user=request.user,
                     full_name=request.POST.get('full_name'),
-                    phone_number=request.POST.get('phone_number'),
-                    address_line1=request.POST.get('address_line1'),
-                    address_line2=request.POST.get('address_line2', ''),
-                    city=request.POST.get('city'),
-                    postal_code=request.POST.get('postal_code', ''),
-                    country=request.POST.get('country', 'Mali'),
+                    quarter=request.POST.get('quarter', ''),
+                    street_address=request.POST.get('street_address', ''),
+                    city=request.POST.get('city', 'BKO'),
+                    additional_info=request.POST.get('additional_info', ''),
                     is_default=False
                 )
                 debug_log(f"✅ Created new address for Orange Money: {address.id}")
