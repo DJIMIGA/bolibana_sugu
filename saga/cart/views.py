@@ -524,18 +524,55 @@ def payment_online(request):
                         debug_log(f"❌ ERROR: Address {address_id} not found!")
                         messages.error(request, "❌ **Erreur** : Adresse de livraison introuvable")
                         return redirect('cart:checkout')
+                else:
+                    # Si pas d'ID fourni, essayer de récupérer l'adresse par défaut
+                    address = ShippingAddress.objects.filter(user=request.user, is_default=True).first()
+                    debug_log(f"📋 Found default address from DB: {address.id if address else None}")
+                    
+                    if not address:
+                        debug_log("❌ ERROR: No default address found!")
+                        messages.error(request, "❌ **Erreur** : Aucune adresse par défaut trouvée")
+                        return redirect('cart:checkout')
             elif address_choice == 'new':
-                # Créer une nouvelle adresse
-                address = ShippingAddress.objects.create(
-                    user=request.user,
-                    full_name=request.POST.get('full_name'),
-                    quarter=request.POST.get('quarter', ''),
-                    street_address=request.POST.get('street_address', ''),
-                    city=request.POST.get('city', 'BKO'),
-                    additional_info=request.POST.get('additional_info', ''),
-                    is_default=False
-                )
-                debug_log(f"✅ Created new address for Orange Money: {address.id}")
+                # Vérifier si des données d'adresse sont présentes dans le formulaire
+                full_name = request.POST.get('full_name')
+                street_address = request.POST.get('street_address')
+                quarter = request.POST.get('quarter')
+                
+                if full_name and street_address and quarter:
+                    # Créer une nouvelle adresse à partir des données du formulaire
+                    debug_log("📋 Creating new address from form data...")
+                    try:
+                        form = ShippingAddressForm(request.POST)
+                        if form.is_valid():
+                            address = form.save(commit=False)
+                            address.user = request.user
+                            address.save()
+                            debug_log(f"✅ Created new address: {address.id}")
+                            
+                            # Définir comme adresse par défaut si demandé
+                            if request.POST.get('is_default'):
+                                debug_log("📋 Setting as default address")
+                                ShippingAddress.objects.filter(user=request.user).update(is_default=False)
+                                address.is_default = True
+                                address.save()
+                                debug_log("✅ Set as default address")
+                        else:
+                            debug_log(f"❌ ERROR: Form validation failed: {form.errors}")
+                            messages.error(request, "❌ **Erreur** : Données d'adresse invalides")
+                            return redirect('cart:payment_online')
+                    except Exception as e:
+                        debug_log(f"❌ ERROR: Failed to create address: {str(e)}")
+                        messages.error(request, "❌ **Erreur** : Impossible de créer l'adresse")
+                        return redirect('cart:payment_online')
+                else:
+                    debug_log("❌ ERROR: Missing required address fields")
+                    messages.error(request, "❌ **Erreur** : Champs d'adresse manquants")
+                    return redirect('cart:payment_online')
+            else:
+                debug_log(f"❌ ERROR: Invalid address_choice: {address_choice}")
+                messages.error(request, "❌ **Erreur** : Choix d'adresse invalide")
+                return redirect('cart:payment_online')
             
             if not address:
                 debug_log("❌ ERROR: No address found for Orange Money!")
@@ -2299,7 +2336,6 @@ def orange_money_payment(request):
         
         # Récupérer l'adresse de livraison
         try:
-            from product.models import ShippingAddress
             shipping_address = ShippingAddress.objects.get(id=shipping_address_id, user=request.user)
             logger.info(f"DEBUG Orange Money Payment - Adresse trouvee: {shipping_address.id}")
         except ShippingAddress.DoesNotExist:
