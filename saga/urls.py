@@ -4,6 +4,7 @@ URL configuration for saga project.
 from django.conf import settings
 from django.conf.urls.static import static
 from django.urls import path, include
+from rest_framework_simplejwt.views import TokenRefreshView, TokenVerifyView
 from accounts.admin import admin_site
 
 # Chemin d'accès admin sécurisé
@@ -18,6 +19,11 @@ urlpatterns = [
     path('', include('suppliers.urls')),
     path('cart/', include('cart.urls')),
     path('api/', include('product.api.urls')),
+    path('api/', include('accounts.api.urls')),
+    path('api/cart/', include('cart.api.urls')),
+    # JWT endpoints
+    path('api/token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
+    path('api/token/verify/', TokenVerifyView.as_view(), name='token_verify'),
     path('price-checker/', include('price_checker.urls', namespace='price_checker')),
     path('core/', include('core.urls', namespace='core')),
 ]

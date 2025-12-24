@@ -230,9 +230,12 @@ class UpdateProfileForm(forms.ModelForm):
         exclude = ['country']
         widgets = {
             'date_of_birth': forms.DateInput(
+                format='%d/%m/%Y',
                 attrs={
-                    'type': 'date',
-                    'class': 'w-full pl-10 px-4 py-3 rounded-xl border-gray-200 focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-colors duration-200'
+                    'type': 'text',
+                    'class': 'w-full pl-10 px-4 py-3 rounded-xl border-gray-200 focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-colors duration-200',
+                    'pattern': '[0-9]{2}/[0-9]{2}/[0-9]{4}',
+                    'placeholder': 'jj/mm/aaaa'
                 }
             )
         }
@@ -243,7 +246,10 @@ class UpdateProfileForm(forms.ModelForm):
         self.fields['password'].initial = None
         # Gérer la date de naissance
         if self.instance and self.instance.date_of_birth:
-            self.initial['date_of_birth'] = self.instance.date_of_birth.strftime('%Y-%m-%d')
+            self.initial['date_of_birth'] = self.instance.date_of_birth.strftime('%d/%m/%Y')
+        # Forcer le format d'entrée jj/mm/aaaa côté formulaire
+        if 'date_of_birth' in self.fields:
+            self.fields['date_of_birth'].input_formats = ['%d/%m/%Y']
 
 
 class TwoFactorVerificationForm(forms.Form):

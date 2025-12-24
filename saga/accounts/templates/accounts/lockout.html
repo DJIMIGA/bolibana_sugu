@@ -1,0 +1,40 @@
+{% extends "core/base.html" %}
+
+{% block content %}
+<div class="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
+    <div class="max-w-md w-full space-y-8 text-center bg-white p-10 rounded-xl shadow-lg border border-red-100">
+        <div class="flex justify-center">
+            <div class="bg-red-100 p-3 rounded-full">
+                <svg class="h-12 w-12 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m0 0v2m0-2h2m-2 0H10m-3-3h10M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path>
+                </svg>
+            </div>
+        </div>
+        
+        <h2 class="mt-6 text-3xl font-extrabold text-gray-900">
+            Compte temporairement bloqué
+        </h2>
+        
+        <p class="mt-2 text-sm text-gray-600">
+            Trop de tentatives de connexion infructueuses ont été détectées. Pour votre sécurité, l'accès à ce compte a été restreint.
+        </p>
+        
+        <div class="mt-8 bg-red-50 border-l-4 border-red-400 p-4">
+            <div class="flex">
+                <div class="ml-3">
+                    <p class="text-sm text-red-700">
+                        Veuillez patienter 1 heure avant de réessayer, ou contactez l'assistance si vous avez oublié vos identifiants.
+                    </p>
+                </div>
+            </div>
+        </div>
+        
+        <div class="mt-6">
+            <a href="{% url 'accounts:login' %}" class="font-medium text-red-600 hover:text-red-500">
+                Retour à la page de connexion
+            </a>
+        </div>
+    </div>
+</div>
+{% endblock %}
+

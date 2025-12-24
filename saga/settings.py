@@ -408,6 +408,25 @@ REST_FRAMEWORK = {
     'PAGE_SIZE': 10
 }
 
+# Configuration JWT
+from datetime import timedelta
+
+SIMPLE_JWT = {
+    'ACCESS_TOKEN_LIFETIME': timedelta(hours=12),
+    'REFRESH_TOKEN_LIFETIME': timedelta(days=7),
+    'ROTATE_REFRESH_TOKENS': True,
+    'BLACKLIST_AFTER_ROTATION': True,
+    'UPDATE_LAST_LOGIN': True,
+    'ALGORITHM': 'HS256',
+    'SIGNING_KEY': SECRET_KEY,
+    'AUTH_HEADER_TYPES': ('Bearer',),
+    'AUTH_HEADER_NAME': 'HTTP_AUTHORIZATION',
+    'USER_ID_FIELD': 'id',
+    'USER_ID_CLAIM': 'user_id',
+    'AUTH_TOKEN_CLASSES': ('rest_framework_simplejwt.tokens.AccessToken',),
+    'TOKEN_TYPE_CLAIM': 'token_type',
+}
+
 # ==================================================
 # LOGGING DE LA CONFIGURATION
 # ==================================================
@@ -481,7 +500,7 @@ SECURE_CROSS_ORIGIN_EMBEDDER_POLICY = 'require-corp'
 
 # Configuration des hôtes autorisés
 if DEBUG:
-    ALLOWED_HOSTS = ['localhost', '127.0.0.1']
+    ALLOWED_HOSTS = ['localhost', '127.0.0.1', '192.168.1.7', '0.0.0.0']
 else:
     ALLOWED_HOSTS = [
         'bolibana-sugu-d56937020d1c.herokuapp.com',
@@ -494,6 +513,7 @@ if DEBUG:
     CSRF_TRUSTED_ORIGINS = [
         'http://localhost:8000',
         'http://127.0.0.1:8000',
+        'http://192.168.1.7:8000',
         'http://bolibana.com',
         'http://www.bolibana.com'
     ]
@@ -508,12 +528,16 @@ else:
 
 # Configuration CORS
 if DEBUG:
+    # Autoriser toutes les origines en développement pour l'app mobile
+    CORS_ALLOW_ALL_ORIGINS = True
     CORS_ALLOWED_ORIGINS = [
         'http://localhost:8000',
         'http://127.0.0.1:8000',
         'http://bolibana.com',
-        'http://www.bolibana.com'
+        'http://www.bolibana.com',
     ]
+    # Autoriser les credentials pour l'authentification
+    CORS_ALLOW_CREDENTIALS = True
 else:
     CORS_ALLOWED_ORIGINS = [
         'https://bolibana.com',
@@ -557,7 +581,12 @@ INSTALLED_APPS = [
     'django_otp',
     'django_otp.plugins.otp_totp',
     'django_otp.plugins.otp_static',
+    'axes',
 ]
+
+# Configuration Crispy Forms
+CRISPY_TEMPLATE_PACK = 'tailwind'
+CRISPY_ALLOWED_TEMPLATE_PACKS = ('tailwind',)
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
@@ -570,6 +599,7 @@ MIDDLEWARE = [
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
+    'axes.middleware.AxesMiddleware',  # Middleware Axes pour la protection brute-force
     'core.middleware.MaintenanceModeMiddleware',  # Après AuthenticationMiddleware pour accéder à request.user
     'django_otp.middleware.OTPMiddleware',  # Middleware OTP juste après AuthenticationMiddleware
     'saga.middleware.AdminIPRestrictionMiddleware',  # Middleware de restriction IP
@@ -611,26 +641,26 @@ WSGI_APPLICATION = 'saga.wsgi.application'
 # CONFIGURATION DE LA BASE DE DONNÉES
 # ======================================================================
 
-# Password validation
-# https://docs.djangoproject.com/en/5.1/ref/settings/#auth-password-validators
-
+# Configuration des validateurs de mot de passe
 AUTH_PASSWORD_VALIDATORS = [
-    {
-        'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator',
-    },
-    {
-        'NAME': 'django.contrib.auth.password_validation.MinimumLengthValidator',
-    },
-    {
-        'NAME': 'django.contrib.auth.password_validation.CommonPasswordValidator',
-    },
-    {
-        'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator',
-    },
+# ... existing code ...
+]
+
+# Configuration d'Axes (Protection Brute-Force)
+AXES_FAILURE_LIMIT = 5  # Nombre de tentatives avant blocage
+AXES_COOLOFF_TIME = 1   # Temps de blocage en heures
+AXES_LOCK_OUT_BY_COMBINATION_USER_AND_IP = True  # Bloquer par couple Utilisateur + IP
+AXES_RESET_ON_SUCCESS = True  # Réinitialiser le compteur en cas de succès
+AXES_LOCKOUT_TEMPLATE = 'accounts/lockout.html'  # Template personnalisé pour le blocage
+
+# Configuration de l'authentification
+AUTHENTICATION_BACKENDS = [
+    'axes.backends.AxesBackend',  # Backend Axes pour le suivi des tentatives
+    'django.contrib.auth.backends.ModelBackend',  # Backend par défaut
 ]
 
 # Internationalization
-# https://docs.djangoproject.com/en/5.1/topics/i18n/
+# ... existing code ...
 
 LANGUAGE_CODE = 'fr-fr'
 

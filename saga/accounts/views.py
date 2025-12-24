@@ -323,6 +323,9 @@ def update_profile(request):
                 updated_user = form.save(commit=False)
                 updated_user.email = new_email
                 updated_user.phone = form.cleaned_data.get('phone')
+                # La date de naissance est déjà gérée par le formulaire, mais on s'assure qu'elle est bien sauvegardée
+                if 'date_of_birth' in form.cleaned_data:
+                    updated_user.date_of_birth = form.cleaned_data.get('date_of_birth')
                 updated_user.save()
 
                 messages.success(request, 'Les modifications ont été apportées avec succès.')

@@ -1,12 +1,51 @@
 from rest_framework import serializers
 from ..models import Shopper, ShippingAddress
+from cart.models import Order, OrderItem
+
+
+class OrderItemSerializer(serializers.ModelSerializer):
+    product_title = serializers.SerializerMethodField()
+
+    class Meta:
+        model = OrderItem
+        fields = ['id', 'product_title', 'quantity', 'price']
+
+    def get_product_title(self, obj):
+        return obj.product.title if obj.product else ''
+
+
+class OrderSerializer(serializers.ModelSerializer):
+    items = OrderItemSerializer(many=True, source='items.all', read_only=True)
+    status_label = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Order
+        fields = [
+            'id',
+            'order_number',
+            'status',
+            'status_label',
+            'payment_method',
+            'is_paid',
+            'total',
+            'created_at',
+            'items',
+        ]
+        read_only_fields = fields
+
+    def get_status_label(self, obj):
+        return obj.get_status_display()
 
 class UserSerializer(serializers.ModelSerializer):
     class Meta:
         model = Shopper
         fields = ['id', 'email', 'first_name', 'last_name', 'phone', 'date_of_birth', 'fidelys_number']
         read_only_fields = ['id', 'fidelys_number']
-        extra_kwargs = {'password': {'write_only': True}}
+        extra_kwargs = {
+            'password': {'write_only': True},
+            'date_of_birth': {'allow_null': True, 'required': False},
+            'phone': {'required': False},
+        }
 
 class AddressSerializer(serializers.ModelSerializer):
     class Meta:
