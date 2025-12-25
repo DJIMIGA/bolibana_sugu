@@ -8,18 +8,18 @@ export const MAX_RETRY_ATTEMPTS = 3;
 export const RETRY_BACKOFF_BASE = 1000; // 1 seconde de base
 
 export const CACHE_KEYS = {
-  PRODUCTS: 'cache:products',
-  CATEGORIES: 'cache:categories',
-  CART: 'cache:cart',
-  USER_PROFILE: 'cache:user_profile',
-  ADDRESSES: 'cache:addresses',
+  PRODUCTS: 'cache_products',
+  CATEGORIES: 'cache_categories',
+  CART: 'cache_cart',
+  USER_PROFILE: 'cache_user_profile',
+  ADDRESSES: 'cache_addresses',
 } as const;
 
 export const STORAGE_KEYS = {
-  AUTH_TOKEN: 'auth:token',
-  AUTH_REFRESH_TOKEN: 'auth:refresh_token',
-  AUTH_USER: 'auth:user',
-  SYNC_QUEUE: 'sync:queue',
+  AUTH_TOKEN: 'auth_token',
+  AUTH_REFRESH_TOKEN: 'auth_refresh_token',
+  AUTH_USER: 'auth_user',
+  SYNC_QUEUE: 'sync_queue',
 } as const;
 
 export const API_ENDPOINTS = {

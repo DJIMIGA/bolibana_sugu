@@ -555,7 +555,7 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'phonenumber_field',
-    'saga',  # Ajout de l'application saga pour les commandes personnalisées
+    # 'saga',  # Temporairement désactivé pour les tests
     'product',
     'accounts.apps.AccountsConfig',
     'suppliers',
@@ -582,6 +582,7 @@ INSTALLED_APPS = [
     'django_otp.plugins.otp_totp',
     'django_otp.plugins.otp_static',
     'axes',
+    'simple_history',
 ]
 
 # Configuration Crispy Forms
@@ -606,6 +607,7 @@ MIDDLEWARE = [
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'django_htmx.middleware.HtmxMiddleware',
+    'simple_history.middleware.HistoryRequestMiddleware',
 ]
 
 ROOT_URLCONF = 'saga.urls'
@@ -649,7 +651,7 @@ AUTH_PASSWORD_VALIDATORS = [
 # Configuration d'Axes (Protection Brute-Force)
 AXES_FAILURE_LIMIT = 5  # Nombre de tentatives avant blocage
 AXES_COOLOFF_TIME = 1   # Temps de blocage en heures
-AXES_LOCK_OUT_BY_COMBINATION_USER_AND_IP = True  # Bloquer par couple Utilisateur + IP
+AXES_LOCKOUT_PARAMETERS = [["username", "ip_address"]]  # Bloquer par couple Utilisateur + IP
 AXES_RESET_ON_SUCCESS = True  # Réinitialiser le compteur en cas de succès
 AXES_LOCKOUT_TEMPLATE = 'accounts/lockout.html'  # Template personnalisé pour le blocage
 

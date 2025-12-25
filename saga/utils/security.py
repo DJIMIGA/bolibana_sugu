@@ -2,7 +2,9 @@
 Utilitaires de sécurité pour SagaKore
 """
 import logging
+import filetype
 from functools import wraps
+from django.core.exceptions import ValidationError
 from django.http import HttpResponseForbidden
 from django.contrib.auth.decorators import login_required
 from django.contrib.admin.views.decorators import staff_member_required
@@ -11,6 +13,34 @@ from django.utils import timezone
 from datetime import timedelta
 
 logger = logging.getLogger('security')
+
+def validate_image_file(file):
+    """
+    Valide un fichier image en vérifiant sa signature binaire.
+    """
+    if not file:
+        return
+    
+    # Lecture des premiers octets pour détection MIME
+    file.seek(0)
+    kind = filetype.guess(file.read(2048))
+    file.seek(0)
+    
+    if kind is None or not kind.mime.startswith('image/'):
+        logger.warning(f"Fichier malveillant ou non-image détecté: {kind.mime if kind else 'Inconnu'}")
+        raise ValidationError(
+            "Le fichier n'est pas une image valide ou son format n'est pas supporté."
+        )
+    
+    # Vérification par Pillow
+    from PIL import Image
+    try:
+        img = Image.open(file)
+        img.verify()
+        file.seek(0)
+    except Exception as e:
+        logger.warning(f"Image corrompue détectée: {str(e)}")
+        raise ValidationError("L'image est corrompue ou invalide.")
 
 def require_2fa(view_func):
     """

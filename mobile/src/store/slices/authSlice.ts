@@ -1,5 +1,6 @@
 import { createSlice, createAsyncThunk, PayloadAction } from '@reduxjs/toolkit';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import * as SecureStore from 'expo-secure-store';
 import apiClient, { setSessionExpiredCallback } from '../../services/api';
 import { STORAGE_KEYS, API_ENDPOINTS, SESSION_EXPIRY } from '../../utils/constants';
 import { User, LoyaltyInfo } from '../../types';
@@ -42,10 +43,10 @@ export const loginAsync = createAsyncThunk(
 
       const { access, refresh } = response.data;
       
-      // Stocker les tokens
-      await AsyncStorage.multiSet([
-        [STORAGE_KEYS.AUTH_TOKEN, access],
-        [STORAGE_KEYS.AUTH_REFRESH_TOKEN, refresh],
+      // Stocker les tokens de manière sécurisée
+      await Promise.all([
+        SecureStore.setItemAsync(STORAGE_KEYS.AUTH_TOKEN, access),
+        SecureStore.setItemAsync(STORAGE_KEYS.AUTH_REFRESH_TOKEN, refresh),
       ]);
 
       // Récupérer le profil utilisateur
@@ -117,7 +118,7 @@ export const refreshTokenAsync = createAsyncThunk(
   'auth/refreshToken',
   async (_, { rejectWithValue }) => {
     try {
-      const refreshToken = await AsyncStorage.getItem(STORAGE_KEYS.AUTH_REFRESH_TOKEN);
+      const refreshToken = await SecureStore.getItemAsync(STORAGE_KEYS.AUTH_REFRESH_TOKEN);
       
       if (!refreshToken) {
         throw new Error('Aucun refresh token disponible');
@@ -128,7 +129,7 @@ export const refreshTokenAsync = createAsyncThunk(
       });
 
       const { access } = response.data;
-      await AsyncStorage.setItem(STORAGE_KEYS.AUTH_TOKEN, access);
+      await SecureStore.setItemAsync(STORAGE_KEYS.AUTH_TOKEN, access);
 
       return access;
     } catch (error: any) {
@@ -142,12 +143,12 @@ export const loadUserAsync = createAsyncThunk(
   'auth/loadUser',
   async (_, { rejectWithValue }) => {
     try {
-      const [token, userJson] = await AsyncStorage.multiGet([
-        STORAGE_KEYS.AUTH_TOKEN,
-        STORAGE_KEYS.AUTH_USER,
+      const [token, userJson] = await Promise.all([
+        SecureStore.getItemAsync(STORAGE_KEYS.AUTH_TOKEN),
+        AsyncStorage.getItem(STORAGE_KEYS.AUTH_USER),
       ]);
 
-      if (!token[1] || !userJson[1]) {
+      if (!token || !userJson) {
         return null;
       }
 
@@ -157,13 +158,13 @@ export const loadUserAsync = createAsyncThunk(
         const { mapUserFromBackend } = await import('../../utils/mappers');
         const user = mapUserFromBackend(response.data);
         await AsyncStorage.setItem(STORAGE_KEYS.AUTH_USER, JSON.stringify(user));
-        return { token: token[1], user };
+        return { token, user };
       } catch (error) {
         // Token invalide, nettoyer
-        await AsyncStorage.multiRemove([
-          STORAGE_KEYS.AUTH_TOKEN,
-          STORAGE_KEYS.AUTH_REFRESH_TOKEN,
-          STORAGE_KEYS.AUTH_USER,
+        await Promise.all([
+          SecureStore.deleteItemAsync(STORAGE_KEYS.AUTH_TOKEN),
+          SecureStore.deleteItemAsync(STORAGE_KEYS.AUTH_REFRESH_TOKEN),
+          AsyncStorage.removeItem(STORAGE_KEYS.AUTH_USER),
         ]);
         return null;
       }
@@ -261,10 +262,10 @@ export const logoutAsync = createAsyncThunk(
       }
 
       // Nettoyer le stockage local
-      await AsyncStorage.multiRemove([
-        STORAGE_KEYS.AUTH_TOKEN,
-        STORAGE_KEYS.AUTH_REFRESH_TOKEN,
-        STORAGE_KEYS.AUTH_USER,
+      await Promise.all([
+        SecureStore.deleteItemAsync(STORAGE_KEYS.AUTH_TOKEN),
+        SecureStore.deleteItemAsync(STORAGE_KEYS.AUTH_REFRESH_TOKEN),
+        AsyncStorage.removeItem(STORAGE_KEYS.AUTH_USER),
       ]);
 
       return null;

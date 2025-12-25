@@ -1,5 +1,6 @@
 import os
 import tinify
+import filetype
 from django.conf import settings
 from django.core.files.uploadedfile import InMemoryUploadedFile
 from io import BytesIO
@@ -251,30 +252,42 @@ class ImageOptimizer:
             return None, {}
 
     def validate_image(self, image):
-        """Vérifie si l'image est valide."""
+        """Vérifie si l'image est valide et sécurisée."""
         try:
-            # Vérifier le type de fichier
+            # Vérifier le type de fichier (structure de base)
             if not isinstance(image, (InMemoryUploadedFile, BytesIO)):
                 logger.error("Type de fichier non supporté")
                 return False
 
             # Vérifier la taille
-            if isinstance(image, InMemoryUploadedFile):
-                if image.size > self.max_size:
-                    logger.error(f"Image trop grande: {image.size} bytes")
-                    return False
-            else:
-                if len(image.getvalue()) > self.max_size:
-                    logger.error(f"Image trop grande: {len(image.getvalue())} bytes")
-                    return False
+            file_size = image.size if isinstance(image, InMemoryUploadedFile) else len(image.getvalue())
+            if file_size > self.max_size:
+                logger.error(f"Image trop grande: {file_size} bytes")
+                return False
 
-            # Vérifier les dimensions
+            # Validation du type MIME réel (Signature binaire)
+            if isinstance(image, InMemoryUploadedFile):
+                image.seek(0)
+                kind = filetype.guess(image.read(2048))
+                image.seek(0)
+            else:
+                kind = filetype.guess(image.getvalue())
+
+            if kind is None or not kind.mime.startswith('image/'):
+                logger.error(f"Type MIME non autorisé ou non détecté: {kind.mime if kind else 'Inconnu'}")
+                return False
+
+            # Vérifier les dimensions avec PIL (plus robuste)
             img = Image.open(image)
             width, height = img.size
+            img.verify() # Vérifie si le fichier est corrompu
+            
             if width > self.max_dimensions[0] or height > self.max_dimensions[1]:
                 logger.error(f"Dimensions trop grandes: {width}x{height}")
                 return False
 
+            # Réouvrir après verify() car verify() ferme le fichier ou invalide l'objet
+            image.seek(0)
             return True
         except Exception as e:
             logger.error(f"Erreur lors de la validation: {str(e)}")

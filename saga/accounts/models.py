@@ -24,6 +24,7 @@ from django.utils import timezone
 from django.conf import settings
 from django.core.files.storage import default_storage
 from django.utils.translation import gettext_lazy as _
+from simple_history.models import HistoricalRecords
 from django_otp.plugins.otp_totp.models import TOTPDevice as BaseTOTPDevice
 from django.contrib.auth import get_user_model
 
@@ -55,6 +56,7 @@ class Shopper(AbstractUser):
     postal_code = models.CharField(max_length=20, verbose_name=_("Code postal"), null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+    history = HistoricalRecords()
     fidelys_number = models.CharField(max_length=240, null=True, blank=True, unique=True, verbose_name="Numéro Fidelys")
     profile_picture = models.ImageField(
         upload_to='profile_pics/%Y/%m/%d/',

@@ -9,6 +9,7 @@ from django.urls import reverse
 from suppliers.models import Supplier
 from saga.utils.image_optimizer import ImageOptimizer
 from saga.utils.path_utils import get_product_image_path
+from saga.utils.security import validate_image_file
 from django.utils import timezone
 from django.core.exceptions import ValidationError
 from django.conf import settings
@@ -16,6 +17,7 @@ from django.core.files.storage import default_storage
 from django.core.files.base import ContentFile
 from .utils import generate_unique_slug
 from decimal import Decimal
+from simple_history.models import HistoricalRecords
 import logging
 import os
 import boto3
@@ -61,7 +63,8 @@ class Category(models.Model):
         storage=ProductImageStorage(),
         blank=True,
         null=True,
-        help_text="Image de la catégorie"
+        help_text="Image de la catégorie",
+        validators=[validate_image_file]
     )
     description = models.TextField(blank=True, null=True)
     color = models.CharField(
@@ -113,6 +116,7 @@ class Category(models.Model):
         null=True,
         help_text="Critères de filtrage pour les sous-catégories"
     )
+    history = HistoricalRecords()
 
     def __str__(self):
         return self.name
@@ -295,7 +299,8 @@ class Product(models.Model):
         storage=ProductImageStorage(),
         null=True,
         blank=True,
-        verbose_name='Image principale'
+        verbose_name='Image principale',
+        validators=[validate_image_file]
     )
     image_urls = models.JSONField(default=dict, blank=True, null=True, verbose_name='URLs des images')
     sku = models.CharField(max_length=50, unique=True, blank=True, null=True, verbose_name='SKU')
@@ -316,6 +321,7 @@ class Product(models.Model):
     discount_price = models.DecimalField(max_digits=10, decimal_places=0, null=True, blank=True, verbose_name='Prix promotionnel (FCFA)')
     is_trending = models.BooleanField(default=False, verbose_name='Produit tendance')
     sales_count = models.IntegerField(default=0, verbose_name='Nombre de ventes')
+    history = HistoricalRecords()
 
     def get_average_rating(self):
         """Calcule la moyenne des notes à partir des avis"""
@@ -799,7 +805,8 @@ class ImageProduct(models.Model):
         upload_to=get_product_gallery_image_upload_path,
         storage=ProductImageStorage(),
         null=True,
-        blank=True
+        blank=True,
+        validators=[validate_image_file]
     )
     ordre = models.PositiveIntegerField(default=0)
     created_at = models.DateTimeField(default=timezone.now)
@@ -901,6 +908,7 @@ class Phone(models.Model):
     storage = models.IntegerField(help_text="Capacité de stockage en GB", default=64)
     ram = models.IntegerField(help_text="RAM en GB", default=4)
     color = models.ForeignKey(Color, on_delete=models.CASCADE, null=True, blank=True)
+    history = HistoricalRecords()
 
     class Meta:
         verbose_name = "Téléphone"
