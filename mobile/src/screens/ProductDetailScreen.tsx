@@ -28,10 +28,13 @@ const ProductDetailScreen: React.FC = () => {
   const route = useRoute();
   const insets = useSafeAreaInsets();
   const { selectedProduct, isLoading, similarProducts, isFetchingSimilarProducts } = useAppSelector((state) => state.product);
-  const { isLoading: isAddingToCart } = useAppSelector((state) => state.cart);
+  const { items, isLoading: isAddingToCart } = useAppSelector((state) => state.cart);
   const [quantity, setQuantity] = useState(1);
   const [activeImageIndex, setActiveImageIndex] = useState(0);
   const slug = (route.params as any)?.slug;
+
+  // Vérifier si le produit est déjà dans le panier
+  const itemInCart = selectedProduct ? items.find(item => item.product.id === selectedProduct.id) : null;
 
   useEffect(() => {
     if (slug) {
@@ -48,6 +51,23 @@ const ProductDetailScreen: React.FC = () => {
   const handleAddToCart = async () => {
     if (!selectedProduct) return;
 
+    // Vérifier la disponibilité
+    if (!selectedProduct.is_available) {
+      Alert.alert('Indisponible', 'Ce produit n\'est actuellement pas disponible');
+      return;
+    }
+
+    // Vérifier le stock (sauf pour les produits Salam)
+    if (!selectedProduct.is_salam && selectedProduct.stock !== undefined && selectedProduct.stock > 0) {
+      if (quantity > selectedProduct.stock) {
+        Alert.alert(
+          'Stock insuffisant',
+          `Stock disponible: ${selectedProduct.stock}. Veuillez réduire la quantité.`
+        );
+        return;
+      }
+    }
+
     try {
       await dispatch(
         addToCart({
@@ -57,7 +77,8 @@ const ProductDetailScreen: React.FC = () => {
       ).unwrap();
       Alert.alert('Succès', 'Produit ajouté au panier');
     } catch (error: any) {
-      Alert.alert('Erreur', error || 'Impossible d\'ajouter le produit au panier');
+      const errorMessage = typeof error === 'string' ? error : 'Impossible d\'ajouter le produit au panier';
+      Alert.alert('Erreur', errorMessage);
     }
   };
 
@@ -198,6 +219,9 @@ const ProductDetailScreen: React.FC = () => {
                 <Text style={styles.discountPrice}>
                   {formatPrice(selectedProduct.discount_price!)}
                 </Text>
+                <Text style={styles.oldPrice}>
+                  {formatPrice(selectedProduct.price)}
+                </Text>
                 <View style={styles.discountTag}>
                   <Text style={styles.discountTagText}>PROMO</Text>
                 </View>
@@ -260,10 +284,10 @@ const ProductDetailScreen: React.FC = () => {
         <TouchableOpacity
           style={[
             styles.addToCartButton, 
-            !selectedProduct.is_available && styles.disabledButton
+            (!selectedProduct.is_available || (selectedProduct.stock !== undefined && selectedProduct.stock <= 0)) && styles.disabledButton
           ]}
           onPress={handleAddToCart}
-          disabled={!selectedProduct.is_available || isAddingToCart}
+          disabled={!selectedProduct.is_available || (selectedProduct.stock !== undefined && selectedProduct.stock <= 0) || isAddingToCart}
           activeOpacity={0.8}
         >
           {isAddingToCart ? (
@@ -271,12 +295,14 @@ const ProductDetailScreen: React.FC = () => {
           ) : (
             <View style={styles.addToCartContent}>
               <MaterialIcons 
-                name={selectedProduct.is_available ? "shopping-cart" : "block"} 
+                name={selectedProduct.is_available && (selectedProduct.stock === undefined || selectedProduct.stock > 0) ? "shopping-cart" : "block"} 
                 size={24} 
                 color="#FFFFFF" 
               />
               <Text style={styles.addToCartText}>
-                {selectedProduct.is_available ? 'Ajouter au panier' : 'Indisponible'}
+                {itemInCart 
+                  ? `Dans le panier (${itemInCart.quantity})` 
+                  : (selectedProduct.is_available && (selectedProduct.stock === undefined || selectedProduct.stock > 0) ? 'Ajouter au panier' : 'Indisponible')}
               </Text>
             </View>
           )}
@@ -623,8 +649,8 @@ const styles = StyleSheet.create({
     flexDirection: 'column',
   },
   priceRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: 'column',
+    alignItems: 'flex-start',
     marginBottom: 8,
   },
   price: {
@@ -638,13 +664,22 @@ const styles = StyleSheet.create({
     fontWeight: '900',
     color: COLORS.DANGER,
     letterSpacing: -0.5,
-    marginRight: 12,
+    marginBottom: 4,
+  },
+  oldPrice: {
+    fontSize: 20,
+    color: COLORS.TEXT_SECONDARY,
+    textDecorationLine: 'line-through',
+    fontWeight: '600',
+    marginBottom: 8,
   },
   discountTag: {
     backgroundColor: COLORS.DANGER,
-    paddingHorizontal: 8,
-    paddingVertical: 4,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
     borderRadius: 6,
+    marginTop: 4,
+    alignSelf: 'flex-start',
   },
   discountTagText: {
     color: '#FFFFFF',

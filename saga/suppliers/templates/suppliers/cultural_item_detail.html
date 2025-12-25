@@ -131,18 +131,23 @@
         <!-- Galerie d'images -->
         <div class="space-y-4">
             <div class="bg-white rounded-lg shadow-md overflow-hidden">
-                {% if images %}
-                    <img id="main-image" src="{{ images.0.image.url }}" alt="{{ product.title }}" class="w-full h-auto object-cover">
-                {% elif product.image %}
+                {% if product.image %}
                     <img id="main-image" src="{{ product.image.url }}" alt="{{ product.title }}" class="w-full h-auto object-cover">
+                {% elif images %}
+                    <img id="main-image" src="{{ images.0.image.url }}" alt="{{ product.title }}" class="w-full h-auto object-cover">
                 {% else %}
                     <img id="main-image" src="{% static 'images/no-image.png' %}" alt="Image non disponible" class="w-full h-auto object-cover">
                 {% endif %}
             </div>
-            {% if images %}
+            {% if product.image or images %}
                 <div class="grid grid-cols-4 gap-2">
+                    {% if product.image %}
+                        <button onclick="changeMainImage('{{ product.image.url }}', this)" class="w-full h-24 rounded overflow-hidden focus:outline-none focus:ring-2 focus:ring-green-500 ring-2 ring-green-500">
+                            <img src="{{ product.image.url }}" alt="{{ product.title }}" class="w-full h-full object-cover">
+                        </button>
+                    {% endif %}
                     {% for image in images %}
-                        <button onclick="changeMainImage('{{ image.image.url }}', this)" class="w-full h-24 rounded overflow-hidden focus:outline-none focus:ring-2 focus:ring-green-500">
+                        <button onclick="changeMainImage('{{ image.image.url }}', this)" class="w-full h-24 rounded overflow-hidden focus:outline-none focus:ring-2 focus:ring-green-500 {% if not product.image and forloop.first %}ring-2 ring-green-500{% endif %}">
                             <img src="{{ image.image.url }}" alt="{{ product.title }}" class="w-full h-full object-cover">
                         </button>
                     {% endfor %}

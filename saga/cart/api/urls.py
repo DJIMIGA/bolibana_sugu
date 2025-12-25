@@ -6,8 +6,9 @@ router = DefaultRouter()
 router.register('', views.CartViewSet, basename='cart')
 
 # URLs personnalisées pour les items du panier
+# Le router Django REST Framework utilise 'pk' comme nom de paramètre
 urlpatterns = router.urls + [
-    path('<int:item_id>/', views.CartViewSet.as_view({
+    path('<int:pk>/', views.CartViewSet.as_view({
         'patch': 'update',
         'put': 'update',
         'delete': 'destroy'

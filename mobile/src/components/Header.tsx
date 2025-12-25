@@ -18,6 +18,10 @@ interface HeaderProps {
   searchQuery: string;
   onSearchChange: (text: string) => void;
   onClearSearch?: () => void;
+  showCategories?: boolean;
+  categories?: Category[];
+  onCategoryPress?: (categoryId: number) => void;
+  onExplorePress?: () => void;
 }
 
 export const Header: React.FC<HeaderProps> = ({
@@ -30,7 +34,7 @@ export const Header: React.FC<HeaderProps> = ({
   onExplorePress,
 }) => {
   const navigation = useNavigation();
-  const cartItemsCount = useAppSelector((state) => state.cart.items.length);
+  const { itemsCount } = useAppSelector((state) => state.cart);
 
   // Afficher uniquement les catégories sans parent (catégories principales)
   const displayCategories = categories.filter((c: Category) => !c.parent).slice(0, 8);
@@ -54,10 +58,10 @@ export const Header: React.FC<HeaderProps> = ({
           }}
         >
           <Ionicons name="cart-outline" size={28} color={COLORS.TEXT} />
-          {cartItemsCount > 0 && (
+          {itemsCount > 0 && (
             <View style={styles.notificationBadge}>
               <Text style={styles.notificationBadgeText}>
-                {cartItemsCount > 99 ? '99+' : cartItemsCount}
+                {itemsCount > 99 ? '99+' : itemsCount}
               </Text>
             </View>
           )}

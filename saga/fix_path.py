@@ -55,9 +55,9 @@ def fix_pythonpath():
     print("\nChemins valides dans PYTHONPATH :")
     for path in sys.path:
         if os.path.exists(path):
-            print(f"✓ {path}")
+            print(f"[OK] {path}")
         else:
-            print(f"✗ {path} (n'existe pas)")
+            print(f"[ERROR] {path} (n'existe pas)")
     
     print("\n=== Fin de la correction du PYTHONPATH ===\n")
     

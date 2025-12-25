@@ -33,23 +33,23 @@ print("="*50 + "\n")
 env_path = os.path.join(BASE_DIR, '.env')
 print(f"\nRecherche du fichier .env à : {env_path}")
 
-# Vérifier si le fichier existe
+# Vrifier si le fichier existe
 if os.path.exists(env_path):
-    print("✓ Fichier .env trouvé")
+    print("[OK] Fichier .env trouv")
     load_dotenv(env_path)
 else:
-    print("✗ Fichier .env non trouvé")
+    print("[ERROR] Fichier .env non trouv")
 
 # Chemin vers le fichier .env.secrets
 env_path = os.path.join(BASE_DIR, 'saga', '.env.secrets')
-print(f"\nRecherche du fichier .env.secrets à : {env_path}")
+print(f"\nRecherche du fichier .env.secrets  : {env_path}")
 
-# Vérifier si le fichier existe
+# Vrifier si le fichier existe
 if os.path.exists(env_path):
-    print("✓ Fichier .env.secrets trouvé")
+    print("[OK] Fichier .env.secrets trouv")
     load_dotenv(env_path)
 else:
-    print("✗ Fichier .env.secrets non trouvé")
+    print("[ERROR] Fichier .env.secrets non trouv")
 
 # ==================================================
 # CONFIGURATION DE BASE
@@ -113,10 +113,10 @@ else:
 try:
     from django.db import connections
     connections['default'].ensure_connection()
-    print("✓ Connexion à la base de données établie avec succès")
-    print(f"Base de données utilisée : {DATABASES['default']['NAME']}")
+    print("[OK] Connexion a la base de donnees etablie avec succes")
+    print(f"Base de donnees utilisee : {DATABASES['default']['NAME']}")
 except Exception as e:
-    print(f"✗ Erreur de connexion à la base de données : {str(e)}")
+    print(f"[ERROR] Erreur de connexion a la base de donnees : {str(e)}")
     print("\nVeuillez vérifier :")
     print("1. Que PostgreSQL est en cours d'exécution")
     print("2. Que les variables dans .env sont correctes")
@@ -348,19 +348,19 @@ CACHES = {
 # CONFIGURATION DE L'EMAIL
 # ==================================================
 if DEBUG:
-    # Configuration pour le développement avec envoi d'emails réels
+    # Configuration pour le dveloppement avec envoi d'emails reels
     EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
     EMAIL_HOST = 'smtp.gmail.com'
     EMAIL_PORT = 587
     EMAIL_USE_TLS = True
     EMAIL_HOST_USER = os.getenv('EMAIL_HOST_USER', 'dev@localhost')
     EMAIL_HOST_PASSWORD = os.getenv('EMAIL_HOST_PASSWORD', '')
-    print("📧 Email configuré en mode SMTP (développement)")
+    print("[INFO] Email configure en mode SMTP (developpement)")
     
     # Fallback vers console si pas de configuration SMTP ou si erreur d'authentification
     if not EMAIL_HOST_PASSWORD:
         EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
-        print("⚠️ Pas de mot de passe SMTP configuré - emails en mode console")
+        print("[WARN] Pas de mot de passe SMTP configure - emails en mode console")
     else:
         # Test de connexion SMTP
         try:
@@ -369,10 +369,10 @@ if DEBUG:
             server.starttls()
             server.login(EMAIL_HOST_USER, EMAIL_HOST_PASSWORD)
             server.quit()
-            print("✅ Connexion SMTP testée avec succès")
+            print("[OK] Connexion SMTP testee avec succes")
         except Exception as e:
-            print(f"⚠️ Erreur de connexion SMTP: {str(e)}")
-            print("🔄 Basculement vers le mode console")
+            print(f"[WARN] Erreur de connexion SMTP: {str(e)}")
+            print("[INFO] Basculement vers le mode console")
             EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
 else:
     # En production, utiliser SMTP
@@ -382,11 +382,11 @@ else:
     EMAIL_USE_TLS = True
     EMAIL_HOST_USER = os.getenv('EMAIL_HOST_USER')
     EMAIL_HOST_PASSWORD = os.getenv('EMAIL_HOST_PASSWORD')
-    print("📧 Email configuré en mode SMTP (production)")
+    print("[INFO] Email configure en mode SMTP (production)")
 
-# Email par défaut
+# Email par dfaut
 DEFAULT_FROM_EMAIL = EMAIL_HOST_USER
-print(f"📧 Email configuré : {'Oui' if EMAIL_HOST_USER else 'Non'}")
+print(f"[INFO] Email configure : {'Oui' if EMAIL_HOST_USER else 'Non'}")
 
 # ==================================================
 # CONFIGURATION REST FRAMEWORK

@@ -207,27 +207,114 @@ export const mapAddressFromBackend = (backendAddress: any): ShippingAddress => {
  * Mappe les données panier du backend vers le type mobile
  */
 export const mapCartFromBackend = (backendCart: any): Cart => {
+  console.log(`[mappers] 🗺️ Mapping du panier depuis le backend (ID: ${backendCart?.id})`);
+  // Vérification de sécurité : si backendCart est null ou undefined
+  if (!backendCart) {
+    console.warn('mapCartFromBackend: backendCart est null ou undefined');
+    return {
+      id: 0,
+      items: [],
+      total_price: 0,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    };
+  }
+
   // Le backend peut retourner soit cart_items soit items
   const items = backendCart.cart_items || backendCart.items || [];
   
+  // Calculer le total si non fourni
+  let totalPrice = parseFloat(backendCart.total_price || backendCart.get_total_price?.() || 0);
+  
+  // Si le total est 0, le calculer depuis les items
+  if (totalPrice === 0 && items.length > 0) {
+    totalPrice = items.reduce((sum: number, item: any) => {
+      // Vérifier que l'item et le produit existent
+      if (!item || !item.product) return sum;
+      
+      const unitPrice = item.unit_price || 
+                       (item.variant && (item.variant.discount_price || item.variant.price)) ||
+                       (item.product && (item.product.discount_price || item.product.price)) ||
+                       0;
+      return sum + (unitPrice * (item.quantity || 1));
+    }, 0);
+  }
+  
+  // Filtrer et mapper les items valides uniquement
+  const validItems = items
+    .filter((item: any) => {
+      // Vérifier que l'item a un id et un produit valide
+      if (!item || !item.id) {
+        console.warn('mapCartFromBackend: item invalide (pas d\'id)', item);
+        return false;
+      }
+      if (!item.product) {
+        console.warn('mapCartFromBackend: item sans produit', item);
+        return false;
+      }
+      return true;
+    })
+    .map((item: any) => {
+      try {
+        // Mapper le produit avec vérification de sécurité
+        if (!item.product || !item.product.id) {
+          console.error('mapCartFromBackend: produit invalide', item.product);
+          throw new Error('Produit invalide dans le panier');
+        }
+        
+        const product = mapProductFromBackend(item.product);
+        
+        // Si une variante existe, mettre à jour le produit avec les infos de la variante
+        if (item.variant) {
+          const variant = item.variant;
+          // Mettre à jour le prix avec celui de la variante
+          if (variant.discount_price || variant.price) {
+            product.discount_price = variant.discount_price ? parseFloat(variant.discount_price) : undefined;
+            product.price = parseFloat(variant.price);
+          }
+          // Mettre à jour le stock avec celui de la variante
+          if (variant.stock !== undefined) {
+            product.stock = variant.stock;
+          }
+          // Ajouter les spécifications de la variante
+          if (variant.color_name || variant.color) {
+            product.specifications = {
+              ...product.specifications,
+              color: variant.color_name || variant.color,
+              color_name: variant.color_name,
+              color_code: variant.color_code,
+              storage: variant.storage,
+              ram: variant.ram,
+            };
+          }
+        }
+        
+        return {
+          id: item.id,
+          product,
+          quantity: item.quantity || 1,
+          colors: Array.isArray(item.colors) 
+            ? item.colors.map((c: any) => typeof c === 'object' && c ? c.id : c).filter((id: any) => id !== null && id !== undefined)
+            : item.colors || [],
+          sizes: Array.isArray(item.sizes)
+            ? item.sizes.map((s: any) => typeof s === 'object' && s ? s.id : s).filter((id: any) => id !== null && id !== undefined)
+            : item.sizes || [],
+          variant: item.variant ? (typeof item.variant === 'object' && item.variant ? item.variant.id : item.variant) : undefined,
+        };
+      } catch (error) {
+        console.error('mapCartFromBackend: erreur lors du mapping d\'un item', error, item);
+        return null;
+      }
+    })
+    .filter((item: any) => item !== null); // Filtrer les items qui ont échoué
+  
   return {
-    id: backendCart.id,
-    user: typeof backendCart.user === 'object'
+    id: backendCart.id || 0,
+    user: typeof backendCart.user === 'object' && backendCart.user
       ? backendCart.user.id
       : backendCart.user || undefined,
-    items: items.map((item: any) => ({
-      id: item.id,
-      product: mapProductFromBackend(item.product),
-      quantity: item.quantity || 1,
-      colors: Array.isArray(item.colors) 
-        ? item.colors.map((c: any) => typeof c === 'object' ? c.id : c)
-        : item.colors || [],
-      sizes: Array.isArray(item.sizes)
-        ? item.sizes.map((s: any) => typeof s === 'object' ? s.id : s)
-        : item.sizes || [],
-      variant: item.variant ? (typeof item.variant === 'object' ? item.variant.id : item.variant) : undefined,
-    })),
-    total_price: parseFloat(backendCart.total_price || backendCart.get_total_price?.() || 0),
+    items: validItems,
+    total_price: totalPrice,
     created_at: backendCart.created_at || new Date().toISOString(),
     updated_at: backendCart.updated_at || new Date().toISOString(),
   };

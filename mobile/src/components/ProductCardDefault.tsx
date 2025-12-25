@@ -7,11 +7,12 @@ import {
   StyleSheet,
   Dimensions,
 } from 'react-native';
-import { MaterialIcons } from '@expo/vector-icons';
+import { MaterialIcons, Ionicons } from '@expo/vector-icons';
 import { Product } from '../types';
 import { formatPrice } from '../utils/helpers';
 import { COLORS } from '../utils/constants';
 import { useNavigation } from '@react-navigation/native';
+import { useAppSelector } from '../store/hooks';
 
 interface ProductCardDefaultProps {
   product: Product;
@@ -22,7 +23,12 @@ const CARD_WIDTH = (width - 48) / 2; // 16px padding on each side, 16px gap in b
 
 const ProductCardDefault: React.FC<ProductCardDefaultProps> = ({ product }) => {
   const navigation = useNavigation();
+  const { items } = useAppSelector((state) => state.cart);
   
+  // Vérifier si le produit est dans le panier
+  const itemInCart = items.find(item => item.product.id === product.id);
+  const quantityInCart = itemInCart ? itemInCart.quantity : 0;
+
   const handlePress = () => {
     navigation.navigate('Products' as never, { screen: 'ProductDetail', params: { slug: product.slug } } as never);
   };
@@ -58,6 +64,14 @@ const ProductCardDefault: React.FC<ProductCardDefaultProps> = ({ product }) => {
           </View>
         )}
 
+        {/* Badge dans le panier */}
+        {quantityInCart > 0 && (
+          <View style={styles.cartBadge}>
+            <Ionicons name="cart" size={12} color="#FFFFFF" />
+            <Text style={styles.cartBadgeText}>{quantityInCart}</Text>
+          </View>
+        )}
+
         {/* Badge indisponible */}
         {!product.is_available && (
           <View style={styles.unavailableBadge}>
@@ -76,7 +90,10 @@ const ProductCardDefault: React.FC<ProductCardDefaultProps> = ({ product }) => {
         )}
         <View style={styles.priceContainer}>
           {hasDiscount ? (
-            <Text style={styles.discountPrice}>{formatPrice(product.discount_price!)}</Text>
+            <>
+              <Text style={styles.discountPrice}>{formatPrice(product.discount_price!)}</Text>
+              <Text style={styles.oldPrice}>{formatPrice(product.price)}</Text>
+            </>
           ) : (
             <Text style={styles.price}>{formatPrice(product.price)}</Text>
           )}
@@ -139,6 +156,30 @@ const styles = StyleSheet.create({
     fontWeight: '900',
     letterSpacing: 0.3,
   },
+  cartBadge: {
+    position: 'absolute',
+    bottom: 8,
+    right: 8,
+    backgroundColor: COLORS.PRIMARY,
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 12,
+    borderWidth: 1.5,
+    borderColor: '#FFFFFF',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 3,
+    elevation: 4,
+  },
+  cartBadgeText: {
+    color: '#FFFFFF',
+    fontSize: 10,
+    fontWeight: '800',
+    marginLeft: 2,
+  },
   unavailableBadge: {
     position: 'absolute',
     top: 8,
@@ -192,6 +233,13 @@ const styles = StyleSheet.create({
     fontWeight: '900',
     color: COLORS.DANGER,
     letterSpacing: -0.3,
+    marginRight: 8,
+  },
+  oldPrice: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: COLORS.TEXT_SECONDARY,
+    textDecorationLine: 'line-through',
   },
 });
 

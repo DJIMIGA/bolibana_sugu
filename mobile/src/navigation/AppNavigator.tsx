@@ -99,6 +99,7 @@ const TabBarIcon: React.FC<{
 // Tabs principales de l'application
 const MainTabs = () => {
   const insets = useSafeAreaInsets();
+  const { itemsCount } = useAppSelector((state) => state.cart);
 
   return (
     <Tab.Navigator
@@ -160,6 +161,21 @@ const MainTabs = () => {
           tabBarLabel: 'Produits',
           tabBarIcon: ({ color, focused }) => (
             <TabBarIcon name="bag" color={color} focused={focused} />
+          ),
+        }}
+      />
+      <Tab.Screen 
+        name="CartTab" 
+        component={CartStack}
+        options={{ 
+          tabBarLabel: 'Panier',
+          tabBarBadge: itemsCount > 0 ? itemsCount : undefined,
+          tabBarIcon: ({ color, focused }) => (
+            <TabBarIcon 
+              name="cart" 
+              color={color} 
+              focused={focused} 
+            />
           ),
         }}
       />
