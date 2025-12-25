@@ -1219,7 +1219,7 @@ class GenericCategoryView(BaseCategoryView):
             is_main=True,
             parent__isnull=True
         ).annotate(
-            available_products_count=Count('products', filter=Q(products__is_available=True))
+            available_products_count=Count('products')
         ).order_by('order', 'name')
         
         # Construire la hiérarchie des catégories
@@ -1306,20 +1306,14 @@ class CategoryListView(TemplateView):
         main_categories = Category.objects.filter(
             is_main=True
         ).annotate(
-            available_products_count=Count(
-                'products',
-                filter=Q(products__is_available=True)
-            )
+            available_products_count=Count('products')
         ).order_by('order', 'name')
 
         # Récupérer les sous-catégories (non principales)
         sub_categories = Category.objects.filter(
             is_main=False
         ).annotate(
-            available_products_count=Count(
-                'products',
-                filter=Q(products__is_available=True)
-            )
+            available_products_count=Count('products')
         ).order_by('order', 'name')
 
         context['main_categories'] = main_categories

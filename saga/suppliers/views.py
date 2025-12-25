@@ -220,7 +220,7 @@ class SupplierListView(ListView):
             'children',
             'products'
         ).annotate(
-            available_products_count=Count('products', filter=Q(products__is_available=True))
+            available_products_count=Count('products')
         ).order_by('order', 'name')
         
         context['main_categories'] = main_categories
@@ -273,12 +273,12 @@ class SupplierListView(ListView):
         # Filtres pour les tissus
         context['fabric_types'] = [{'fabric_product__fabric_type': t} for t in sorted(filter(None, all_products.filter(fabric_product__isnull=False).values_list('fabric_product__fabric_type', flat=True).distinct()))]
         context['fabric_colors'] = [{'fabric_product__color__name': c} for c in sorted(filter(None, all_products.filter(fabric_product__isnull=False).values_list('fabric_product__color__name', flat=True).distinct()))]
-        context['qualities'] = [{'fabric_product__quality': q} for q in sorted(filter(None, active_products.filter(fabric_product__isnull=False).values_list('fabric_product__quality', flat=True).distinct()))]
+        context['qualities'] = [{'fabric_product__quality': q} for q in sorted(filter(None, all_products.filter(fabric_product__isnull=False).values_list('fabric_product__quality', flat=True).distinct()))]
 
         # Filtres pour les produits culturels
-        context['authors'] = [{'cultural_product__author': a} for a in sorted(filter(None, active_products.filter(cultural_product__isnull=False).values_list('cultural_product__author', flat=True).distinct()))]
-        context['isbns'] = [{'cultural_product__isbn': i} for i in sorted(filter(None, active_products.filter(cultural_product__isnull=False).values_list('cultural_product__isbn', flat=True).distinct()))]
-        context['dates'] = [{'cultural_product__date': d} for d in sorted(filter(None, active_products.filter(cultural_product__isnull=False).values_list('cultural_product__date', flat=True).distinct()))]
+        context['authors'] = [{'cultural_product__author': a} for a in sorted(filter(None, all_products.filter(cultural_product__isnull=False).values_list('cultural_product__author', flat=True).distinct()))]
+        context['isbns'] = [{'cultural_product__isbn': i} for i in sorted(filter(None, all_products.filter(cultural_product__isnull=False).values_list('cultural_product__isbn', flat=True).distinct()))]
+        context['dates'] = [{'cultural_product__date': d} for d in sorted(filter(None, all_products.filter(cultural_product__isnull=False).values_list('cultural_product__date', flat=True).distinct()))]
 
         # Filtres sélectionnés
         context['selected_brand'] = self.request.GET.get('brand', '')
@@ -317,7 +317,7 @@ class SupplierListView(ListView):
         logger.info(f"Nombre de produits culturels: {cultural_count}")
 
         # Récupérer les produits en promotion (avec discount_price)
-        promotional_products = active_products.filter(
+        promotional_products = all_products.filter(
             discount_price__isnull=False,
             discount_price__gt=0
         ).order_by('-created_at')[:8]
@@ -325,7 +325,7 @@ class SupplierListView(ListView):
         logger.info(f"Nombre de produits en promotion: {promotional_products.count()}")
 
         # Récupérer les produits pilotes (5 premiers produits disponibles)
-        pilot_products = active_products.order_by('-created_at')[:5]
+        pilot_products = all_products.order_by('-created_at')[:5]
         logger.info(f"Nombre de produits pilotes: {pilot_products.count()}")
         for product in pilot_products:
             logger.info(f"Produit pilote: {product.title} (ID: {product.id})")
@@ -457,26 +457,25 @@ class BrandDetailView(TemplateView):
             context['breadcrumbs'] = self.get_breadcrumbs(brand)
 
             # Préparation des filtres pour le template
-            active_products = Product.objects.filter(
-                phone__brand__iexact=brand,
-                is_available=True
+            all_products = Product.objects.filter(
+                phone__brand__iexact=brand
             ).select_related('phone', 'phone__color')
 
             # Marques (ici une seule, mais structure attendue par le template)
             context['brands'] = [{'phone__brand': brand}]
 
             # Modèles disponibles
-            models_list = list(active_products.values_list('phone__model', flat=True))
+            models_list = list(all_products.values_list('phone__model', flat=True))
             models_clean = sorted(set(filter(None, models_list)))
             context['models'] = [{'phone__model': m} for m in models_clean]
 
             # Stockages disponibles
-            storages_list = list(active_products.values_list('phone__storage', flat=True))
+            storages_list = list(all_products.values_list('phone__storage', flat=True))
             storages_clean = sorted(set(filter(None, storages_list)))
             context['storages'] = [{'phone__storage': s} for s in storages_clean]
 
             # RAM disponibles
-            rams_list = list(active_products.values_list('phone__ram', flat=True))
+            rams_list = list(all_products.values_list('phone__ram', flat=True))
             rams_clean = sorted(set(filter(None, rams_list)))
             context['rams'] = [{'phone__ram': r} for r in rams_clean]
 
