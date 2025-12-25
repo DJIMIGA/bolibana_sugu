@@ -45,10 +45,8 @@ def global_supplier_context(request):
     
     context['main_categories'] = main_categories
     
-    # Récupérer les produits actifs avec leurs relations
-    base_queryset = Product.objects.filter(
-        is_available=True
-    ).select_related(
+    # Récupérer tous les produits pour les filtres
+    base_queryset = Product.objects.all().select_related(
         'phone',
         'phone__color',
         'supplier',
@@ -78,14 +76,14 @@ def global_supplier_context(request):
     if price_max:
         base_queryset = base_queryset.filter(price__lte=price_max)
     
-    # Trier les résultats
-    base_queryset = base_queryset.order_by('-created_at')
+    # Trier les résultats : Disponible d'abord, puis nouveautés
+    base_queryset = base_queryset.order_by('-is_available', '-created_at')
     
     # Ajouter les produits au contexte
     context['products'] = base_queryset
     
     # Produits téléphones
-    context['phone_products'] = phone_products.order_by('-created_at')[:8]
+    context['phone_products'] = phone_products.order_by('-is_available', '-created_at')[:8]
     
     # Récupérer les marques de téléphones
     brands_list = list(phone_products.values_list('phone__brand', flat=True))
@@ -93,13 +91,13 @@ def global_supplier_context(request):
     context['phone_categories'] = [{'brand': b} for b in brands_clean]
     
     # Produits vêtements
-    context['clothing_products'] = clothing_products.order_by('-created_at')[:8]
+    context['clothing_products'] = clothing_products.order_by('-is_available', '-created_at')[:8]
     
     # Produits tissus avec toutes les informations
     fabric_products = fabric_products.select_related(
         'fabric_product',
         'fabric_product__color'
-    ).order_by('-created_at')[:8]
+    ).order_by('-is_available', '-created_at')[:8]
     
     # Enrichir les produits tissus avec les informations spécifiques
     enriched_fabric_products = []
@@ -123,12 +121,10 @@ def global_supplier_context(request):
     context['fabric_products'] = enriched_fabric_products
     
     # Produits culturels
-    context['cultural_products'] = cultural_products.order_by('-created_at')[:8]
+    context['cultural_products'] = cultural_products.order_by('-is_available', '-created_at')[:8]
     
     # Méthodes de livraison
-    context['shipping_methods'] = ShippingMethod.objects.filter(
-        products__is_available=True
-    ).distinct().order_by('price')
+    context['shipping_methods'] = ShippingMethod.objects.all().distinct().order_by('price')
     
     # Statistiques globales
     context['total_products'] = base_queryset.count()
@@ -137,18 +133,18 @@ def global_supplier_context(request):
     # Produits en vedette (les plus vendus ou les mieux notés)
     context['featured_products'] = base_queryset.annotate(
         avg_rating=Avg('reviews__rating')
-    ).order_by('-avg_rating')[:4]
+    ).order_by('-is_available', '-avg_rating')[:4]
     
     # Nouveaux produits (derniers 7 jours)
     seven_days_ago = timezone.now() - timedelta(days=7)
     context['new_products'] = base_queryset.filter(
         created_at__gte=seven_days_ago
-    ).order_by('-created_at')[:4]
+    ).order_by('-is_available', '-created_at')[:4]
     
     # Produits en promotion
     context['promo_products'] = base_queryset.filter(
         discount_price__isnull=False
-    ).order_by('-discount_price')[:4]
+    ).order_by('-is_available', '-discount_price')[:4]
     
     # Filtres de prix sélectionnés
     context['selected_price_min'] = request.GET.get('price_min', '')
@@ -189,9 +185,7 @@ def global_supplier_context(request):
         context['selected_ram'] = ''
     
     # Récupérer les catégories disponibles pour les filtres
-    categories_list = Category.objects.filter(
-        products__is_available=True
-    ).values_list('name', flat=True).distinct()
+    categories_list = Category.objects.all().values_list('name', flat=True).distinct()
     
     return context
 

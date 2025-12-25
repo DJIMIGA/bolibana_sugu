@@ -62,3 +62,4 @@ Write-Host "2. Ou utilisez: appwiz.cpl pour le panneau de désinstallation class
 Write-Host "3. Vérifiez le fichier CSV pour une liste complète" -ForegroundColor White
 
 
+
