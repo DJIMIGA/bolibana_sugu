@@ -246,7 +246,7 @@ class LoginView(AuthLoginView):
             if not old_session_key:
                 self.request.session.save()
                 old_session_key = self.request.session.session_key
-            auth_login(self.request, user)
+            auth_login(self.request, user, backend='django.contrib.auth.backends.ModelBackend')
             
             # Tracking de la connexion
             track_login(self.request, method='email', source='website')
@@ -498,7 +498,7 @@ def setup_2fa(request):
                 device.save()
                 messages.success(request, 'La 2FA a été activée avec succès.')
                 if not request.user.is_authenticated:
-                    auth_login(request, user)
+                    auth_login(request, user, backend='django.contrib.auth.backends.ModelBackend')
                 return redirect('suppliers:supplier_index')
             else:
                 messages.error(request, 'Code invalide. Veuillez réessayer.')
@@ -592,7 +592,7 @@ def verify_2fa(request):
             if not old_session_key:
                 request.session.save()
                 old_session_key = request.session.session_key
-            auth_login(request, user)
+            auth_login(request, user, backend='django.contrib.auth.backends.ModelBackend')
             user.set_verified(True)
             
             # Migrer le panier anonyme vers le compte utilisateur

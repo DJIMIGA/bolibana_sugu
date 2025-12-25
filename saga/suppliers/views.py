@@ -1673,8 +1673,6 @@ def search(request):
     
     if query:
         # Rediriger vers l'URL optimisée si c'est une recherche simple
-        from django.utils.text import slugify
-        from django.shortcuts import redirect
         
         # Vérifier s'il y a des filtres supplémentaires
         has_filters = any([
@@ -1750,7 +1748,6 @@ def search_suggestions(request):
             normalized_query = normalize_search_term(query)
             if normalized_query in normalized_title:
                 # Créer un slug pour l'URL optimisée
-                from django.utils.text import slugify
                 search_slug = slugify(product.title)
                 suggestions.append({
                     'type': 'product',
@@ -1925,7 +1922,6 @@ def search_by_slug(request, search_term):
     Vue pour les URLs de recherche optimisées avec slug
     Exemple: /recherche/tecno-pop-5-bleu-ice/
     """
-    from django.utils.text import slugify
     
     # Convertir le slug en terme de recherche
     # Remplacer les tirets par des espaces
