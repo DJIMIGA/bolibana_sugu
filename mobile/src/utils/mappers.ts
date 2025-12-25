@@ -54,6 +54,8 @@ export const mapProductFromBackend = (backendProduct: any): Product => {
     } else if (backendProduct.feature_image.image) {
       imageUrl = ensureAbsoluteUrl(backendProduct.feature_image.image);
     }
+  } else if (backendProduct.image) {
+    imageUrl = ensureAbsoluteUrl(backendProduct.image);
   } else if (backendProduct.images && backendProduct.images.length > 0) {
     const firstImage = backendProduct.images[0];
     imageUrl = ensureAbsoluteUrl(typeof firstImage === 'string' ? firstImage : firstImage.image);

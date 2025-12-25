@@ -61,9 +61,7 @@ class BaseCategoryView(TemplateView):
     
     def get_base_queryset(self):
         """Retourne le queryset de base avec les relations communes"""
-        queryset = Product.objects.filter(
-            is_available=True
-        ).select_related(
+        queryset = Product.objects.all().select_related(
             'phone',
             'phone__color',
             'supplier',
@@ -215,13 +213,13 @@ class BaseCategoryView(TemplateView):
 
         sort = self.request.GET.get('sort')
         if sort == 'price_asc':
-            queryset = queryset.order_by('price')
+            queryset = queryset.order_by('-is_available', 'price')
         elif sort == 'price_desc':
-            queryset = queryset.order_by('-price')
+            queryset = queryset.order_by('-is_available', '-price')
         elif sort == 'new':
-            queryset = queryset.order_by('-created_at')
+            queryset = queryset.order_by('-is_available', '-created_at')
         elif sort == 'best_selling':
-            queryset = queryset.order_by('-sales_count')
+            queryset = queryset.order_by('-is_available', '-sales_count')
 
         print(f"Nombre final de produits après tous les filtres: {queryset.count()}")
         print("=== FIN DEBUG GENERIC FILTERS ===\n")
@@ -587,21 +585,18 @@ class ClothingCategoryView(BaseCategoryView):
         
         print("\n=== DEBUG CONTEXT DATA ===")
         
-        # Récupérer les produits actifs pour les filtres avec toutes les relations nécessaires
-        active_products = Product.objects.filter(
-            is_available=True,
-            clothing_product__isnull=False
-        ).select_related(
+        # Récupérer tous les produits pour les filtres avec toutes les relations nécessaires
+        all_products = Product.objects.all().select_related(
             'clothing_product'
         ).prefetch_related(
             'clothing_product__size',
             'clothing_product__color'
         ).distinct()
         
-        print(f"Nombre de produits actifs: {active_products.count()}")
+        print(f"Nombre de produits récupérés: {all_products.count()}")
         
         # Récupérer les genres disponibles et les formater
-        gender_list = list(active_products.values_list('clothing_product__gender', flat=True).distinct())
+        gender_list = list(all_products.values_list('clothing_product__gender', flat=True).distinct())
         gender_mapping = {
             'H': 'Homme',
             'F': 'Femme',
@@ -616,7 +611,7 @@ class ClothingCategoryView(BaseCategoryView):
         print(f"Genres disponibles: {context['genders']}")
         
         # Récupérer les tailles disponibles
-        size_list = list(active_products.values_list(
+        size_list = list(all_products.values_list(
             'clothing_product__size__name', 
             flat=True
         ).distinct())
@@ -624,7 +619,7 @@ class ClothingCategoryView(BaseCategoryView):
         print(f"Tailles disponibles: {context['sizes']}")
         
         # Récupérer les couleurs disponibles
-        colors_list = active_products.values_list(
+        colors_list = all_products.values_list(
             'clothing_product__color__name', 
             'clothing_product__color__code'
         ).distinct()
@@ -637,15 +632,15 @@ class ClothingCategoryView(BaseCategoryView):
         print(f"Couleurs disponibles: {context['colors']}")
         
         # Récupérer les types disponibles
-        material_list = list(active_products.values_list('clothing_product__material', flat=True).distinct())
+        material_list = list(all_products.values_list('clothing_product__material', flat=True).distinct())
         context['materials'] = [{'material': m} for m in sorted(set(filter(None, material_list)))]
         print(f"Matériaux disponibles: {context['materials']}")
         
-        style_list = list(active_products.values_list('clothing_product__style', flat=True).distinct())
+        style_list = list(all_products.values_list('clothing_product__style', flat=True).distinct())
         context['styles'] = [{'style': s} for s in sorted(set(filter(None, style_list)))]
         print(f"Styles disponibles: {context['styles']}")
         
-        season_list = list(active_products.values_list('clothing_product__season', flat=True).distinct())
+        season_list = list(all_products.values_list('clothing_product__season', flat=True).distinct())
         context['seasons'] = [{'season': s} for s in sorted(set(filter(None, season_list)))]
         print(f"Saisons disponibles: {context['seasons']}")
         
@@ -794,39 +789,36 @@ class PhoneCategoryView(BaseCategoryView):
         
         print("\n=== DEBUG CONTEXT DATA ===")
         
-        # Récupérer les produits actifs pour les filtres avec toutes les relations nécessaires
-        active_products = Product.objects.filter(
-            is_available=True,
-            phone__isnull=False
-        ).select_related(
+        # Récupérer tous les produits pour les filtres avec toutes les relations nécessaires
+        all_products = Product.objects.all().select_related(
             'phone',
             'phone__color'
         ).distinct()
         
-        print(f"Nombre de produits actifs: {active_products.count()}")
+        print(f"Nombre de produits récupérés: {all_products.count()}")
         
         # Récupérer les marques disponibles (normalisées)
-        brands_list = list(active_products.values_list('phone__brand', flat=True).distinct())
+        brands_list = list(all_products.values_list('phone__brand', flat=True).distinct())
         context['brands'] = [{'phone__brand': b} for b in sorted(set(filter(None, brands_list)))]
         print(f"Marques disponibles: {context['brands']}")
         
         # Récupérer les modèles disponibles
-        models_list = list(active_products.values_list('phone__model', flat=True).distinct())
+        models_list = list(all_products.values_list('phone__model', flat=True).distinct())
         context['models'] = [{'phone__model': m} for m in sorted(set(filter(None, models_list)))]
         print(f"Modèles disponibles: {context['models']}")
         
         # Récupérer les stockages disponibles
-        storages_list = list(active_products.values_list('phone__storage', flat=True).distinct())
+        storages_list = list(all_products.values_list('phone__storage', flat=True).distinct())
         context['storages'] = [{'phone__storage': s} for s in sorted(set(filter(None, storages_list)))]
         print(f"Stockages disponibles: {context['storages']}")
         
         # Récupérer les RAM disponibles
-        rams_list = list(active_products.values_list('phone__ram', flat=True).distinct())
+        rams_list = list(all_products.values_list('phone__ram', flat=True).distinct())
         context['rams'] = [{'phone__ram': str(r)} for r in sorted(set(filter(None, rams_list)))]
         print(f"RAM disponibles: {context['rams']}")
         
         # Récupérer les couleurs disponibles avec leurs codes
-        colors_list = active_products.values_list(
+        colors_list = all_products.values_list(
             'phone__color__name',
             'phone__color__code'
         ).distinct()
@@ -933,13 +925,13 @@ class FabricCategoryView(BaseCategoryView):
         # Appliquer le tri global
         sort = self.request.GET.get('sort')
         if sort == 'price_asc':
-            queryset = queryset.order_by('price')
+            queryset = queryset.order_by('-is_available', 'price')
         elif sort == 'price_desc':
-            queryset = queryset.order_by('-price')
+            queryset = queryset.order_by('-is_available', '-price')
         elif sort == 'new':
-            queryset = queryset.order_by('-created_at')
+            queryset = queryset.order_by('-is_available', '-created_at')
         elif sort == 'best_selling':
-            queryset = queryset.order_by('-sales_count')
+            queryset = queryset.order_by('-is_available', '-sales_count')
         
         # Appliquer les filtres de prix
         queryset = self.get_price_filters(queryset)
@@ -967,21 +959,18 @@ class FabricCategoryView(BaseCategoryView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         
-        # Récupérer les produits actifs pour les filtres avec toutes les relations nécessaires
-        active_products = Product.objects.filter(
-            is_available=True,
-            fabric_product__isnull=False
-        ).select_related(
+        # Récupérer tous les produits pour les filtres avec toutes les relations nécessaires
+        all_products = Product.objects.all().select_related(
             'fabric_product',
             'fabric_product__color'
         ).distinct()
         
         # Récupérer les types de tissus disponibles
-        fabric_type_list = list(active_products.values_list('fabric_product__fabric_type', flat=True).distinct())
+        fabric_type_list = list(all_products.values_list('fabric_product__fabric_type', flat=True).distinct())
         context['fabric_types'] = [{'fabric_type': ft} for ft in sorted(set(filter(None, fabric_type_list)))]
         
         # Récupérer les couleurs disponibles avec leurs codes
-        colors_list = active_products.values_list(
+        colors_list = all_products.values_list(
             'fabric_product__color__name',
             'fabric_product__color__code'
         ).distinct()
@@ -993,7 +982,7 @@ class FabricCategoryView(BaseCategoryView):
         ]
         
         # Récupérer les qualités disponibles
-        quality_list = list(active_products.values_list('fabric_product__quality', flat=True).distinct())
+        quality_list = list(all_products.values_list('fabric_product__quality', flat=True).distinct())
         context['qualities'] = [{'quality': q} for q in sorted(set(filter(None, quality_list)))]
         
         # Ajouter les méthodes de livraison
@@ -1059,13 +1048,13 @@ class CulturalCategoryView(BaseCategoryView):
         # Appliquer le tri global
         sort = self.request.GET.get('sort')
         if sort == 'price_asc':
-            queryset = queryset.order_by('price')
+            queryset = queryset.order_by('-is_available', 'price')
         elif sort == 'price_desc':
-            queryset = queryset.order_by('-price')
+            queryset = queryset.order_by('-is_available', '-price')
         elif sort == 'new':
-            queryset = queryset.order_by('-created_at')
+            queryset = queryset.order_by('-is_available', '-created_at')
         elif sort == 'best_selling':
-            queryset = queryset.order_by('-sales_count')
+            queryset = queryset.order_by('-is_available', '-sales_count')
         
         # Appliquer les filtres de prix
         queryset = self.get_price_filters(queryset)
@@ -1098,24 +1087,21 @@ class CulturalCategoryView(BaseCategoryView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         
-        # Récupérer les produits actifs pour les filtres
-        active_products = Product.objects.filter(
-            is_available=True,
-            cultural_product__isnull=False
-        ).select_related(
+        # Récupérer tous les produits pour les filtres
+        all_products = Product.objects.all().select_related(
             'cultural_product'
         )
         
         # Récupérer les auteurs disponibles
-        author_list = list(active_products.values_list('cultural_product__author', flat=True).distinct())
+        author_list = list(all_products.values_list('cultural_product__author', flat=True).distinct())
         context['authors'] = [{'author': a} for a in sorted(set(filter(None, author_list)))]
         
         # Récupérer les ISBN disponibles
-        isbn_list = list(active_products.values_list('cultural_product__isbn', flat=True).distinct())
+        isbn_list = list(all_products.values_list('cultural_product__isbn', flat=True).distinct())
         context['isbns'] = [{'isbn': i} for i in sorted(set(filter(None, isbn_list)))]
         
         # Récupérer les dates disponibles
-        date_list = list(active_products.values_list('cultural_product__date', flat=True).distinct())
+        date_list = list(all_products.values_list('cultural_product__date', flat=True).distinct())
         # Formater les dates au format français pour l'affichage
         formatted_dates = []
         for date_obj in sorted(set(filter(None, date_list))):
@@ -1166,10 +1152,8 @@ class GenericCategoryView(BaseCategoryView):
         # Appliquer les filtres selon le type de catégorie
         if category.slug == 'tous-les-produits':
             print("Cas 1: Catégorie principale (Tous les produits)")
-            # Pour la catégorie principale, on inclut tous les produits disponibles
-            queryset = queryset.filter(
-                is_available=True
-            )
+            # Pour la catégorie principale, on inclut tous les produits
+            queryset = queryset
             print(f"Nombre de produits après filtres de base: {queryset.count()}")
             
             # Appliquer le filtre de catégorie principale
@@ -1189,8 +1173,7 @@ class GenericCategoryView(BaseCategoryView):
             category_ids = set([category.id] + child_ids)
             print(f"IDs des catégories concernées: {category_ids}")
             queryset = queryset.filter(
-                category_id__in=category_ids,
-                is_available=True
+                category_id__in=category_ids
             )
             print(f"Nombre de produits après filtres de catégorie: {queryset.count()}")
         
@@ -1265,25 +1248,21 @@ class GenericCategoryView(BaseCategoryView):
             'page_obj': products,
         })
         
-        # Récupérer les produits actifs pour les filtres
-        active_products = Product.objects.filter(
-            is_available=True
-        ).select_related(
+        # Récupérer tous les produits pour les filtres
+        all_products = Product.objects.all().select_related(
             'category'
         ).distinct()
         
         # Récupérer les marques disponibles
-        brands_list = list(active_products.values_list('brand', flat=True).distinct())
+        brands_list = list(all_products.values_list('brand', flat=True).distinct())
         context['brands'] = [{'brand': b} for b in sorted(set(filter(None, brands_list)))]
         
         # Récupérer les catégories disponibles pour les filtres
-        categories_list = Category.objects.filter(
-            products__is_available=True
-        ).values_list('name', flat=True).distinct()
+        categories_list = Category.objects.all().values_list('name', flat=True).distinct()
         context['filter_categories'] = [{'name': c} for c in sorted(set(filter(None, categories_list)))]
         
         # Récupérer les conditions disponibles
-        conditions_list = list(active_products.values_list('condition', flat=True).distinct())
+        conditions_list = list(all_products.values_list('condition', flat=True).distinct())
         context['conditions'] = [{'condition': c} for c in sorted(set(filter(None, conditions_list)))]
         
         # Filtres sélectionnés

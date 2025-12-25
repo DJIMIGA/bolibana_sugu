@@ -93,9 +93,7 @@ class SupplierListView(ListView):
     context_object_name = 'products'
     paginate_by = 12
     def get_queryset(self):
-        queryset = Product.objects.filter(
-            is_available=True
-        ).select_related(
+        queryset = Product.objects.all().select_related(
             'phone',
             'phone__color',
             'supplier',
@@ -196,7 +194,7 @@ class SupplierListView(ListView):
             queryset = queryset.filter(price__lte=price_max)
         
         logger.info(f"Nombre de produits récupérés: {queryset.count()}")
-        return queryset.order_by('-created_at')
+        return queryset.order_by('-is_available', '-created_at')
 
     def get_context_data(self, **kwargs):
         logger.info("\n=== SUPPLIER LIST VIEW - GET_CONTEXT_DATA ===")
@@ -233,10 +231,8 @@ class SupplierListView(ListView):
             logger.info(f"Sous-catégories: {[child.name for child in cat.children.all()]}")
             logger.info("---")
 
-        # Récupérer les produits actifs avec leurs relations
-        active_products = Product.objects.filter(
-            is_available=True
-        ).select_related(
+        # Récupérer tous les produits pour les filtres
+        all_products = Product.objects.all().select_related(
             'phone',
             'phone__color',
             'clothing_product',
@@ -249,7 +245,7 @@ class SupplierListView(ListView):
         )
 
         # Log détaillé des vêtements
-        clothing_products = active_products.filter(clothing_product__isnull=False)
+        clothing_products = all_products.filter(clothing_product__isnull=False)
         logger.info("\n=== VÊTEMENTS ===")
         logger.info(f"Nombre total de vêtements: {clothing_products.count()}")
         for product in clothing_products:
@@ -260,23 +256,23 @@ class SupplierListView(ListView):
             logger.info("---")
 
         # Filtres pour les téléphones
-        context['phone_categories'] = [{'brand': b} for b in sorted(filter(None, active_products.filter(phone__isnull=False).values_list('phone__brand', flat=True).distinct()))]
-        context['brands'] = [{'phone__brand': b} for b in sorted(filter(None, active_products.filter(phone__isnull=False).values_list('phone__brand', flat=True).distinct()))]
-        context['models'] = [{'phone__model': m} for m in sorted(filter(None, active_products.filter(phone__isnull=False).values_list('phone__model', flat=True).distinct()))]
-        context['storages'] = [{'phone__storage': s} for s in sorted(filter(None, active_products.filter(phone__isnull=False).values_list('phone__storage', flat=True).distinct()))]
-        context['rams'] = [{'phone__ram': r} for r in sorted(filter(None, active_products.filter(phone__isnull=False).values_list('phone__ram', flat=True).distinct()))]
+        context['phone_categories'] = [{'brand': b} for b in sorted(filter(None, all_products.filter(phone__isnull=False).values_list('phone__brand', flat=True).distinct()))]
+        context['brands'] = [{'phone__brand': b} for b in sorted(filter(None, all_products.filter(phone__isnull=False).values_list('phone__brand', flat=True).distinct()))]
+        context['models'] = [{'phone__model': m} for m in sorted(filter(None, all_products.filter(phone__isnull=False).values_list('phone__model', flat=True).distinct()))]
+        context['storages'] = [{'phone__storage': s} for s in sorted(filter(None, all_products.filter(phone__isnull=False).values_list('phone__storage', flat=True).distinct()))]
+        context['rams'] = [{'phone__ram': r} for r in sorted(filter(None, all_products.filter(phone__isnull=False).values_list('phone__ram', flat=True).distinct()))]
 
         # Filtres pour les vêtements
-        context['genders'] = [{'clothing_product__gender': g} for g in sorted(filter(None, active_products.filter(clothing_product__isnull=False).values_list('clothing_product__gender', flat=True).distinct()))]
-        context['sizes'] = [{'clothing_product__size': s} for s in sorted(filter(None, active_products.filter(clothing_product__isnull=False).values_list('clothing_product__size', flat=True).distinct()))]
-        context['clothing_colors'] = [{'clothing_product__color__name': c} for c in sorted(filter(None, active_products.filter(clothing_product__isnull=False).values_list('clothing_product__color__name', flat=True).distinct()))]
-        context['materials'] = [{'clothing_product__material': m} for m in sorted(filter(None, active_products.filter(clothing_product__isnull=False).values_list('clothing_product__material', flat=True).distinct()))]
-        context['styles'] = [{'clothing_product__style': s} for s in sorted(filter(None, active_products.filter(clothing_product__isnull=False).values_list('clothing_product__style', flat=True).distinct()))]
-        context['seasons'] = [{'clothing_product__season': s} for s in sorted(filter(None, active_products.filter(clothing_product__isnull=False).values_list('clothing_product__season', flat=True).distinct()))]
+        context['genders'] = [{'clothing_product__gender': g} for g in sorted(filter(None, all_products.filter(clothing_product__isnull=False).values_list('clothing_product__gender', flat=True).distinct()))]
+        context['sizes'] = [{'clothing_product__size': s} for s in sorted(filter(None, all_products.filter(clothing_product__isnull=False).values_list('clothing_product__size', flat=True).distinct()))]
+        context['clothing_colors'] = [{'clothing_product__color__name': c} for c in sorted(filter(None, all_products.filter(clothing_product__isnull=False).values_list('clothing_product__color__name', flat=True).distinct()))]
+        context['materials'] = [{'clothing_product__material': m} for m in sorted(filter(None, all_products.filter(clothing_product__isnull=False).values_list('clothing_product__material', flat=True).distinct()))]
+        context['styles'] = [{'clothing_product__style': s} for s in sorted(filter(None, all_products.filter(clothing_product__isnull=False).values_list('clothing_product__style', flat=True).distinct()))]
+        context['seasons'] = [{'clothing_product__season': s} for s in sorted(filter(None, all_products.filter(clothing_product__isnull=False).values_list('clothing_product__season', flat=True).distinct()))]
 
         # Filtres pour les tissus
-        context['fabric_types'] = [{'fabric_product__fabric_type': t} for t in sorted(filter(None, active_products.filter(fabric_product__isnull=False).values_list('fabric_product__fabric_type', flat=True).distinct()))]
-        context['fabric_colors'] = [{'fabric_product__color__name': c} for c in sorted(filter(None, active_products.filter(fabric_product__isnull=False).values_list('fabric_product__color__name', flat=True).distinct()))]
+        context['fabric_types'] = [{'fabric_product__fabric_type': t} for t in sorted(filter(None, all_products.filter(fabric_product__isnull=False).values_list('fabric_product__fabric_type', flat=True).distinct()))]
+        context['fabric_colors'] = [{'fabric_product__color__name': c} for c in sorted(filter(None, all_products.filter(fabric_product__isnull=False).values_list('fabric_product__color__name', flat=True).distinct()))]
         context['qualities'] = [{'fabric_product__quality': q} for q in sorted(filter(None, active_products.filter(fabric_product__isnull=False).values_list('fabric_product__quality', flat=True).distinct()))]
 
         # Filtres pour les produits culturels
@@ -879,7 +875,6 @@ class PhoneDetailView(DetailView):
         
         similar_products = Product.objects.filter(
             similar_conditions,
-            is_available=True,  # Uniquement les produits disponibles
         ).exclude(
             id=product.id
         ).select_related(
@@ -889,7 +884,7 @@ class PhoneDetailView(DetailView):
         ).prefetch_related(
             'images'
         ).order_by(
-            # Ordre par priorité : même catégorie d'abord, puis sous-catégories
+            '-is_available',
             'category__id',  # Même catégorie en premier
             '-created_at'    # Puis par date de création
         )[:8]  # Augmenter le nombre pour avoir plus de choix
@@ -1049,7 +1044,6 @@ class ClothingDetailView(DetailView):
         
         similar_products = Product.objects.filter(
             similar_conditions,
-            is_available=True,  # Uniquement les produits disponibles
         ).exclude(
             id=product.id
         ).select_related(
@@ -1060,7 +1054,7 @@ class ClothingDetailView(DetailView):
             'clothing_product__size',
             'clothing_product__color'
         ).order_by(
-            # Ordre par priorité : même catégorie d'abord, puis sous-catégories
+            '-is_available',
             'category__id',  # Même catégorie en premier
             '-created_at'    # Puis par date de création
         )[:8]  # Augmenter le nombre pour avoir plus de choix
@@ -1201,7 +1195,7 @@ class CulturalItemDetailView(DetailView):
         ).prefetch_related(
             'images'
         ).order_by(
-            # Ordre par priorité : même catégorie d'abord, puis sous-catégories
+            '-is_available',
             'category__id',  # Même catégorie en premier
             '-created_at'    # Puis par date de création
         )[:8]  # Augmenter le nombre pour avoir plus de choix
@@ -1305,7 +1299,7 @@ class FabricDetailView(DetailView):
         ).prefetch_related(
             'images'
         ).order_by(
-            # Ordre par priorité : même catégorie d'abord, puis sous-catégories
+            '-is_available',
             'category__id',  # Même catégorie en premier
             '-created_at'    # Puis par date de création
         )[:8]  # Augmenter le nombre pour avoir plus de choix
@@ -1691,7 +1685,7 @@ def search(request):
         
         # Utiliser la nouvelle fonction de recherche améliorée
         search_query = create_search_query(query)
-        products = Product.objects.filter(search_query).select_related('category', 'supplier').prefetch_related('images')
+        products = Product.objects.filter(search_query).select_related('category', 'supplier').prefetch_related('images').order_by('-is_available', '-created_at')
     
     # Tracking de la recherche
     track_search(
@@ -1719,6 +1713,9 @@ def search(request):
             content_category="Produits BoliBana"
         )
     
+    # Appliquer le tri par disponibilité
+    products = products.order_by('-is_available', '-created_at')
+    
     context = {
         'query': query,
         'products': products,
@@ -1739,7 +1736,7 @@ def search_suggestions(request):
         suggestions = []
         # Utiliser la nouvelle fonction de recherche améliorée
         search_query = create_search_query(query)
-        products = Product.objects.filter(search_query).select_related('category').distinct()[:10]
+        products = Product.objects.filter(search_query).select_related('category').distinct().order_by('-is_available', '-created_at')[:10]
         
         # Créer des suggestions basées sur les produits trouvés
         for product in products:
@@ -1815,8 +1812,8 @@ def search_results_page(request):
     # Utiliser text comme requête principale, keywords comme contexte
     search_query = text or keywords
     
-    # Initialiser avec tous les produits disponibles
-    products = Product.objects.filter(is_available=True).select_related('category', 'supplier').prefetch_related('images')
+    # Initialiser avec tous les produits
+    products = Product.objects.all().select_related('category', 'supplier').prefetch_related('images')
     
     # Appliquer la recherche si un terme est fourni
     if search_query:
@@ -1883,6 +1880,9 @@ def search_results_page(request):
     final_count = products.count()
     logger.info(f"Nombre final de produits après tous les filtres: {final_count}")
     
+    # Appliquer le tri par disponibilité
+    products = products.order_by('-is_available', '-created_at')
+    
     # Récupérer les valeurs sélectionnées pour les filtres
     selected_price_min = request.GET.get('price_min', '')
     selected_price_max = request.GET.get('price_max', '')
@@ -1927,8 +1927,8 @@ def search_by_slug(request, search_term):
     # Remplacer les tirets par des espaces
     query = search_term.replace('-', ' ').replace('_', ' ')
     
-    # Initialiser avec tous les produits disponibles
-    products = Product.objects.filter(is_available=True).select_related('category', 'supplier').prefetch_related('images')
+    # Initialiser avec tous les produits
+    products = Product.objects.all().select_related('category', 'supplier').prefetch_related('images')
     
     # Appliquer la recherche
     if query:

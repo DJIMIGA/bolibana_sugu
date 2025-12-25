@@ -8,7 +8,8 @@ import {
   TouchableOpacity,
   ActivityIndicator,
   Alert,
-  SafeAreaView,
+  Dimensions,
+  FlatList,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons, MaterialIcons } from '@expo/vector-icons';
@@ -29,6 +30,7 @@ const ProductDetailScreen: React.FC = () => {
   const { selectedProduct, isLoading, similarProducts, isFetchingSimilarProducts } = useAppSelector((state) => state.product);
   const { isLoading: isAddingToCart } = useAppSelector((state) => state.cart);
   const [quantity, setQuantity] = useState(1);
+  const [activeImageIndex, setActiveImageIndex] = useState(0);
   const slug = (route.params as any)?.slug;
 
   useEffect(() => {
@@ -76,8 +78,21 @@ const ProductDetailScreen: React.FC = () => {
     ? Math.round(((selectedProduct.price - selectedProduct.discount_price!) / selectedProduct.price) * 100)
     : 0;
 
+  // Préparer la liste des images pour le carrousel
+  const images: string[] = [];
+  if (selectedProduct.image) images.push(selectedProduct.image);
+  
+  if (selectedProduct.image_urls?.gallery) {
+    selectedProduct.image_urls.gallery.forEach(img => {
+      if (!images.includes(img)) images.push(img);
+    });
+  }
+
+  const hasImages = images.length > 0;
+  const screenWidth = Dimensions.get('window').width;
+
   return (
-    <SafeAreaView style={styles.container}>
+    <View style={styles.container}>
       {/* Header avec bouton retour et titre */}
       <View style={[styles.headerContainer, { paddingTop: Math.max(insets.top + 8, 20) }]}>
         <TouchableOpacity
@@ -91,15 +106,43 @@ const ProductDetailScreen: React.FC = () => {
         <View style={styles.headerSpacer} />
       </View>
 
-      <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
-      {/* Image du produit avec badge de promotion */}
+      <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
+      {/* Image du produit avec carrousel si plusieurs images */}
       <View style={styles.imageContainer}>
-        {selectedProduct.image || selectedProduct.image_urls?.main ? (
-          <Image
-            source={{ uri: selectedProduct.image || selectedProduct.image_urls?.main }}
-            style={styles.image}
-            resizeMode="cover"
-          />
+        {hasImages ? (
+          <>
+            <FlatList
+              data={images}
+              horizontal
+              pagingEnabled
+              showsHorizontalScrollIndicator={false}
+              onMomentumScrollEnd={(e) => {
+                const index = Math.round(e.nativeEvent.contentOffset.x / screenWidth);
+                setActiveImageIndex(index);
+              }}
+              keyExtractor={(_, index) => `image-${index}`}
+              renderItem={({ item }) => (
+                <Image
+                  source={{ uri: item }}
+                  style={styles.carouselImage}
+                  resizeMode="contain"
+                />
+              )}
+            />
+            {images.length > 1 && (
+              <View style={styles.paginationContainer}>
+                {images.map((_, index) => (
+                  <View
+                    key={index}
+                    style={[
+                      styles.paginationDot,
+                      activeImageIndex === index && styles.paginationDotActive,
+                    ]}
+                  />
+                ))}
+              </View>
+            )}
+          </>
         ) : (
           <View style={styles.imagePlaceholder}>
             <MaterialIcons name="image-not-supported" size={64} color={COLORS.TEXT_SECONDARY} />
@@ -125,7 +168,7 @@ const ProductDetailScreen: React.FC = () => {
       </View>
 
       {/* Contenu principal */}
-      <View style={styles.content}>
+      <View style={styles.mainContent}>
         {/* En-tête avec titre et marque */}
         <View style={styles.header}>
           {selectedProduct.brand && (
@@ -383,7 +426,7 @@ const ProductDetailScreen: React.FC = () => {
         </View>
       )}
     </ScrollView>
-    </SafeAreaView>
+    </View>
   );
 };
 
@@ -432,7 +475,7 @@ const styles = StyleSheet.create({
   headerSpacer: {
     width: 40,
   },
-  content: {
+  scrollView: {
     flex: 1,
   },
   loadingContainer: {
@@ -443,13 +486,34 @@ const styles = StyleSheet.create({
   },
   imageContainer: {
     width: '100%',
-    height: 400,
+    height: Dimensions.get('window').width, // Image carrée basée sur la largeur
     position: 'relative',
-    backgroundColor: '#F9FAFB',
+    backgroundColor: '#FFFFFF',
   },
-  image: {
-    width: '100%',
-    height: '100%',
+  carouselImage: {
+    width: Dimensions.get('window').width,
+    height: Dimensions.get('window').width,
+  },
+  paginationContainer: {
+    position: 'absolute',
+    bottom: 16,
+    flexDirection: 'row',
+    alignSelf: 'center',
+    backgroundColor: 'rgba(0,0,0,0.1)',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 12,
+  },
+  paginationDot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+    backgroundColor: 'rgba(0,0,0,0.2)',
+    marginHorizontal: 4,
+  },
+  paginationDotActive: {
+    backgroundColor: COLORS.PRIMARY,
+    width: 16,
   },
   imagePlaceholder: {
     width: '100%',
@@ -513,7 +577,7 @@ const styles = StyleSheet.create({
     fontWeight: '800',
     letterSpacing: 0.5,
   },
-  content: {
+  mainContent: {
     padding: 20,
     backgroundColor: COLORS.BACKGROUND,
   },

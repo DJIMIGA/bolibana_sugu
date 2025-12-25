@@ -1,6 +1,6 @@
 <div class="absolute top-2 left-2 right-2 flex flex-wrap justify-between gap-2 z-10">
     {% for badge in badges %}
-        {% if forloop.counter <= 2 or badge.type == 'promo' %}
+        {% if forloop.counter <= 2 or badge.type == 'promo' or badge.type == 'out_of_stock' %}
         <span class="
             {% if badge.color == 'new' %}
                 bg-new
@@ -16,6 +16,8 @@
                 bg-classic
             {% elif badge.color == 'warranty' %}
                 bg-warranty
+            {% elif badge.color == 'danger' %}
+                bg-red-600
             {% else %}
                 bg-gray-500
             {% endif %}

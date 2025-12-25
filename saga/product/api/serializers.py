@@ -32,9 +32,19 @@ class CategorySerializer(serializers.ModelSerializer):
         return obj.product_count
 
 class ProductImageSerializer(serializers.ModelSerializer):
+    image = serializers.SerializerMethodField()
+    
     class Meta:
         model = ImageProduct
         fields = ['id', 'image', 'ordre', 'created_at', 'updated_at']
+
+    def get_image(self, obj):
+        if obj.image:
+            request = self.context.get('request')
+            if request:
+                return request.build_absolute_uri(obj.image.url)
+            return obj.image.url
+        return None
 
 
 
@@ -108,6 +118,7 @@ class ProductListSerializer(serializers.ModelSerializer):
 class ProductDetailSerializer(serializers.ModelSerializer):
     category = CategorySerializer(read_only=True)
     images = ProductImageSerializer(many=True, read_only=True)
+    feature_image = serializers.SerializerMethodField()
     phone = serializers.SerializerMethodField()
     clothing_product = serializers.SerializerMethodField()
     fabric_product = serializers.SerializerMethodField()
@@ -118,11 +129,23 @@ class ProductDetailSerializer(serializers.ModelSerializer):
         fields = [
             'id', 'title', 'slug', 'description',
             'price', 'discount_price', 'category', 'brand',
-            'images', 'stock', 'is_trending', 'is_salam',
+            'images', 'feature_image', 'stock', 'is_trending', 'is_salam',
             'is_available', 'created_at', 'updated_at',
             'specifications', 'weight', 'dimensions', 'phone',
             'clothing_product', 'fabric_product', 'cultural_product'
         ]
+    
+    def get_feature_image(self, obj):
+        # Retourner l'image principale du produit ou la première image de la galerie
+        if obj.image:
+            request = self.context.get('request')
+            if request:
+                return {'image': request.build_absolute_uri(obj.image.url)}
+            return {'image': obj.image.url}
+        feature_image = obj.images.first()
+        if feature_image:
+            return ProductImageSerializer(feature_image, context=self.context).data
+        return None
     
     def get_phone(self, obj):
         if hasattr(obj, 'phone') and obj.phone:

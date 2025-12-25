@@ -19,6 +19,15 @@ def product_badges(product):
             return {'badges': badges}
         product = product_obj
     
+    # Badge Rupture de stock (priorité haute)
+    if hasattr(product, 'is_available') and not product.is_available:
+        badges.append({
+            'type': 'out_of_stock',
+            'text': 'Rupture de stock',
+            'color': 'danger',
+            'icon': 'M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636'
+        })
+
     # Badge SALAM/CLASSIQUE (priorité haute)
     if hasattr(product, 'is_salam') and product.is_salam:
         badges.append({

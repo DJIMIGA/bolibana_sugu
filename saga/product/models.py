@@ -409,7 +409,7 @@ class Product(models.Model):
     class Meta:
         verbose_name = 'Produit'
         verbose_name_plural = 'Produits'
-        ordering = ['-created_at']
+        ordering = ['-is_available', '-created_at']
 
     def __str__(self):
         return self.title
