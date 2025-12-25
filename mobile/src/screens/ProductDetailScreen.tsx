@@ -28,6 +28,7 @@ const ProductDetailScreen: React.FC = () => {
   const route = useRoute();
   const insets = useSafeAreaInsets();
   const { selectedProduct, isLoading, similarProducts, isFetchingSimilarProducts } = useAppSelector((state) => state.product);
+  const { isReadOnly } = useAppSelector((state) => state.auth);
   const { items, isLoading: isAddingToCart } = useAppSelector((state) => state.cart);
   const [quantity, setQuantity] = useState(1);
   const [activeImageIndex, setActiveImageIndex] = useState(0);
@@ -66,6 +67,14 @@ const ProductDetailScreen: React.FC = () => {
         );
         return;
       }
+    }
+
+    if (isReadOnly) {
+      Alert.alert(
+        'Mode lecture seule',
+        'Votre session a expiré ou vous êtes hors ligne. Veuillez vous connecter pour ajouter des produits au panier.'
+      );
+      return;
     }
 
     try {
@@ -280,11 +289,10 @@ const ProductDetailScreen: React.FC = () => {
           </View>
         </View>
 
-        {/* Bouton Ajouter au panier */}
         <TouchableOpacity
           style={[
             styles.addToCartButton, 
-            (!selectedProduct.is_available || (selectedProduct.stock !== undefined && selectedProduct.stock <= 0)) && styles.disabledButton
+            (!selectedProduct.is_available || (selectedProduct.stock !== undefined && selectedProduct.stock <= 0) || isReadOnly) && styles.disabledButton
           ]}
           onPress={handleAddToCart}
           disabled={!selectedProduct.is_available || (selectedProduct.stock !== undefined && selectedProduct.stock <= 0) || isAddingToCart}
@@ -295,14 +303,16 @@ const ProductDetailScreen: React.FC = () => {
           ) : (
             <View style={styles.addToCartContent}>
               <MaterialIcons 
-                name={selectedProduct.is_available && (selectedProduct.stock === undefined || selectedProduct.stock > 0) ? "shopping-cart" : "block"} 
+                name={isReadOnly ? "cloud-off" : (selectedProduct.is_available && (selectedProduct.stock === undefined || selectedProduct.stock > 0) ? "shopping-cart" : "block")} 
                 size={24} 
                 color="#FFFFFF" 
               />
               <Text style={styles.addToCartText}>
-                {itemInCart 
-                  ? `Dans le panier (${itemInCart.quantity})` 
-                  : (selectedProduct.is_available && (selectedProduct.stock === undefined || selectedProduct.stock > 0) ? 'Ajouter au panier' : 'Indisponible')}
+                {isReadOnly 
+                  ? 'Mode lecture seule'
+                  : (itemInCart 
+                      ? `Dans le panier (${itemInCart.quantity})` 
+                      : (selectedProduct.is_available && (selectedProduct.stock === undefined || selectedProduct.stock > 0) ? 'Ajouter au panier' : 'Indisponible'))}
               </Text>
             </View>
           )}

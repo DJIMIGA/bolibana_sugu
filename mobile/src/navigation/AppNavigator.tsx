@@ -17,6 +17,7 @@ import HomeScreen from '../screens/HomeScreen';
 import ProductListScreen from '../screens/ProductListScreen';
 import ProductDetailScreen from '../screens/ProductDetailScreen';
 import CartScreen from '../screens/CartScreen';
+import CheckoutScreen from '../screens/CheckoutScreen';
 import ProfileScreen from '../screens/ProfileScreen';
 import CategoryScreen from '../screens/CategoryScreen';
 import WebViewScreen from '../screens/WebViewScreen';
@@ -56,6 +57,7 @@ const ProductStack = () => (
 const CartStack = () => (
   <Stack.Navigator screenOptions={{ headerShown: false }}>
     <Stack.Screen name="CartMain" component={CartScreen} />
+    <Stack.Screen name="Checkout" component={CheckoutScreen} />
   </Stack.Navigator>
 );
 

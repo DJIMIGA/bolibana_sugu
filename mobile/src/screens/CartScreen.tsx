@@ -119,8 +119,8 @@ const CartScreen: React.FC = () => {
       Alert.alert('Panier vide', 'Votre panier est vide');
       return;
     }
-    // Navigation vers l'écran de checkout (à implémenter)
-    Alert.alert('Checkout', 'Fonctionnalité de checkout à implémenter');
+    // Navigation vers l'écran de checkout
+    navigation.navigate('Checkout' as never);
   };
 
   const handleSearch = (text: string) => {

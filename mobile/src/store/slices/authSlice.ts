@@ -10,6 +10,7 @@ interface AuthState {
   token: string | null;
   refreshToken: string | null;
   isAuthenticated: boolean;
+  isReadOnly: boolean; // Mode lecture seule (si session expirée ou hors ligne non identifié)
   isLoading: boolean; // Pour le chargement initial
   isLoggingIn: boolean; // Pour la connexion
   sessionExpired: boolean;
@@ -23,6 +24,7 @@ const initialState: AuthState = {
   token: null,
   refreshToken: null,
   isAuthenticated: false,
+  isReadOnly: false,
   isLoading: true,
   isLoggingIn: false,
   sessionExpired: false,
@@ -152,22 +154,28 @@ export const loadUserAsync = createAsyncThunk(
         return null;
       }
 
-      // Vérifier si le token est toujours valide en récupérant le profil
-      try {
-        const response = await apiClient.get(API_ENDPOINTS.PROFILE);
-        const { mapUserFromBackend } = await import('../../utils/mappers');
-        const user = mapUserFromBackend(response.data);
-        await AsyncStorage.setItem(STORAGE_KEYS.AUTH_USER, JSON.stringify(user));
-        return { token, user };
-      } catch (error) {
-        // Token invalide, nettoyer
-        await Promise.all([
-          SecureStore.deleteItemAsync(STORAGE_KEYS.AUTH_TOKEN),
-          SecureStore.deleteItemAsync(STORAGE_KEYS.AUTH_REFRESH_TOKEN),
-          AsyncStorage.removeItem(STORAGE_KEYS.AUTH_USER),
-        ]);
-        return null;
+      const user = JSON.parse(userJson);
+
+      // Si on est en ligne, on vérifie le token
+      const { connectivityService } = await import('../../services/connectivityService');
+      const isOnline = connectivityService.getIsOnline();
+
+      if (isOnline) {
+        try {
+          console.log('[authSlice] 🌐 Online: Checking token validity...');
+          const response = await apiClient.get(API_ENDPOINTS.PROFILE);
+          const { mapUserFromBackend } = await import('../../utils/mappers');
+          const freshUser = mapUserFromBackend(response.data);
+          await AsyncStorage.setItem(STORAGE_KEYS.AUTH_USER, JSON.stringify(freshUser));
+          console.log('[authSlice] ✅ Token valid, profile updated.');
+          return { token, user: freshUser, isReadOnly: false };
+        } catch (error) {
+          console.warn('[authSlice] ❌ Token invalid or expired online.');
+          return { token, user, isReadOnly: true, expired: true };
+        }
       }
+
+      console.log('[authSlice] 🔌 Offline: Using local data in READ-ONLY mode.');
     } catch (error: any) {
       return rejectWithValue(error.message || 'Erreur de chargement');
     }
@@ -283,10 +291,11 @@ const authSlice = createSlice({
       state.sessionExpired = action.payload;
       if (action.payload) {
         state.isAuthenticated = false;
-        state.user = null;
-        state.token = null;
-        state.refreshToken = null;
+        state.isReadOnly = true; // On passe en lecture seule
       }
+    },
+    setReadOnly: (state, action: PayloadAction<boolean>) => {
+      state.isReadOnly = action.payload;
     },
     clearError: (state) => {
       state.error = null;
@@ -302,6 +311,7 @@ const authSlice = createSlice({
       .addCase(loginAsync.fulfilled, (state, action) => {
         state.isLoggingIn = false;
         state.isAuthenticated = true;
+        state.isReadOnly = false; // Reset read-only on login
         state.token = action.payload.access;
         state.refreshToken = action.payload.refresh;
         state.user = action.payload.user;
@@ -330,13 +340,16 @@ const authSlice = createSlice({
       .addCase(loadUserAsync.fulfilled, (state, action) => {
         state.isLoading = false;
         if (action.payload) {
-          state.isAuthenticated = true;
+          state.isAuthenticated = !action.payload.expired;
           state.token = action.payload.token;
           state.user = action.payload.user;
+          state.isReadOnly = action.payload.isReadOnly;
+          state.sessionExpired = !!action.payload.expired;
         } else {
           state.isAuthenticated = false;
           state.user = null;
           state.token = null;
+          state.isReadOnly = false;
         }
       })
       .addCase(loadUserAsync.rejected, (state) => {

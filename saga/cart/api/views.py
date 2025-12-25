@@ -1,11 +1,21 @@
 from rest_framework import viewsets, permissions, status
 from rest_framework.decorators import action
 from rest_framework.response import Response
-from rest_framework.permissions import AllowAny
+from rest_framework.permissions import AllowAny, IsAuthenticated
 from django.db import transaction
+from django.shortcuts import get_object_or_404
+from django.conf import settings
+from django.urls import reverse
 from .serializers import CartSerializer, CartItemSerializer
-from cart.models import Cart, CartItem
-from product.models import Product, Phone
+from cart.models import Cart, CartItem, Order, OrderItem
+from product.models import Product, Phone, ShippingMethod
+from accounts.models import ShippingAddress
+from cart.services import CartService
+from cart.orange_money_service import orange_money_service
+import stripe
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 class CartViewSet(viewsets.ModelViewSet):
@@ -248,4 +258,152 @@ class CartViewSet(viewsets.ModelViewSet):
             })
         except Exception as e:
             print(f"ERROR in CartViewSet.clear: {str(e)}")
-            return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR) 
+            return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+    @action(detail=False, methods=['post'], permission_classes=[IsAuthenticated])
+    def checkout(self, request):
+        """
+        Initié le processus de commande pour le mobile.
+        Retourne une URL de paiement (Stripe ou Orange Money).
+        """
+        user = request.user
+        cart = self.get_object()
+        
+        payment_method = request.data.get('payment_method')  # 'stripe', 'orange_money', 'cash_on_delivery'
+        address_id = request.data.get('shipping_address_id')
+        product_type = request.data.get('product_type', 'all')  # 'classic', 'salam', 'all'
+        
+        if not payment_method:
+            return Response({'error': 'La méthode de paiement est requise'}, status=status.HTTP_400_BAD_REQUEST)
+        
+        if not address_id:
+            return Response({'error': 'L\'adresse de livraison est requise'}, status=status.HTTP_400_BAD_REQUEST)
+            
+        address = get_object_or_404(ShippingAddress, id=address_id, user=user)
+        
+        # Valider le panier
+        is_valid, errors = CartService.validate_cart_for_checkout(cart, product_type)
+        if not is_valid:
+            return Response({'error': errors[0] if errors else 'Panier invalide'}, status=status.HTTP_400_BAD_REQUEST)
+            
+        # Déterminer la méthode de livraison par défaut (la première disponible)
+        shipping_method = ShippingMethod.objects.first()
+        if not shipping_method:
+            return Response({'error': 'Aucune méthode de livraison configurée'}, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            with transaction.atomic():
+                # 1. Créer la commande
+                total_price = cart.get_total_price()
+                order = Order.objects.create(
+                    user=user,
+                    shipping_address=address,
+                    shipping_method=shipping_method,
+                    payment_method=payment_method,
+                    subtotal=total_price,
+                    shipping_cost=shipping_method.price,
+                    total=total_price + shipping_method.price,
+                    status=Order.PENDING
+                )
+                
+                # 2. Créer les items de commande
+                for item in cart.cart_items.all():
+                    order_item = OrderItem.objects.create(
+                        order=order,
+                        product=item.product,
+                        quantity=item.quantity,
+                        price=item.get_unit_price()
+                    )
+                    if item.colors.exists():
+                        order_item.colors.set(item.colors.all())
+                    if item.sizes.exists():
+                        order_item.sizes.set(item.sizes.all())
+
+                # 3. Gérer le paiement
+                domain_url = request.build_absolute_uri('/')[:-1]
+                
+                if payment_method == 'stripe' or payment_method == 'online_payment':
+                    stripe.api_key = settings.STRIPE_SECRET_KEY
+                    
+                    line_items = []
+                    for item in order.items.all():
+                        line_items.append({
+                            'price_data': {
+                                'currency': 'xof',
+                                'product_data': {'name': item.product.title},
+                                'unit_amount': int(item.price),
+                            },
+                            'quantity': item.quantity,
+                        })
+                    
+                    # Ajouter les frais de livraison
+                    line_items.append({
+                        'price_data': {
+                            'currency': 'xof',
+                            'product_data': {'name': 'Frais de livraison'},
+                            'unit_amount': int(order.shipping_cost),
+                        },
+                        'quantity': 1,
+                    })
+
+                    checkout_session = stripe.checkout.Session.create(
+                        customer_email=user.email,
+                        payment_method_types=['card'],
+                        line_items=line_items,
+                        mode='payment',
+                        success_url=f"{domain_url}/cart/success/?session_id={{CHECKOUT_SESSION_ID}}&order_id={order.id}",
+                        cancel_url=f"{domain_url}/cart/cancel/?order_id={order.id}",
+                        metadata={'order_id': order.id, 'mobile': 'true'}
+                    )
+                    
+                    order.stripe_session_id = checkout_session.id
+                    order.save()
+                    
+                    return Response({
+                        'order_id': order.id,
+                        'checkout_url': checkout_session.url,
+                        'payment_method': 'stripe'
+                    })
+
+                elif payment_method == 'orange_money' or payment_method == 'mobile_money':
+                    order_data = {
+                        'order_id': order.order_number,
+                        'amount': int(order.total * 100),  # Orange Money veut des centimes? Non, FCFA? 
+                        # Selon orange_money_service.py: format_amount multiplie par 100
+                        'amount': orange_money_service.format_amount(float(order.total)),
+                        'return_url': f"{domain_url}/cart/success/?order_id={order.id}",
+                        'cancel_url': f"{domain_url}/cart/cancel/?order_id={order.id}",
+                        'notif_url': f"{domain_url}/api/cart/orange-money-webhook/",
+                        'reference': f"CMD-{order.id}"
+                    }
+                    
+                    success, response_data = orange_money_service.create_payment_session(order_data)
+                    if success:
+                        payment_url = orange_money_service.get_payment_url(
+                            response_data.get('pay_token'), 
+                            response_data.get('payment_url')
+                        )
+                        return Response({
+                            'order_id': order.id,
+                            'checkout_url': payment_url,
+                            'payment_method': 'orange_money'
+                        })
+                    else:
+                        return Response({'error': response_data.get('error', 'Erreur Orange Money')}, status=status.HTTP_400_BAD_REQUEST)
+
+                elif payment_method == 'cash_on_delivery':
+                    # Pour le paiement à la livraison, pas d'URL de redirection
+                    # On vide le panier car la commande est validée
+                    cart.cart_items.all().delete()
+                    return Response({
+                        'order_id': order.id,
+                        'status': 'confirmed',
+                        'message': 'Commande enregistrée avec succès (Paiement à la livraison)',
+                        'payment_method': 'cash_on_delivery'
+                    })
+
+                return Response({'error': 'Méthode de paiement non supportée'}, status=status.HTTP_400_BAD_REQUEST)
+
+        except Exception as e:
+            logger.error(f"Checkout Error: {str(e)}")
+            return Response({'error': f"Erreur lors de la commande: {str(e)}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR) 

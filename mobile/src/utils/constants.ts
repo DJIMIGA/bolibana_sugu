@@ -7,6 +7,9 @@ export const SYNC_BATCH_SIZE = 5; // Nombre d'éléments à synchroniser en para
 export const MAX_RETRY_ATTEMPTS = 3;
 export const RETRY_BACKOFF_BASE = 1000; // 1 seconde de base
 
+// Clé de chiffrement pour la persistance Redux (en production, utiliser une variable d'env)
+export const REDUX_PERSIST_SECRET_KEY = 'sagakore-offline-secret-key-change-me';
+
 export const CACHE_KEYS = {
   PRODUCTS: 'cache_products',
   CATEGORIES: 'cache_categories',

@@ -14,14 +14,21 @@ import { Ionicons } from '@expo/vector-icons';
 import { COLORS, API_ENDPOINTS } from '../utils/constants';
 import apiClient from '../services/api';
 import { useNavigation } from '@react-navigation/native';
-import { useDispatch } from 'react-redux';
-import { logoutAsync } from '../store/slices/authSlice';
+import { useDispatch, useSelector } from 'react-redux';
+import { logoutAsync, fetchProfileAsync } from '../store/slices/authSlice';
+import { fetchProducts, fetchCategories } from '../store/slices/productSlice';
+import { RootState } from '../store/store';
+import { connectivityService } from '../services/connectivityService';
+import { debugOfflineStorage } from '../utils/debugOffline';
 
 const SettingsScreen: React.FC = () => {
   const navigation = useNavigation();
   const dispatch = useDispatch();
+  const { isReadOnly } = useSelector((state: RootState) => state.auth);
   const [isPasswordModalVisible, setIsPasswordModalVisible] = React.useState(false);
   const [isLoading, setIsLoading] = React.useState(false);
+  const [isDownloading, setIsDownloading] = React.useState(false);
+  const [downloadProgress, setDownloadProgress] = React.useState(0);
   const [passwordForm, setPasswordForm] = React.useState({
     current_password: '',
     new_password: '',
@@ -32,6 +39,50 @@ const SettingsScreen: React.FC = () => {
     new: false,
     confirm: false,
   });
+
+  const handlePrepareOffline = async () => {
+    if (!connectivityService.getIsOnline()) {
+      Alert.alert('Erreur', 'Vous devez être en ligne pour préparer le mode hors ligne.');
+      return;
+    }
+
+    Alert.alert(
+      'Préparer le mode hors ligne',
+      'L\'application va télécharger le catalogue actuel et vos informations pour une utilisation sans connexion. Cela peut consommer des données mobiles.',
+      [
+        { text: 'Annuler', style: 'cancel' },
+        {
+          text: 'Télécharger',
+          onPress: async () => {
+            setIsDownloading(true);
+            setDownloadProgress(0);
+            try {
+              // 1. Télécharger les catégories (25%)
+              setDownloadProgress(10);
+              await dispatch(fetchCategories() as any).unwrap();
+              setDownloadProgress(25);
+
+              // 2. Télécharger les produits (50%)
+              setDownloadProgress(40);
+              await dispatch(fetchProducts({ page: 1, pageSize: 50 }) as any).unwrap();
+              setDownloadProgress(75);
+
+              // 3. Télécharger le profil (25%)
+              setDownloadProgress(85);
+              await dispatch(fetchProfileAsync() as any).unwrap();
+              setDownloadProgress(100);
+
+              Alert.alert('Succès', 'L\'application est prête pour une utilisation hors ligne !');
+            } catch (error) {
+              Alert.alert('Erreur', 'Échec du téléchargement des données hors ligne.');
+            } finally {
+              setIsDownloading(false);
+            }
+          }
+        }
+      ]
+    );
+  };
 
   const handleChangePassword = async () => {
     // Validation
@@ -175,6 +226,31 @@ const SettingsScreen: React.FC = () => {
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Application</Text>
           
+          <TouchableOpacity 
+            style={[styles.menuItem, isDownloading && { opacity: 0.5 }]} 
+            onPress={handlePrepareOffline}
+            disabled={isDownloading}
+          >
+            <View style={styles.menuItemLeft}>
+              <Ionicons 
+                name={isDownloading ? "cloud-download-outline" : "cloud-offline-outline"} 
+                size={24} 
+                color={COLORS.PRIMARY} 
+              />
+              <View>
+                <Text style={styles.menuItemText}>Préparer le mode hors ligne</Text>
+                {isDownloading && (
+                  <Text style={styles.downloadStatus}>Téléchargement : {downloadProgress}%</Text>
+                )}
+              </View>
+            </View>
+            {isDownloading ? (
+              <ActivityIndicator size="small" color={COLORS.PRIMARY} />
+            ) : (
+              <Ionicons name="chevron-forward" size={20} color={COLORS.TEXT_SECONDARY} />
+            )}
+          </TouchableOpacity>
+
           <TouchableOpacity style={styles.menuItem} onPress={handleAbout}>
             <View style={styles.menuItemLeft}>
               <Ionicons name="information-circle-outline" size={24} color={COLORS.TEXT} />
@@ -187,6 +263,15 @@ const SettingsScreen: React.FC = () => {
             <View style={styles.menuItemLeft}>
               <Ionicons name="help-circle-outline" size={24} color={COLORS.TEXT} />
               <Text style={styles.menuItemText}>Aide et support</Text>
+            </View>
+            <Ionicons name="chevron-forward" size={20} color={COLORS.TEXT_SECONDARY} />
+          </TouchableOpacity>
+
+          {/* Section Debug (Visible uniquement en développement ou pour test) */}
+          <TouchableOpacity style={styles.menuItem} onPress={debugOfflineStorage}>
+            <View style={styles.menuItemLeft}>
+              <Ionicons name="bug-outline" size={24} color={COLORS.SECONDARY} />
+              <Text style={styles.menuItemText}>Debug Storage (Logs)</Text>
             </View>
             <Ionicons name="chevron-forward" size={20} color={COLORS.TEXT_SECONDARY} />
           </TouchableOpacity>
@@ -362,6 +447,12 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: COLORS.TEXT,
     marginLeft: 12,
+  },
+  downloadStatus: {
+    fontSize: 12,
+    color: COLORS.PRIMARY,
+    marginLeft: 12,
+    fontWeight: '600',
   },
   modalOverlay: {
     flex: 1,
