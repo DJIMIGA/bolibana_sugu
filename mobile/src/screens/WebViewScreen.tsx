@@ -4,6 +4,7 @@ import { useRoute, useNavigation } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import * as WebBrowser from 'expo-web-browser';
 import { COLORS } from '../utils/constants';
+import { LoadingScreen } from '../components/LoadingScreen';
 
 interface WebViewScreenParams {
   url: string;
@@ -37,8 +38,7 @@ const WebViewScreen: React.FC = () => {
         <View style={styles.placeholder} />
       </View>
       <View style={styles.content}>
-        <ActivityIndicator size="large" color={COLORS.PRIMARY} />
-        <Text style={styles.loadingText}>Ouverture dans le navigateur...</Text>
+        <LoadingScreen />
       </View>
     </View>
   );

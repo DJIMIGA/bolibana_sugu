@@ -19,6 +19,7 @@ import { formatPrice, debounce } from '../utils/helpers';
 import { COLORS } from '../utils/constants';
 import { CartItem } from '../types';
 import { Header } from '../components/Header';
+import { LoadingScreen } from '../components/LoadingScreen';
 
 const CartScreen: React.FC = () => {
   const dispatch = useAppDispatch();
@@ -286,11 +287,7 @@ const CartScreen: React.FC = () => {
   };
 
   if (isLoading && items.length === 0) {
-    return (
-      <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color={COLORS.PRIMARY} />
-      </View>
-    );
+    return <LoadingScreen />;
   }
 
   return (
@@ -322,7 +319,7 @@ const CartScreen: React.FC = () => {
       ) : (
         <>
           <FlatList
-            data={items.filter(item => item && item.product && item.id)}
+            data={(items || []).filter(item => item && item.product && item.id)}
             renderItem={renderItem}
             keyExtractor={(item) => item.id.toString()}
             contentContainerStyle={styles.list}

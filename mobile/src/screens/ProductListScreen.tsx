@@ -21,6 +21,7 @@ import { COLORS } from '../utils/constants';
 import { Product, Category } from '../types';
 import DynamicProductCard from '../components/DynamicProductCard';
 import { Header } from '../components/Header';
+import { LoadingScreen } from '../components/LoadingScreen';
 
 const ProductListScreen: React.FC = () => {
   const dispatch = useAppDispatch();
@@ -87,18 +88,18 @@ const ProductListScreen: React.FC = () => {
   
   // Filtrer les produits en promotion si nécessaire
   const displayProducts = isPromo
-    ? products.filter((p: Product) => 
+    ? (products || []).filter((p: Product) => 
         p.discount_price && p.discount_price < p.price && p.discount_price > 0
       )
-    : products;
+    : (products || []);
 
   // Trouver la catégorie sélectionnée
   const selectedCategory = filters.category 
-    ? categories.find((c: Category) => c.id === filters.category)
+    ? (categories || []).find((c: Category) => c.id === filters.category)
     : null;
 
   // Afficher les catégories principales, et ajouter la sous-catégorie sélectionnée si elle existe
-  const mainCategories = categories.filter((c: Category) => !c.parent).slice(0, 8);
+  const mainCategories = (categories || []).filter((c: Category) => !c.parent).slice(0, 8);
   
   let displayCategories: Category[] = [...mainCategories];
   
@@ -257,10 +258,7 @@ const ProductListScreen: React.FC = () => {
       </View>
 
       {isLoading && products.length === 0 ? (
-        <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color={COLORS.PRIMARY} />
-          <Text style={styles.loadingText}>Chargement des produits...</Text>
-        </View>
+        <LoadingScreen />
       ) : (
         <FlatList
           data={displayProducts}

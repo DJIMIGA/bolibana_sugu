@@ -72,7 +72,8 @@ function handleSearchResults(resultsContainer, searchInput) {
 
 // Fonction pour gérer les erreurs de recherche
 function handleSearchError(error) {
-    console.error('Erreur de recherche:', error);
+    const status = error?.xhr?.status || error?.status || 'N/A';
+    console.error(`[Search] ❌ Erreur ${status}`);
     
     // Afficher un message d'erreur à l'utilisateur
     const errorMessage = document.createElement('div');

@@ -6,7 +6,6 @@ document.addEventListener('DOMContentLoaded', function() {
     const searchResults = document.getElementById('searchResults');
 
     if (!searchToggle || !searchModal || !closeSearch || !searchInput) {
-        console.log('Éléments de recherche mobile non trouvés');
         return;
     }
 

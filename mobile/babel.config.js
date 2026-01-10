@@ -18,6 +18,7 @@ module.exports = function(api) {
             '@types': './src/types',
             '@utils': './src/utils',
             '@navigation': './src/navigation',
+            'crypto-js': './node_modules/crypto-js',
           },
         },
       ],

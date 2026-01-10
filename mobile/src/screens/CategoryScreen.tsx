@@ -18,6 +18,7 @@ import { useNavigation } from '@react-navigation/native';
 import { COLORS } from '../utils/constants';
 import { Category } from '../types';
 import { Header } from '../components/Header';
+import { LoadingScreen } from '../components/LoadingScreen';
 
 const { width } = Dimensions.get('window');
 
@@ -55,24 +56,126 @@ const CategoryScreen: React.FC = () => {
     setRefreshing(false);
   };
 
-  // Séparer les catégories principales et les sous-catégories
-  const mainCategories = categories
-    .filter((c: Category) => c.is_main && !c.parent)
-    .sort((a: Category, b: Category) => {
+  // Fonction pour formater le rayon_type (comme sur le web)
+  const formatRayonType = (rayonType: string | null | undefined): string => {
+    if (!rayonType) return '';
+    return rayonType.replace(/_/g, ' ').replace(/\b\w/g, (l) => l.toUpperCase());
+  };
+
+  // Filtrer uniquement les catégories B2B (avec rayon_type ou level défini)
+  const b2bCategories = (categories || []).filter((c: Category) => 
+    c.rayon_type || c.level !== undefined
+  );
+
+  // Organiser les catégories par rayon_type et niveau
+  // Catégories de niveau 0 uniquement (comme sur le web)
+  const level0Categories = b2bCategories.filter((c: Category) => 
+    c.level === 0 || (c.level === null && !c.parent)
+  );
+
+  // Grouper par rayon_type
+  const categoriesByRayon: { [key: string]: Category[] } = {};
+  level0Categories.forEach((category: Category) => {
+    const rayonType = category.rayon_type || 'Autres';
+    if (!categoriesByRayon[rayonType]) {
+      categoriesByRayon[rayonType] = [];
+    }
+    categoriesByRayon[rayonType].push(category);
+  });
+
+  // Trier les catégories dans chaque rayon
+  Object.keys(categoriesByRayon).forEach((rayonType) => {
+    categoriesByRayon[rayonType].sort((a: Category, b: Category) => {
       if (a.order !== b.order) {
         return a.order - b.order;
       }
       return a.name.localeCompare(b.name);
     });
+  });
+
+  // Fonction récursive pour construire la hiérarchie complète (tous les niveaux)
+  const buildCategoryHierarchy = (
+    parentCategory: Category,
+    allCategories: Category[],
+    currentLevel: number = 0,
+    maxDepth: number = 10
+  ): Category[] => {
+    if (currentLevel >= maxDepth) {
+      return [];
+    }
+
+    const children: Category[] = [];
+    const expectedLevel = (parentCategory.level ?? 0) + 1;
+
+    // Trouver les enfants par level et rayon_type
+    allCategories.forEach((category: Category) => {
+      if (category.id === parentCategory.id) return;
+      
+      // Vérifier si c'est un enfant direct
+      if (
+        category.level === expectedLevel &&
+        category.rayon_type === parentCategory.rayon_type
+      ) {
+        // Vérifier aussi par parent si disponible
+        if (category.parent === parentCategory.id || !category.parent) {
+          children.push(category);
+        }
+      }
+    });
+
+    // Trier les enfants
+    children.sort((a: Category, b: Category) => {
+      if (a.order !== b.order) {
+        return a.order - b.order;
+      }
+      return a.name.localeCompare(b.name);
+    });
+
+    return children;
+  };
+
+  // Créer une hiérarchie complète pour toutes les catégories (tous les niveaux)
+  const categoryHierarchy: { [key: number]: { category: Category; children: Category[]; nested: { [key: number]: Category[] } } } = {};
   
-  const subCategories = categories
-    .filter((c: Category) => !c.is_main || (c.is_main && c.parent))
-    .sort((a: Category, b: Category) => {
-      if (a.order !== b.order) {
-        return a.order - b.order;
+  level0Categories.forEach((category: Category) => {
+    const level1Children = buildCategoryHierarchy(category, b2bCategories, 0);
+    const nested: { [key: number]: Category[] } = {};
+    
+    // Construire récursivement les niveaux plus profonds
+    level1Children.forEach((level1Child: Category) => {
+      const level2Children = buildCategoryHierarchy(level1Child, b2bCategories, 1);
+      if (level2Children.length > 0) {
+        nested[level1Child.id] = level2Children;
+        
+        // Continuer pour les niveaux 3, 4, etc.
+        level2Children.forEach((level2Child: Category) => {
+          const level3Children = buildCategoryHierarchy(level2Child, b2bCategories, 2);
+          if (level3Children.length > 0) {
+            if (!nested[level2Child.id]) {
+              nested[level2Child.id] = [];
+            }
+            nested[level2Child.id] = level3Children;
+          }
+        });
       }
-      return a.name.localeCompare(b.name);
     });
+    
+    categoryHierarchy[category.id] = {
+      category,
+      children: level1Children,
+      nested
+    };
+  });
+
+  const toggleCategory = (categoryId: number) => {
+    const newExpanded = new Set(expandedCategories);
+    if (newExpanded.has(categoryId)) {
+      newExpanded.delete(categoryId);
+    } else {
+      newExpanded.add(categoryId);
+    }
+    setExpandedCategories(newExpanded);
+  };
 
   const getCategoryColor = (color: string) => {
     const colorMap: { [key: string]: string } = {
@@ -155,100 +258,169 @@ const CategoryScreen: React.FC = () => {
         />
       </View>
 
-      <ScrollView
-        style={styles.content}
-        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
-      >
-        {/* Catégories principales - Grille comme les autres */}
-        {mainCategories.length > 0 && (
-          <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Catégories principales</Text>
-            <View style={styles.gridContainer}>
-              {mainCategories.map((category: Category) => (
-                <TouchableOpacity
-                  key={`main-${category.id}`}
-                  style={styles.gridItem}
-                  onPress={() => handleCategoryPress(category.id)}
-                  activeOpacity={0.8}
-                >
-                  <View style={[styles.gridImageContainer, { backgroundColor: `${getCategoryColor(category.color)}15` }]}>
-                    {category.image ? (
-                      <Image source={{ uri: category.image }} style={styles.gridImage} />
-                    ) : (
-                      <View style={styles.gridIconContainer}>
-                        <Ionicons 
-                          name={getCategoryIcon(category.slug) as any} 
-                          size={32} 
-                          color={getCategoryColor(category.color)} 
-                        />
-                      </View>
-                    )}
-                  </View>
-                  <View style={styles.gridContent}>
-                    <Text style={styles.gridCategoryName} numberOfLines={2}>
-                      {category.name}
-                    </Text>
-                    {category.product_count !== undefined && category.product_count > 0 && (
-                      <Text style={[styles.gridCategoryCount, { color: getCategoryColor(category.color) }]}>
-                        {category.product_count} produit{category.product_count > 1 ? 's' : ''}
+      {isLoading ? (
+        <LoadingScreen />
+      ) : (
+        <ScrollView
+          style={styles.content}
+          refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
+        >
+          {/* Catégories B2B organisées par rayon_type (comme sur le web) */}
+          {Object.keys(categoriesByRayon).length > 0 ? (
+            Object.entries(categoriesByRayon).map(([rayonType, rayonCategories]) => (
+              <View key={rayonType} style={styles.section}>
+                {/* Titre du rayon */}
+                <View style={styles.rayonHeader}>
+                  <Text style={styles.rayonTitle}>{formatRayonType(rayonType)}</Text>
+                </View>
+                
+                {/* Catégories de niveau 0 */}
+              <View style={styles.gridContainer}>
+                  {rayonCategories.map((category: Category) => {
+                    const isExpanded = expandedCategories.has(category.id);
+                    
+                    return (
+                      <View key={`category-${category.id}`} style={styles.categoryWrapper}>
+                  <TouchableOpacity
+                    style={styles.gridItem}
+                    onPress={() => handleCategoryPress(category.id)}
+                    activeOpacity={0.8}
+                  >
+                    <View style={[styles.gridImageContainer, { backgroundColor: `${getCategoryColor(category.color)}15` }]}>
+                      {category.image ? (
+                        <Image source={{ uri: category.image }} style={styles.gridImage} />
+                      ) : (
+                        <View style={styles.gridIconContainer}>
+                          <Ionicons 
+                            name={getCategoryIcon(category.slug) as any} 
+                            size={32} 
+                            color={getCategoryColor(category.color)} 
+                          />
+                        </View>
+                      )}
+                    </View>
+                    <View style={styles.gridContent}>
+                      <Text style={styles.gridCategoryName} numberOfLines={2}>
+                        {category.name}
                       </Text>
-                    )}
-                  </View>
-                </TouchableOpacity>
-              ))}
-            </View>
-          </View>
-        )}
-
-        {/* Sous-catégories - Layout horizontal avec image arrondie */}
-        {subCategories.length > 0 && (
-          <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Toutes les catégories</Text>
-            <View style={styles.gridContainer}>
-              {subCategories.map((category: Category) => (
-                <TouchableOpacity
-                  key={`sub-${category.id}`}
-                  style={styles.horizontalCard}
-                  onPress={() => handleCategoryPress(category.id)}
-                  activeOpacity={0.8}
-                >
-                  <View style={[styles.horizontalImageContainer, { backgroundColor: `${getCategoryColor(category.color)}15` }]}>
-                    {category.image ? (
-                      <Image source={{ uri: category.image }} style={styles.horizontalImage} />
-                    ) : (
-                      <View style={styles.horizontalIconContainer}>
-                        <Ionicons 
-                          name={getCategoryIcon(category.slug) as any} 
-                          size={24} 
-                          color={getCategoryColor(category.color)} 
-                        />
-                      </View>
-                    )}
-                  </View>
-                  <View style={styles.horizontalContent}>
-                    <Text style={styles.horizontalCategoryName} numberOfLines={2}>
-                      {category.name}
-                    </Text>
-                    {category.product_count !== undefined && category.product_count > 0 && (
-                      <Text style={[styles.horizontalCategoryCount, { color: getCategoryColor(category.color) }]}>
-                        {category.product_count} produit{category.product_count > 1 ? 's' : ''}
+                      {category.product_count !== undefined && category.product_count > 0 && (
+                        <Text style={[styles.gridCategoryCount, { color: getCategoryColor(category.color) }]}>
+                          {category.product_count} produit{category.product_count > 1 ? 's' : ''}
+                        </Text>
+                      )}
+                    </View>
+                  </TouchableOpacity>
+                        
+                        {/* Bouton pour afficher/masquer les sous-catégories */}
+                        {categoryHierarchy[category.id]?.children.length > 0 && (
+                          <TouchableOpacity
+                            style={styles.expandButton}
+                            onPress={() => toggleCategory(category.id)}
+                            activeOpacity={0.7}
+                          >
+                            <Ionicons 
+                              name={isExpanded ? 'chevron-up' : 'chevron-down'} 
+                              size={20} 
+                              color={getCategoryColor(category.color)} 
+                            />
+                            <Text style={[styles.expandButtonText, { color: getCategoryColor(category.color) }]}>
+                              {isExpanded ? 'Masquer' : 'Voir'} ({categoryHierarchy[category.id]?.children.length || 0})
+                            </Text>
+                          </TouchableOpacity>
+                        )}
+                        
+                        {/* Sous-catégories (tous les niveaux récursifs) */}
+                        {isExpanded && categoryHierarchy[category.id]?.children.length > 0 && (
+                          <View style={styles.subcategoriesContainer}>
+                            {categoryHierarchy[category.id].children.map((subcategory: Category) => {
+                              const nestedChildren = categoryHierarchy[category.id]?.nested[subcategory.id] || [];
+                              const isSubExpanded = expandedCategories.has(subcategory.id);
+                              
+                              return (
+                                <View key={`sub-${subcategory.id}`}>
+                  <TouchableOpacity
+                                    style={styles.subcategoryItem}
+                                    onPress={() => handleCategoryPress(subcategory.id)}
+                    activeOpacity={0.8}
+                  >
+                                    <View style={[styles.subcategoryIconContainer, { backgroundColor: `${getCategoryColor(subcategory.color)}15` }]}>
+                                      {subcategory.image ? (
+                                        <Image source={{ uri: subcategory.image }} style={styles.subcategoryIconImage} />
+                                      ) : (
+                          <Ionicons 
+                                          name={getCategoryIcon(subcategory.slug) as any} 
+                                          size={20} 
+                                          color={getCategoryColor(subcategory.color)} 
+                                        />
+                      )}
+                    </View>
+                                    <Text style={styles.subcategoryName} numberOfLines={1}>
+                                      {subcategory.name}
                       </Text>
-                    )}
-                  </View>
-                </TouchableOpacity>
-              ))}
+                                    {nestedChildren.length > 0 && (
+                                      <TouchableOpacity
+                                        onPress={() => toggleCategory(subcategory.id)}
+                                        style={{ marginLeft: 8 }}
+                                      >
+                                        <Ionicons 
+                                          name={isSubExpanded ? 'chevron-up' : 'chevron-down'} 
+                                          size={16} 
+                                          color={getCategoryColor(subcategory.color)} 
+                                        />
+                                      </TouchableOpacity>
+                                    )}
+                                  </TouchableOpacity>
+                                  
+                                  {/* Niveaux plus profonds (2, 3, etc.) */}
+                                  {isSubExpanded && nestedChildren.length > 0 && (
+                                    <View style={[styles.subcategoriesContainer, { marginLeft: 16, marginTop: 4, paddingLeft: 8, borderLeftWidth: 2, borderLeftColor: '#E5E7EB' }]}>
+                                      {nestedChildren.map((nestedCategory: Category) => (
+                                        <TouchableOpacity
+                                          key={`nested-${nestedCategory.id}`}
+                                          style={[styles.subcategoryItem, { marginBottom: 4 }]}
+                                          onPress={() => handleCategoryPress(nestedCategory.id)}
+                                          activeOpacity={0.8}
+                                        >
+                                          <View style={[styles.subcategoryIconContainer, { backgroundColor: `${getCategoryColor(nestedCategory.color)}15`, width: 20, height: 20 }]}>
+                                            {nestedCategory.image ? (
+                                              <Image source={{ uri: nestedCategory.image }} style={styles.subcategoryIconImage} />
+                                            ) : (
+                                              <Ionicons 
+                                                name={getCategoryIcon(nestedCategory.slug) as any} 
+                                                size={16} 
+                                                color={getCategoryColor(nestedCategory.color)} 
+                                              />
+                      )}
+                    </View>
+                                          <Text style={[styles.subcategoryName, { fontSize: 12 }]} numberOfLines={1}>
+                                            {nestedCategory.name}
+                                          </Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+                                  )}
+                                </View>
+                              );
+                            })}
             </View>
-          </View>
-        )}
-
-        {/* Message si aucune catégorie */}
-        {!isLoading && categories.length === 0 && (
-          <View style={styles.emptyContainer}>
-            <MaterialIcons name="category" size={64} color={COLORS.TEXT_SECONDARY} />
-            <Text style={styles.emptyText}>Aucune catégorie disponible</Text>
-          </View>
-        )}
-      </ScrollView>
+          )}
+                      </View>
+                    );
+                  })}
+                </View>
+              </View>
+            ))
+          ) : (
+            /* Message si aucune catégorie B2B */
+            !isLoading && (
+            <View style={styles.emptyContainer}>
+              <MaterialIcons name="category" size={64} color={COLORS.TEXT_SECONDARY} />
+                <Text style={styles.emptyText}>Aucune catégorie B2B disponible</Text>
+            </View>
+            )
+          )}
+        </ScrollView>
+      )}
     </SafeAreaView>
   );
 };
@@ -457,6 +629,83 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: COLORS.TEXT_SECONDARY,
     marginTop: 16,
+  },
+  rayonHeader: {
+    paddingHorizontal: 20,
+    paddingVertical: 12,
+    backgroundColor: '#F9FAFB',
+    borderBottomWidth: 1,
+    borderBottomColor: '#E5E7EB',
+    marginBottom: 12,
+  },
+  rayonTitle: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: COLORS.TEXT,
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+  },
+  categoryWrapper: {
+    marginBottom: 16,
+  },
+  expandButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    marginTop: 8,
+    backgroundColor: '#F3F4F6',
+    borderRadius: 8,
+    marginHorizontal: 4,
+  },
+  expandButtonText: {
+    fontSize: 12,
+    fontWeight: '600',
+    marginLeft: 4,
+  },
+  subcategoriesContainer: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    paddingHorizontal: 12,
+    paddingTop: 8,
+    marginTop: 8,
+    backgroundColor: '#FAFAFA',
+    borderRadius: 8,
+    marginHorizontal: 4,
+  },
+  subcategoryItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    marginRight: 8,
+    marginBottom: 8,
+    backgroundColor: '#FFFFFF',
+    borderRadius: 6,
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
+    minWidth: 120,
+  },
+  subcategoryIconContainer: {
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 8,
+    overflow: 'hidden',
+  },
+  subcategoryIconImage: {
+    width: '100%',
+    height: '100%',
+    resizeMode: 'cover',
+  },
+  subcategoryName: {
+    fontSize: 12,
+    fontWeight: '500',
+    color: COLORS.TEXT,
+    flex: 1,
   },
 });
 

@@ -13,6 +13,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { COLORS, API_ENDPOINTS } from '../utils/constants';
 import apiClient from '../services/api';
 import type { ShippingAddress } from '../types';
+import { LoadingScreen } from '../components/LoadingScreen';
 
 const AddressesScreen: React.FC = () => {
   const navigation = useNavigation();
@@ -36,7 +37,12 @@ const AddressesScreen: React.FC = () => {
         ? raw.results
         : [];
       setAddresses(list);
-    } catch (error) {
+    } catch (error: any) {
+      // Si c'est une erreur de mode hors ligne, gérer silencieusement
+      if (error.isOfflineBlocked || error.message === 'OFFLINE_MODE_FORCED') {
+        console.log('[AddressesScreen] 🔌 Mode hors ligne - Aucune adresse chargée');
+        return;
+      }
       console.error('[AddressesScreen] Error loading addresses:', error);
     } finally {
       setIsLoading(false);
@@ -67,9 +73,7 @@ const AddressesScreen: React.FC = () => {
       
       <View style={styles.content}>
         {isLoading ? (
-          <View style={styles.loaderContainer}>
-            <ActivityIndicator size="large" color={COLORS.PRIMARY} />
-          </View>
+          <LoadingScreen />
         ) : addresses.length === 0 ? (
           <View style={styles.emptyContainer}>
             <Ionicons

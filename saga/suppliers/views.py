@@ -24,6 +24,7 @@ import unicodedata
 from core.utils import track_search, track_view_content
 from core.facebook_conversions import facebook_conversions
 from product.context_processors import dropdown_categories_processor
+from inventory.utils import get_b2b_products
 
 logger = logging.getLogger(__name__)
 
@@ -231,6 +232,20 @@ class SupplierListView(ListView):
             logger.info(f"Sous-catégories: {[child.name for child in cat.children.all()]}")
             logger.info("---")
 
+        # Récupérer la hiérarchie des catégories B2B
+        try:
+            from inventory.category_utils import get_b2b_categories_hierarchy
+            b2b_hierarchy = get_b2b_categories_hierarchy()
+            context['b2b_categories'] = b2b_hierarchy.get('main_categories', [])
+            context['b2b_total_main'] = b2b_hierarchy.get('total_main', 0)
+            context['b2b_total_sub'] = b2b_hierarchy.get('total_sub', 0)
+            logger.info(f"Catégories B2B: {context['b2b_total_main']} principales, {context['b2b_total_sub']} sous-catégories")
+        except Exception as e:
+            logger.warning(f"Erreur lors de la récupération des catégories B2B: {str(e)}")
+            context['b2b_categories'] = []
+            context['b2b_total_main'] = 0
+            context['b2b_total_sub'] = 0
+
         # Récupérer tous les produits pour les filtres
         all_products = Product.objects.all().select_related(
             'phone',
@@ -338,6 +353,11 @@ class SupplierListView(ListView):
         context['fabric_products'] = products.filter(fabric_product__isnull=False)[:4]
         context['cultural_products'] = products.filter(cultural_product__isnull=False)[:4]
         context['promotional_products'] = promotional_products
+        
+        # Récupérer les produits B2B synchronisés (limité à 8 pour l'affichage)
+        b2b_products = get_b2b_products(limit=8)
+        context['b2b_products'] = b2b_products
+        logger.info(f"Nombre de produits B2B récupérés: {len(b2b_products)}")
         
         # Log des produits ajoutés au contexte
         logger.info("\n=== PRODUITS DANS LE CONTEXTE ===")
@@ -2129,7 +2149,8 @@ def category_tree(request):
     
     context = {
         'dropdown_categories': context_data['dropdown_categories'],
-        'dropdown_categories_hierarchy': context_data['dropdown_categories_hierarchy']
+        'dropdown_categories_hierarchy': context_data['dropdown_categories_hierarchy'],
+        'categories_by_rayon': context_data.get('categories_by_rayon', {})
     }
     
     return render(request, 'components/_subcategories_menu.html', context)

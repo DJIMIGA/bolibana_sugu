@@ -11,7 +11,6 @@ document.addEventListener('DOMContentLoaded', function() {
     const profileMenu = document.getElementById('profileMenu');
 
     if (!profileButton || !profileMenu) {
-        console.log('Éléments du menu de profil non trouvés');
         return;
     }
 

@@ -21,13 +21,14 @@ import { formatPrice } from '../utils/helpers';
 import { COLORS } from '../utils/constants';
 import { Product } from '../types';
 import DynamicProductCard from '../components/DynamicProductCard';
+import { LoadingScreen } from '../components/LoadingScreen';
 
 const ProductDetailScreen: React.FC = () => {
   const dispatch = useAppDispatch();
   const navigation = useNavigation();
   const route = useRoute();
   const insets = useSafeAreaInsets();
-  const { selectedProduct, isLoading, similarProducts, isFetchingSimilarProducts } = useAppSelector((state) => state.product);
+  const { selectedProduct, isLoading, similarProducts, isFetchingSimilarProducts, categories } = useAppSelector((state) => state.product);
   const { isReadOnly } = useAppSelector((state) => state.auth);
   const { items, isLoading: isAddingToCart } = useAppSelector((state) => state.cart);
   const [quantity, setQuantity] = useState(1);
@@ -92,11 +93,7 @@ const ProductDetailScreen: React.FC = () => {
   };
 
   if (isLoading || !selectedProduct) {
-    return (
-      <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color={COLORS.PRIMARY} />
-      </View>
-    );
+    return <LoadingScreen />;
   }
 
   const hasDiscount = selectedProduct.discount_price && 
@@ -207,6 +204,15 @@ const ProductDetailScreen: React.FC = () => {
               <Text style={styles.brand}>{selectedProduct.brand}</Text>
             </View>
           )}
+          {selectedProduct.category && (() => {
+            const category = categories.find(c => c.id === selectedProduct.category);
+            return category ? (
+              <View style={styles.categoryContainer}>
+                <MaterialIcons name="category" size={18} color={COLORS.SECONDARY} />
+                <Text style={styles.category}>{category.name}</Text>
+              </View>
+            ) : null;
+          })()}
           <Text style={styles.title}>{selectedProduct.title}</Text>
           
           {/* Note et avis */}
@@ -629,6 +635,17 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '600',
     color: COLORS.PRIMARY,
+    marginLeft: 6,
+  },
+  categoryContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  category: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: COLORS.SECONDARY,
     marginLeft: 6,
   },
   title: {

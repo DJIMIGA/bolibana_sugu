@@ -163,16 +163,16 @@ export const loadUserAsync = createAsyncThunk(
       if (isOnline) {
         try {
           console.log('[authSlice] 🌐 Online: Checking token validity...');
-          const response = await apiClient.get(API_ENDPOINTS.PROFILE);
-          const { mapUserFromBackend } = await import('../../utils/mappers');
+        const response = await apiClient.get(API_ENDPOINTS.PROFILE);
+        const { mapUserFromBackend } = await import('../../utils/mappers');
           const freshUser = mapUserFromBackend(response.data);
           await AsyncStorage.setItem(STORAGE_KEYS.AUTH_USER, JSON.stringify(freshUser));
           console.log('[authSlice] ✅ Token valid, profile updated.');
           return { token, user: freshUser, isReadOnly: false };
-        } catch (error) {
+      } catch (error) {
           console.warn('[authSlice] ❌ Token invalid or expired online.');
           return { token, user, isReadOnly: true, expired: true };
-        }
+      }
       }
 
       console.log('[authSlice] 🔌 Offline: Using local data in READ-ONLY mode.');
@@ -197,8 +197,7 @@ export const updateProfileAsync = createAsyncThunk(
       console.log('[authSlice] updateProfileAsync - API endpoint:', endpoint);
       
       const response = await apiClient.patch(endpoint, data);
-      console.log('[authSlice] updateProfileAsync - Response status:', response.status);
-      console.log('[authSlice] updateProfileAsync - Response data:', response.data);
+      // Logs réduits pour éviter le spam
       
       const { mapUserFromBackend } = await import('../../utils/mappers');
       const user = mapUserFromBackend(response.data);
@@ -209,10 +208,11 @@ export const updateProfileAsync = createAsyncThunk(
       
       return user;
     } catch (error: any) {
-      console.error('[authSlice] updateProfileAsync - Error:', error);
-      console.error('[authSlice] updateProfileAsync - Error response:', error.response);
-      console.error('[authSlice] updateProfileAsync - Error response data:', error.response?.data);
-      console.error('[authSlice] updateProfileAsync - Error response status:', error.response?.status);
+      const errorMsg = cleanErrorForLog(error);
+      console.error('[authSlice] updateProfileAsync - Erreur:', errorMsg);
+      if (error.response?.status) {
+        console.error('[authSlice] Status:', error.response.status);
+      }
       
       const errorMessage = error.response?.data?.detail 
         || error.response?.data?.password?.[0] 

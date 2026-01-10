@@ -68,17 +68,7 @@ document.addEventListener('DOMContentLoaded', function() {
         const target = evt.detail.elt;
         const isFavoriteRequest = evt.detail.xhr.responseURL.includes('favorite');
         
-        console.log('HTMX afterRequest:', {
-            target: target,
-            targetType: target.tagName,
-            targetClasses: target.className,
-            isFavoriteForm: target.matches('form[hx-post*="toggle_favorite"]'),
-            isAddToCartForm: target.matches('form[hx-post*="add_to_cart"]'),
-            successful: evt.detail.successful,
-            status: evt.detail.xhr.status,
-            url: evt.detail.xhr.responseURL,
-            isFavoriteRequest: isFavoriteRequest
-        });
+        // Traitement des requêtes HTMX
         
         // Notification pour l'ajout au panier
         if (target.matches('form[hx-post*="add_to_cart"]')) {
@@ -106,7 +96,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     });
                 }
             } catch (error) {
-                console.error('Erreur lors du traitement de la réponse:', error);
+                console.error('[Notyf] ❌ Erreur:', error.message || 'Erreur inconnue');
             }
         }
     });

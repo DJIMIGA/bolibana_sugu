@@ -10,7 +10,6 @@ document.addEventListener('DOMContentLoaded', () => {
     const profileMenu = document.getElementById('profileMenuMobile');
 
     if (!profileButton || !profileMenu) {
-        console.error('Éléments du menu de profil mobile non trouvés');
         return;
     }
 

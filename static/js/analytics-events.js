@@ -8,11 +8,10 @@
     
     // Vérifier si Google Analytics est disponible
     if (typeof gtag === 'undefined') {
-        console.log('📊 Google Analytics non disponible pour les événements d\'engagement');
         return;
     }
     
-    console.log('📊 Initialisation des événements d\'engagement Google Analytics');
+    // Initialisation des événements d'engagement Google Analytics
     
     // Configuration
     const SCROLL_THRESHOLDS = [25, 50, 75, 90]; // Pourcentages de scroll

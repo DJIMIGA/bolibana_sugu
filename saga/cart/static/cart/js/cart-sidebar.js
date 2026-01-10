@@ -3,53 +3,35 @@ import Swal from 'sweetalert2';
 
 class CartSidebar {
     constructor() {
-        console.log('CartSidebar: Initialisation...');
-        
         this.sidebar = document.getElementById('cart-sidebar');
         this.overlay = document.getElementById('cart-overlay');
         this.container = document.getElementById('cart-container');
         this.closeButton = document.getElementById('closeCartButton');
-        
-        // Log des éléments trouvés
-        console.log('CartSidebar: Éléments trouvés:', {
-            sidebar: !!this.sidebar,
-            overlay: !!this.overlay,
-            container: !!this.container,
-            closeButton: !!this.closeButton
-        });
 
         if (!this.sidebar || !this.overlay || !this.container || !this.closeButton) {
-            console.error('CartSidebar: Éléments manquants!');
+            console.error('[Cart] ⚠️ Éléments manquants');
             return;
         }
 
         this.isMobile = window.innerWidth < 1024; // lg breakpoint
         this.bindEvents();
         this.bindResize();
-        console.log('CartSidebar: Initialisation terminée');
     }
 
     bindEvents() {
-        console.log('CartSidebar: Liaison des événements...');
-        
         this.closeButton.addEventListener('click', () => {
-            console.log('CartSidebar: Clic sur le bouton fermer');
             this.close();
         });
         
         this.overlay.addEventListener('click', () => {
-            console.log('CartSidebar: Clic sur overlay');
             this.close();
         });
         
         document.addEventListener('keydown', (e) => {
             if (e.key === 'Escape') {
-                console.log('CartSidebar: Touche Escape pressée');
                 this.close();
             }
         });
-
-        console.log('CartSidebar: Événements liés');
     }
 
     bindResize() {
@@ -62,7 +44,6 @@ class CartSidebar {
     }
 
     open() {
-        console.log('CartSidebar: Ouverture...');
         this.isOpen = true;
         
         // Activer les interactions
@@ -82,7 +63,6 @@ class CartSidebar {
     }
 
     close() {
-        console.log('CartSidebar: Fermeture...');
         this.isOpen = false;
         
         // Désactiver les interactions
@@ -101,19 +81,15 @@ class CartSidebar {
     }
 }
 
-console.log('CartSidebar: Script chargé');
-
 let cartSidebarInstance = null;
 
 document.addEventListener('DOMContentLoaded', () => {
-    console.log('CartSidebar: DOM chargé, création de l\'instance');
     cartSidebarInstance = new CartSidebar();
 });
 
 window.openCart = () => {
-    console.log('CartSidebar: Appel à openCart avec instance:', !!cartSidebarInstance);
     if (!cartSidebarInstance) {
-        console.error('CartSidebar: Instance non initialisée');
+        console.error('[Cart] ⚠️ Instance non initialisée');
         return;
     }
     cartSidebarInstance.open();
@@ -125,7 +101,6 @@ window.showAddToCartAnimation = (productName) => {
 };
 
 window.closeCart = () => {
-    console.log('CartSidebar: Appel à closeCart');
     cartSidebarInstance?.close();
 };
 

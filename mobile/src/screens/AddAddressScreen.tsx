@@ -8,7 +8,6 @@ import {
   TouchableOpacity,
   Switch,
   Alert,
-  ActivityIndicator,
   KeyboardAvoidingView,
   Platform,
 } from 'react-native';
@@ -17,6 +16,8 @@ import { Ionicons } from '@expo/vector-icons';
 import { COLORS } from '../utils/constants';
 import apiClient from '../services/api';
 import { API_ENDPOINTS } from '../utils/constants';
+import { cleanErrorForLog } from '../utils/helpers';
+import { LoadingScreen } from '../components/LoadingScreen';
 
 const CITY_CHOICES = [
   { value: 'BKO', label: 'Bamako' },
@@ -152,7 +153,7 @@ const AddAddressScreen: React.FC = () => {
         },
       ]);
     } catch (error: any) {
-      console.error('[AddAddressScreen] Error:', error?.response?.data || error);
+      console.error('[AddAddressScreen] Error:', cleanErrorForLog(error));
       const errorMessage =
         error?.response?.data?.detail ||
         error?.response?.data?.error ||
@@ -163,6 +164,10 @@ const AddAddressScreen: React.FC = () => {
       setIsSubmitting(false);
     }
   };
+
+  if (isSubmitting) {
+    return <LoadingScreen />;
+  }
 
   return (
     <KeyboardAvoidingView
@@ -327,13 +332,9 @@ const AddAddressScreen: React.FC = () => {
               onPress={handleSubmit}
               disabled={isSubmitting}
             >
-              {isSubmitting ? (
-                <ActivityIndicator color="#FFFFFF" />
-              ) : (
-                <Text style={styles.saveText}>
-                  {isEditMode ? 'Enregistrer les modifications' : 'Ajouter cette adresse'}
-                </Text>
-              )}
+              <Text style={styles.saveText}>
+                {isEditMode ? 'Enregistrer les modifications' : 'Ajouter cette adresse'}
+              </Text>
             </TouchableOpacity>
           </View>
         </View>

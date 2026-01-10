@@ -277,7 +277,5 @@ class ProductAutocomplete {
 
 // Initialiser l'autocomplétion quand le DOM est chargé
 document.addEventListener('DOMContentLoaded', function() {
-    console.log('DOM chargé, initialisation de ProductAutocomplete...');
-    const autocomplete = new ProductAutocomplete();
-    console.log('ProductAutocomplete initialisé:', autocomplete);
+    new ProductAutocomplete();
 }); 

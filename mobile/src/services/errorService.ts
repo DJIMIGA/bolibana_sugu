@@ -28,6 +28,12 @@ class ErrorService {
   private logs: ErrorLog[] = [];
 
   classifyError(error: any): { type: ErrorType; severity: ErrorSeverity } {
+    // Détecter les erreurs de mode hors ligne forcé
+    if (error.isOfflineBlocked || error.code === 'OFFLINE_MODE_FORCED' || error.message === 'OFFLINE_MODE_FORCED') {
+      // Ne pas traiter comme une erreur critique en mode hors ligne
+      return { type: ErrorType.NETWORK, severity: ErrorSeverity.LOW };
+    }
+
     if (error instanceof AxiosError) {
       if (!error.response) {
         // Erreur réseau
@@ -55,6 +61,11 @@ class ErrorService {
   getUserMessage(error: any): string {
     // Si l'erreur est déjà une chaîne, la renvoyer directement
     if (typeof error === 'string') return error;
+
+    // Si c'est une erreur de mode hors ligne, retourner un message silencieux
+    if (error.isOfflineBlocked || error.code === 'OFFLINE_MODE_FORCED' || error.message === 'OFFLINE_MODE_FORCED' || error.message === '') {
+      return ''; // Message vide pour ne pas afficher d'erreur
+    }
 
     const { type } = this.classifyError(error);
 
@@ -147,12 +158,14 @@ class ErrorService {
   handleApiError(error: any): ApiError {
     const { type, severity } = this.classifyError(error);
     const message = this.getUserMessage(error);
+    const isOfflineBlocked = error.isOfflineBlocked || error.code === 'OFFLINE_MODE_FORCED' || error.message === 'OFFLINE_MODE_FORCED';
 
     const apiError: ApiError = {
       message,
       code: type,
       status: error instanceof AxiosError ? error.response?.status : undefined,
       details: error instanceof AxiosError ? error.response?.data : undefined,
+      isOfflineBlocked,
     };
 
     // Logging
@@ -168,6 +181,11 @@ class ErrorService {
   }
 
   log(errorLog: ErrorLog): void {
+    // Ne pas logger les erreurs de mode hors ligne
+    if (errorLog.message === 'OFFLINE_MODE_FORCED' || errorLog.severity === ErrorSeverity.LOW) {
+      return;
+    }
+
     this.logs.push(errorLog);
     
     // Garder seulement les 100 derniers logs
@@ -175,8 +193,8 @@ class ErrorService {
       this.logs = this.logs.slice(-100);
     }
 
-    // Logging console en développement
-    if (__DEV__) {
+    // Logging console en développement (sauf pour les erreurs de mode hors ligne)
+    if (__DEV__ && errorLog.severity !== ErrorSeverity.LOW) {
       console.error(`[${errorLog.severity.toUpperCase()}] ${errorLog.type}:`, errorLog.message, errorLog.details);
     }
   }

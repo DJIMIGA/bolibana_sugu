@@ -35,14 +35,10 @@ def render_analytics_scripts(context):
     """
     request = context.get('request')
     if not request or not hasattr(request, 'cookie_consent') or not request.cookie_consent:
-        print("DEBUG: Pas de consentement cookies trouvé")
         return ""
     
     if not request.cookie_consent.analytics:
-        print("DEBUG: Consentement analytics non donné")
         return ""
-    
-    print("DEBUG: Consentement analytics donné, chargement du script...")
     
     # Récupérer l'ID Google Analytics depuis la configuration
     try:
@@ -50,10 +46,8 @@ def render_analytics_scripts(context):
         config = SiteConfiguration.get_config()
         ga_id = config.google_analytics_id
         if not ga_id:
-            print("DEBUG: Aucun ID Google Analytics configuré")
             return ""
-    except Exception as e:
-        print(f"Erreur lors du chargement de Google Analytics: {e}")
+    except Exception:
         return ""
     
     # Configuration des cookies selon l'environnement
@@ -128,8 +122,7 @@ def render_marketing_scripts(context):
         pixel_id = config.facebook_pixel_id
         if not pixel_id:
             return ""
-    except Exception as e:
-        print(f"Erreur lors du chargement du Facebook Pixel: {e}")
+    except Exception:
         return ""
     
     # Récupérer les événements stockés en session

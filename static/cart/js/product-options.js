@@ -50,9 +50,7 @@ class ProductOptions {
     }
 
     handleHtmxResponse(evt) {
-        if (evt.detail.target.id === 'product-options-content') {
-            console.log('Options produit chargées');
-        }
+        // Options produit chargées
     }
 
     handleFormSwap(e) {

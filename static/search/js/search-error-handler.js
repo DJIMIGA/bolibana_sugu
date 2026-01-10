@@ -6,7 +6,8 @@ document.addEventListener('DOMContentLoaded', function() {
     // Gérer les erreurs HTMX
     document.body.addEventListener('htmx:responseError', function(evt) {
         if (evt.detail.elt.id && evt.detail.elt.id.includes('search')) {
-            console.error('Erreur de recherche HTMX:', evt.detail);
+            const status = evt.detail.xhr?.status || 'N/A';
+            console.error(`[Search] ❌ Erreur ${status}`);
             
             // Afficher un message d'erreur
             const target = evt.detail.target;
@@ -21,7 +22,7 @@ document.addEventListener('DOMContentLoaded', function() {
     // Gérer les erreurs de réseau
     document.body.addEventListener('htmx:sendError', function(evt) {
         if (evt.detail.elt.id && evt.detail.elt.id.includes('search')) {
-            console.error('Erreur d\'envoi de recherche:', evt.detail);
+            console.error('[Search] ❌ Erreur de connexion');
             
             // Afficher un message d'erreur de connexion
             const target = evt.detail.target;
@@ -43,7 +44,7 @@ document.addEventListener('DOMContentLoaded', function() {
     // Gérer les timeouts
     document.body.addEventListener('htmx:timeout', function(evt) {
         if (evt.detail.elt.id && evt.detail.elt.id.includes('search')) {
-            console.error('Timeout de recherche:', evt.detail);
+            console.error('[Search] ⏱️ Timeout');
             
             // Afficher un message de timeout
             const target = evt.detail.target;

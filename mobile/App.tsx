@@ -1,4 +1,12 @@
-import React, { useEffect } from 'react';
+import 'react-native-get-random-values'; // DOIT être le premier import pour crypto-js
+import React, { useEffect, useState, useCallback } from 'react';
+import * as SplashScreen from 'expo-splash-screen';
+
+// Garder le splash screen visible pendant que l'app charge
+SplashScreen.preventAutoHideAsync().catch(() => {
+  /* ignore error */
+});
+
 import { StatusBar } from 'expo-status-bar';
 import { Provider } from 'react-redux';
 import { PersistGate } from 'redux-persist/integration/react';
@@ -11,20 +19,46 @@ import { setSessionExpiredCallback } from './src/services/api';
 import { setSessionExpired } from './src/store/slices/authSlice';
 
 export default function App() {
+  const [appIsReady, setAppIsReady] = useState(false);
+
   useEffect(() => {
-    // Configurer le callback de session expirée
-    setSessionExpiredCallback(() => {
-      store.dispatch(setSessionExpired(true));
-    });
+    async function prepare() {
+      try {
+        // Configurer le callback de session expirée
+        setSessionExpiredCallback(() => {
+          store.dispatch(setSessionExpired(true));
+        });
+        
+        // Simuler un petit délai pour laisser les polices/assets se charger si nécessaire
+        await new Promise(resolve => setTimeout(resolve, 500));
+      } catch (e) {
+        console.warn(e);
+      } finally {
+        setAppIsReady(true);
+      }
+    }
+
+    prepare();
   }, []);
 
+  const onLayoutRootView = useCallback(async () => {
+    if (appIsReady) {
+      // Masquer le splash screen natif une fois que le RootView est prêt
+      await SplashScreen.hideAsync();
+    }
+  }, [appIsReady]);
+
+  if (!appIsReady) {
+    return null;
+  }
+
   return (
-    <SafeAreaProvider>
+    <SafeAreaProvider onLayout={onLayoutRootView}>
       <ErrorBoundary>
         <Provider store={store}>
           <PersistGate loading={<LoadingScreen />} persistor={persistor}>
             <AppNavigator />
-            <StatusBar style="auto" />
+            <StatusBar style="dark" />
           </PersistGate>
         </Provider>
       </ErrorBoundary>

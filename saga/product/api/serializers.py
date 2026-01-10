@@ -1,5 +1,8 @@
 from rest_framework import serializers
 from product.models import Product, Category, ImageProduct, Phone
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 
@@ -7,17 +10,61 @@ class CategorySerializer(serializers.ModelSerializer):
     children = serializers.SerializerMethodField()
     image = serializers.SerializerMethodField()
     product_count = serializers.SerializerMethodField()
+    parent = serializers.SerializerMethodField()
+    slug = serializers.CharField(required=False, allow_null=True, allow_blank=True)
 
     class Meta:
         model = Category
         fields = [
             'id', 'name', 'slug', 'parent', 'children',
             'image', 'description', 'color', 'is_main', 'order',
-            'category_type', 'product_count'
+            'category_type', 'product_count', 'rayon_type', 'level'
         ]
+        extra_kwargs = {
+            'slug': {'required': False, 'allow_null': True, 'allow_blank': True},
+            'name': {'required': False},
+            'description': {'required': False, 'allow_null': True, 'allow_blank': True},
+        }
 
+    def get_parent(self, obj):
+        """Retourne l'ID du parent au lieu de l'objet complet"""
+        try:
+            return obj.parent_id if obj.parent_id else None
+        except (AttributeError, TypeError):
+            return None
+    
     def get_children(self, obj):
-        return CategorySerializer(obj.children.all(), many=True).data
+        # Sérialiser les enfants sans récursion profonde pour éviter les problèmes
+        children = obj.children.all()
+        if not children:
+            return []
+        
+        # Sérialiser les enfants avec le même serializer mais sans récursion
+        children_data = []
+        for child in children:
+            try:
+                child_dict = {
+                    'id': child.id,
+                    'name': child.name or '',
+                    'slug': child.slug or '',
+                    'parent': child.parent_id if hasattr(child, 'parent_id') else None,
+                    'image': self.get_image(child),
+                    'description': child.description or '',
+                    'color': child.color or 'blue',
+                    'is_main': getattr(child, 'is_main', False),
+                    'order': getattr(child, 'order', 0),
+                    'category_type': getattr(child, 'category_type', 'MODEL') or 'MODEL',
+                    'product_count': getattr(child, 'product_count', 0) or 0,
+                    'rayon_type': getattr(child, 'rayon_type', None),
+                    'level': getattr(child, 'level', None),
+                    'children': []  # Ne pas récurser pour éviter les problèmes
+                }
+                children_data.append(child_dict)
+            except Exception as e:
+                logger.warning(f"Erreur lors de la sérialisation de l'enfant {child.id}: {str(e)}")
+                continue
+        
+        return children_data
 
     def get_image(self, obj):
         if obj.image:
@@ -29,7 +76,14 @@ class CategorySerializer(serializers.ModelSerializer):
 
     def get_product_count(self, obj):
         """Retourne le nombre de produits disponibles dans cette catégorie"""
-        return obj.product_count
+        # Gérer le cas où product_count n'est pas annoté (pour les enfants récursifs)
+        if hasattr(obj, 'product_count'):
+            return obj.product_count
+        # Si product_count n'est pas annoté, utiliser la propriété du modèle
+        try:
+            return obj.product_count
+        except (AttributeError, TypeError):
+            return 0
 
 class ProductImageSerializer(serializers.ModelSerializer):
     image = serializers.SerializerMethodField()

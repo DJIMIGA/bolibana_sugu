@@ -927,11 +927,8 @@ def send_order_confirmation_email(order, request=None):
     try:
         html_message = render_to_string('cart/emails/order_confirmation.html', context)
         plain_message = strip_tags(html_message)
-        print(f"✅ Template email rendu avec succès")
-        print(f"Longueur HTML: {len(html_message)} caractères")
-        print(f"Longueur texte: {len(plain_message)} caractères")
     except Exception as template_error:
-        print(f"❌ Erreur lors du rendu du template: {str(template_error)}")
+        logger.error(f"[Email] ❌ Erreur rendu template: {str(template_error)}")
         return False
     
     try:

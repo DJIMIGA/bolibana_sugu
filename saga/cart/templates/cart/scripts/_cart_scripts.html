@@ -6,18 +6,14 @@
 
 <!-- JavaScript -->
 <script type="module">
-    console.log('Initialisation des scripts...');
-    
     import CartSidebar from "{% static 'cart/js/cart-sidebar.js' %}";
     import "{% static 'cart/js/product-options.js' %}";
 
     document.addEventListener('DOMContentLoaded', () => {
-        console.log('DOM chargé');
         try {
-            const cartSidebar = new CartSidebar();
-            console.log('CartSidebar initialisé');
+            new CartSidebar();
         } catch (error) {
-            console.error('Erreur d\'initialisation:', error);
+            console.error('[Cart] ❌ Erreur d\'initialisation:', error.message || 'Erreur inconnue');
         }
     });
 </script>

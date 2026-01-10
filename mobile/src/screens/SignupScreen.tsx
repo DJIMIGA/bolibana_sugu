@@ -8,17 +8,17 @@ import {
   Alert,
   KeyboardAvoidingView,
   Platform,
-  ActivityIndicator,
   ScrollView,
   Linking,
 } from 'react-native';
 import { useAppDispatch, useAppSelector } from '../store/hooks';
 import { useNavigation } from '@react-navigation/native';
 import { COLORS } from '../utils/constants';
-import { Logo } from '../components/Logo';
+import Logo from '../components/Logo';
 import apiClient from '../services/api';
 import { API_ENDPOINTS } from '../utils/constants';
 import { Ionicons } from '@expo/vector-icons';
+import { LoadingScreen } from '../components/LoadingScreen';
 
 const SignupScreen: React.FC = () => {
   const dispatch = useAppDispatch();
@@ -178,6 +178,10 @@ const SignupScreen: React.FC = () => {
     }
   };
 
+  if (isSubmitting || isLoggingIn) {
+    return <LoadingScreen />;
+  }
+
   return (
     <KeyboardAvoidingView
       style={styles.container}
@@ -189,7 +193,8 @@ const SignupScreen: React.FC = () => {
       >
         <View style={styles.content}>
           <View style={styles.logoContainer}>
-            <Logo size="large" showText={true} />
+            <Logo size="large" showText={false} />
+            <Text style={styles.appTitle}>Sugu</Text>
           </View>
           <Text style={styles.subtitle}>Créez votre compte</Text>
 
@@ -379,11 +384,7 @@ const SignupScreen: React.FC = () => {
               onPress={handleSignup}
               disabled={isSubmitting || !acceptedCGV}
             >
-              {isSubmitting ? (
-                <ActivityIndicator color="#FFFFFF" />
-              ) : (
-                <Text style={styles.buttonText}>Créer un compte</Text>
-              )}
+              <Text style={styles.buttonText}>Créer un compte</Text>
             </TouchableOpacity>
 
             <TouchableOpacity
@@ -417,6 +418,14 @@ const styles = StyleSheet.create({
   logoContainer: {
     alignItems: 'center',
     marginBottom: 8,
+  },
+  appTitle: {
+    fontSize: 32,
+    fontWeight: 'bold',
+    color: COLORS.PRIMARY,
+    marginTop: -4,
+    letterSpacing: 1,
+    textAlign: 'center',
   },
   subtitle: {
     fontSize: 16,

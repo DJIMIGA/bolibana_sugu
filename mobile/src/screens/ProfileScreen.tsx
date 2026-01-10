@@ -8,7 +8,6 @@ import {
   Image,
   RefreshControl,
   Alert,
-  ActivityIndicator,
   TextInput,
   Modal,
 } from 'react-native';
@@ -18,6 +17,8 @@ import { useNavigation } from '@react-navigation/native';
 import { COLORS } from '../utils/constants';
 import { formatDate, formatPrice } from '../utils/helpers';
 import { Ionicons } from '@expo/vector-icons';
+import Logo from '../components/Logo';
+import { LoadingScreen } from '../components/LoadingScreen';
 
 const ProfileScreen: React.FC = () => {
   const dispatch = useAppDispatch();
@@ -168,19 +169,14 @@ const ProfileScreen: React.FC = () => {
       setIsEditModalVisible(false);
       Alert.alert('Succès', 'Profil mis à jour avec succès');
     } catch (error: any) {
-      console.error('[ProfileScreen] handleSaveProfile - Error:', error);
-      console.error('[ProfileScreen] handleSaveProfile - Error response:', error?.response);
-      console.error('[ProfileScreen] handleSaveProfile - Error data:', error?.response?.data);
-      Alert.alert('Erreur', error?.response?.data?.detail || error?.message || error || 'Impossible de mettre à jour le profil');
+      const errorMsg = cleanErrorForLog(error);
+      console.error('[ProfileScreen] handleSaveProfile - Erreur:', errorMsg);
+      Alert.alert('Erreur', error?.response?.data?.detail || error?.message || 'Impossible de mettre à jour le profil');
     }
   };
 
   if (isLoading) {
-    return (
-      <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color={COLORS.PRIMARY} />
-      </View>
-    );
+    return <LoadingScreen />;
   }
 
   if (!user) {
@@ -188,10 +184,11 @@ const ProfileScreen: React.FC = () => {
       <View style={styles.container}>
         <View style={styles.notLoggedInContainer}>
           <View style={styles.notLoggedInContent}>
-            <View style={styles.iconContainer}>
-              <Ionicons name="person-circle-outline" size={100} color={COLORS.PRIMARY} />
+            <View style={styles.logoContainer}>
+              <Logo size="large" showText={false} />
+              <Text style={styles.appTitle}>Sugu</Text>
             </View>
-            <Text style={styles.notLoggedInTitle}>Connectez-vous</Text>
+            <Text style={styles.notLoggedInTitle}>Votre Compte</Text>
             <Text style={styles.notLoggedInSubtitle}>
               Connectez-vous pour accéder à votre profil, vos commandes et bénéficier du programme de fidélité
             </Text>
@@ -892,6 +889,18 @@ const styles = StyleSheet.create({
     width: '100%',
     maxWidth: 400,
     alignItems: 'center',
+  },
+  logoContainer: {
+    alignItems: 'center',
+    marginBottom: 20,
+  },
+  appTitle: {
+    fontSize: 32,
+    fontWeight: 'bold',
+    color: COLORS.PRIMARY,
+    marginTop: -4,
+    letterSpacing: 1,
+    textAlign: 'center',
   },
   iconContainer: {
     marginBottom: 24,

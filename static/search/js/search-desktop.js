@@ -4,7 +4,6 @@ document.addEventListener('DOMContentLoaded', function() {
     const form = document.getElementById('form-desktop');
 
     if (!searchInput || !resultsContainer || !form) {
-        console.log('Éléments de recherche desktop non trouvés');
         return;
     }
 

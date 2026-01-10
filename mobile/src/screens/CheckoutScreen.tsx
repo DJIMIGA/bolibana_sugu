@@ -17,6 +17,7 @@ import { formatPrice } from '../utils/helpers';
 import apiClient from '../services/api';
 import type { ShippingAddress, CartItem } from '../types';
 import * as WebBrowser from 'expo-web-browser';
+import { LoadingScreen } from '../components/LoadingScreen';
 
 const CheckoutScreen: React.FC = () => {
   const navigation = useNavigation();
@@ -46,7 +47,12 @@ const CheckoutScreen: React.FC = () => {
       if (defaultAddr) {
         setSelectedAddress(defaultAddr);
       }
-    } catch (error) {
+    } catch (error: any) {
+      // Si c'est une erreur de mode hors ligne, gérer silencieusement
+      if (error.isOfflineBlocked || error.message === 'OFFLINE_MODE_FORCED') {
+        console.log('[CheckoutScreen] 🔌 Mode hors ligne - Aucune adresse chargée');
+        return;
+      }
       console.error('[CheckoutScreen] Error loading addresses:', error);
     } finally {
       setIsLoading(false);
@@ -101,11 +107,7 @@ const CheckoutScreen: React.FC = () => {
   };
 
   if (isLoading) {
-    return (
-      <View style={styles.loaderContainer}>
-        <ActivityIndicator size="large" color={COLORS.PRIMARY} />
-      </View>
-    );
+    return <LoadingScreen />;
   }
 
   return (
@@ -125,8 +127,33 @@ const CheckoutScreen: React.FC = () => {
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Résumé de la commande</Text>
           <View style={styles.summaryCard}>
-            <Text style={styles.summaryText}>{itemsCount} article(s)</Text>
-            <Text style={styles.summaryTotal}>{formatPrice(total)}</Text>
+            {items.map((item) => (
+              <View key={item.id} style={styles.itemRow}>
+                <View style={styles.itemInfo}>
+                  <Text style={styles.itemName} numberOfLines={1}>
+                    {item.product.name}
+                  </Text>
+                  {item.product.selected_color_name || item.product.selected_size_name ? (
+                    <Text style={styles.itemVariant}>
+                      {[item.product.selected_color_name, item.product.selected_size_name]
+                        .filter(Boolean)
+                        .join(' / ')}
+                    </Text>
+                  ) : null}
+                  <Text style={styles.itemQuantity}>
+                    Quantité: {item.quantity} × {formatPrice(item.product.discount_price || item.product.price)}
+                  </Text>
+                </View>
+                <Text style={styles.itemSubtotal}>
+                  {formatPrice((item.product.discount_price || item.product.price) * item.quantity)}
+                </Text>
+              </View>
+            ))}
+            <View style={styles.summaryDivider} />
+            <View style={styles.summaryFooter}>
+              <Text style={styles.summaryText}>{itemsCount} article(s)</Text>
+              <Text style={styles.summaryTotal}>{formatPrice(total)}</Text>
+            </View>
           </View>
         </View>
 
@@ -261,11 +288,48 @@ const styles = StyleSheet.create({
     backgroundColor: '#F9FAFB',
     borderRadius: 12,
     padding: 16,
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
+  },
+  itemRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    borderWidth: 1,
-    borderColor: '#E5E7EB',
+    marginBottom: 12,
+  },
+  itemInfo: {
+    flex: 1,
+    marginRight: 12,
+  },
+  itemName: {
+    fontSize: 15,
+    fontWeight: '600',
+    color: COLORS.TEXT,
+    marginBottom: 2,
+  },
+  itemVariant: {
+    fontSize: 13,
+    color: COLORS.TEXT_SECONDARY,
+    marginBottom: 2,
+  },
+  itemQuantity: {
+    fontSize: 13,
+    color: COLORS.TEXT_SECONDARY,
+  },
+  itemSubtotal: {
+    fontSize: 15,
+    fontWeight: '700',
+    color: COLORS.TEXT,
+  },
+  summaryDivider: {
+    height: 1,
+    backgroundColor: '#E5E7EB',
+    marginVertical: 12,
+  },
+  summaryFooter: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
   },
   summaryText: {
     fontSize: 16,

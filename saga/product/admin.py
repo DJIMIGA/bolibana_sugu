@@ -7,11 +7,72 @@ from price_checker.models import PriceEntry
 from price_checker.admin import PriceEntryInline
 from accounts.admin import admin_site
 from django.utils.text import slugify
+from django import forms
 
 # Register your models here.
 from .models import Product, Category, ImageProduct, Review, Size, Color, Clothing, CulturalItem, ShippingMethod, Phone, Fabric
 from django.contrib import admin
 from django.contrib.contenttypes.admin import GenericStackedInline
+
+def get_hierarchical_category_choices():
+    """
+    Retourne les choix de catégories formatés de manière hiérarchique.
+    """
+    choices = [('', '---------')]  # Option vide par défaut
+    
+    # Récupérer toutes les catégories avec leurs relations
+    categories = Category.objects.select_related('parent', 'parent__parent').order_by('parent__name', 'name')
+    
+    # Organiser en hiérarchie
+    main_categories = []
+    subcategories_by_parent = {}
+    
+    for cat in categories:
+        if cat.parent is None:
+            main_categories.append(cat)
+        else:
+            parent_id = cat.parent.id
+            if parent_id not in subcategories_by_parent:
+                subcategories_by_parent[parent_id] = []
+            subcategories_by_parent[parent_id].append(cat)
+    
+    # Construire les choix hiérarchiques
+    for main_cat in sorted(main_categories, key=lambda x: x.name):
+        # Catégorie principale
+        choices.append((main_cat.id, main_cat.name))
+        
+        # Sous-catégories (avec indentation)
+        if main_cat.id in subcategories_by_parent:
+            for sub_cat in sorted(subcategories_by_parent[main_cat.id], key=lambda x: x.name):
+                choices.append((sub_cat.id, f"  └─ {sub_cat.name}"))
+                
+                # Sous-sous-catégories (niveau 3)
+                if sub_cat.id in subcategories_by_parent:
+                    for sub_sub_cat in sorted(subcategories_by_parent[sub_cat.id], key=lambda x: x.name):
+                        choices.append((sub_sub_cat.id, f"    └─ {sub_sub_cat.name}"))
+    
+    return choices
+
+
+class CategoryAdminForm(forms.ModelForm):
+    """Formulaire personnalisé pour Category avec widget hiérarchique"""
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # Exclure la catégorie actuelle de la liste des parents pour éviter les boucles
+        if self.instance and self.instance.pk:
+            self.fields['parent'].queryset = Category.objects.exclude(
+                id=self.instance.id
+            ).exclude(
+                parent__id=self.instance.id
+            ).exclude(
+                parent__parent__id=self.instance.id
+            )
+        self.fields['parent'].choices = get_hierarchical_category_choices()
+    
+    class Meta:
+        model = Category
+        fields = '__all__'
+
 
 class CategoryLevelFilter(admin.SimpleListFilter):
     title = 'Niveau de la catégorie'
@@ -33,6 +94,7 @@ class CategoryLevelFilter(admin.SimpleListFilter):
             return queryset.filter(parent__parent__isnull=False)
 
 class CategoryAdmin(admin.ModelAdmin):
+    form = CategoryAdminForm
     list_display = ('name', 'parent_name', 'get_full_path', 'image_preview', 'subcategories_count', 'subsubcategories_count', 'category_type', 'color')
     list_filter = (CategoryLevelFilter, 'parent',)
     search_fields = ('name',)
@@ -153,7 +215,19 @@ class CulturalItemAdmin(admin.ModelAdmin):
         verbose_name = 'Livre et Culture'
         verbose_name_plural = 'Livres et Culture'
 
+class ProductAdminForm(forms.ModelForm):
+    """Formulaire personnalisé pour Product avec widget hiérarchique pour category"""
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields['category'].choices = get_hierarchical_category_choices()
+    
+    class Meta:
+        model = Product
+        fields = '__all__'
+
+
 class ProductAdmin(admin.ModelAdmin):
+    form = ProductAdminForm
     list_display = ('title', 'category', 'brand', 'price', 'get_stock_display', 'sku', 'is_available', 'is_salam', 'created_at', 'discount_price', 'condition')
     list_filter = ('is_available', 'is_salam', 'category', 'brand', 'created_at', 'condition')
     search_fields = ('title', 'sku', 'brand', 'description')

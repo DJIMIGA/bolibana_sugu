@@ -69,6 +69,8 @@ export interface Category {
   order: number;
   category_type?: 'MODEL' | 'FILTER' | 'MARKETING';
   product_count?: number;
+  rayon_type?: string | null;
+  level?: number | null;
 }
 
 export interface CartItem {
@@ -126,6 +128,7 @@ export interface ApiError {
   code?: string;
   status?: number;
   details?: Record<string, any>;
+  isOfflineBlocked?: boolean;
 }
 
 export interface ConnectivityState {

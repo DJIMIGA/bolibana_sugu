@@ -1,2 +1,1 @@
-// Fichier JavaScript principal pour l'application accounts
-console.log('Accounts JS loaded'); 
+// Fichier JavaScript principal pour l'application accounts 

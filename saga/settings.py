@@ -389,6 +389,30 @@ DEFAULT_FROM_EMAIL = EMAIL_HOST_USER
 print(f"[INFO] Email configure : {'Oui' if EMAIL_HOST_USER else 'Non'}")
 
 # ==================================================
+# CONFIGURATION DE L'APP DE GESTION DE STOCK (B2B)
+# ==================================================
+# URL de base de l'API B2B
+B2B_API_URL = os.getenv('B2B_API_URL', 'https://www.bolibanastock.com/api/v1')
+
+# Token API pour authentifier les requêtes vers l'app de gestion de stock
+# Ce token est créé et géré dans le projet B2B (BoliBanaStock)
+# Il doit être stocké dans le fichier .env (NE PAS COMMITER)
+B2B_API_KEY = os.getenv('B2B_API_KEY', '')
+if not B2B_API_KEY:
+    print("[WARN] B2B_API_KEY n'est pas configuré dans .env")
+
+# Configuration pour les appels API vers l'app de gestion de stock
+INVENTORY_API_TIMEOUT = int(os.getenv('INVENTORY_API_TIMEOUT', '30'))  # Timeout en secondes
+INVENTORY_API_MAX_RETRIES = int(os.getenv('INVENTORY_API_MAX_RETRIES', '3'))
+INVENTORY_SYNC_FREQUENCY = int(os.getenv('INVENTORY_SYNC_FREQUENCY', '60'))  # Fréquence par défaut en minutes
+
+# Clé de chiffrement pour les clés API stockées en base de données
+# Générer avec: python -c "from cryptography.fernet import Fernet; print(Fernet.generate_key().decode())"
+INVENTORY_ENCRYPTION_KEY = os.getenv('INVENTORY_ENCRYPTION_KEY', '')
+if not INVENTORY_ENCRYPTION_KEY:
+    print("[WARN] INVENTORY_ENCRYPTION_KEY n'est pas configuré dans .env - les clés API seront chiffrées avec une clé temporaire")
+
+# ==================================================
 # CONFIGURATION REST FRAMEWORK
 # ==================================================
 REST_FRAMEWORK = {
@@ -577,6 +601,7 @@ INSTALLED_APPS = [
     'rembg',
     'onnxruntime',
     'price_checker',
+    'inventory.apps.InventoryConfig',  # App de gestion de stock
     # Applications pour la 2FA
     'django_otp',
     'django_otp.plugins.otp_totp',
@@ -604,6 +629,7 @@ MIDDLEWARE = [
     'core.middleware.MaintenanceModeMiddleware',  # Après AuthenticationMiddleware pour accéder à request.user
     'django_otp.middleware.OTPMiddleware',  # Middleware OTP juste après AuthenticationMiddleware
     'saga.middleware.AdminIPRestrictionMiddleware',  # Middleware de restriction IP
+    'inventory.middleware.AutoSyncB2BMiddleware',  # Synchronisation automatique des produits B2B
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'django_htmx.middleware.HtmxMiddleware',
@@ -627,6 +653,7 @@ TEMPLATES = [
                 'cart.context_processors.cart_context',
                 'suppliers.context_processors.user_context',
                 'core.context_processors.site_config',
+                'inventory.context_processors.synced_categories_context',
             ],
         },
     },

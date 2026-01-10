@@ -47,12 +47,23 @@ export const mapProductFromBackend = (backendProduct: any): Product => {
   }
 
   // Extraire l'image principale
+  // L'API B2B utilise 'image_url', l'API normale utilise 'feature_image' ou 'image'
   let imageUrl: string | undefined;
-  if (backendProduct.feature_image) {
+  if (backendProduct.image_url) {
+    // API B2B utilise image_url directement
+    imageUrl = ensureAbsoluteUrl(backendProduct.image_url);
+  } else if (backendProduct.feature_image) {
     if (typeof backendProduct.feature_image === 'string') {
       imageUrl = ensureAbsoluteUrl(backendProduct.feature_image);
-    } else if (backendProduct.feature_image.image) {
-      imageUrl = ensureAbsoluteUrl(backendProduct.feature_image.image);
+    } else if (typeof backendProduct.feature_image === 'object') {
+      // feature_image peut être {image: url} ou un objet avec d'autres propriétés
+      imageUrl = ensureAbsoluteUrl(
+        backendProduct.feature_image.image || 
+        backendProduct.feature_image.url ||
+        (typeof backendProduct.feature_image === 'object' && backendProduct.feature_image !== null 
+          ? Object.values(backendProduct.feature_image)[0] as string 
+          : undefined)
+      );
     }
   } else if (backendProduct.image) {
     imageUrl = ensureAbsoluteUrl(backendProduct.image);
@@ -115,28 +126,43 @@ export const mapProductFromBackend = (backendProduct: any): Product => {
     specifications.product_type = productType;
   }
 
+  // Gérer le prix : l'API B2B utilise 'selling_price', l'API normale utilise 'price'
+  const priceValue = backendProduct.selling_price || backendProduct.price;
+  const price = priceValue ? parseFloat(priceValue) : 0;
+  
+  // Gérer la disponibilité : l'API B2B utilise 'is_available_b2c', l'API normale utilise 'is_available'
+  const isAvailable = backendProduct.is_available_b2c !== undefined 
+    ? backendProduct.is_available_b2c 
+    : (backendProduct.is_available !== false);
+  
+  // Gérer le stock : l'API B2B utilise 'quantity', l'API normale utilise 'stock'
+  const stockValue = backendProduct.quantity !== undefined 
+    ? backendProduct.quantity 
+    : backendProduct.stock;
+  const stock = stockValue ? parseFloat(stockValue) : 0;
+
   return {
     id: backendProduct.id,
     title: backendProduct.name || backendProduct.title, // Backend retourne "name"
     slug: backendProduct.slug,
     description: backendProduct.description || undefined,
-    price: parseFloat(backendProduct.price) || 0,
+    price: price,
     discount_price: backendProduct.discount_price
       ? parseFloat(backendProduct.discount_price)
       : undefined,
     category: typeof backendProduct.category === 'object' && backendProduct.category
-      ? backendProduct.category.id
+      ? (backendProduct.category.id || backendProduct.category)
       : backendProduct.category,
     supplier: backendProduct.supplier || undefined,
     brand: typeof backendProduct.brand === 'object' && backendProduct.brand
       ? (backendProduct.brand.name || backendProduct.brand)
       : backendProduct.brand || undefined,
-    is_available: backendProduct.is_available !== false,
+    is_available: isAvailable,
     is_salam: backendProduct.is_salam || false,
-    stock: backendProduct.stock || 0,
+    stock: stock,
     image: imageUrl,
     image_urls: Object.keys(imageUrls).length > 0 ? imageUrls : undefined,
-    sku: backendProduct.sku || undefined,
+    sku: backendProduct.cug || backendProduct.sku || undefined,
     specifications: Object.keys(specifications).length > 0 ? specifications : undefined,
     weight: backendProduct.weight ? parseFloat(backendProduct.weight) : undefined,
     dimensions: backendProduct.dimensions || undefined,
@@ -181,6 +207,10 @@ export const mapCategoryFromBackend = (backendCategory: any): Category => {
     order: backendCategory.order || 0,
     category_type: backendCategory.category_type || undefined,
     product_count: backendCategory.product_count || undefined,
+    rayon_type: backendCategory.rayon_type || undefined,
+    level: backendCategory.level !== undefined && backendCategory.level !== null 
+      ? backendCategory.level 
+      : undefined,
   };
 };
 

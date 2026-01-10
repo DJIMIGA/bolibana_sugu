@@ -1,0 +1,7 @@
+{
+  "dependencies": {
+    "crypto-js": "^4.2.0",
+    "expo-splash-screen": "~31.0.13",
+    "react-native-get-random-values": "^2.0.0"
+  }
+}

@@ -11,6 +11,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import { COLORS, API_ENDPOINTS } from '../utils/constants';
 import apiClient from '../services/api';
+import { LoadingScreen } from '../components/LoadingScreen';
 
 type OrderItemLite = {
   id: number;
@@ -45,7 +46,14 @@ const OrdersScreen: React.FC = () => {
         ? raw.results
         : [];
       setOrders(list);
-    } catch (error) {
+    } catch (error: any) {
+      // Si c'est une erreur de mode hors ligne, gérer silencieusement
+      if (error.isOfflineBlocked || error.code === 'OFFLINE_MODE_FORCED') {
+        console.log('[OrdersScreen] 🔌 Mode hors ligne - Aucune commande chargée');
+        // En mode hors ligne, on peut garder les commandes déjà chargées ou vider la liste
+        // setOrders([]); // Optionnel : vider si on veut forcer l'utilisateur à être en ligne
+        return;
+      }
       console.error('[OrdersScreen] Error loading orders:', error);
     } finally {
       setIsLoading(false);
@@ -73,9 +81,7 @@ const OrdersScreen: React.FC = () => {
       
       <View style={styles.content}>
         {isLoading ? (
-          <View style={styles.loaderContainer}>
-            <ActivityIndicator size="large" color={COLORS.PRIMARY} />
-          </View>
+          <LoadingScreen />
         ) : orders.length === 0 ? (
           <View style={styles.emptyContainer}>
             <Ionicons

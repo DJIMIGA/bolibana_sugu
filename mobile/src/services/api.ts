@@ -4,6 +4,8 @@ import * as SecureStore from 'expo-secure-store';
 import Constants from 'expo-constants';
 import { STORAGE_KEYS, API_TIMEOUT, API_ENDPOINTS } from '../utils/constants';
 import { errorService } from './errorService';
+import { connectivityService } from './connectivityService';
+import { networkMonitor } from '../utils/networkMonitor';
 
 // URL de base de l'API depuis les variables d'environnement
 // En développement, utilisez l'IP locale de votre ordinateur au lieu de localhost
@@ -31,9 +33,48 @@ const apiClient: AxiosInstance = axios.create({
   },
 });
 
-// Intercepteur de requête : injection du token JWT
+// Intercepteur de requête : vérification du mode hors ligne et injection du token JWT
 apiClient.interceptors.request.use(
   async (config: InternalAxiosRequestConfig) => {
+    // Vérifier si on est en mode hors ligne forcé
+    const isOnline = connectivityService.getIsOnline();
+    const isForceOffline = connectivityService.isForceOffline();
+    
+    if (isForceOffline) {
+      const endpoint = config.url || 'unknown';
+      const method = config.method?.toUpperCase() || 'UNKNOWN';
+      
+      // Enregistrer la tentative bloquée dans le monitor
+      networkMonitor.logRequest({
+        method,
+        endpoint,
+        timestamp: new Date().toISOString(),
+        status: 'BLOCKED',
+        reason: 'OFFLINE_MODE_FORCED'
+      });
+      
+      // Rejeter la requête avec une erreur Axios compatible
+      const error = new Error('') as AxiosError;
+      error.isOfflineBlocked = true;
+      error.config = config;
+      error.response = undefined;
+      error.request = undefined;
+      error.code = 'OFFLINE_MODE_FORCED';
+      error.message = ''; // Message vide pour ne pas afficher d'erreur
+      return Promise.reject(error);
+    }
+    
+    // Enregistrer les requêtes autorisées
+    networkMonitor.logRequest({
+      method: config.method?.toUpperCase() || 'UNKNOWN',
+      endpoint: config.url || 'unknown',
+      timestamp: new Date().toISOString(),
+      status: 'ALLOWED'
+    });
+    
+    // Si on est vraiment hors ligne (pas de connexion), permettre quand même pour les cas d'urgence
+    // Logs réduits pour éviter le bruit
+    
     try {
       const token = await SecureStore.getItemAsync(STORAGE_KEYS.AUTH_TOKEN);
       if (token && config.headers) {
@@ -42,6 +83,8 @@ apiClient.interceptors.request.use(
     } catch (error) {
       console.error('Erreur lors de la récupération du token:', error);
     }
+    
+    // Logs réduits - les requêtes autorisées sont suivies par NetworkMonitor mais non loggées
     return config;
   },
   (error: AxiosError) => {

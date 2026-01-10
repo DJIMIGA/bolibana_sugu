@@ -1,5 +1,7 @@
 from django import template
+
 from django.contrib.contenttypes.models import ContentType
+from django.conf import settings
 from product.models import Phone, Clothing, CulturalItem, Fabric, Product, Favorite
 from django.utils import timezone
 from django.urls import reverse
@@ -12,6 +14,15 @@ from django.core.cache import cache
 register = template.Library()
 logger = logging.getLogger(__name__)
 
+def debug_log(message: str) -> None:
+    """
+    Log uniquement lorsque le DEBUG est activé *et* que l'on a explicitement autorisé
+    les logs de tags (pour éviter l'inondation dans dev par défaut).
+    """
+    enabled = getattr(settings, 'PRODUCT_TAGS_DEBUG_LOGGING', False)
+    if enabled and settings.DEBUG and logger.isEnabledFor(logging.DEBUG):
+        logger.debug(message)
+
 @register.simple_tag
 def get_product_detail_url(product):
     """
@@ -21,34 +32,34 @@ def get_product_detail_url(product):
         # Si c'est un objet Product
         if isinstance(product, Product):
             if hasattr(product, 'phone'):
-                logger.debug(f"Produit trouvé: Téléphone - {product.title}")
+                debug_log(f"Produit trouvé: Téléphone - {product.title}")
                 return reverse('suppliers:phone_detail', args=[product.slug])
             elif hasattr(product, 'clothing_product'):
-                logger.debug(f"Produit trouvé: Vêtement - {product.title}")
+                debug_log(f"Produit trouvé: Vêtement - {product.title}")
                 return reverse('suppliers:clothing_detail', args=[product.slug])
             elif hasattr(product, 'cultural_product'):
-                logger.debug(f"Produit trouvé: Article culturel - {product.title}")
+                debug_log(f"Produit trouvé: Article culturel - {product.title}")
                 return reverse('suppliers:cultural_detail', args=[product.slug])
             elif hasattr(product, 'fabric_product'):
-                logger.debug(f"Produit trouvé: Tissu - {product.title}")
+                debug_log(f"Produit trouvé: Tissu - {product.title}")
                 return reverse('suppliers:fabric_detail', args=[product.slug])
             else:
                 # Cas par défaut pour les produits sans modèle spécifique
-                logger.debug(f"Produit trouvé: Produit générique - {product.title}")
+                debug_log(f"Produit trouvé: Produit générique - {product.title}")
                 return reverse('suppliers:product_detail', args=[product.slug])
         
         # Si c'est un objet spécifique (Phone, Clothing, etc.)
         elif isinstance(product, Phone):
-            logger.debug(f"Téléphone trouvé: {product.product.title}")
+            debug_log(f"Téléphone trouvé: {product.product.title}")
             return reverse('suppliers:phone_detail', args=[product.product.slug])
         elif isinstance(product, Clothing):
-            logger.debug(f"Vêtement trouvé: {product.product.title}")
+            debug_log(f"Vêtement trouvé: {product.product.title}")
             return reverse('suppliers:clothing_detail', args=[product.product.slug])
         elif isinstance(product, CulturalItem):
-            logger.debug(f"Article culturel trouvé: {product.product.title}")
+            debug_log(f"Article culturel trouvé: {product.product.title}")
             return reverse('suppliers:cultural_detail', args=[product.product.slug])
         elif isinstance(product, Fabric):
-            logger.debug(f"Tissu trouvé: {product.product.title}")
+            debug_log(f"Tissu trouvé: {product.product.title}")
             return reverse('suppliers:fabric_detail', args=[product.product.slug])
         
         logger.warning(f"Type de produit non reconnu pour {getattr(product, 'title', 'Sans titre')}")
@@ -256,17 +267,17 @@ def filter_by_category(products, category_id):
 
 @register.filter
 def is_favorite(user, product):
-    logger.debug(f"Checking favorite for user {user} and product {product}")
+    debug_log(f"Checking favorite for user {user} and product {product}")
     if not user or not user.is_authenticated:
-        logger.debug("User not authenticated")
+        debug_log("User not authenticated")
         return False
     cache_key = f"favorite_{user.id}_{product.id}"
     cached = cache.get(cache_key)
     if cached is not None:
-        logger.debug(f"Cache hit: {cached}")
+        debug_log(f"Cache hit: {cached}")
         return cached
     result = Favorite.objects.filter(user=user, product=product).exists()
-    logger.debug(f"Database check result: {result}")
+    debug_log(f"Database check result: {result}")
     cache.set(cache_key, result, 60*15)
     return result
 
@@ -289,5 +300,107 @@ def get_phone_colors():
     except Exception as e:
         logger.error(f"Erreur lors de la récupération des couleurs: {str(e)}")
         return {}
+
+@register.filter
+def get_brand_name(brand):
+    """
+    Extrait le nom de la marque depuis un dict, une chaîne JSON/Python ou retourne la string directement.
+    Gère les formats: dict, JSON string, Python dict string representation.
+    """
+    if not brand:
+        return None
+    
+    # Si c'est déjà un dict
+    if isinstance(brand, dict):
+        return brand.get('name', str(brand))
+    
+    # Si c'est une chaîne
+    if isinstance(brand, str):
+        brand_str = brand.strip()
+        
+        # Vérifier si c'est une représentation de dict (commence par {)
+        if brand_str.startswith('{'):
+            # Essayer d'abord JSON
+            try:
+                import json
+                parsed = json.loads(brand_str)
+                if isinstance(parsed, dict):
+                    return parsed.get('name', brand)
+            except (json.JSONDecodeError, ValueError):
+                pass
+            
+            # Essayer d'évaluer comme représentation Python (avec sécurité)
+            # Format: {'id': 10, 'name': 'Bara mousso'}
+            try:
+                # Remplacer les guillemets simples par des doubles pour JSON
+                # ou utiliser ast.literal_eval pour plus de sécurité
+                import ast
+                parsed = ast.literal_eval(brand_str)
+                if isinstance(parsed, dict):
+                    return parsed.get('name', brand)
+            except (ValueError, SyntaxError):
+                pass
+            
+            # Si c'est une chaîne qui ressemble à un dict mais ne peut pas être parsée,
+            # essayer d'extraire le nom avec regex
+            import re
+            match = re.search(r"'name':\s*['\"]([^'\"]+)['\"]", brand_str)
+            if match:
+                return match.group(1)
+        
+        # Sinon, retourner la chaîne telle quelle
+        return brand
+    
+    return str(brand)
+
+@register.filter
+def format_specification_key(key):
+    """
+    Formate les clés de spécifications pour un affichage plus lisible.
+    """
+    # Mapping des clés pour un affichage plus lisible
+    key_mapping = {
+        'ean': 'Code EAN',
+        'barcode': 'Code-barres',
+        'unit_display': 'Unité de vente',
+        'formatted_quantity': 'Quantité disponible',
+        'b2b_category_name': 'Catégorie B2B',
+        'b2b_slug': 'Slug B2B',
+        'b2b_image_url': 'URL Image B2B',
+        'b2b_created_at': 'Date de création B2B',
+        'b2b_updated_at': 'Date de mise à jour B2B',
+    }
+    
+    # Remplacer les underscores par des espaces et capitaliser
+    formatted = key_mapping.get(key, key.replace('_', ' ').title())
+    return formatted
+
+@register.filter
+def is_b2b_technical_field(key):
+    """
+    Détermine si un champ est technique B2B et ne doit pas être affiché dans les spécifications principales.
+    """
+    technical_fields = [
+        'b2b_slug',
+        'b2b_image_url',
+        'b2b_created_at',
+        'b2b_updated_at',
+        'alert_threshold',  # Seuil d'alerte - champ technique interne
+    ]
+    return key in technical_fields
+
+@register.filter
+def is_important_spec(key):
+    """
+    Détermine si une spécification est importante et doit être affichée en premier.
+    """
+    important_fields = [
+        'ean',
+        'barcode',
+        'unit_display',
+        'formatted_quantity',
+        'b2b_category_name',
+    ]
+    return key in important_fields
 
 

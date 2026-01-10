@@ -327,6 +327,7 @@
     /* Garantir la séparation mobile/desktop pour toutes les sections */
     .pilotProductsSwiper,
     .promotionsSwiper,
+    .b2bProductsSwiper,
     .phonesSwiper,
     .clothingSwiper,
     .fabricSwiper,
@@ -339,6 +340,7 @@
     @media (min-width: 640px) {
         .pilotProductsSwiper,
         .promotionsSwiper,
+        .b2bProductsSwiper,
         .phonesSwiper,
         .clothingSwiper,
         .fabricSwiper,
@@ -349,6 +351,7 @@
     
     .pilot-products-desktop-grid,
     .promotions-desktop-grid,
+    .b2b-products-desktop-grid,
     .phones-desktop-grid,
     .clothing-desktop-grid,
     .fabric-desktop-grid,
@@ -359,6 +362,7 @@
     @media (min-width: 640px) {
         .pilot-products-desktop-grid,
         .promotions-desktop-grid,
+        .b2b-products-desktop-grid,
         .phones-desktop-grid,
         .clothing-desktop-grid,
         .fabric-desktop-grid,
@@ -859,31 +863,10 @@
         function initSwiper(containerClass, config) {
             const container = document.querySelector(containerClass);
             if (container) {
-                console.log(`Initializing ${containerClass}`);
                 const swiper = new Swiper(containerClass, config);
-                
-                // Ajouter des événements de débogage pour les catégories
-                if (containerClass === '.categoriesSwiper') {
-                    swiper.on('slideChange', function () {
-                        console.log('Categories slide changed to:', swiper.activeIndex);
-                    });
-                    
-                    swiper.on('touchStart', function () {
-                        console.log('Categories touch started');
-                    });
-                    
-                    swiper.on('touchMove', function () {
-                        console.log('Categories touch moving');
-                    });
-                    
-                    swiper.on('touchEnd', function () {
-                        console.log('Categories touch ended');
-                    });
-                }
-                
                 return swiper;
             }
-            console.error(`${containerClass} not found`);
+            console.error(`[Swiper] ⚠️ ${containerClass} non trouvé`);
             return null;
         }
 
@@ -908,14 +891,12 @@
 
             if (nextButton) {
                 nextButton.addEventListener('click', () => {
-                    console.log(`${containerClass} next button clicked`);
                     swiper.slideNext();
                 });
             }
 
             if (prevButton) {
                 prevButton.addEventListener('click', () => {
-                    console.log(`${containerClass} prev button clicked`);
                     swiper.slidePrev();
                 });
             }
@@ -925,36 +906,8 @@
         Object.entries(swipers).forEach(([name, swiper]) => {
             if (swiper) {
                 addButtonListeners(swiper, `.${name}Swiper`);
-                
-                // Ajouter des événements de débogage pour tous les Swipers
-                swiper.on('slideChange', function () {
-                    console.log(`${name} slide changed to:`, swiper.activeIndex);
-                });
-                
-                swiper.on('touchStart', function () {
-                    console.log(`${name} touch started`);
-                });
-                
-                swiper.on('touchMove', function () {
-                    console.log(`${name} touch moving`);
-                });
-                
-                swiper.on('touchEnd', function () {
-                    console.log(`${name} touch ended`);
-                });
             }
         });
-        
-        // Debug: Vérifier si les éléments existent
-        console.log('=== DEBUG SWIPER ELEMENTS ===');
-        console.log('Pilot Products Swiper:', document.querySelector('.pilotProductsSwiper'));
-        console.log('Categories Swiper:', document.querySelector('.categoriesSwiper'));
-        console.log('Promotions Swiper:', document.querySelector('.promotionsSwiper'));
-        console.log('Phones Swiper:', document.querySelector('.phonesSwiper'));
-        console.log('Clothing Swiper:', document.querySelector('.clothingSwiper'));
-        console.log('Fabric Swiper:', document.querySelector('.fabricSwiper'));
-        console.log('Cultural Swiper:', document.querySelector('.culturalSwiper'));
-        console.log('=== END DEBUG ===');
         });
     </script>
 {% endblock %}
@@ -1139,6 +1092,9 @@
             </div>
         </div>
 
+        <!-- Section Catégories B2B avec Hiérarchie -->
+        {% include "suppliers/components/_b2b_categories_hierarchy.html" %}
+
         <!-- Section Promotions en Cours -->
         {% if promotional_products or products %}
         <div id="promotions" class="mb-24">
@@ -1264,6 +1220,94 @@
         {% else %}
         <!-- Espacement quand pas de promotions -->
         <div class="mb-24"></div>
+        {% endif %}
+
+        <!-- Section Produits B2B -->
+        {% if b2b_products %}
+        <div id="produits-b2b" class="mb-24">
+            <div class="relative px-2 sm:px-0 flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 sm:gap-0">
+                <div class="relative">
+                    <h1 class="text-2xl sm:text-3xl font-bold font-bitter bg-gradient-to-r from-gray-900 to-gray-700 bg-clip-text text-transparent mb-3 sm:mb-4 flex items-center gap-2">
+                        <svg class="w-8 h-8 text-green-600" fill="currentColor" viewBox="0 0 20 20">
+                            <path d="M9 2a1 1 0 000 2h2a1 1 0 100-2H9z"/>
+                            <path fill-rule="evenodd" d="M4 5a2 2 0 012-2 3 3 0 003 3h2a3 3 0 003-3 2 2 0 012 2v11a2 2 0 01-2 2H6a2 2 0 01-2-2V5zm3 4a1 1 0 000 2h.01a1 1 0 100-2H7zm3 0a1 1 0 000 2h3a1 1 0 100-2h-3zm-3 4a1 1 0 100 2h.01a1 1 0 100-2H7zm3 0a1 1 0 100 2h3a1 1 0 100-2h-3z" clip-rule="evenodd"/>
+                        </svg>
+                        Produits B2B
+                    </h1>
+                    <div class="absolute -bottom-1 left-0 w-24 h-1 bg-gradient-to-r from-green-500 via-yellow-500 to-red-500 rounded-full"></div>
+                </div>
+                <a href="{% url 'inventory:category_list_synced' %}" 
+                   class="inline-flex items-center justify-center w-full sm:w-auto px-4 py-2 border border-transparent text-sm font-medium rounded-md text-green-700 bg-green-100 hover:bg-green-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-all duration-300">
+                    Voir tous les produits B2B
+                    <svg class="ml-2 w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8l4 4m0 0l-4 4m4-4H3" />
+                    </svg>
+                </a>
+            </div>
+
+            <!-- Swiper sur mobile, grille sur desktop -->
+            <div class="mt-12 relative">
+                <!-- Swiper container - Visible uniquement sur mobile -->
+                <div class="swiper b2bProductsSwiper block sm:hidden">
+                    <div class="swiper-wrapper">
+                        {% for product in b2b_products|slice:":8" %}
+                            <div class="swiper-slide">
+                                {% if product.phone %}
+                                    {% render_phone_card product %}
+                                {% elif product.clothing_product %}
+                                    {% render_clothing_card product %}
+                                {% elif product.fabric_product %}
+                                    {% render_fabric_card product %}
+                                {% elif product.cultural_product %}
+                                    {% render_cultural_card product %}
+                                {% else %}
+                                    {% render_product_card product %}
+                                {% endif %}
+                            </div>
+                        {% empty %}
+                            <div class="swiper-slide">
+                                <div class="text-center py-12">
+                                    <p class="text-gray-500 text-xl">Aucun produit B2B disponible pour le moment.</p>
+                                </div>
+                            </div>
+                        {% endfor %}
+                    </div>
+                    <!-- Navigation -->
+                    <div class="swiper-button-next"></div>
+                    <div class="swiper-button-prev"></div>
+                    <!-- Pagination -->
+                    <div class="swiper-pagination"></div>
+                </div>
+
+                <!-- Grille pour desktop - Visible uniquement sur desktop -->
+                <div class="hidden sm:grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 grid-4-cols b2b-products-desktop-grid">
+                {% for product in b2b_products|slice:":8" %}
+                    {% if product.phone %}
+                        {% render_phone_card product %}
+                    {% elif product.clothing_product %}
+                        {% render_clothing_card product %}
+                    {% elif product.fabric_product %}
+                        {% render_fabric_card product %}
+                    {% elif product.cultural_product %}
+                        {% render_cultural_card product %}
+                    {% else %}
+                        {% render_product_card product %}
+                    {% endif %}
+                {% empty %}
+                    <div class="col-span-full text-center py-12">
+                        <p class="text-gray-500 text-xl">Aucun produit B2B disponible pour le moment.</p>
+                        <a href="{% url 'inventory:category_list_synced' %}" class="mt-4 inline-flex items-center px-6 py-3 text-sm text-green-700 bg-green-50 hover:bg-green-100 transition-colors duration-200 rounded-lg">
+                            <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                            </svg>
+                            Découvrir tous nos produits B2B
+                        </a>
+                    </div>
+                {% endfor %}
+                </div>
+            </div>
+        </div>
         {% endif %}
 
         <!-- Section Téléphones -->

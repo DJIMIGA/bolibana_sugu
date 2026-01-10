@@ -21,11 +21,13 @@ urlpatterns = [
     path('api/', include('product.api.urls')),
     path('api/', include('accounts.api.urls')),
     path('api/cart/', include('cart.api.urls')),
+    path('api/inventory/', include('inventory.api.urls')),
     # JWT endpoints
     path('api/token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
     path('api/token/verify/', TokenVerifyView.as_view(), name='token_verify'),
     path('price-checker/', include('price_checker.urls', namespace='price_checker')),
     path('core/', include('core.urls', namespace='core')),
+    path('inventory/', include('inventory.urls', namespace='inventory')),
 ]
 
 # Ajout des URLs pour les fichiers médias en développement

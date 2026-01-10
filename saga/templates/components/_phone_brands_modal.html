@@ -62,7 +62,7 @@ function loadAllPhoneBrands() {
             });
         })
         .catch(error => {
-            console.error('Erreur lors du chargement des marques:', error);
+            console.error('[PhoneBrands] ❌ Erreur:', error.message || 'Erreur inconnue');
         });
 }
 

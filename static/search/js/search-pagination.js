@@ -37,7 +37,8 @@ document.addEventListener('DOMContentLoaded', function() {
                         window.SearchUtils.scrollToTop(targetElement);
                     }
                 }).catch(function(error) {
-                    console.error('Erreur de pagination:', error);
+                    const status = error?.status || 'N/A';
+                    console.error(`[Search] ❌ Erreur ${status} de pagination`);
                     targetElement.innerHTML = `
                         <div class="bg-red-50 border border-red-200 rounded-lg p-4 text-center">
                             <p class="text-red-700 text-sm">Erreur lors du chargement de la page.</p>

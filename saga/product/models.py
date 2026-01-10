@@ -116,6 +116,24 @@ class Category(models.Model):
         null=True,
         help_text="Critères de filtrage pour les sous-catégories"
     )
+    
+    # Champs pour la synchronisation avec l'app de gestion de stock
+    external_id = models.IntegerField(null=True, blank=True, verbose_name='ID externe (app de gestion)')
+    external_parent_id = models.IntegerField(null=True, blank=True, verbose_name='ID parent externe (app de gestion)')
+    rayon_type = models.CharField(
+        max_length=100, 
+        null=True, 
+        blank=True, 
+        verbose_name='Type de rayon (B2B)',
+        help_text='Type de rayon depuis l\'API B2B (ex: frais_libre_service, epicerie)'
+    )
+    level = models.IntegerField(
+        null=True, 
+        blank=True, 
+        verbose_name='Niveau hiérarchique (B2B)',
+        help_text='Niveau dans la hiérarchie B2B (0, 1, 2, 3...)'
+    )
+    
     history = HistoricalRecords()
 
     def __str__(self):
@@ -321,6 +339,11 @@ class Product(models.Model):
     discount_price = models.DecimalField(max_digits=10, decimal_places=0, null=True, blank=True, verbose_name='Prix promotionnel (FCFA)')
     is_trending = models.BooleanField(default=False, verbose_name='Produit tendance')
     sales_count = models.IntegerField(default=0, verbose_name='Nombre de ventes')
+    
+    # Champs pour la synchronisation avec l'app de gestion de stock
+    external_id = models.IntegerField(null=True, blank=True, verbose_name='ID externe (app de gestion)')
+    external_sku = models.CharField(max_length=100, null=True, blank=True, verbose_name='SKU externe (app de gestion)')
+    
     history = HistoricalRecords()
 
     def get_average_rating(self):
@@ -405,6 +428,50 @@ class Product(models.Model):
         """Retourne l'estimation de délai de livraison"""
         status = self.get_stock_status()
         return status['delivery_days']
+
+    def get_display_image(self):
+        """Retourne l'image à afficher : image locale ou image B2B depuis les spécifications"""
+        # D'abord, vérifier si on a une image locale
+        if self.image:
+            return self.image
+        
+        # Sinon, vérifier si on a une image B2B dans les spécifications
+        if self.specifications and isinstance(self.specifications, dict):
+            b2b_image_url = self.specifications.get('b2b_image_url')
+            if b2b_image_url:
+                # Retourner une chaîne pour les URLs externes
+                # Le template vérifiera si c'est une URL HTTP
+                return b2b_image_url
+        
+        # En dernier recours, vérifier les images de la galerie
+        if hasattr(self, 'images') and self.images.exists():
+            first_image = self.images.first()
+            if first_image and first_image.image:
+                return first_image.image
+        
+        return None
+
+    def get_display_image_url(self):
+        """Retourne l'URL de l'image à afficher (compatible avec les templates)"""
+        display_image = self.get_display_image()
+        if not display_image:
+            return None
+        
+        # Si c'est une chaîne (URL B2B), la retourner directement
+        if isinstance(display_image, str):
+            return display_image
+        
+        # Sinon, c'est un ImageField, retourner son URL
+        try:
+            return display_image.url
+        except (ValueError, AttributeError):
+            return None
+
+    def get_category_display(self):
+        """Retourne le nom de la catégorie pour l'affichage"""
+        if self.category:
+            return self.category.name
+        return "Sans catégorie"
 
     class Meta:
         verbose_name = 'Produit'

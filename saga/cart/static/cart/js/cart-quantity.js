@@ -17,7 +17,8 @@ class CartQuantity {
         });
 
         document.body.addEventListener('htmx:responseError', (evt) => {
-            console.error('Erreur lors de la mise à jour de la quantité:', evt.detail.error);
+            const status = evt.detail?.xhr?.status || 'N/A';
+            console.error(`[Cart] ❌ Erreur ${status} lors de la mise à jour`);
         });
     }
 

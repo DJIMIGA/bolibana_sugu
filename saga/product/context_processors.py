@@ -1,5 +1,8 @@
 from .models import Category
 from django.db.models import Prefetch
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 
@@ -142,28 +145,126 @@ def categrpies_processor_espace_culturel(request):
 def dropdown_categories_processor(request):
     """
     Context processor pour gérer les catégories dans le menu déroulant.
-    Optimisé pour charger toutes les catégories en une seule requête.
+    Affiche uniquement les catégories de niveau 0 (premier niveau), organisées par rayon_type.
     """
     from product.models import Phone
     from product.utils import extract_phone_series, normalize_phone_series
+    from inventory.models import ExternalCategory
     
-    # Récupérer toutes les catégories principales avec leurs sous-catégories en une seule requête
+    from django.db.models import Q
+    
+    # Fonction de tri personnalisée pour les catégories B2B
+    def get_sort_key(category):
+        """Retourne une clé de tri : (rayon_type, level, order, name)"""
+        rayon_type = category.rayon_type or ''
+        level = category.level if category.level is not None else 999
+        order = category.order if category.order is not None else 999
+        name = category.name or ''
+        return (rayon_type, level, order, name)
+    
+    # Récupérer UNIQUEMENT les catégories B2B de niveau 0 (premier niveau)
+    # Filtrer par level=0 OU (level is None ET external_parent_id is None)
     main_categories = Category.objects.filter(
-        parent__isnull=True
-    ).prefetch_related(
-        Prefetch(
-            'children',
-            queryset=Category.objects.all().prefetch_related(
-                Prefetch(
-                    'children',
-                    queryset=Category.objects.all()
-                )
-            )
-        )
-    ).order_by('order', 'name')
+        Q(external_category__isnull=False) | Q(rayon_type__isnull=False)
+    ).filter(
+        Q(level=0) | (Q(level__isnull=True) & Q(external_category__external_parent_id__isnull=True))
+    ).select_related('external_category').order_by('rayon_type', 'order', 'name')
+    
+    logger.info(f"[DROPDOWN] Nombre de catégories de niveau 0 trouvées: {main_categories.count()}")
+    
+    # Log des catégories principales
+    for cat in main_categories:
+        logger.info(f"[DROPDOWN] Catégorie niveau 0: {cat.name} (ID: {cat.id}, level: {cat.level}, rayon_type: {cat.rayon_type})")
+    
+    # Trier les catégories principales selon rayon_type, level, order, name
+    main_categories = sorted(main_categories, key=get_sort_key)
+    
+    logger.info(f"[DROPDOWN] Catégories principales triées: {[cat.name for cat in main_categories]}")
 
-    # Construire la hiérarchie des catégories
+    # Récupérer toutes les catégories B2B pour trouver les enfants
+    all_b2b_categories = Category.objects.filter(
+        Q(external_category__isnull=False) | Q(rayon_type__isnull=False)
+    ).select_related('external_category')
+    
+    # Fonction récursive pour construire la hiérarchie complète (tous les niveaux)
+    def build_category_hierarchy(category, all_categories, parent_external_id=None, current_level=0, max_depth=10):
+        """
+        Construit récursivement la hiérarchie des catégories.
+        Gère tous les niveaux (1, 2, 3, etc.)
+        """
+        if current_level >= max_depth:
+            return []
+        
+        # S'assurer que la catégorie a un slug
+        if not category.slug:
+            from django.utils.text import slugify
+            base_slug = slugify(category.name)
+            slug = base_slug
+            counter = 1
+            while Category.objects.filter(slug=slug).exclude(id=category.id).exists():
+                slug = f"{base_slug}-{counter}"
+                counter += 1
+            category.slug = slug
+            category.save(update_fields=['slug'])
+            logger.info(f"[DROPDOWN] Slug généré pour catégorie '{category.name}': {slug}")
+        
+        # Trouver les enfants de cette catégorie
+        children = []
+        category_external_id = None
+        
+        if hasattr(category, 'external_category') and category.external_category:
+            category_external_id = category.external_category.external_id
+        
+        # Méthode 1: Vérifier par external_parent_id
+        if category_external_id is not None:
+            for cat in all_categories:
+                if cat.id == category.id:
+                    continue
+                if hasattr(cat, 'external_category') and cat.external_category:
+                    if cat.external_category.external_parent_id == category_external_id:
+                        children.append(cat)
+        
+        # Méthode 2: Si aucune trouvée, vérifier par level et rayon_type
+        if not children and category.level is not None:
+            expected_level = category.level + 1
+            for cat in all_categories:
+                if cat.id == category.id:
+                    continue
+                if cat.level == expected_level and cat.rayon_type == category.rayon_type:
+                    # Vérifier aussi par external_parent_id si disponible
+                    if category_external_id and hasattr(cat, 'external_category') and cat.external_category:
+                        if cat.external_category.external_parent_id == category_external_id:
+                            if cat not in children:
+                                children.append(cat)
+                    elif cat not in children:
+                        children.append(cat)
+        
+        # Trier les enfants
+        children = sorted(children, key=get_sort_key)
+        
+        # Construire récursivement la structure pour chaque enfant
+        subcategories_data = []
+        for child in children:
+            child_data = {
+                'subcategory': child,
+                'subsubcategories': build_category_hierarchy(
+                    child, 
+                    all_categories, 
+                    category_external_id if hasattr(category, 'external_category') and category.external_category else None,
+                    current_level + 1,
+                    max_depth
+                ),
+                'is_brand': False,
+                'level': child.level if child.level is not None else current_level + 1
+            }
+            subcategories_data.append(child_data)
+            logger.info(f"[DROPDOWN] Catégorie '{category.name}' -> enfant '{child.name}' (level={child.level}) avec {len(child_data['subsubcategories'])} sous-enfants")
+        
+        return subcategories_data
+    
+    # Construire la hiérarchie avec les enfants (tous les niveaux)
     categories_hierarchy = {}
+    
     for main_cat in main_categories:
         categories_hierarchy[main_cat.id] = {
             'category': main_cat,
@@ -246,17 +347,98 @@ def dropdown_categories_processor(request):
                     }
                     categories_hierarchy[main_cat.id]['subcategories'].append(series_data)
         else:
-            # Pour les autres catégories, utiliser les sous-catégories normales
-            for subcat in main_cat.children.all():
-                subcategory_data = {
-                    'subcategory': subcat,
-                    'subsubcategories': list(subcat.children.all().order_by('order', 'name')),
-                    'is_brand': False
-                }
-                categories_hierarchy[main_cat.id]['subcategories'].append(subcategory_data)
+            # Pour les catégories B2B, utiliser la fonction récursive pour construire toute la hiérarchie
+            main_external_id = None
+            if hasattr(main_cat, 'external_category') and main_cat.external_category:
+                main_external_id = main_cat.external_category.external_id
+            
+            # Construire récursivement toute la hiérarchie (niveaux 1, 2, 3, etc.)
+            subcategories_data = build_category_hierarchy(
+                main_cat,
+                all_b2b_categories,
+                main_external_id,
+                current_level=0,
+                max_depth=10  # Limite de profondeur pour éviter les boucles infinies
+            )
+            
+            categories_hierarchy[main_cat.id]['subcategories'] = subcategories_data
+            logger.info(f"[DROPDOWN] Catégorie B2B '{main_cat.name}' (level={main_cat.level}, rayon_type={main_cat.rayon_type}): {len(subcategories_data)} sous-catégories trouvées (avec sous-niveaux)")
+
+    # Grouper les catégories B2B par rayon_type pour l'affichage dans le dropdown
+    # Toutes les catégories sont déjà de niveau 0
+    categories_by_rayon = {}
+    
+    logger.info(f"[DROPDOWN] Groupement des catégories par rayon_type...")
+    
+    # Séparer les catégories avec rayon_type et celles sans
+    categories_with_rayon = []
+    categories_without_rayon = []
+    
+    for category in main_categories:
+        logger.info(f"[DROPDOWN] Catégorie '{category.name}': level={category.level}, rayon_type={category.rayon_type}")
+        
+        if category.rayon_type:
+            categories_with_rayon.append(category)
+        else:
+            categories_without_rayon.append(category)
+    
+    # Grouper les catégories avec rayon_type
+    # Éviter les duplications en utilisant distinct() sur le rayon_type
+    seen_rayon_types = set()
+    for category in categories_with_rayon:
+        rayon_type = category.rayon_type.strip() if category.rayon_type else ''
+        # Normaliser le rayon_type (première lettre en majuscule)
+        if rayon_type:
+            rayon_type_normalized = ' '.join(word.capitalize() for word in rayon_type.split('_'))
+        else:
+            rayon_type_normalized = 'Autres'
+        
+        # Vérifier si le nom de la catégorie correspond au rayon_type (pour éviter duplication)
+        category_name_normalized = category.name.strip()
+        rayon_type_from_name = ' '.join(word.capitalize() for word in category_name_normalized.lower().replace(' ', '_').split('_'))
+        
+        logger.info(f"[DROPDOWN] Catégorie '{category.name}' -> rayon_type: '{rayon_type_normalized}'")
+        
+        if rayon_type_normalized not in categories_by_rayon:
+            categories_by_rayon[rayon_type_normalized] = []
+        categories_by_rayon[rayon_type_normalized].append(category)
+    
+    # Pour les catégories sans rayon_type, les grouper par leur parent ou créer un groupe "Autres"
+    # Mais d'abord, vérifier si elles ont des enfants pour créer une hiérarchie
+    if categories_without_rayon:
+        # Si toutes les catégories sans rayon_type sont au même niveau (sans parent),
+        # les mettre dans "Autres"
+        # Sinon, organiser par hiérarchie
+        logger.info(f"[DROPDOWN] {len(categories_without_rayon)} catégories sans rayon_type trouvées")
+        
+        # Vérifier si certaines ont des enfants (sous-catégories)
+        categories_with_children = [c for c in categories_without_rayon if c.children.exists()]
+        categories_without_children = [c for c in categories_without_rayon if not c.children.exists()]
+        
+        logger.info(f"[DROPDOWN] Parmi elles: {len(categories_with_children)} avec enfants, {len(categories_without_children)} sans enfants")
+        
+        # Mettre toutes dans "Autres" pour l'instant, mais organisées hiérarchiquement
+        if 'Autres' not in categories_by_rayon:
+            categories_by_rayon['Autres'] = []
+        categories_by_rayon['Autres'].extend(sorted(categories_without_rayon, key=get_sort_key))
+    
+    logger.info(f"[DROPDOWN] Nombre de rayon_types trouvés: {len(categories_by_rayon)}")
+    for rayon_type, cats in categories_by_rayon.items():
+        logger.info(f"[DROPDOWN] Rayon '{rayon_type}': {len(cats)} catégories - {[c.name for c in cats]}")
+    
+    # Trier les catégories dans chaque rayon_type selon level, order, name
+    for rayon_type in categories_by_rayon:
+        categories_by_rayon[rayon_type] = sorted(
+            categories_by_rayon[rayon_type],
+            key=get_sort_key
+        )
+        logger.info(f"[DROPDOWN] Rayon '{rayon_type}' trié: {[c.name for c in categories_by_rayon[rayon_type]]}")
+    
+    logger.info(f"[DROPDOWN] Résultat final: {len(categories_by_rayon)} rayon_types avec un total de {sum(len(cats) for cats in categories_by_rayon.values())} catégories")
 
     return {
         'dropdown_categories': main_categories,
-        'dropdown_categories_hierarchy': categories_hierarchy
+        'dropdown_categories_hierarchy': categories_hierarchy,
+        'categories_by_rayon': categories_by_rayon
     }
 

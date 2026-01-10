@@ -56,28 +56,6 @@ heroku run python saga/manage.py migrate
      - Format : `products/YYYY/MM/DD/nom-du-produit_identifiant.extension`
      - Exemple : `products/2025/05/13/samsung-galaxy-a05-64-go-argent_LVkZakf.jpg`
 
-#### ModuleNotFoundError
-- Problème : "ModuleNotFoundError: No module named 'product'" ou autres modules
-- Solutions :
-  1. Vérifier la structure des dossiers :
-     ```
-     saga/
-     ├── manage.py
-     ├── saga/
-     │   ├── settings.py
-     │   └── ...
-     └── product/
-         ├── __init__.py
-         ├── models.py
-         └── ...
-     ```
-  2. Configurer le PYTHONPATH dans manage.py :
-     ```python
-     import os
-     import sys
-     
-     if __name__ == "__main__":
-         os.environ.setdefault("DJANGO_SETTINGS_MODULE", "saga.settings")
          sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
      ```
   3. Vérifier INSTALLED_APPS dans settings.py :
@@ -341,4 +319,10 @@ Clothing.objects.filter(
 2. Créer une branche pour votre fonctionnalité
 3. Commiter vos changements
 4. Pousser vers la branche
-5. Créer une Pull Request 
+5. Créer une Pull Request
+
+## Mobile (Expo / EAS)
+
+- Le dossier `mobile/docs/keystore-setup.md` décrit la genèse et la gestion des keystores Android et des certificats iOS utilisés par EAS pour les profils `development`, `preview` et `production`.
+- Avant de lancer un `npm run build:dev|preview|prod`, exporte les variables d’environnement listées dans ce guide pour injecter les fichiers base64 (keystore, certificat, provisioning) et les mots de passe associés.
+- Les fichiers `.jks` / `.p12` restent hors du repo (stockés dans `credentials/` localement) et sont distribués en CI via des secrets pour les builds de chaque profil.

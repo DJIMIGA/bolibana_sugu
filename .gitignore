@@ -79,4 +79,13 @@ logs/
 
 # Fichiers système
 .DS_Store
-Thumbs.db 
+Thumbs.db
+
+# Mobile - Credentials et keystores (NE JAMAIS COMMITTER)
+mobile/credentials/
+mobile/**/*.jks
+mobile/**/*.keystore
+mobile/**/*.p12
+mobile/**/*.mobileprovision
+mobile/**/*.base64
+mobile/credentials/passwords-*.txt 

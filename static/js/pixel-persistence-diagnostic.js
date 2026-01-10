@@ -18,7 +18,6 @@ function checkPixelOnLoad() {
 }
 
 function performLoadCheck() {
-    console.log('🔄 DOM chargé, vérification du pixel...');
     
     // Vérifier si fbq est disponible
     if (typeof fbq === 'undefined') {

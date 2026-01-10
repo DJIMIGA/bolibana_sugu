@@ -101,7 +101,7 @@ export const updateCartItem = createAsyncThunk(
       console.log(`[cartSlice] 🔌 Mode hors ligne détecté`);
       return null;
     } catch (error: any) {
-      console.error(`[cartSlice] ❌ Erreur API updateCartItem:`, error.response?.data || error.message);
+      console.error(`[cartSlice] ❌ Erreur API updateCartItem:`, cleanErrorForLog(error));
       return rejectWithValue(error.response?.data?.error || 'Erreur lors de la mise à jour');
     }
   }
@@ -140,7 +140,7 @@ export const clearCart = createAsyncThunk(
         return null;
       }
     } catch (error: any) {
-      console.error(`[cartSlice] ❌ Erreur vidage panier:`, error.response?.data || error.message);
+      console.error(`[cartSlice] ❌ Erreur vidage panier:`, cleanErrorForLog(error));
       const errorMessage = error.response?.data?.error || 
                           error.response?.data?.detail || 
                           error.message || 

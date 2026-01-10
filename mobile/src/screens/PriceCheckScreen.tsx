@@ -17,6 +17,7 @@ import { COLORS } from '../utils/constants';
 import { formatPrice } from '../utils/helpers';
 import apiClient from '../services/api';
 import { Product } from '../types';
+import { LoadingScreen } from '../components/LoadingScreen';
 
 const PriceCheckScreen: React.FC = () => {
   const navigation = useNavigation();
@@ -143,9 +144,8 @@ const PriceCheckScreen: React.FC = () => {
           </View>
 
           {isLoading ? (
-            <View style={styles.loadingContainer}>
-              <ActivityIndicator size="large" color={COLORS.PRIMARY} />
-              <Text style={styles.loadingText}>Recherche en cours...</Text>
+            <View style={{ height: 300 }}>
+              <LoadingScreen />
             </View>
           ) : products.length > 0 ? (
             <View style={styles.productsList}>

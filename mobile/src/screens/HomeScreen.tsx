@@ -16,20 +16,21 @@ import {
 } from 'react-native';
 import { Ionicons, MaterialIcons } from '@expo/vector-icons';
 import { useAppDispatch, useAppSelector } from '../store/hooks';
-import { fetchProducts, fetchCategories, setSearchQuery, searchProducts, clearFilters, setFilters } from '../store/slices/productSlice';
+import { fetchProducts, fetchCategories, setSearchQuery, searchProducts, clearFilters, setFilters, fetchB2BProducts } from '../store/slices/productSlice';
 import { useNavigation, NavigationProp, useFocusEffect } from '@react-navigation/native';
 import { HomeScreenNavigationProp } from '../types/navigation';
 import { formatPrice } from '../utils/helpers';
 import { COLORS, API_ENDPOINTS } from '../utils/constants';
 import { Product, Category } from '../types';
 import { Header } from '../components/Header';
+import { LoadingScreen } from '../components/LoadingScreen';
 import apiClient from '../services/api';
 import { mapProductFromBackend } from '../utils/mappers';
 
 const HomeScreen: React.FC = () => {
   const dispatch = useAppDispatch();
   const navigation = useNavigation<HomeScreenNavigationProp>();
-  const { products, categories, isLoading, isFetchingMore, pagination } = useAppSelector((state) => state.product);
+  const { products, categories, isLoading, isFetchingMore, pagination, b2bProducts, isFetchingB2B } = useAppSelector((state) => state.product);
   const [refreshing, setRefreshing] = React.useState(false);
   const [searchQuery, setSearchQueryLocal] = useState('');
   const [currentInfoCardIndex, setCurrentInfoCardIndex] = useState(0);
@@ -47,14 +48,28 @@ const HomeScreen: React.FC = () => {
     // Charger les produits et catégories au montage
     dispatch(fetchProducts({ page: 1, filters: {} }));
     dispatch(fetchCategories());
+    // Charger les produits B2B
+    dispatch(fetchB2BProducts({ pageSize: 8 }));
   }, [dispatch]);
+
+  // Logger les changements de produits B2B (seulement quand le nombre change significativement)
+  const prevB2BCountRef = React.useRef(0);
+  useEffect(() => {
+    const currentCount = b2bProducts.length;
+    const countChanged = currentCount !== prevB2BCountRef.current;
+    const justFinishedLoading = prevB2BCountRef.current === 0 && currentCount > 0 && !isFetchingB2B;
+    
+    if (justFinishedLoading || (countChanged && currentCount > 0)) {
+      prevB2BCountRef.current = currentCount;
+    }
+  }, [b2bProducts.length, isFetchingB2B]);
 
   // Charger les produits par TYPE (Exactement comme sur le Web avec filtres API)
   // Utilise les mêmes filtres que le web : has_phone, has_clothing, has_fabric, has_cultural
   useEffect(() => {
     const loadProductsByType = async () => {
       try {
-        console.log('HOME / Chargement des produits par section (méthode Web avec filtres API)');
+        // Chargement des produits par section
         
         // Faire 4 appels API en parallèle avec les filtres spécifiques (comme sur le web)
         const [phonesRes, clothingRes, fabricsRes, culturalRes] = await Promise.all([
@@ -71,7 +86,7 @@ const HomeScreen: React.FC = () => {
               try {
                 return mapProductFromBackend(p);
               } catch (error) {
-                console.error('HOME / Erreur mapping produit:', error, p);
+                // Ignorer les erreurs de mapping silencieusement
                 return null;
               }
             })
@@ -83,20 +98,14 @@ const HomeScreen: React.FC = () => {
         const fabrics = mapProductsSafely(fabricsRes.data.results || fabricsRes.data || []);
         const cultural = mapProductsSafely(culturalRes.data.results || culturalRes.data || []);
 
-        console.log(`HOME / Sections chargées: Téléphones:${phones.length} Vêtements:${clothing.length} Tissus:${fabrics.length} Culture:${cultural.length}`);
-        console.log('HOME / Données brutes API:', {
-          phones: phonesRes.data.results?.length || phonesRes.data?.length || 0,
-          clothing: clothingRes.data.results?.length || clothingRes.data?.length || 0,
-          fabrics: fabricsRes.data.results?.length || fabricsRes.data?.length || 0,
-          cultural: culturalRes.data.results?.length || culturalRes.data?.length || 0,
-        });
+        // Log silencieux - données chargées
 
         setPhoneProducts(phones);
         setClothingProducts(clothing);
         setFabricProducts(fabrics);
         setCulturalProducts(cultural);
       } catch (error) {
-        console.error('HOME / Erreur chargement sections:', error);
+        // Erreur silencieuse - utiliser le cache si disponible
       }
     };
 
@@ -173,6 +182,9 @@ const HomeScreen: React.FC = () => {
         apiClient.get(`${API_ENDPOINTS.PRODUCTS}?is_available=true&has_fabric=true&ordering=-created_at&page_size=8`),
         apiClient.get(`${API_ENDPOINTS.PRODUCTS}?is_available=true&has_cultural=true&ordering=-created_at&page_size=8`)
       ]);
+      
+      // Recharger les produits B2B
+      dispatch(fetchB2BProducts({ pageSize: 8 }));
 
       // Mapper les produits avec gestion d'erreur
       const mapProductsSafely = (products: any[]): Product[] => {
@@ -192,8 +204,10 @@ const HomeScreen: React.FC = () => {
       setClothingProducts(mapProductsSafely(clothingRes.data.results || clothingRes.data || []));
       setFabricProducts(mapProductsSafely(fabricsRes.data.results || fabricsRes.data || []));
       setCulturalProducts(mapProductsSafely(culturalRes.data.results || culturalRes.data || []));
-    } catch (error) {
-      console.error('HOME / Erreur refresh sections:', error);
+    } catch (error: any) {
+      if (error.code !== 'OFFLINE_MODE_FORCED' && error.message !== 'OFFLINE_MODE_FORCED') {
+        // Erreur refresh silencieuse
+      }
     }
     
     setRefreshing(false);
@@ -211,10 +225,10 @@ const HomeScreen: React.FC = () => {
     }
   };
 
-  const trendingProducts = products.filter((p: Product) => p.is_trending).slice(0, 6);
+  const trendingProducts = (products || []).filter((p: Product) => p.is_trending).slice(0, 6);
 
   // Nouveaux produits (basés sur la date de création)
-  const newProducts = [...products]
+  const newProducts = [...(products || [])]
     .filter((p: Product) => p.created_at)
     .sort(
       (a: Product, b: Product) =>
@@ -223,18 +237,18 @@ const HomeScreen: React.FC = () => {
     .slice(0, 4);
 
   // Produits en promotion (avec discount_price)
-  const promoProducts = products.filter((p: Product) => {
+  const promoProducts = (products || []).filter((p: Product) => {
     return p.discount_price && p.discount_price < p.price && p.discount_price > 0;
   });
   
   // Si pas de produits en promotion, utiliser les produits tendance ou les premiers produits
   const displayPromoProducts = promoProducts.length > 0 
     ? promoProducts.slice(0, 10) 
-    : (trendingProducts.length > 0 ? trendingProducts.slice(0, 10) : products.slice(0, Math.min(10, products.length)));
+    : (trendingProducts.length > 0 ? trendingProducts.slice(0, 10) : (products || []).slice(0, Math.min(10, (products || []).length)));
   
   // S'assurer qu'on a toujours quelque chose à afficher
   // Afficher uniquement les catégories sans parent (catégories principales)
-  const displayCategories = categories.filter((c: Category) => !c.parent).slice(0, 8);
+  const displayCategories = (categories || []).filter((c: Category) => !c.parent).slice(0, 8);
 
   // Helpers de catégorisation (même logique que DynamicProductCard)
   const findCategoryWithParents = (categoryId: number, allCategories: Category[]): Category | null => {
@@ -586,6 +600,65 @@ const HomeScreen: React.FC = () => {
         </View>
       )}
 
+      {/* Section Produits B2B */}
+      {b2bProducts.length > 0 && (() => {
+        // Filtrer uniquement les produits valides avec ID et titre
+        const validB2BProducts = b2bProducts.filter((p: Product) => p && p.id && p.title);
+        // Logs désactivés pour réduire la pollution de la console
+        // console.log(`[HOME] 🎯 Section B2B - b2bProducts.length: ${b2bProducts.length}, validB2BProducts.length: ${validB2BProducts.length}`);
+        if (validB2BProducts.length > 0) {
+          const displayedIds = validB2BProducts.map(p => p.id);
+          // console.log(`[HOME] 🔢 IDs produits B2B à afficher: [${displayedIds.join(', ')}]`);
+        }
+        return (
+          <View style={styles.promoSection}>
+            <View style={styles.promoHeaderInline}>
+              <View style={styles.promoHeaderIconContainer}>
+                <MaterialIcons name="inventory" size={20} color={COLORS.SECONDARY} />
+              </View>
+              <View style={styles.promoHeaderTextContainer}>
+                <Text style={styles.promoSectionTitleInline}>Produits B2B</Text>
+                <Text style={styles.promoSectionSubtitleInline}>Stock disponible</Text>
+              </View>
+            </View>
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={styles.promoCarouselContent}
+              snapToInterval={156}
+              decelerationRate="fast"
+              snapToAlignment="start"
+              pagingEnabled={false}
+            >
+              {validB2BProducts.map((product: Product) => (
+              <TouchableOpacity
+                key={product.id}
+                style={styles.promoCard}
+                onPress={() => navigation.navigate('Products', { screen: 'ProductDetail', params: { slug: product.slug } })}
+                activeOpacity={0.8}
+              >
+                <View style={styles.promoImageContainer}>
+                  {product.image ? (
+                    <Image source={{ uri: product.image }} style={styles.promoImage} resizeMode="cover" />
+                  ) : (
+                    <View style={styles.promoImageFallback}>
+                      <MaterialIcons name="image-not-supported" size={48} color={COLORS.TEXT_SECONDARY} />
+                    </View>
+                  )}
+                </View>
+                <View style={styles.promoCardContent}>
+                  <Text style={styles.promoProductTitle} numberOfLines={1}>{product.title}</Text>
+                  <View style={styles.promoPriceContainer}>
+                    <Text style={styles.promoNewPrice}>{formatPrice(product.discount_price || product.price)}</Text>
+                  </View>
+                </View>
+              </TouchableOpacity>
+              ))}
+            </ScrollView>
+          </View>
+        );
+      })()}
+
       {/* Titre pour "Autres produits" */}
       <View style={styles.sectionHeader}>
         <Text style={styles.sectionTitle}>Découvrez d'autres produits</Text>
@@ -616,22 +689,26 @@ const HomeScreen: React.FC = () => {
         />
       </View>
 
-      <FlatList
-        data={products}
-        renderItem={renderProductItem}
-        keyExtractor={(item) => item.id.toString()}
-        ListHeaderComponent={renderHeader}
-        ListFooterComponent={renderFooter}
-        onEndReached={handleLoadMore}
-        onEndReachedThreshold={0.5}
-        refreshControl={
-          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
-        }
-        numColumns={2}
-        columnWrapperStyle={styles.columnWrapper}
-        contentContainerStyle={styles.flatListContent}
-        showsVerticalScrollIndicator={false}
-      />
+      {isLoading && products.length === 0 ? (
+        <LoadingScreen />
+      ) : (
+        <FlatList
+          data={products}
+          renderItem={renderProductItem}
+          keyExtractor={(item) => item.id.toString()}
+          ListHeaderComponent={renderHeader}
+          ListFooterComponent={renderFooter}
+          onEndReached={handleLoadMore}
+          onEndReachedThreshold={0.5}
+          refreshControl={
+            <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+          }
+          numColumns={2}
+          columnWrapperStyle={styles.columnWrapper}
+          contentContainerStyle={styles.flatListContent}
+          showsVerticalScrollIndicator={false}
+        />
+      )}
     </SafeAreaView>
   );
 };

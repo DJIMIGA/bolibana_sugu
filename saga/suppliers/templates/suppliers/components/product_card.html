@@ -24,11 +24,19 @@
     {% else %}
         <div class="block h-56 sm:h-72 rounded-lg w-full overflow-hidden bg-gray-100 relative" aria-label="Produit sans lien (slug manquant)">
     {% endif %}
-        {% if product.image %}
-            <img src="{{ product.image.url }}" 
-                 alt="Photo de {{ product.title }}" 
-                 class="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105 rounded-lg"
-                 loading="lazy">
+        {% with display_image=product.get_display_image %}
+        {% if display_image %}
+            {% if display_image|slice:":4" == "http" %}
+                <img src="{{ display_image }}" 
+                     alt="Photo de {{ product.title }}" 
+                     class="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105 rounded-lg"
+                     loading="lazy">
+            {% else %}
+                <img src="{{ display_image.url }}" 
+                     alt="Photo de {{ product.title }}" 
+                     class="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105 rounded-lg"
+                     loading="lazy">
+            {% endif %}
         {% else %}
             <div class="h-full w-full flex items-center justify-center rounded-lg">
                 <svg class="h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -36,6 +44,7 @@
                 </svg>
             </div>
         {% endif %}
+        {% endwith %}
         <div class="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-10 transition-all duration-300 rounded-lg"></div>
     </a>
 
@@ -56,7 +65,7 @@
                         {{ product.get_category_display }}
                     </p>
                     {% if product.brand %}
-                        <p class="text-[10px] sm:text-xs text-gray-400 mt-0.5">Marque : {{ product.brand }}</p>
+                        <p class="text-[10px] sm:text-xs text-gray-400 mt-0.5">Marque : {{ product.brand|get_brand_name|default:product.brand }}</p>
                     {% endif %}
                 </div>
             </div>

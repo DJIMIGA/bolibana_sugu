@@ -1,12 +1,14 @@
 import React from 'react';
 import { Image, StyleSheet, View, Text } from 'react-native';
+import { COLORS } from '../utils/constants';
 
 interface LogoProps {
   size?: 'small' | 'medium' | 'large';
   showText?: boolean;
+  textColor?: string;
 }
 
-export const Logo: React.FC<LogoProps> = ({ size = 'medium', showText = true }) => {
+export const Logo: React.FC<LogoProps> = ({ size = 'medium', showText = true, textColor = COLORS.PRIMARY }) => {
   const sizeStyles = {
     small: { width: 120, height: 40 },
     medium: { width: 180, height: 60 },
@@ -23,7 +25,7 @@ export const Logo: React.FC<LogoProps> = ({ size = 'medium', showText = true }) 
         resizeMode="contain"
       />
       {showText && (
-        <Text style={styles.sugu}>Sugu</Text>
+        <Text style={[styles.appTitle, { color: textColor }]}>Sugu</Text>
       )}
     </View>
   );
@@ -35,13 +37,16 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   logo: {
-    // Les dimensions sont définies dynamiquement
+    width: 100,
+    height: 100,
   },
-  sugu: {
-    color: '#FFFFFF',
-    fontWeight: '600',
-    marginTop: 8,
-    fontSize: 16,
-    opacity: 0.9,
+  appTitle: {
+    fontWeight: 'bold',
+    marginTop: -4,
+    fontSize: 22,
+    letterSpacing: 1,
+    textTransform: 'uppercase',
   },
 });
+
+export default Logo;

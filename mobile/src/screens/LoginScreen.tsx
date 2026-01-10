@@ -8,15 +8,15 @@ import {
   Alert,
   KeyboardAvoidingView,
   Platform,
-  ActivityIndicator,
 } from 'react-native';
 import { useAppDispatch, useAppSelector } from '../store/hooks';
 import { loginAsync } from '../store/slices/authSlice';
 import { useErrorHandler } from '../hooks/useErrorHandler';
 import { useNavigation } from '@react-navigation/native';
 import { COLORS } from '../utils/constants';
-import { Logo } from '../components/Logo';
+import Logo from '../components/Logo';
 import { Ionicons } from '@expo/vector-icons';
+import { LoadingScreen } from '../components/LoadingScreen';
 
 const LoginScreen: React.FC = () => {
   const dispatch = useAppDispatch();
@@ -81,6 +81,10 @@ const LoginScreen: React.FC = () => {
     }
   };
 
+  if (isLoggingIn) {
+    return <LoadingScreen />;
+  }
+
   return (
     <KeyboardAvoidingView
       style={styles.container}
@@ -88,7 +92,8 @@ const LoginScreen: React.FC = () => {
     >
       <View style={styles.content}>
         <View style={styles.logoContainer}>
-          <Logo size="large" showText={true} />
+          <Logo size="large" showText={false} />
+          <Text style={styles.appTitle}>Sugu</Text>
         </View>
         <Text style={styles.subtitle}>Connectez-vous à votre compte</Text>
 
@@ -150,11 +155,7 @@ const LoginScreen: React.FC = () => {
             onPress={handleLogin}
             disabled={isLoggingIn}
           >
-            {isLoggingIn ? (
-              <ActivityIndicator color="#FFFFFF" />
-            ) : (
-              <Text style={styles.buttonText}>Se connecter</Text>
-            )}
+            <Text style={styles.buttonText}>Se connecter</Text>
           </TouchableOpacity>
 
           <View style={styles.legalTextContainer}>
@@ -224,6 +225,13 @@ const styles = StyleSheet.create({
   logoContainer: {
     alignItems: 'center',
     marginBottom: 24,
+  },
+  appTitle: {
+    fontSize: 32,
+    fontWeight: 'bold',
+    color: COLORS.PRIMARY,
+    marginTop: -4,
+    letterSpacing: 1,
   },
   title: {
     fontSize: 32,

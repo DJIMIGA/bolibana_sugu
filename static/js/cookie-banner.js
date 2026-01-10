@@ -12,8 +12,6 @@ document.addEventListener('DOMContentLoaded', function () {
 
   // Fonction pour sauvegarder les préférences côté backend
   function saveCookiePreferences(analytics, marketing) {
-    console.log('🔄 Sauvegarde des préférences...', { analytics, marketing });
-    
     const formData = new FormData();
     formData.append('analytics', analytics);
     formData.append('marketing', marketing);
@@ -26,23 +24,23 @@ document.addEventListener('DOMContentLoaded', function () {
       }
     })
     .then(response => {
-      console.log('📡 Réponse reçue:', response.status, response.statusText);
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}`);
+      }
       return response.json();
     })
     .then(data => {
-      console.log('📊 Données reçues:', data);
       if (data.success) {
-        console.log('✅ Préférences cookies sauvegardées');
         // Recharger la page pour appliquer les nouveaux scripts
         setTimeout(() => {
           window.location.reload();
         }, 1000);
       } else {
-        console.error('❌ Erreur dans la réponse:', data);
+        console.error('[Cookies] ❌ Erreur de sauvegarde');
       }
     })
     .catch(error => {
-      console.error('❌ Erreur lors de la sauvegarde:', error);
+      console.error('[Cookies] ❌ Erreur:', error.message || 'Erreur inconnue');
     });
   }
 

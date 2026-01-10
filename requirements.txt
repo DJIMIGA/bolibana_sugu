@@ -15,6 +15,7 @@ django-axes==6.3.0
 django-guardian==2.4.0
 django-otp==1.5.4
 PyJWT==2.9.0
+cryptography==43.0.3
 
 # API & REST
 djangorestframework==3.14.0

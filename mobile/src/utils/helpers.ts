@@ -57,4 +57,99 @@ export const retryWithBackoff = async <T>(
   throw lastError!;
 };
 
+/**
+ * Nettoie les données de log pour retirer le HTML et limiter la taille
+ * @param data - Les données à nettoyer (peuvent être string, object, etc.)
+ * @param maxLength - Longueur maximale du message (défaut: 200)
+ * @returns Message nettoyé sans HTML
+ */
+export const cleanLogData = (data: any, maxLength: number = 200): string => {
+  if (!data) return 'N/A';
+  
+  // Si c'est une string
+  if (typeof data === 'string') {
+    // Détecter si c'est du HTML
+    const isHtml = data.includes('<!DOCTYPE') || 
+                   data.includes('<html') || 
+                   data.includes('<body') ||
+                   data.length > 500;
+    
+    if (isHtml) {
+      // Extraire un message simple depuis le HTML si possible
+      const titleMatch = data.match(/<title[^>]*>([^<]+)<\/title>/i);
+      if (titleMatch) {
+        return titleMatch[1].trim().substring(0, maxLength);
+      }
+      
+      const h1Match = data.match(/<h1[^>]*>([^<]+)<\/h1>/i);
+      if (h1Match) {
+        return h1Match[1].trim().substring(0, maxLength);
+      }
+      
+      // Sinon, retourner un message générique
+      return 'Réponse HTML (contenu non affiché)';
+    }
+    
+    // Nettoyer les balises HTML restantes et limiter la taille
+    const cleaned = data
+      .replace(/<[^>]+>/g, '') // Retirer toutes les balises HTML
+      .replace(/\s+/g, ' ') // Normaliser les espaces
+      .trim();
+    
+    return cleaned.length > maxLength 
+      ? cleaned.substring(0, maxLength) + '...' 
+      : cleaned;
+  }
+  
+  // Si c'est un objet
+  if (typeof data === 'object') {
+    // Vérifier si l'objet contient des propriétés avec du HTML
+    const cleaned: any = {};
+    for (const [key, value] of Object.entries(data)) {
+      if (typeof value === 'string') {
+        cleaned[key] = cleanLogData(value, maxLength);
+      } else if (value !== null && value !== undefined) {
+        cleaned[key] = value;
+      }
+    }
+    
+    // Convertir en string JSON avec limite de taille
+    const jsonStr = JSON.stringify(cleaned);
+    return jsonStr.length > maxLength 
+      ? jsonStr.substring(0, maxLength) + '...' 
+      : jsonStr;
+  }
+  
+  // Pour les autres types, convertir en string
+  const str = String(data);
+  return str.length > maxLength 
+    ? str.substring(0, maxLength) + '...' 
+    : str;
+};
+
+/**
+ * Nettoie les données d'erreur pour les logs (retire HTML, limite taille)
+ * @param error - L'erreur à nettoyer
+ * @returns Message d'erreur nettoyé
+ */
+export const cleanErrorForLog = (error: any): string => {
+  if (!error) return 'Erreur inconnue';
+  
+  // Priorité 1: error.response?.data
+  if (error.response?.data) {
+    const cleaned = cleanLogData(error.response.data);
+    if (cleaned !== 'N/A' && !cleaned.includes('Réponse HTML')) {
+      return cleaned;
+    }
+  }
+  
+  // Priorité 2: error.message
+  if (error.message) {
+    return cleanLogData(error.message);
+  }
+  
+  // Priorité 3: error.toString()
+  return cleanLogData(error.toString());
+};
+
 

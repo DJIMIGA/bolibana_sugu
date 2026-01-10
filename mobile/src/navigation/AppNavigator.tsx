@@ -7,7 +7,6 @@ import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useAppSelector, useAppDispatch } from '../store/hooks';
 import { loadUserAsync } from '../store/slices/authSlice';
-import { OfflineBanner } from '../components/OfflineBanner';
 import { LoadingScreen } from '../components/LoadingScreen';
 
 // Screens
@@ -101,7 +100,8 @@ const TabBarIcon: React.FC<{
 // Tabs principales de l'application
 const MainTabs = () => {
   const insets = useSafeAreaInsets();
-  const { itemsCount } = useAppSelector((state) => state.cart);
+  const cart = useAppSelector((state) => state.cart);
+  const itemsCount = cart?.itemsCount || 0;
 
   return (
     <Tab.Navigator
@@ -216,7 +216,8 @@ const RootStack = () => (
 // Navigation principale
 const AppNavigator: React.FC = () => {
   const dispatch = useAppDispatch();
-  const { isLoading } = useAppSelector((state) => state.auth);
+  const auth = useAppSelector((state) => state.auth);
+  const isLoading = auth?.isLoading;
 
   useEffect(() => {
     // Charger l'utilisateur au démarrage
@@ -225,16 +226,13 @@ const AppNavigator: React.FC = () => {
 
   // N'afficher l'écran de chargement QUE lors du chargement initial de l'application
   // pour éviter de démonter toute la navigation lors d'un login ou d'une mise à jour de profil
-  if (isLoading) {
+  if (isLoading !== false) {
     return <LoadingScreen />;
   }
 
   return (
-    <NavigationContainer>
-      <View style={styles.container}>
-        <OfflineBanner />
+    <NavigationContainer fallback={<LoadingScreen />}>
         <RootStack />
-      </View>
     </NavigationContainer>
   );
 };

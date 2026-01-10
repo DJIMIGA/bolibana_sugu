@@ -8,7 +8,7 @@ export const MAX_RETRY_ATTEMPTS = 3;
 export const RETRY_BACKOFF_BASE = 1000; // 1 seconde de base
 
 // Clé de chiffrement pour la persistance Redux (en production, utiliser une variable d'env)
-export const REDUX_PERSIST_SECRET_KEY = 'sagakore-offline-secret-key-change-me';
+export const REDUX_PERSIST_SECRET_KEY = 'sagakore-secure-offline-key-2025-v1';
 
 export const CACHE_KEYS = {
   PRODUCTS: 'cache_products',
@@ -41,6 +41,10 @@ export const API_ENDPOINTS = {
   LOYALTY: '/loyalty/',
   CHANGE_PASSWORD: '/change-password/',
   DELETE_ACCOUNT: '/delete-account/',
+  B2B: {
+    PRODUCTS: '/api/inventory/products/synced/',
+    CATEGORIES: '/api/inventory/categories/synced/',
+  },
 } as const;
 
 export const COLORS = {

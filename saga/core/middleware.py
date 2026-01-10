@@ -24,16 +24,9 @@ class CookieConsentMiddleware:
             # Chercher d'abord par utilisateur, puis par session
             if user:
                 consent = CookieConsent.objects.filter(user=user).order_by('-updated_at').first()
-                print(f"🔍 Middleware - Cherche par utilisateur: {user}")
             if not consent:
                 consent = CookieConsent.objects.filter(session_id=session_id).order_by('-updated_at').first()
-                print(f"🔍 Middleware - Cherche par session: {session_id[:10]}...")
-            
-            print(f"🔍 Middleware - User: {user}, Session: {session_id[:10]}..., Consent: {consent}")
-            if consent:
-                print(f"🔍 Middleware - Analytics: {consent.analytics}, Marketing: {consent.marketing}")
         except Exception as e:
-            print(f"❌ Erreur middleware: {e}")
             consent = None
         request.cookie_consent = consent
         response = self.get_response(request)
@@ -55,9 +48,9 @@ class AnalyticsMiddleware:
             if not request.path.startswith('/admin/') and not request.path.startswith('/static/'):
                 try:
                     track_page_view(request)
-                except Exception as e:
-                    # Log l'erreur mais ne pas bloquer la requête
-                    print(f"❌ Erreur tracking page view: {e}")
+                except Exception:
+                    # Erreur silencieuse pour ne pas bloquer la requête
+                    pass
         
         return response 
 
