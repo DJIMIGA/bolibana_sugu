@@ -73,10 +73,22 @@ export const fetchProducts = createAsyncThunk(
       }
 
       const endpoint = `${API_ENDPOINTS.PRODUCTS}?${queryParams.toString()}`;
+      console.log('[PRODUCTS] 🚀 Début fetchProducts, endpoint:', endpoint);
       const response = await apiClient.get(endpoint);
 
       // Mapper les produits du backend
       const products = (response.data.results || response.data).map((p: any) => mapProductFromBackend(p));
+      console.log(`[PRODUCTS] ✅ Produits récupérés et mappés: ${products.length}`);
+      
+      // Log des premiers produits pour debug
+      if (products.length > 0) {
+        console.log('[PRODUCTS] 📋 Exemples produits:', products.slice(0, 3).map((p: Product) => ({
+          id: p.id,
+          title: p.title,
+          category: p.category,
+          is_available: p.is_available
+        })));
+      }
 
       // Mettre en cache si en ligne
       if (connectivityService.getIsOnline()) {
@@ -113,63 +125,104 @@ export const fetchProducts = createAsyncThunk(
 export const fetchCategories = createAsyncThunk(
   'product/fetchCategories',
   async (_, { rejectWithValue }) => {
-  try {
-      let allCategories: any[] = [];
-      let nextUrl: string | null = API_ENDPOINTS.CATEGORIES;
+    const fetchAllPages = async (initialUrl: string) => {
+      let all: any[] = [];
+      let nextUrl: string | null = initialUrl;
 
-      // Charger toutes les pages de catégories normales
       while (nextUrl) {
         const response = await apiClient.get(nextUrl);
-        const categoriesData = response.data.results || [];
-        allCategories = [...allCategories, ...categoriesData];
-        
-        // Vérifier s'il y a une page suivante
-        nextUrl = response.data.next ? response.data.next.replace(apiClient.defaults.baseURL || '', '') : null;
-        if (nextUrl && !nextUrl.startsWith('/')) {
-          nextUrl = '/' + nextUrl;
+        const data = response.data;
+
+        // DRF paginé: { results: [], next: "..." }
+        // Non paginé: [ ... ]
+        const pageItems: any[] = Array.isArray(data)
+          ? data
+          : (Array.isArray(data?.results) ? data.results : []);
+
+        all = [...all, ...pageItems];
+
+        if (Array.isArray(data)) {
+          nextUrl = null; // non paginé
+        } else {
+          nextUrl = data?.next ? String(data.next).replace(apiClient.defaults.baseURL || '', '') : null;
+          if (nextUrl && !nextUrl.startsWith('/')) {
+            nextUrl = '/' + nextUrl;
+          }
         }
       }
 
-      // Récupérer aussi les catégories synchronisées depuis B2B
-      try {
-        const b2bResponse = await apiClient.get(API_ENDPOINTS.B2B.CATEGORIES);
-        const b2bCategoriesData = b2bResponse.data.results || [];
-        
-        // Fusionner les catégories B2B avec les catégories normales
-        // Utiliser un Map pour éviter les doublons par ID
-        const categoriesMap = new Map<number, any>();
-        
-        // Ajouter d'abord les catégories normales
-        allCategories.forEach((cat: any) => {
-          if (cat.id) {
-            categoriesMap.set(cat.id, cat);
-          }
-        });
-        
-        // Ajouter les catégories B2B (elles remplaceront les doublons si même ID)
-        b2bCategoriesData.forEach((cat: any) => {
-          if (cat.id) {
-            categoriesMap.set(cat.id, cat);
-          }
-        });
-        
-        // Convertir le Map en tableau
-        allCategories = Array.from(categoriesMap.values());
-      } catch (b2bError: any) {
-        // Si l'endpoint B2B n'est pas disponible, continuer avec les catégories normales
-        // Warning désactivé pour réduire la pollution de la console
-        // const { cleanErrorForLog } = require('../../utils/helpers');
-        // const errorMessage = cleanErrorForLog(b2bError);
-        // console.warn('[productSlice] ⚠️ Catégories B2B non disponibles:', errorMessage);
-        // Ne pas rejeter, continuer avec les catégories normales
+      return all;
+    };
+
+    try {
+      console.log('[CATEGORIES] 🚀 Début fetchCategories');
+      console.log('[CATEGORIES] 🌐 BaseURL:', apiClient.defaults.baseURL);
+
+      // Priorité: endpoint B2B (celui qui contient `rayon_type` / `level`)
+      console.log('[CATEGORIES] 📍 Endpoint B2B:', API_ENDPOINTS.B2B.CATEGORIES);
+      let allCategories = await fetchAllPages(API_ENDPOINTS.B2B.CATEGORIES);
+
+      // Fallback: endpoint normal si B2B vide / non dispo
+      if (!Array.isArray(allCategories) || allCategories.length === 0) {
+        console.log('[CATEGORIES] ⚠️ Endpoint B2B vide, fallback vers endpoint normal:', API_ENDPOINTS.CATEGORIES);
+        allCategories = await fetchAllPages(API_ENDPOINTS.CATEGORIES);
       }
 
+      console.log(`[CATEGORIES] ✅ Total catégories récupérées: ${allCategories.length}`);
+
       if (!Array.isArray(allCategories) || allCategories.length === 0) {
+        console.log('[CATEGORIES] ❌ Aucune catégorie trouvée (B2B + fallback)');
         return rejectWithValue('Aucune catégorie trouvée');
       }
 
+      // Log des données brutes avant mapping pour debug
+      console.log('[CATEGORIES] 📋 Exemples catégories brutes (avant mapping):', allCategories.slice(0, 5).map((c: any) => ({
+        id: c.id,
+        name: c.name,
+        rayon_type: c.rayon_type,
+        level: c.level,
+        parent: c.parent,
+        external_category: c.external_category ? 'présent' : 'absent'
+      })));
+
       // Mapper les catégories du backend
       const categories = allCategories.map((c: any) => mapCategoryFromBackend(c));
+      console.log(`[CATEGORIES] 🗺️ Catégories mappées: ${categories.length}`);
+
+      // Log des catégories mappées pour voir si rayon_type et level sont présents
+      console.log('[CATEGORIES] 📋 Exemples catégories mappées:', categories.slice(0, 5).map((c: Category) => ({
+        id: c.id,
+        name: c.name,
+        rayon_type: c.rayon_type,
+        level: c.level,
+        parent: c.parent
+      })));
+
+      // Filtrer les catégories B2B pour debug
+      const b2bCategories = categories.filter((c: Category) => 
+        c.rayon_type || c.level !== undefined
+      );
+      console.log(`[CATEGORIES] 🎯 Catégories B2B après mapping: ${b2bCategories.length}`);
+      if (b2bCategories.length > 0) {
+        console.log('[CATEGORIES] 📋 Exemples catégories B2B mappées:', b2bCategories.slice(0, 3).map((c: Category) => ({
+          id: c.id,
+          name: c.name,
+          rayon_type: c.rayon_type,
+          level: c.level,
+          parent: c.parent
+        })));
+      } else {
+        console.log('[CATEGORIES] ⚠️ Aucune catégorie B2B trouvée - Vérifiez que les catégories ont rayon_type ou level');
+        // Log toutes les catégories pour voir ce qui manque
+        console.log('[CATEGORIES] 📋 Toutes les catégories:', categories.map((c: Category) => ({
+          id: c.id,
+          name: c.name,
+          rayon_type: c.rayon_type,
+          level: c.level,
+          has_rayon_type: !!c.rayon_type,
+          has_level: c.level !== undefined && c.level !== null
+        })));
+      }
 
       // Mettre en cache si en ligne
     if (connectivityService.getIsOnline()) {
@@ -177,7 +230,7 @@ export const fetchCategories = createAsyncThunk(
     }
 
       return categories;
-  } catch (error: any) {
+    } catch (error: any) {
       // Si c'est une erreur de mode hors ligne bloqué, utiliser le cache
       if (error.isOfflineBlocked) {
         const cached = await offlineCacheService.get<Category[]>(CACHE_KEYS.CATEGORIES);
@@ -190,8 +243,7 @@ export const fetchCategories = createAsyncThunk(
       if (error.code === 'OFFLINE_MODE_FORCED' || error.message === 'OFFLINE_MODE_FORCED' || error.isOfflineBlocked) {
         // En mode hors ligne forcé, ne pas logger d'erreur, juste essayer le cache
       } else {
-        console.error('❌ Error fetching categories:', error);
-        console.error('❌ Error details:', cleanErrorForLog(error));
+        // Erreur silencieuse en production
       }
       
       // Essayer de récupérer depuis le cache
@@ -203,7 +255,7 @@ export const fetchCategories = createAsyncThunk(
       }
       return rejectWithValue(error.response?.data?.detail || error.message || 'Erreur de chargement des catégories');
     }
-  }
+  },
 );
 
 // Thunk pour récupérer les détails d'un produit
@@ -278,7 +330,7 @@ export const fetchB2BProducts = createAsyncThunk(
           }
           return mapped;
         } catch (error) {
-          console.warn(`[B2B] ⚠️ Erreur mapping produit ID ${p.id}:`, error);
+          // Erreur mapping produit silencieuse
           return null;
         }
       }).filter((p: Product | null): p is Product => p !== null);
@@ -306,9 +358,20 @@ export const fetchB2BProducts = createAsyncThunk(
       };
     } catch (error: any) {
       const status = error.response?.status;
-      const errorMessage = cleanErrorForLog(error) || 'Erreur de chargement des produits B2B';
       
-      // Logger uniquement les infos essentielles (sans HTML)
+      // Ne pas logger les erreurs 404 pour les endpoints B2B optionnels
+      if (status === 404) {
+        // Erreur 404 silencieuse pour les endpoints B2B optionnels
+        // Essayer de récupérer depuis le cache en cas d'erreur
+        const cached = await offlineCacheService.get<Product[]>(CACHE_KEYS.PRODUCTS);
+        if (cached) {
+          return { results: cached, count: cached.length };
+        }
+        return rejectWithValue('Endpoint B2B non disponible');
+      }
+      
+      // Logger uniquement les autres erreurs
+      const errorMessage = cleanErrorForLog(error) || 'Erreur de chargement des produits B2B';
       if (status) {
         console.error(`[B2B] ❌ Erreur ${status}: ${errorMessage}`);
       } else {
@@ -455,7 +518,7 @@ const productSlice = createSlice({
           // Vérifier que tous les produits ont bien un ID unique
           const uniqueIds = new Set(validProducts.map(p => p.id));
           if (uniqueIds.size !== validProducts.length) {
-            console.warn(`[B2B] ⚠️ Produits dupliqués détectés! Unique: ${uniqueIds.size}, Total: ${validProducts.length}`);
+            // Produits dupliqués détectés et filtrés silencieusement
           }
         }
         

@@ -24,13 +24,7 @@ class NetworkMonitor {
       this.requests.shift();
     }
     
-    // Logger seulement les requêtes bloquées ou en échec (pas les autorisées pour réduire le bruit)
-    if (request.status === 'BLOCKED') {
-      console.log(`[NetworkMonitor] 🚫 ${request.method} ${request.endpoint} - BLOQUÉ (${request.reason})`);
-    } else if (request.status === 'FAILED') {
-      console.log(`[NetworkMonitor] ❌ ${request.method} ${request.endpoint} - ÉCHEC`);
-    }
-    // Les requêtes autorisées ne sont plus loggées pour réduire le bruit
+    // Les requêtes ne sont plus loggées pour réduire le bruit
   }
 
   getBlockedRequests(): NetworkRequest[] {
@@ -63,7 +57,6 @@ class NetworkMonitor {
 
   clear(): void {
     this.requests = [];
-    console.log('[NetworkMonitor] 📊 Logs de monitoring effacés');
   }
 
   getReport(): string {

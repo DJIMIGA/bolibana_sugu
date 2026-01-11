@@ -408,9 +408,31 @@ INVENTORY_SYNC_FREQUENCY = int(os.getenv('INVENTORY_SYNC_FREQUENCY', '60'))  # F
 
 # Clé de chiffrement pour les clés API stockées en base de données
 # Générer avec: python -c "from cryptography.fernet import Fernet; print(Fernet.generate_key().decode())"
-INVENTORY_ENCRYPTION_KEY = os.getenv('INVENTORY_ENCRYPTION_KEY', '')
+def _normalize_fernet_key(raw_value: str) -> str:
+    """
+    Normalise une clé Fernet lue depuis l'environnement.
+    - supprime espaces/newlines
+    - enlève les guillemets simples/doubles éventuels
+    - enlève un éventuel préfixe b'...' copié depuis Python
+    """
+    value = (raw_value or '').strip()
+    if (value.startswith("b'") and value.endswith("'")) or (value.startswith('b"') and value.endswith('"')):
+        value = value[2:-1]
+    if (value.startswith("'") and value.endswith("'")) or (value.startswith('"') and value.endswith('"')):
+        value = value[1:-1]
+    return value.strip()
+
+INVENTORY_ENCRYPTION_KEY = _normalize_fernet_key(os.getenv('INVENTORY_ENCRYPTION_KEY', ''))
 if not INVENTORY_ENCRYPTION_KEY:
     print("[WARN] INVENTORY_ENCRYPTION_KEY n'est pas configuré dans .env - les clés API seront chiffrées avec une clé temporaire")
+else:
+    # Validation "soft" (ne pas planter le démarrage, mais logguer clairement)
+    try:
+        from cryptography.fernet import Fernet
+        Fernet(INVENTORY_ENCRYPTION_KEY.encode())
+    except Exception as e:
+        # Ne jamais afficher la clé en clair dans les logs
+        print(f"[ERROR] INVENTORY_ENCRYPTION_KEY invalide (Fernet): {e}")
 
 # ==================================================
 # CONFIGURATION REST FRAMEWORK

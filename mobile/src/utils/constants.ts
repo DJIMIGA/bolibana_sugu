@@ -42,8 +42,10 @@ export const API_ENDPOINTS = {
   CHANGE_PASSWORD: '/change-password/',
   DELETE_ACCOUNT: '/delete-account/',
   B2B: {
-    PRODUCTS: '/api/inventory/products/synced/',
-    CATEGORIES: '/api/inventory/categories/synced/',
+    // NOTE: API_BASE_URL inclut déjà "/api" (ex: https://domaine.com/api)
+    // Donc ici on NE remet pas "/api", sinon on obtient "/api/api/..."
+    PRODUCTS: '/inventory/products/synced/',
+    CATEGORIES: '/inventory/categories/synced/',
   },
 } as const;
 

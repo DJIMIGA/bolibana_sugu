@@ -19,8 +19,12 @@ def should_sync_products():
         bool: True si une synchronisation est nécessaire
     """
     # Vérifier si une clé API est configurée
-    if not ApiKey.get_active_key():
-        logger.warning("Aucune clé API active - synchronisation impossible")
+    try:
+        if not ApiKey.get_active_key():
+            logger.warning("Aucune clé API active - synchronisation impossible")
+            return False
+    except Exception as e:
+        logger.error(f"Impossible de récupérer la clé API (produits) : {e}")
         return False
     
     # Vérifier le cache pour éviter les synchronisations trop fréquentes
@@ -43,8 +47,12 @@ def should_sync_categories():
         bool: True si une synchronisation est nécessaire
     """
     # Vérifier si une clé API est configurée
-    if not ApiKey.get_active_key():
-        logger.warning("Aucune clé API active - synchronisation des catégories impossible")
+    try:
+        if not ApiKey.get_active_key():
+            logger.warning("Aucune clé API active - synchronisation des catégories impossible")
+            return False
+    except Exception as e:
+        logger.error(f"Impossible de récupérer la clé API (catégories) : {e}")
         return False
     
     # Vérifier le cache pour éviter les synchronisations trop fréquentes

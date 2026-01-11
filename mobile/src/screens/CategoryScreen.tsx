@@ -28,6 +28,7 @@ const CategoryScreen: React.FC = () => {
   const { categories, isLoading, searchQuery } = useAppSelector((state) => state.product);
   const [refreshing, setRefreshing] = useState(false);
   const [localSearch, setLocalSearch] = useState(searchQuery);
+  const [expandedCategories, setExpandedCategories] = useState<Set<number>>(new Set());
 
   useEffect(() => {
     dispatch(fetchCategories());
@@ -62,16 +63,66 @@ const CategoryScreen: React.FC = () => {
     return rayonType.replace(/_/g, ' ').replace(/\b\w/g, (l) => l.toUpperCase());
   };
 
+  // Log pour debug
+  console.log('[CategoryScreen] 📊 Total catégories reçues:', (categories || []).length);
+  if (categories && categories.length > 0) {
+    console.log('[CategoryScreen] 📋 Exemples catégories:', categories.slice(0, 5).map((c: Category) => ({
+      id: c.id,
+      name: c.name,
+      rayon_type: c.rayon_type,
+      level: c.level,
+      parent: c.parent,
+      has_rayon_type: !!c.rayon_type,
+      has_level: c.level !== undefined && c.level !== null
+    })));
+    
+    // Log toutes les catégories pour voir lesquelles ont rayon_type ou level
+    const categoriesWithRayonType = categories.filter((c: Category) => !!c.rayon_type);
+    const categoriesWithLevel = categories.filter((c: Category) => c.level !== undefined && c.level !== null);
+    console.log(`[CategoryScreen] 📊 Catégories avec rayon_type: ${categoriesWithRayonType.length}`);
+    console.log(`[CategoryScreen] 📊 Catégories avec level: ${categoriesWithLevel.length}`);
+    
+    if (categoriesWithRayonType.length > 0) {
+      console.log('[CategoryScreen] 📋 Catégories avec rayon_type:', categoriesWithRayonType.map((c: Category) => ({
+        id: c.id,
+        name: c.name,
+        rayon_type: c.rayon_type
+      })));
+    }
+    
+    if (categoriesWithLevel.length > 0) {
+      console.log('[CategoryScreen] 📋 Catégories avec level:', categoriesWithLevel.map((c: Category) => ({
+        id: c.id,
+        name: c.name,
+        level: c.level
+      })));
+    }
+  }
+
   // Filtrer uniquement les catégories B2B (avec rayon_type ou level défini)
+  // Vérifier que rayon_type n'est pas null/undefined et que level n'est pas null/undefined
   const b2bCategories = (categories || []).filter((c: Category) => 
-    c.rayon_type || c.level !== undefined
+    (c.rayon_type !== null && c.rayon_type !== undefined) || 
+    (c.level !== null && c.level !== undefined)
   );
+
+  console.log(`[CategoryScreen] 🎯 Catégories B2B filtrées: ${b2bCategories.length}`);
+  if (b2bCategories.length > 0) {
+    console.log('[CategoryScreen] 📋 Exemples catégories B2B:', b2bCategories.slice(0, 3).map((c: Category) => ({
+      id: c.id,
+      name: c.name,
+      rayon_type: c.rayon_type,
+      level: c.level
+    })));
+  }
 
   // Organiser les catégories par rayon_type et niveau
   // Catégories de niveau 0 uniquement (comme sur le web)
   const level0Categories = b2bCategories.filter((c: Category) => 
     c.level === 0 || (c.level === null && !c.parent)
   );
+
+  console.log(`[CategoryScreen] 📍 Catégories niveau 0: ${level0Categories.length}`);
 
   // Grouper par rayon_type
   const categoriesByRayon: { [key: string]: Category[] } = {};
@@ -107,17 +158,25 @@ const CategoryScreen: React.FC = () => {
     const children: Category[] = [];
     const expectedLevel = (parentCategory.level ?? 0) + 1;
 
-    // Trouver les enfants par level et rayon_type
+    // Trouver les enfants par level et rayon_type (ou par parent si pas de B2B)
     allCategories.forEach((category: Category) => {
       if (category.id === parentCategory.id) return;
       
-      // Vérifier si c'est un enfant direct
-      if (
-        category.level === expectedLevel &&
-        category.rayon_type === parentCategory.rayon_type
-      ) {
-        // Vérifier aussi par parent si disponible
-        if (category.parent === parentCategory.id || !category.parent) {
+      // Si on a des catégories B2B, utiliser la logique B2B
+      if (b2bCategories.length > 0) {
+        // Vérifier si c'est un enfant direct par level et rayon_type
+        if (
+          category.level === expectedLevel &&
+          category.rayon_type === parentCategory.rayon_type
+        ) {
+          // Vérifier aussi par parent si disponible
+          if (category.parent === parentCategory.id || !category.parent) {
+            children.push(category);
+          }
+        }
+      } else {
+        // Sinon, utiliser la logique normale par parent
+        if (category.parent === parentCategory.id) {
           children.push(category);
         }
       }
@@ -337,26 +396,26 @@ const CategoryScreen: React.FC = () => {
                               const isSubExpanded = expandedCategories.has(subcategory.id);
                               
                               return (
-                                <View key={`sub-${subcategory.id}`}>
-                  <TouchableOpacity
+                                <View key={`sub-${subcategory.id}`} style={styles.subcategoryWrapper}>
+                                  <TouchableOpacity
                                     style={styles.subcategoryItem}
                                     onPress={() => handleCategoryPress(subcategory.id)}
-                    activeOpacity={0.8}
-                  >
+                                    activeOpacity={0.8}
+                                  >
                                     <View style={[styles.subcategoryIconContainer, { backgroundColor: `${getCategoryColor(subcategory.color)}15` }]}>
                                       {subcategory.image ? (
                                         <Image source={{ uri: subcategory.image }} style={styles.subcategoryIconImage} />
                                       ) : (
-                          <Ionicons 
+                                        <Ionicons 
                                           name={getCategoryIcon(subcategory.slug) as any} 
                                           size={20} 
                                           color={getCategoryColor(subcategory.color)} 
                                         />
-                      )}
-                    </View>
+                                      )}
+                                    </View>
                                     <Text style={styles.subcategoryName} numberOfLines={1}>
                                       {subcategory.name}
-                      </Text>
+                                    </Text>
                                     {nestedChildren.length > 0 && (
                                       <TouchableOpacity
                                         onPress={() => toggleCategory(subcategory.id)}
@@ -373,11 +432,11 @@ const CategoryScreen: React.FC = () => {
                                   
                                   {/* Niveaux plus profonds (2, 3, etc.) */}
                                   {isSubExpanded && nestedChildren.length > 0 && (
-                                    <View style={[styles.subcategoriesContainer, { marginLeft: 16, marginTop: 4, paddingLeft: 8, borderLeftWidth: 2, borderLeftColor: '#E5E7EB' }]}>
+                                    <View style={[styles.nestedSubcategoriesContainer, { borderLeftColor: getCategoryColor(subcategory.color) }]}>
                                       {nestedChildren.map((nestedCategory: Category) => (
                                         <TouchableOpacity
                                           key={`nested-${nestedCategory.id}`}
-                                          style={[styles.subcategoryItem, { marginBottom: 4 }]}
+                                          style={[styles.nestedSubcategoryItem]}
                                           onPress={() => handleCategoryPress(nestedCategory.id)}
                                           activeOpacity={0.8}
                                         >
@@ -390,20 +449,20 @@ const CategoryScreen: React.FC = () => {
                                                 size={16} 
                                                 color={getCategoryColor(nestedCategory.color)} 
                                               />
-                      )}
-                    </View>
-                                          <Text style={[styles.subcategoryName, { fontSize: 12 }]} numberOfLines={1}>
+                                            )}
+                                          </View>
+                                          <Text style={[styles.nestedSubcategoryName]} numberOfLines={1}>
                                             {nestedCategory.name}
                                           </Text>
-                  </TouchableOpacity>
-                ))}
-              </View>
+                                        </TouchableOpacity>
+                                      ))}
+                                    </View>
                                   )}
                                 </View>
                               );
                             })}
-            </View>
-          )}
+                          </View>
+                        )}
                       </View>
                     );
                   })}
@@ -665,27 +724,61 @@ const styles = StyleSheet.create({
     marginLeft: 4,
   },
   subcategoriesContainer: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
+    flexDirection: 'column',
     paddingHorizontal: 12,
     paddingTop: 8,
+    paddingBottom: 8,
     marginTop: 8,
     backgroundColor: '#FAFAFA',
     borderRadius: 8,
     marginHorizontal: 4,
   },
+  subcategoryWrapper: {
+    width: '100%',
+    marginBottom: 8,
+  },
   subcategoryItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: 8,
+    paddingVertical: 10,
     paddingHorizontal: 12,
-    marginRight: 8,
-    marginBottom: 8,
+    marginBottom: 4,
     backgroundColor: '#FFFFFF',
-    borderRadius: 6,
+    borderRadius: 8,
     borderWidth: 1,
     borderColor: '#E5E7EB',
     minWidth: 120,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 2,
+    elevation: 1,
+  },
+  nestedSubcategoriesContainer: {
+    marginLeft: 16,
+    marginTop: 8,
+    paddingLeft: 12,
+    borderLeftWidth: 2,
+    paddingTop: 4,
+    paddingBottom: 4,
+  },
+  nestedSubcategoryItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 6,
+    paddingHorizontal: 10,
+    marginBottom: 4,
+    backgroundColor: '#F9FAFB',
+    borderRadius: 6,
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
+  },
+  nestedSubcategoryName: {
+    fontSize: 12,
+    fontWeight: '500',
+    color: COLORS.TEXT,
+    flex: 1,
+    marginLeft: 8,
   },
   subcategoryIconContainer: {
     width: 24,

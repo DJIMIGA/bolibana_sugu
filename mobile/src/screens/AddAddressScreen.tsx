@@ -138,10 +138,8 @@ const AddAddressScreen: React.FC = () => {
       let response;
       if (isEditMode && addressId) {
         response = await apiClient.put(`/addresses/${addressId}/update/`, payload);
-        console.log('[AddAddressScreen] Address updated:', response.data);
       } else {
         response = await apiClient.post(API_ENDPOINTS.ADDRESSES, payload);
-        console.log('[AddAddressScreen] Address created:', response.data);
       }
 
       Alert.alert('Succès', isEditMode ? 'Adresse mise à jour avec succès.' : 'Adresse ajoutée avec succès.', [

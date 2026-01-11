@@ -17,8 +17,6 @@ import cartReducer from './slices/cartSlice';
 // Créer le storage chiffré personnalisé
 const encryptedStorage = createEncryptedStorage();
 
-console.log('🔐 Redux Persist Encryption configured at storage level');
-
 // Configuration pour la slice auth
 const authPersistConfig = {
   key: 'auth',

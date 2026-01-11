@@ -49,7 +49,6 @@ const OrdersScreen: React.FC = () => {
     } catch (error: any) {
       // Si c'est une erreur de mode hors ligne, gérer silencieusement
       if (error.isOfflineBlocked || error.code === 'OFFLINE_MODE_FORCED') {
-        console.log('[OrdersScreen] 🔌 Mode hors ligne - Aucune commande chargée');
         // En mode hors ligne, on peut garder les commandes déjà chargées ou vider la liste
         // setOrders([]); // Optionnel : vider si on veut forcer l'utilisateur à être en ligne
         return;

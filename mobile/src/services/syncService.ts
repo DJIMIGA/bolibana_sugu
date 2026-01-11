@@ -69,7 +69,6 @@ class SyncService {
     if (this.isSyncing) return;
     if (!connectivityService.getIsOnline()) return;
 
-    console.log(`[SyncService] 🔄 Starting sync for ${await this.getPendingCount()} items...`);
     this.isSyncing = true;
 
     try {

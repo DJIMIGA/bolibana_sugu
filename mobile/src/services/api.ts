@@ -146,6 +146,18 @@ apiClient.interceptors.response.use(
       }
     }
 
+    // Ne pas logger les erreurs pour les endpoints B2B optionnels (ils sont gérés silencieusement)
+    const isB2BOptionalEndpoint = originalRequest.url?.includes('/api/inventory/') && 
+                                  (originalRequest.url?.includes('/synced/') || 
+                                   originalRequest.url?.includes('/categories/'));
+    
+    // Si c'est un endpoint B2B optionnel et que c'est une erreur 400/404, ne pas logger
+    if (isB2BOptionalEndpoint && 
+        (error.response?.status === 400 || error.response?.status === 404 || !error.response)) {
+      // Rejeter l'erreur sans la logger (elle sera gérée silencieusement dans le code appelant)
+      return Promise.reject(error);
+    }
+
     // Gestion des autres erreurs
     const apiError = errorService.handleApiError(error);
     return Promise.reject(apiError);

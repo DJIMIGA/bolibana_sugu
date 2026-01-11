@@ -50,7 +50,6 @@ const CheckoutScreen: React.FC = () => {
     } catch (error: any) {
       // Si c'est une erreur de mode hors ligne, gérer silencieusement
       if (error.isOfflineBlocked || error.message === 'OFFLINE_MODE_FORCED') {
-        console.log('[CheckoutScreen] 🔌 Mode hors ligne - Aucune adresse chargée');
         return;
       }
       console.error('[CheckoutScreen] Error loading addresses:', error);

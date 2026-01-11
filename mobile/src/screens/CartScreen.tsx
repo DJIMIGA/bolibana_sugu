@@ -32,7 +32,6 @@ const CartScreen: React.FC = () => {
   // Fonction pour envoyer la mise à jour au serveur (débouncée)
   const debouncedUpdate = useCallback(
     debounce((itemId: number, quantity: number) => {
-      console.log(`[CartScreen] 🚀 Envoi de la mise à jour au serveur: Item ${itemId}, Quantité ${quantity}`);
       dispatch(updateCartItem({ itemId, quantity }));
     }, 500),
     [dispatch]
@@ -50,23 +49,18 @@ const CartScreen: React.FC = () => {
   };
 
   const handleUpdateQuantity = (itemId: number, newQuantity: number) => {
-    console.log(`[CartScreen] 👆 Clic sur bouton quantité: Item ${itemId}, Nouvelle quantité souhaitée: ${newQuantity}`);
-    
     if (newQuantity <= 0) {
-      console.log(`[CartScreen] 🗑️ Quantité <= 0, demande de suppression`);
       handleRemoveItem(itemId);
       return;
     }
     
     const item = items.find(i => i.id === itemId);
     if (item && item.product.stock !== undefined && item.product.stock > 0 && newQuantity > item.product.stock) {
-      console.log(`[CartScreen] ⚠️ Stock insuffisant: ${item.product.stock}`);
       Alert.alert('Stock insuffisant', `Stock disponible: ${item.product.stock}`);
       return;
     }
     
     // 1. Mise à jour visuelle instantanée
-    console.log(`[CartScreen] ✨ Mise à jour optimiste UI: ${newQuantity}`);
     dispatch(optimisticUpdateQuantity({ itemId, quantity: newQuantity }));
     
     // 2. Programmation de la mise à jour serveur

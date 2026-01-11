@@ -198,7 +198,8 @@ export const mapCategoryFromBackend = (backendCategory: any): Category => {
     name: backendCategory.name,
     slug: backendCategory.slug,
     parent: parentId,
-    image: ensureAbsoluteUrl(backendCategory.image),
+    // Certaines API renvoient `image_url` au lieu de `image`
+    image: ensureAbsoluteUrl(backendCategory.image || backendCategory.image_url),
     description: backendCategory.description || undefined,
     color: backendCategory.color || '#10B981', // Couleur par défaut
     is_main: backendCategory.is_main !== undefined
@@ -207,9 +208,13 @@ export const mapCategoryFromBackend = (backendCategory: any): Category => {
     order: backendCategory.order || 0,
     category_type: backendCategory.category_type || undefined,
     product_count: backendCategory.product_count || undefined,
-    rayon_type: backendCategory.rayon_type || undefined,
-    level: backendCategory.level !== undefined && backendCategory.level !== null 
-      ? backendCategory.level 
+    // Gérer rayon_type : peut être null, string, ou undefined
+    rayon_type: backendCategory.rayon_type !== null && backendCategory.rayon_type !== undefined
+      ? backendCategory.rayon_type
+      : undefined,
+    // Gérer level : peut être null, number, ou undefined
+    level: backendCategory.level !== null && backendCategory.level !== undefined
+      ? backendCategory.level
       : undefined,
   };
 };
@@ -237,10 +242,8 @@ export const mapAddressFromBackend = (backendAddress: any): ShippingAddress => {
  * Mappe les données panier du backend vers le type mobile
  */
 export const mapCartFromBackend = (backendCart: any): Cart => {
-  console.log(`[mappers] 🗺️ Mapping du panier depuis le backend (ID: ${backendCart?.id})`);
   // Vérification de sécurité : si backendCart est null ou undefined
   if (!backendCart) {
-    console.warn('mapCartFromBackend: backendCart est null ou undefined');
     return {
       id: 0,
       items: [],
@@ -275,11 +278,9 @@ export const mapCartFromBackend = (backendCart: any): Cart => {
     .filter((item: any) => {
       // Vérifier que l'item a un id et un produit valide
       if (!item || !item.id) {
-        console.warn('mapCartFromBackend: item invalide (pas d\'id)', item);
         return false;
       }
       if (!item.product) {
-        console.warn('mapCartFromBackend: item sans produit', item);
         return false;
       }
       return true;

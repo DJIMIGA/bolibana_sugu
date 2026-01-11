@@ -68,7 +68,6 @@ def render_analytics_scripts(context):
         // Envoyer les événements stockés en session
         const storedEvents = """ + str(analytics_events) + """;
         storedEvents.forEach(function(eventData) {
-            console.log('📊 Envoi événement différé:', eventData.event_type);
             gtag('event', eventData.event_type, eventData.parameters);
         });
         """
@@ -90,11 +89,7 @@ def render_analytics_scripts(context):
             {',' + cookie_config if cookie_config else ''}
         }});
         
-        // Log pour le développement
-        if ({str(settings.DEBUG).lower()}) {{
-            console.log('🔍 Google Analytics chargé avec ID:', '{ga_id}');
-            console.log('📊 Consentement analytics:', {str(request.cookie_consent.analytics).lower()});
-        }}
+        // Logs désactivés en production
         
         {events_script}
     </script>
@@ -133,9 +128,7 @@ def render_marketing_scripts(context):
         events_script = """
         // Envoyer les événements stockés en session
         const storedMarketingEvents = """ + str(marketing_events) + """;
-        console.log('🎯 Événements Facebook Pixel à envoyer:', storedMarketingEvents);
         storedMarketingEvents.forEach(function(eventData) {
-            console.log('🎯 Envoi événement Facebook Pixel:', eventData.event_type, eventData.parameters);
             fbq('track', eventData.event_type, eventData.parameters);
         });
         """
@@ -157,11 +150,7 @@ def render_marketing_scripts(context):
         fbq('init', '{pixel_id}');
         fbq('track', 'PageView');
         
-        // Log pour le développement
-        if ({str(settings.DEBUG).lower()}) {{
-            console.log('🎯 Facebook Pixel chargé avec ID:', '{pixel_id}');
-            console.log('🎯 Consentement marketing:', {str(request.cookie_consent.marketing).lower()});
-        }}
+        // Logs désactivés en production
         
         {events_script}
     </script>

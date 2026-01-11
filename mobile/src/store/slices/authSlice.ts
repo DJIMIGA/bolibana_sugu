@@ -162,20 +162,15 @@ export const loadUserAsync = createAsyncThunk(
 
       if (isOnline) {
         try {
-          console.log('[authSlice] 🌐 Online: Checking token validity...');
         const response = await apiClient.get(API_ENDPOINTS.PROFILE);
         const { mapUserFromBackend } = await import('../../utils/mappers');
           const freshUser = mapUserFromBackend(response.data);
           await AsyncStorage.setItem(STORAGE_KEYS.AUTH_USER, JSON.stringify(freshUser));
-          console.log('[authSlice] ✅ Token valid, profile updated.');
           return { token, user: freshUser, isReadOnly: false };
       } catch (error) {
-          console.warn('[authSlice] ❌ Token invalid or expired online.');
           return { token, user, isReadOnly: true, expired: true };
       }
       }
-
-      console.log('[authSlice] 🔌 Offline: Using local data in READ-ONLY mode.');
     } catch (error: any) {
       return rejectWithValue(error.message || 'Erreur de chargement');
     }
@@ -187,24 +182,15 @@ export const updateProfileAsync = createAsyncThunk(
   'auth/updateProfile',
   async (data: Partial<User>, { rejectWithValue }) => {
     try {
-      console.log('[authSlice] updateProfileAsync - Request data:', {
-        ...data,
-        password: data.password ? '***' : undefined // Ne pas logger le mot de passe en clair
-      });
-      
       // Utiliser l'endpoint profile directement avec PATCH (ProfileView supporte PATCH)
       const endpoint = API_ENDPOINTS.PROFILE;
-      console.log('[authSlice] updateProfileAsync - API endpoint:', endpoint);
       
       const response = await apiClient.patch(endpoint, data);
-      // Logs réduits pour éviter le spam
       
       const { mapUserFromBackend } = await import('../../utils/mappers');
       const user = mapUserFromBackend(response.data);
-      console.log('[authSlice] updateProfileAsync - Mapped user:', user);
       
       await AsyncStorage.setItem(STORAGE_KEYS.AUTH_USER, JSON.stringify(user));
-      console.log('[authSlice] updateProfileAsync - User saved to AsyncStorage');
       
       return user;
     } catch (error: any) {
@@ -220,7 +206,6 @@ export const updateProfileAsync = createAsyncThunk(
         || error.message 
         || 'Erreur de mise à jour du profil';
       
-      console.error('[authSlice] updateProfileAsync - Error message:', errorMessage);
       return rejectWithValue(errorMessage);
     }
   }

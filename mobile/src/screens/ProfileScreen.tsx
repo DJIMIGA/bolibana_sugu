@@ -74,7 +74,6 @@ const ProfileScreen: React.FC = () => {
   };
 
   const handleEditProfile = () => {
-    console.log('[ProfileScreen] handleEditProfile - User:', user);
     if (user) {
       // Mettre à jour le formulaire avec les données actuelles de l'utilisateur
       let dateOfBirth = '';
@@ -104,7 +103,6 @@ const ProfileScreen: React.FC = () => {
         password: '', // Ne pas pré-remplir le mot de passe pour des raisons de sécurité
       };
       
-      console.log('[ProfileScreen] handleEditProfile - Form data:', formData);
       setEditForm(formData);
       setShowPassword(false); // Réinitialiser l'état d'affichage du mot de passe
     }
@@ -112,11 +110,8 @@ const ProfileScreen: React.FC = () => {
   };
 
   const handleSaveProfile = async () => {
-    console.log('[ProfileScreen] handleSaveProfile - Edit form:', editForm);
-    
     // Vérifier que le mot de passe est fourni
     if (!editForm.password || editForm.password.trim() === '') {
-      console.log('[ProfileScreen] handleSaveProfile - Password missing');
       Alert.alert('Erreur', 'Veuillez entrer votre mot de passe actuel pour confirmer les modifications');
       return;
     }
@@ -151,13 +146,7 @@ const ProfileScreen: React.FC = () => {
         password: editForm.password,
       };
       
-      console.log('[ProfileScreen] handleSaveProfile - Update data:', {
-        ...updateData,
-        password: '***' // Ne pas logger le mot de passe en clair
-      });
-      
       const result = await dispatch(updateProfileAsync(updateData as any)).unwrap();
-      console.log('[ProfileScreen] handleSaveProfile - Success, result:', result);
       
       // Réinitialiser le formulaire après succès
       setEditForm({

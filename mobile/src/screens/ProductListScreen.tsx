@@ -83,15 +83,40 @@ const ProductListScreen: React.FC = () => {
     }
   };
 
+  // Log pour debug
+  console.log('[ProductListScreen] 📊 Total produits reçus:', (products || []).length);
+  console.log('[ProductListScreen] 📊 Total catégories reçues:', (categories || []).length);
+
+  // Filtrer les catégories B2B pour identifier les produits B2B
+  const b2bCategoryIds = new Set<number>();
+  (categories || []).forEach((c: Category) => {
+    if ((c.rayon_type !== null && c.rayon_type !== undefined) || 
+        (c.level !== null && c.level !== undefined)) {
+      b2bCategoryIds.add(c.id);
+    }
+  });
+  console.log(`[ProductListScreen] 🎯 Catégories B2B identifiées: ${b2bCategoryIds.size}`);
+  if (b2bCategoryIds.size > 0) {
+    console.log('[ProductListScreen] 📋 IDs catégories B2B:', Array.from(b2bCategoryIds).slice(0, 10));
+  }
+
   // Vérifier si on est en mode promo
   const isPromo = (route.params as any)?.promo === true;
   
+  // Filtrer les produits : ne garder que ceux dans des catégories B2B
+  let filteredProducts = (products || []).filter((p: Product) => {
+    const isB2B = b2bCategoryIds.has(p.category);
+    return isB2B;
+  });
+  
+  console.log(`[ProductListScreen] 🔍 Produits après filtre B2B: ${filteredProducts.length} sur ${(products || []).length}`);
+  
   // Filtrer les produits en promotion si nécessaire
   const displayProducts = isPromo
-    ? (products || []).filter((p: Product) => 
+    ? filteredProducts.filter((p: Product) => 
         p.discount_price && p.discount_price < p.price && p.discount_price > 0
       )
-    : (products || []);
+    : filteredProducts;
 
   // Trouver la catégorie sélectionnée
   const selectedCategory = filters.category 

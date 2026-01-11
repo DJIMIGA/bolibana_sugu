@@ -93,10 +93,33 @@ const HomeScreen: React.FC = () => {
             .filter((p): p is Product => p !== null);
         };
 
-        const phones = mapProductsSafely(phonesRes.data.results || phonesRes.data || []);
-        const clothing = mapProductsSafely(clothingRes.data.results || clothingRes.data || []);
-        const fabrics = mapProductsSafely(fabricsRes.data.results || fabricsRes.data || []);
-        const cultural = mapProductsSafely(culturalRes.data.results || culturalRes.data || []);
+        const allPhones = mapProductsSafely(phonesRes.data.results || phonesRes.data || []);
+        const allClothing = mapProductsSafely(clothingRes.data.results || clothingRes.data || []);
+        const allFabrics = mapProductsSafely(fabricsRes.data.results || fabricsRes.data || []);
+        const allCultural = mapProductsSafely(culturalRes.data.results || culturalRes.data || []);
+
+        // Filtrer pour ne garder que les produits B2B (dans des catégories B2B)
+        // Note: b2bCategoryIds sera disponible après le chargement des catégories
+        const getB2BCategoryIds = () => {
+          const ids = new Set<number>();
+          (categories || []).forEach((c: Category) => {
+            if ((c.rayon_type !== null && c.rayon_type !== undefined) || 
+                (c.level !== null && c.level !== undefined)) {
+              ids.add(c.id);
+            }
+          });
+          return ids;
+        };
+        
+        const b2bCatIds = getB2BCategoryIds();
+        console.log(`[HomeScreen] 🎯 Filtrage produits par type - Catégories B2B: ${b2bCatIds.size}`);
+        
+        const phones = allPhones.filter((p: Product) => b2bCatIds.has(p.category));
+        const clothing = allClothing.filter((p: Product) => b2bCatIds.has(p.category));
+        const fabrics = allFabrics.filter((p: Product) => b2bCatIds.has(p.category));
+        const cultural = allCultural.filter((p: Product) => b2bCatIds.has(p.category));
+        
+        console.log(`[HomeScreen] 📊 Produits filtrés - Téléphones: ${phones.length}/${allPhones.length}, Vêtements: ${clothing.length}/${allClothing.length}, Tissus: ${fabrics.length}/${allFabrics.length}, Culturels: ${cultural.length}/${allCultural.length}`);
 
         // Log silencieux - données chargées
 
@@ -200,10 +223,12 @@ const HomeScreen: React.FC = () => {
           .filter((p): p is Product => p !== null);
       };
 
-      setPhoneProducts(mapProductsSafely(phonesRes.data.results || phonesRes.data || []));
-      setClothingProducts(mapProductsSafely(clothingRes.data.results || clothingRes.data || []));
-      setFabricProducts(mapProductsSafely(fabricsRes.data.results || fabricsRes.data || []));
-      setCulturalProducts(mapProductsSafely(culturalRes.data.results || culturalRes.data || []));
+        // Les produits retournés par l'API sont déjà filtrés pour ne garder que ceux dans des catégories B2B
+        // (filtrés côté backend dans ProductViewSet.get_queryset())
+        setPhoneProducts(mapProductsSafely(phonesRes.data.results || phonesRes.data || []));
+        setClothingProducts(mapProductsSafely(clothingRes.data.results || clothingRes.data || []));
+        setFabricProducts(mapProductsSafely(fabricsRes.data.results || fabricsRes.data || []));
+        setCulturalProducts(mapProductsSafely(culturalRes.data.results || culturalRes.data || []));
     } catch (error: any) {
       if (error.code !== 'OFFLINE_MODE_FORCED' && error.message !== 'OFFLINE_MODE_FORCED') {
         // Erreur refresh silencieuse
@@ -225,10 +250,26 @@ const HomeScreen: React.FC = () => {
     }
   };
 
-  const trendingProducts = (products || []).filter((p: Product) => p.is_trending).slice(0, 6);
+  // Filtrer les catégories B2B pour identifier les produits B2B
+  const b2bCategoryIds = new Set<number>();
+  (categories || []).forEach((c: Category) => {
+    if ((c.rayon_type !== null && c.rayon_type !== undefined) || 
+        (c.level !== null && c.level !== undefined)) {
+      b2bCategoryIds.add(c.id);
+    }
+  });
+  console.log(`[HomeScreen] 🎯 Catégories B2B identifiées: ${b2bCategoryIds.size}`);
+  
+  // Filtrer les produits : ne garder que ceux dans des catégories B2B
+  const b2bProductsFiltered = (products || []).filter((p: Product) => 
+    b2bCategoryIds.has(p.category)
+  );
+  console.log(`[HomeScreen] 🔍 Produits après filtre B2B: ${b2bProductsFiltered.length} sur ${(products || []).length}`);
 
-  // Nouveaux produits (basés sur la date de création)
-  const newProducts = [...(products || [])]
+  const trendingProducts = b2bProductsFiltered.filter((p: Product) => p.is_trending).slice(0, 6);
+
+  // Nouveaux produits (basés sur la date de création) - uniquement B2B
+  const newProducts = [...b2bProductsFiltered]
     .filter((p: Product) => p.created_at)
     .sort(
       (a: Product, b: Product) =>
@@ -237,14 +278,14 @@ const HomeScreen: React.FC = () => {
     .slice(0, 4);
 
   // Produits en promotion (avec discount_price)
-  const promoProducts = (products || []).filter((p: Product) => {
+  const promoProducts = b2bProductsFiltered.filter((p: Product) => {
     return p.discount_price && p.discount_price < p.price && p.discount_price > 0;
   });
   
-  // Si pas de produits en promotion, utiliser les produits tendance ou les premiers produits
+  // Si pas de produits en promotion, utiliser les produits tendance ou les premiers produits - uniquement B2B
   const displayPromoProducts = promoProducts.length > 0 
     ? promoProducts.slice(0, 10) 
-    : (trendingProducts.length > 0 ? trendingProducts.slice(0, 10) : (products || []).slice(0, Math.min(10, (products || []).length)));
+    : (trendingProducts.length > 0 ? trendingProducts.slice(0, 10) : b2bProductsFiltered.slice(0, Math.min(10, b2bProductsFiltered.length)));
   
   // S'assurer qu'on a toujours quelque chose à afficher
   // Afficher uniquement les catégories sans parent (catégories principales)

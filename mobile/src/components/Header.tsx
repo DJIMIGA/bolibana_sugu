@@ -53,22 +53,14 @@ export const Header: React.FC<HeaderProps> = ({
   // Charger l'état du mode forcé hors ligne au démarrage depuis le service
   React.useEffect(() => {
     const loadForceOffline = async () => {
-      console.log('[Header] 📱 Chargement de l\'état du mode hors ligne depuis le service...');
       // Attendre que le service soit complètement initialisé
       await connectivityService.waitForInitialization();
       // Utiliser l'état du service plutôt que de charger directement depuis AsyncStorage
       const isForcedOffline = connectivityService.isForceOffline();
-      console.log(`[Header] 📊 État du service: ${isForcedOffline ? 'HORS LIGNE' : 'EN LIGNE'} (forceOffline: ${isForcedOffline})`);
       setForceOffline(isForcedOffline);
-      console.log(`[Header] ✅ État synchronisé - forceOffline=${isForcedOffline}, Switch devrait être ${isForcedOffline ? 'ON (→)' : 'OFF (←)'}`);
     };
     loadForceOffline();
   }, []);
-
-  // Log pour vérifier l'état du switch quand forceOffline change
-  React.useEffect(() => {
-    console.log(`[Header] 🔍 forceOffline a changé: ${forceOffline} → Switch devrait être ${forceOffline ? 'ON (→)' : 'OFF (←)'}`);
-  }, [forceOffline]);
 
   const toggleOfflineMode = async () => {
     const newValue = !forceOffline;
@@ -249,17 +241,12 @@ export const Header: React.FC<HeaderProps> = ({
               <TouchableOpacity
                 style={[styles.toggleButton, forceOffline && styles.toggleButtonOffline]}
                 onPress={async () => {
-                  console.log(`[Header] 🔄 Toggle changé: ${forceOffline ? '→ EN LIGNE' : '→ HORS LIGNE'}`);
-                  
                   if (forceOffline) {
                     // Actuellement hors ligne → passer en ligne
-                    console.log('[Header] 🟢 Activation du mode EN LIGNE');
                     setForceOffline(false);
                     await connectivityService.setForceOfflineMode(false);
-                    console.log('[Header] ✅ Mode en ligne activé');
                   } else {
                     // Actuellement en ligne → passer en hors ligne (télécharger puis basculer)
-                    console.log('[Header] 🔴 Déclenchement du mode HORS LIGNE');
                     handlePrepareOffline();
                   }
                 }}

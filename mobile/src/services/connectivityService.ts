@@ -21,7 +21,6 @@ class ConnectivityService {
   private initPromise: Promise<void> | null = null;
 
   constructor() {
-    console.log('[ConnectivityService] 🚀 Initialisation du service de connectivité...');
     this.initPromise = this.initializeAsync();
     this.initialize();
   }
@@ -29,7 +28,6 @@ class ConnectivityService {
   private async initializeAsync(): Promise<void> {
     await this.loadForceOfflineMode();
     this.initialized = true;
-    console.log('[ConnectivityService] ✅ Service initialisé');
   }
 
   async waitForInitialization(): Promise<void> {
@@ -49,17 +47,13 @@ class ConnectivityService {
         AsyncStorage.getItem(FORCE_OFFLINE_VERSION_KEY)
       ]);
       
-      console.log('[ConnectivityService] 📱 Chargement du mode hors ligne:', saved, 'version:', savedVersion);
-      
       // Si c'est une nouvelle version ou première utilisation, réinitialiser à EN LIGNE par défaut
       if (savedVersion !== CURRENT_VERSION) {
-        console.log('[ConnectivityService] 🔄 Nouvelle version détectée, réinitialisation à EN LIGNE par défaut');
         this.forceOffline = false;
         await Promise.all([
           AsyncStorage.setItem(FORCE_OFFLINE_KEY, 'false'),
           AsyncStorage.setItem(FORCE_OFFLINE_VERSION_KEY, CURRENT_VERSION)
         ]);
-        console.log('[ConnectivityService] ✅ Mode EN LIGNE par défaut (nouvelle version)');
         return;
       }
       
@@ -69,7 +63,6 @@ class ConnectivityService {
       
       // Si rien n'est sauvegardé, s'assurer qu'on est en ligne
       if (saved === null) {
-        console.log('[ConnectivityService] ✅ Aucune préférence trouvée, mode EN LIGNE par défaut');
         this.forceOffline = false;
         await Promise.all([
           AsyncStorage.setItem(FORCE_OFFLINE_KEY, 'false'),
@@ -79,15 +72,11 @@ class ConnectivityService {
         // Si la valeur sauvegardée est 'true' mais qu'on veut forcer EN LIGNE par défaut
         // (pour cette version, on réinitialise toujours à EN LIGNE)
         if (saved === 'true') {
-          console.log('[ConnectivityService] 🔄 Réinitialisation de HORS LIGNE vers EN LIGNE (nouvelle logique)');
           this.forceOffline = false;
           await Promise.all([
             AsyncStorage.setItem(FORCE_OFFLINE_KEY, 'false'),
             AsyncStorage.setItem(FORCE_OFFLINE_VERSION_KEY, CURRENT_VERSION)
           ]);
-          console.log('[ConnectivityService] ✅ Mode EN LIGNE par défaut restauré');
-        } else {
-          console.log(`[ConnectivityService] ${this.forceOffline ? '🔴 Mode HORS LIGNE' : '🟢 Mode EN LIGNE'} (sauvegardé: ${saved})`);
         }
       }
     } catch (error) {
@@ -98,14 +87,12 @@ class ConnectivityService {
   }
 
   async setForceOfflineMode(enabled: boolean): Promise<void> {
-    console.log(`[ConnectivityService] 🔄 Changement de mode: ${enabled ? 'HORS LIGNE' : 'EN LIGNE'}`);
     this.forceOffline = enabled;
     try {
       await Promise.all([
         AsyncStorage.setItem(FORCE_OFFLINE_KEY, enabled.toString()),
         AsyncStorage.setItem(FORCE_OFFLINE_VERSION_KEY, CURRENT_VERSION)
       ]);
-      console.log(`[ConnectivityService] 💾 Mode sauvegardé: ${enabled} (version: ${CURRENT_VERSION})`);
       this.notifyListeners();
     } catch (error) {
       console.error('[ConnectivityService] ❌ Erreur lors de la sauvegarde du mode:', error);

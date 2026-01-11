@@ -216,8 +216,6 @@
         
         // Engagement au moment de quitter la page
         window.addEventListener('beforeunload', trackEngagement);
-        
-        console.log('📊 Événements d\'engagement Google Analytics initialisés');
     }
     
     // Démarrer quand le DOM est prêt

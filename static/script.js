@@ -51,7 +51,6 @@ document.addEventListener('DOMContentLoaded', function() {
   
   // Vérifier si l'élément existe avant de continuer
   if (!starRating) {
-    console.log('Star rating element not found, skipping star rating initialization');
     return;
   }
   
@@ -134,12 +133,10 @@ function changeMainImage(imageUrl, button) {
   }
 
 document.addEventListener('DOMContentLoaded', function() {
-    console.log("DOM fully loaded and parsed");
     const quickViewContent = document.getElementById('quick-view-content');
 
     document.body.addEventListener('click', function(event) {
         if (event.target.id === 'quick-view-btn' || event.target.closest('#quick-view-btn')) {
-            console.log("Close button clicked");
             if (quickViewContent) {
                 quickViewContent.style.display = 'none';
             }

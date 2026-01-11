@@ -90,15 +90,12 @@ export const updateCartItem = createAsyncThunk(
   'cart/updateCartItem',
   async (data: { itemId: number; quantity: number }, { rejectWithValue }) => {
     try {
-      console.log(`[cartSlice] 🛠️ Thunk updateCartItem démarré: Item ${data.itemId}, Quantité ${data.quantity}`);
       if (connectivityService.getIsOnline()) {
         const response = await apiClient.patch(`${API_ENDPOINTS.CART}${data.itemId}/`, {
           quantity: data.quantity,
         });
-        console.log(`[cartSlice] ✅ Réponse API reçue pour updateCartItem`);
         return mapCartFromBackend(response.data);
       }
-      console.log(`[cartSlice] 🔌 Mode hors ligne détecté`);
       return null;
     } catch (error: any) {
       console.error(`[cartSlice] ❌ Erreur API updateCartItem:`, cleanErrorForLog(error));
@@ -130,9 +127,7 @@ export const clearCart = createAsyncThunk(
     try {
       if (connectivityService.getIsOnline()) {
         const url = `${API_ENDPOINTS.CART}clear/`;
-        console.log(`[cartSlice] 🧹 Vidage du panier: DELETE ${url}`);
         const response = await apiClient.delete(url);
-        console.log(`[cartSlice] ✅ Réponse vidage reçue`);
         return mapCartFromBackend(response.data);
       } else {
         // Mode hors ligne
@@ -204,7 +199,6 @@ const cartSlice = createSlice({
       );
       state.total = action.payload.total_price || 0;
       state.itemsCount = calculateItemsCount(state.items);
-      console.log(`[cartSlice] 📊 Nouveau total: ${state.total}, Nouveaux articles: ${state.itemsCount}`);
     };
 
     builder

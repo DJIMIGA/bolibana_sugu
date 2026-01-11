@@ -68,6 +68,19 @@ class ApiKey(models.Model):
     def _get_encryption_key(self):
         """Récupère la clé de chiffrement depuis settings"""
         encryption_key = getattr(settings, 'INVENTORY_ENCRYPTION_KEY', None)
+
+        # Normaliser au maximum (espaces, guillemets, copie "b'...'" depuis Python)
+        if isinstance(encryption_key, str):
+            encryption_key = encryption_key.strip()
+            if (encryption_key.startswith("b'") and encryption_key.endswith("'")) or (
+                encryption_key.startswith('b"') and encryption_key.endswith('"')
+            ):
+                encryption_key = encryption_key[2:-1]
+            if (encryption_key.startswith("'") and encryption_key.endswith("'")) or (
+                encryption_key.startswith('"') and encryption_key.endswith('"')
+            ):
+                encryption_key = encryption_key[1:-1]
+            encryption_key = encryption_key.strip()
         
         if not encryption_key:
             # Générer une clé par défaut (en production, utiliser une clé fixe dans .env)
@@ -92,7 +105,16 @@ class ApiKey(models.Model):
         """Récupère la clé API active"""
         api_key = cls.objects.filter(is_active=True).first()
         if api_key:
-            return api_key.get_key()
+            try:
+                return api_key.get_key()
+            except Exception as e:
+                # Ne pas bloquer tout le système si la clé chiffrée est illisible
+                # (ex: INVENTORY_ENCRYPTION_KEY invalide, clé recréée, etc.)
+                logger.error(
+                    "Clé ApiKey active illisible (déchiffrement impossible). "
+                    "Fallback vers settings.B2B_API_KEY si disponible. "
+                    f"Erreur: {e}"
+                )
         # Fallback vers la clé globale depuis settings
         return getattr(settings, 'B2B_API_KEY', '')
     
