@@ -263,8 +263,70 @@ export const fetchProductDetail = createAsyncThunk(
   'product/fetchProductDetail',
   async (slug: string, { rejectWithValue }) => {
     try {
-      const response = await apiClient.get(`${API_ENDPOINTS.PRODUCTS}${slug}/`);
-      return mapProductFromBackend(response.data);
+      // IMPORTANT:
+      // - Le produit "site" (B2C) et le produit "inventory" (B2B) peuvent avoir le même slug
+      //   mais PAS le même id.
+      // - Pour éviter de casser le panier / similar_products (qui utilisent l'id B2C),
+      //   on charge d'abord le produit B2C, puis on ENRICHIT avec promo/galerie depuis l'inventory.
+
+      // 1) Produit B2C (source de vérité pour id, stock, endpoints produits)
+      const b2cRes = await apiClient.get(`${API_ENDPOINTS.PRODUCTS}${slug}/`);
+      const b2cProduct = mapProductFromBackend(b2cRes.data);
+
+      // 2) Enrichissement inventory/B2B (promo + galerie)
+      let inventoryMatch: any | null = null;
+      try {
+        const invRes = await apiClient.get(API_ENDPOINTS.B2B.PRODUCTS);
+        const raw = (invRes.data as any)?.results || (invRes.data as any) || [];
+        const list: any[] = Array.isArray(raw) ? raw : [];
+        inventoryMatch = list.find((p) => p && String(p.slug) === String(slug)) || null;
+      } catch (e: any) {
+        // Endpoint optionnel : ignorer (réseau/404/503/400)
+      }
+
+      if (!inventoryMatch) {
+        if (__DEV__) {
+          console.log('[ProductDetail] ℹ️ Enrichissement inventory: aucun match', {
+            slug,
+            b2cId: b2cProduct.id,
+          });
+        }
+        return b2cProduct;
+      }
+
+      // Mapper le produit inventory pour normaliser images/promo (mais ne PAS utiliser son id)
+      const invMapped = mapProductFromBackend(inventoryMatch);
+
+      const enriched = {
+        ...b2cProduct,
+        // Images/galerie: on prend l'inventory en priorité si présent, sinon on garde B2C
+        image: invMapped.image || b2cProduct.image,
+        image_urls: invMapped.image_urls || b2cProduct.image_urls,
+
+        // Champs promo bruts (pour debug/UI éventuel)
+        promo_price: invMapped.promo_price,
+        has_promotion: invMapped.has_promotion,
+        discount_percent: invMapped.discount_percent,
+        promotion_start_date: invMapped.promotion_start_date,
+        promotion_end_date: invMapped.promotion_end_date,
+
+        // discount_price: si B2C n'en a pas, prendre celle calculée via inventory
+        discount_price: b2cProduct.discount_price ?? invMapped.discount_price,
+      };
+
+      if (__DEV__) {
+        console.log('[ProductDetail] ✅ Enrichi depuis inventory', {
+          slug,
+          b2cId: b2cProduct.id,
+          inventoryId: invMapped.id,
+          galleryCount: enriched.image_urls?.gallery?.length || 0,
+          hasPromotion: enriched.has_promotion,
+          promoPrice: enriched.promo_price,
+          discountPriceUsed: enriched.discount_price,
+        });
+      }
+
+      return enriched;
     } catch (error: any) {
       return rejectWithValue(error.response?.data?.detail || 'Erreur de chargement du produit');
     }

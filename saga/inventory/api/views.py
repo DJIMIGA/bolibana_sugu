@@ -206,9 +206,10 @@ class ProductViewSet(viewsets.ReadOnlyModelViewSet):
         logger.info(f"[B2B API] Requête reçue pour /api/inventory/products/synced/")
         
         # Déclencher une synchronisation automatique si nécessaire
-        from inventory.tasks import sync_products_auto
+        from inventory.tasks import trigger_products_sync_async
         try:
-            sync_products_auto(force=False)
+            # Non bloquant: ne ralentit pas l'API mobile
+            trigger_products_sync_async(force=False)
         except Exception as e:
             logger.warning(f"Erreur lors de la synchronisation automatique: {str(e)}")
         

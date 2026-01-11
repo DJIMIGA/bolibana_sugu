@@ -111,6 +111,15 @@ class ProductImageSerializer(serializers.ModelSerializer):
 class ProductListSerializer(serializers.ModelSerializer):
     category = CategorySerializer(read_only=True)
     feature_image = serializers.SerializerMethodField()
+    image_url = serializers.SerializerMethodField()
+    images = serializers.SerializerMethodField()
+    image_urls = serializers.SerializerMethodField()
+    gallery = serializers.SerializerMethodField()
+    promo_price = serializers.SerializerMethodField()
+    has_promotion = serializers.SerializerMethodField()
+    discount_percent = serializers.SerializerMethodField()
+    promotion_start_date = serializers.SerializerMethodField()
+    promotion_end_date = serializers.SerializerMethodField()
     phone = serializers.SerializerMethodField()
     clothing_product = serializers.SerializerMethodField()
     fabric_product = serializers.SerializerMethodField()
@@ -121,6 +130,8 @@ class ProductListSerializer(serializers.ModelSerializer):
         fields = [
             'id', 'title', 'slug', 'price', 'discount_price',
             'category', 'brand', 'feature_image',
+            'image_url', 'images', 'image_urls', 'gallery',
+            'promo_price', 'has_promotion', 'discount_percent', 'promotion_start_date', 'promotion_end_date',
             'is_available', 'is_trending', 'is_salam', 'stock',
             'phone', 'clothing_product', 'fabric_product', 'cultural_product', 'created_at'
         ]
@@ -135,6 +146,101 @@ class ProductListSerializer(serializers.ModelSerializer):
         feature_image = obj.images.first()
         if feature_image:
             return ProductImageSerializer(feature_image, context=self.context).data
+        return None
+
+    def _abs(self, url: str):
+        """Construit une URL absolue si possible"""
+        if not url:
+            return None
+        request = self.context.get('request')
+        if request and isinstance(url, str) and url.startswith('/'):
+            return request.build_absolute_uri(url)
+        return url
+
+    def get_image_url(self, obj):
+        """Compat B2B: image_url string (principale)"""
+        try:
+            url = obj.get_display_image_url() if hasattr(obj, 'get_display_image_url') else None
+            return self._abs(url) if url else None
+        except Exception:
+            return None
+
+    def get_images(self, obj):
+        """Compat B2B: images[] (liste d'URLs)"""
+        try:
+            urls = []
+            if hasattr(obj, 'get_all_image_urls'):
+                all_urls = obj.get_all_image_urls() or {}
+                main = all_urls.get('main')
+                gallery = all_urls.get('gallery') or []
+                if main:
+                    urls.append(self._abs(main))
+                for u in gallery:
+                    if u and u not in urls:
+                        urls.append(self._abs(u))
+            # Fallback: URLs externes stockées dans specifications
+            if (not urls) and obj.specifications and isinstance(obj.specifications, dict):
+                b2b_urls = obj.specifications.get('b2b_image_urls') or []
+                if isinstance(b2b_urls, list):
+                    urls = [u for u in b2b_urls if isinstance(u, str)]
+            return [u for u in urls if u]
+        except Exception:
+            return []
+
+    def get_gallery(self, obj):
+        """Alias de images[] pour compat 'gallery'"""
+        return self.get_images(obj)
+
+    def get_image_urls(self, obj):
+        """Compat B2B: image_urls[] (liste d'URLs)"""
+        return self.get_images(obj)
+
+    def get_has_promotion(self, obj):
+        try:
+            if obj.specifications and isinstance(obj.specifications, dict):
+                if obj.specifications.get('has_promotion') is True:
+                    return True
+            return bool(obj.discount_price and obj.discount_price > 0)
+        except Exception:
+            return False
+
+    def get_promo_price(self, obj):
+        try:
+            if obj.specifications and isinstance(obj.specifications, dict):
+                promo = obj.specifications.get('promo_price')
+                if promo is not None:
+                    return promo
+            return obj.discount_price
+        except Exception:
+            return None
+
+    def get_discount_percent(self, obj):
+        try:
+            if obj.specifications and isinstance(obj.specifications, dict):
+                dp = obj.specifications.get('discount_percent')
+                if dp is not None:
+                    return dp
+            promo = self.get_promo_price(obj)
+            if promo and obj.price and obj.price > 0:
+                return round(((obj.price - promo) / obj.price) * 100, 2)
+            return None
+        except Exception:
+            return None
+
+    def get_promotion_start_date(self, obj):
+        try:
+            if obj.specifications and isinstance(obj.specifications, dict):
+                return obj.specifications.get('promotion_start_date')
+        except Exception:
+            pass
+        return None
+
+    def get_promotion_end_date(self, obj):
+        try:
+            if obj.specifications and isinstance(obj.specifications, dict):
+                return obj.specifications.get('promotion_end_date')
+        except Exception:
+            pass
         return None
     
     def get_phone(self, obj):
@@ -179,6 +285,14 @@ class ProductDetailSerializer(serializers.ModelSerializer):
     category = CategorySerializer(read_only=True)
     images = ProductImageSerializer(many=True, read_only=True)
     feature_image = serializers.SerializerMethodField()
+    image_url = serializers.SerializerMethodField()
+    image_urls = serializers.SerializerMethodField()
+    gallery = serializers.SerializerMethodField()
+    promo_price = serializers.SerializerMethodField()
+    has_promotion = serializers.SerializerMethodField()
+    discount_percent = serializers.SerializerMethodField()
+    promotion_start_date = serializers.SerializerMethodField()
+    promotion_end_date = serializers.SerializerMethodField()
     phone = serializers.SerializerMethodField()
     clothing_product = serializers.SerializerMethodField()
     fabric_product = serializers.SerializerMethodField()
@@ -191,6 +305,8 @@ class ProductDetailSerializer(serializers.ModelSerializer):
             'price', 'discount_price', 'category', 'brand',
             'images', 'feature_image', 'stock', 'is_trending', 'is_salam',
             'is_available', 'created_at', 'updated_at',
+            'image_url', 'image_urls', 'gallery',
+            'promo_price', 'has_promotion', 'discount_percent', 'promotion_start_date', 'promotion_end_date',
             'specifications', 'weight', 'dimensions', 'phone',
             'clothing_product', 'fabric_product', 'cultural_product'
         ]
@@ -205,6 +321,95 @@ class ProductDetailSerializer(serializers.ModelSerializer):
         feature_image = obj.images.first()
         if feature_image:
             return ProductImageSerializer(feature_image, context=self.context).data
+        return None
+
+    def _abs(self, url: str):
+        if not url:
+            return None
+        request = self.context.get('request')
+        if request and isinstance(url, str) and url.startswith('/'):
+            return request.build_absolute_uri(url)
+        return url
+
+    def get_image_url(self, obj):
+        try:
+            url = obj.get_display_image_url() if hasattr(obj, 'get_display_image_url') else None
+            return self._abs(url) if url else None
+        except Exception:
+            return None
+
+    def get_image_urls(self, obj):
+        try:
+            if hasattr(obj, 'get_all_image_urls'):
+                all_urls = obj.get_all_image_urls() or {}
+                main = all_urls.get('main')
+                gallery = all_urls.get('gallery') or []
+                return {
+                    'main': self._abs(main) if main else None,
+                    'gallery': [self._abs(u) for u in gallery if u],
+                }
+        except Exception:
+            pass
+        return {}
+
+    def get_gallery(self, obj):
+        try:
+            urls = (self.get_image_urls(obj) or {}).get('gallery') or []
+            # Fallback specs
+            if not urls and obj.specifications and isinstance(obj.specifications, dict):
+                b2b_urls = obj.specifications.get('b2b_image_urls') or []
+                if isinstance(b2b_urls, list):
+                    return [u for u in b2b_urls if isinstance(u, str)]
+            return urls
+        except Exception:
+            return []
+
+    def get_has_promotion(self, obj):
+        try:
+            if obj.specifications and isinstance(obj.specifications, dict):
+                if obj.specifications.get('has_promotion') is True:
+                    return True
+            return bool(obj.discount_price and obj.discount_price > 0)
+        except Exception:
+            return False
+
+    def get_promo_price(self, obj):
+        try:
+            if obj.specifications and isinstance(obj.specifications, dict):
+                promo = obj.specifications.get('promo_price')
+                if promo is not None:
+                    return promo
+            return obj.discount_price
+        except Exception:
+            return None
+
+    def get_discount_percent(self, obj):
+        try:
+            if obj.specifications and isinstance(obj.specifications, dict):
+                dp = obj.specifications.get('discount_percent')
+                if dp is not None:
+                    return dp
+            promo = self.get_promo_price(obj)
+            if promo and obj.price and obj.price > 0:
+                return round(((obj.price - promo) / obj.price) * 100, 2)
+            return None
+        except Exception:
+            return None
+
+    def get_promotion_start_date(self, obj):
+        try:
+            if obj.specifications and isinstance(obj.specifications, dict):
+                return obj.specifications.get('promotion_start_date')
+        except Exception:
+            pass
+        return None
+
+    def get_promotion_end_date(self, obj):
+        try:
+            if obj.specifications and isinstance(obj.specifications, dict):
+                return obj.specifications.get('promotion_end_date')
+        except Exception:
+            pass
         return None
     
     def get_phone(self, obj):

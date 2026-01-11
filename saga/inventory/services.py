@@ -903,6 +903,29 @@ class ProductSyncService:
             discount_price = to_number(external_data['promotional_price'])
         elif 'sale_price' in external_data:
             discount_price = to_number(external_data['sale_price'])
+
+        # NOUVEAU (API B2B): promo_price + has_promotion + dates
+        # Exemple:
+        # - "promo_price": "100000.00"
+        # - "has_promotion": true
+        # - "discount_percent": "50.00"
+        # - "promotion_start_date": "2026-01-11T17:07:00+00:00"
+        # - "promotion_end_date": "2026-02-10T23:00:00+00:00"
+        has_promotion = external_data.get('has_promotion', False) is True
+        promo_price_value = external_data.get('promo_price')
+        if has_promotion and promo_price_value is not None:
+            promo_price = to_number(promo_price_value)
+            if promo_price and promo_price > 0:
+                discount_price = promo_price
+                # Stocker les infos promo dans specifications (pour exposition API / debug)
+                product_data['specifications']['has_promotion'] = True
+                product_data['specifications']['promo_price'] = promo_price
+                if 'discount_percent' in external_data and external_data.get('discount_percent') is not None:
+                    product_data['specifications']['discount_percent'] = to_number(external_data.get('discount_percent'))
+                if external_data.get('promotion_start_date'):
+                    product_data['specifications']['promotion_start_date'] = str(external_data.get('promotion_start_date'))
+                if external_data.get('promotion_end_date'):
+                    product_data['specifications']['promotion_end_date'] = str(external_data.get('promotion_end_date'))
         
         if discount_price and discount_price > 0:
             product_data['discount_price'] = discount_price
@@ -999,6 +1022,7 @@ class ProductSyncService:
                 external_id=external_id,
                 external_sku=external_data.get('sku', ''),
                 external_category_id=external_category_id,
+                is_b2b=True,
                 sync_status='synced',
                 last_synced_at=timezone.now()
             )
@@ -1007,6 +1031,8 @@ class ProductSyncService:
         external_product.sync_status = 'synced'
         external_product.last_synced_at = timezone.now()
         external_product.sync_error = None
+        # IMPORTANT: ces produits proviennent de la synchro B2B → marquer is_b2b=True
+        external_product.is_b2b = True
         external_product.save()
         
         # Télécharger et sauvegarder les images si disponibles
