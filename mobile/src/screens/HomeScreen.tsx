@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import {
   View,
   Text,
@@ -112,14 +112,19 @@ const HomeScreen: React.FC = () => {
         };
         
         const b2bCatIds = getB2BCategoryIds();
-        console.log(`[HomeScreen] 🎯 Filtrage produits par type - Catégories B2B: ${b2bCatIds.size}`);
+        // Log uniquement si on a des catégories (sinon bruit au boot)
+        if (b2bCatIds.size > 0) {
+          console.log(`[HomeScreen] 🎯 Filtrage produits par type - Catégories B2B: ${b2bCatIds.size}`);
+        }
         
         const phones = allPhones.filter((p: Product) => b2bCatIds.has(p.category));
         const clothing = allClothing.filter((p: Product) => b2bCatIds.has(p.category));
         const fabrics = allFabrics.filter((p: Product) => b2bCatIds.has(p.category));
         const cultural = allCultural.filter((p: Product) => b2bCatIds.has(p.category));
         
-        console.log(`[HomeScreen] 📊 Produits filtrés - Téléphones: ${phones.length}/${allPhones.length}, Vêtements: ${clothing.length}/${allClothing.length}, Tissus: ${fabrics.length}/${allFabrics.length}, Culturels: ${cultural.length}/${allCultural.length}`);
+        if (b2bCatIds.size > 0) {
+          console.log(`[HomeScreen] 📊 Produits filtrés - Téléphones: ${phones.length}/${allPhones.length}, Vêtements: ${clothing.length}/${allClothing.length}, Tissus: ${fabrics.length}/${allFabrics.length}, Culturels: ${cultural.length}/${allCultural.length}`);
+        }
 
         // Log silencieux - données chargées
 
@@ -133,7 +138,7 @@ const HomeScreen: React.FC = () => {
     };
 
     loadProductsByType();
-  }, [dispatch]);
+  }, [dispatch, categories]);
 
   // Réinitialiser les filtres chaque fois que l'écran est affiché
   useFocusEffect(
@@ -251,20 +256,37 @@ const HomeScreen: React.FC = () => {
   };
 
   // Filtrer les catégories B2B pour identifier les produits B2B
-  const b2bCategoryIds = new Set<number>();
-  (categories || []).forEach((c: Category) => {
-    if ((c.rayon_type !== null && c.rayon_type !== undefined) || 
-        (c.level !== null && c.level !== undefined)) {
-      b2bCategoryIds.add(c.id);
+  const b2bCategoryIds = useMemo(() => {
+    const ids = new Set<number>();
+    (categories || []).forEach((c: Category) => {
+      if ((c.rayon_type !== null && c.rayon_type !== undefined) ||
+          (c.level !== null && c.level !== undefined)) {
+        ids.add(c.id);
+      }
+    });
+    return ids;
+  }, [categories]);
+
+  const b2bProductsFiltered = useMemo(() => {
+    return (products || []).filter((p: Product) => b2bCategoryIds.has(p.category));
+  }, [products, b2bCategoryIds]);
+
+  // Réduire le bruit: log uniquement quand ça change vraiment
+  const prevB2BCategoryCountRef = React.useRef<number>(-1);
+  const prevB2BFilteredCountRef = React.useRef<number>(-1);
+  useEffect(() => {
+    if (b2bCategoryIds.size !== prevB2BCategoryCountRef.current) {
+      prevB2BCategoryCountRef.current = b2bCategoryIds.size;
+      console.log(`[HomeScreen] 🎯 Catégories B2B identifiées: ${b2bCategoryIds.size}`);
     }
-  });
-  console.log(`[HomeScreen] 🎯 Catégories B2B identifiées: ${b2bCategoryIds.size}`);
-  
-  // Filtrer les produits : ne garder que ceux dans des catégories B2B
-  const b2bProductsFiltered = (products || []).filter((p: Product) => 
-    b2bCategoryIds.has(p.category)
-  );
-  console.log(`[HomeScreen] 🔍 Produits après filtre B2B: ${b2bProductsFiltered.length} sur ${(products || []).length}`);
+  }, [b2bCategoryIds.size]);
+
+  useEffect(() => {
+    if (b2bProductsFiltered.length !== prevB2BFilteredCountRef.current) {
+      prevB2BFilteredCountRef.current = b2bProductsFiltered.length;
+      console.log(`[HomeScreen] 🔍 Produits après filtre B2B: ${b2bProductsFiltered.length} sur ${(products || []).length}`);
+    }
+  }, [b2bProductsFiltered.length, products?.length]);
 
   const trendingProducts = b2bProductsFiltered.filter((p: Product) => p.is_trending).slice(0, 6);
 

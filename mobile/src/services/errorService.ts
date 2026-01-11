@@ -239,11 +239,11 @@ class ErrorService {
       return;
     }
 
-    // Ne pas logger les erreurs B2B optionnelles (endpoints /api/inventory/ avec synced ou categories)
+    // Ne pas logger les erreurs B2B optionnelles (endpoints inventory avec synced/categories)
     if (errorLog.details && typeof errorLog.details === 'object') {
       const url = (errorLog.details as any).url || (errorLog.details as any).config?.url;
       if (url && typeof url === 'string' && 
-          url.includes('/api/inventory/') && 
+          (url.includes('/inventory/') || url.includes('/api/inventory/')) && 
           (url.includes('/synced/') || url.includes('/categories/'))) {
         return; // Erreur B2B optionnelle, ne pas logger
       }

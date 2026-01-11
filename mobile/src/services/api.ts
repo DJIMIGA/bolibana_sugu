@@ -147,9 +147,12 @@ apiClient.interceptors.response.use(
     }
 
     // Ne pas logger les erreurs pour les endpoints B2B optionnels (ils sont gérés silencieusement)
-    const isB2BOptionalEndpoint = originalRequest.url?.includes('/api/inventory/') && 
-                                  (originalRequest.url?.includes('/synced/') || 
-                                   originalRequest.url?.includes('/categories/'));
+    // NOTE: `baseURL` inclut déjà "/api", donc `originalRequest.url` est souvent "/inventory/..." (sans "/api").
+    const url = originalRequest.url || '';
+    const isInventoryEndpoint = url.includes('/inventory/') || url.includes('/api/inventory/');
+    const isB2BOptionalEndpoint =
+      isInventoryEndpoint &&
+      (url.includes('/synced/') || url.includes('/categories/'));
     
     // Si c'est un endpoint B2B optionnel et que c'est une erreur 400/404, ne pas logger
     if (isB2BOptionalEndpoint && 

@@ -17,6 +17,23 @@ const ensureAbsoluteUrl = (url: string | undefined): string | undefined => {
 };
 
 /**
+ * Normalise une liste d'images provenant du backend (string[] ou objets)
+ */
+const normalizeImageList = (value: any): string[] => {
+  if (!Array.isArray(value)) return [];
+  return value
+    .map((img: any) => {
+      if (!img) return undefined;
+      if (typeof img === 'string') return ensureAbsoluteUrl(img);
+      if (typeof img === 'object') {
+        return ensureAbsoluteUrl(img.image || img.url || img.image_url);
+      }
+      return undefined;
+    })
+    .filter(Boolean) as string[];
+};
+
+/**
  * Mappe les données utilisateur du backend vers le type mobile
  */
 export const mapUserFromBackend = (backendUser: any): User => {
@@ -67,9 +84,16 @@ export const mapProductFromBackend = (backendProduct: any): Product => {
     }
   } else if (backendProduct.image) {
     imageUrl = ensureAbsoluteUrl(backendProduct.image);
-  } else if (backendProduct.images && backendProduct.images.length > 0) {
-    const firstImage = backendProduct.images[0];
-    imageUrl = ensureAbsoluteUrl(typeof firstImage === 'string' ? firstImage : firstImage.image);
+  } else {
+    // Fallback: prendre la première image de gallery/image_urls/images si présent
+    const candidates = [
+      ...normalizeImageList(backendProduct.gallery),
+      ...normalizeImageList(backendProduct.image_urls),
+      ...normalizeImageList(backendProduct.images),
+    ];
+    if (candidates.length > 0) {
+      imageUrl = candidates[0];
+    }
   }
 
   // Extraire les URLs d'images pour la galerie
@@ -77,10 +101,23 @@ export const mapProductFromBackend = (backendProduct: any): Product => {
   if (imageUrl) {
     imageUrls.main = imageUrl;
   }
-  if (backendProduct.images && Array.isArray(backendProduct.images)) {
-    imageUrls.gallery = backendProduct.images
-      .map((img: any) => ensureAbsoluteUrl(typeof img === 'string' ? img : img.image))
-      .filter(Boolean) as string[];
+  // Priorité galerie: gallery -> image_urls -> images (dédoublonné)
+  const galleryCandidates = [
+    ...normalizeImageList(backendProduct.gallery),
+    ...normalizeImageList(backendProduct.image_urls),
+    ...normalizeImageList(backendProduct.images),
+  ];
+  if (galleryCandidates.length > 0) {
+    const unique: string[] = [];
+    const seen = new Set<string>();
+    const all = (imageUrl ? [imageUrl, ...galleryCandidates] : galleryCandidates);
+    all.forEach((u) => {
+      if (!u) return;
+      if (seen.has(u)) return;
+      seen.add(u);
+      unique.push(u);
+    });
+    imageUrls.gallery = unique;
   }
 
   // Construire les specifications en incluant les données de téléphone si disponibles
@@ -129,6 +166,19 @@ export const mapProductFromBackend = (backendProduct: any): Product => {
   // Gérer le prix : l'API B2B utilise 'selling_price', l'API normale utilise 'price'
   const priceValue = backendProduct.selling_price || backendProduct.price;
   const price = priceValue ? parseFloat(priceValue) : 0;
+
+  // Promotion (API inventory/B2B)
+  const hasPromotion = backendProduct.has_promotion === true;
+  const promoPriceRaw = backendProduct.promo_price;
+  const promoPrice = promoPriceRaw !== undefined && promoPriceRaw !== null ? parseFloat(promoPriceRaw) : undefined;
+  const discountPercentRaw = backendProduct.discount_percent;
+  const discountPercent = discountPercentRaw !== undefined && discountPercentRaw !== null ? parseFloat(discountPercentRaw) : undefined;
+  const promotionStart = backendProduct.promotion_start_date ? String(backendProduct.promotion_start_date) : undefined;
+  const promotionEnd = backendProduct.promotion_end_date ? String(backendProduct.promotion_end_date) : undefined;
+  const nowMs = Date.now();
+  const startOk = !promotionStart || (new Date(promotionStart).getTime() <= nowMs);
+  const endOk = !promotionEnd || (new Date(promotionEnd).getTime() >= nowMs);
+  const isPromoActive = hasPromotion && startOk && endOk;
   
   // Gérer la disponibilité : l'API B2B utilise 'is_available_b2c', l'API normale utilise 'is_available'
   const isAvailable = backendProduct.is_available_b2c !== undefined 
@@ -147,9 +197,15 @@ export const mapProductFromBackend = (backendProduct: any): Product => {
     slug: backendProduct.slug,
     description: backendProduct.description || undefined,
     price: price,
+    // discount_price (mobile) doit refléter une promo active quand l'API B2B renvoie promo_price
     discount_price: backendProduct.discount_price
       ? parseFloat(backendProduct.discount_price)
-      : undefined,
+      : (isPromoActive && promoPrice !== undefined && promoPrice > 0 && promoPrice < price ? promoPrice : undefined),
+    promo_price: promoPrice,
+    has_promotion: hasPromotion,
+    discount_percent: discountPercent,
+    promotion_start_date: promotionStart,
+    promotion_end_date: promotionEnd,
     category: typeof backendProduct.category === 'object' && backendProduct.category
       ? (backendProduct.category.id || backendProduct.category)
       : backendProduct.category,

@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import {
   View,
   Text,
@@ -50,6 +50,58 @@ const ProductDetailScreen: React.FC = () => {
     }
   }, [dispatch, selectedProduct?.id]);
 
+  // Préparer la liste des images pour le carrousel (toujours appeler les hooks, même si selectedProduct est null)
+  const images: string[] = useMemo(() => {
+    if (!selectedProduct) return [];
+    const imgs: string[] = [];
+    if (selectedProduct.image) imgs.push(selectedProduct.image);
+    if (selectedProduct.image_urls?.gallery) {
+      selectedProduct.image_urls.gallery.forEach((img) => {
+        if (!imgs.includes(img)) imgs.push(img);
+      });
+    }
+    return imgs;
+  }, [selectedProduct?.id, selectedProduct?.image, selectedProduct?.image_urls?.gallery]);
+
+  // Logs debug (galerie + promo) — uniquement en dev, et uniquement quand le produit change
+  useEffect(() => {
+    if (!__DEV__) return;
+    if (!selectedProduct) return;
+
+    const hasDiscount =
+      !!selectedProduct.discount_price &&
+      selectedProduct.discount_price > 0 &&
+      selectedProduct.price > 0 &&
+      selectedProduct.discount_price < selectedProduct.price;
+
+    const discountPercentage =
+      hasDiscount && selectedProduct.price > 0
+        ? Math.round(((selectedProduct.price - selectedProduct.discount_price!) / selectedProduct.price) * 100)
+        : 0;
+
+    console.log('[ProductDetailScreen] 🖼️ Galerie:', {
+      productId: selectedProduct.id,
+      slug: selectedProduct.slug,
+      image: selectedProduct.image,
+      main: selectedProduct.image_urls?.main,
+      galleryCount: selectedProduct.image_urls?.gallery?.length || 0,
+      carouselCount: images.length,
+      galleryPreview: (selectedProduct.image_urls?.gallery || []).slice(0, 3),
+    });
+    console.log('[ProductDetailScreen] 🏷️ Promo:', {
+      productId: selectedProduct.id,
+      slug: selectedProduct.slug,
+      price: selectedProduct.price,
+      discount_price_used: selectedProduct.discount_price,
+      promo_price_raw: selectedProduct.promo_price,
+      has_promotion: selectedProduct.has_promotion,
+      discount_percent: selectedProduct.discount_percent,
+      promotion_start_date: selectedProduct.promotion_start_date,
+      promotion_end_date: selectedProduct.promotion_end_date,
+      computedDiscountPercentageUI: discountPercentage,
+    });
+  }, [selectedProduct?.id, images.length]);
+
   const handleAddToCart = async () => {
     if (!selectedProduct) return;
 
@@ -96,24 +148,14 @@ const ProductDetailScreen: React.FC = () => {
     return <LoadingScreen />;
   }
 
-  const hasDiscount = selectedProduct.discount_price && 
-                     selectedProduct.discount_price > 0 && 
+  const hasDiscount = selectedProduct.discount_price &&
+                     selectedProduct.discount_price > 0 &&
                      selectedProduct.price > 0 &&
                      selectedProduct.discount_price < selectedProduct.price;
   
   const discountPercentage = hasDiscount && selectedProduct.price > 0
     ? Math.round(((selectedProduct.price - selectedProduct.discount_price!) / selectedProduct.price) * 100)
     : 0;
-
-  // Préparer la liste des images pour le carrousel
-  const images: string[] = [];
-  if (selectedProduct.image) images.push(selectedProduct.image);
-  
-  if (selectedProduct.image_urls?.gallery) {
-    selectedProduct.image_urls.gallery.forEach(img => {
-      if (!images.includes(img)) images.push(img);
-    });
-  }
 
   const hasImages = images.length > 0;
   const screenWidth = Dimensions.get('window').width;

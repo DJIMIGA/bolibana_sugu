@@ -358,16 +358,22 @@ export const fetchB2BProducts = createAsyncThunk(
       };
     } catch (error: any) {
       const status = error.response?.status;
+      const serverMsg: string =
+        error?.response?.data?.error ||
+        error?.response?.data?.detail ||
+        error?.message ||
+        '';
       
-      // Ne pas logger les erreurs 404 pour les endpoints B2B optionnels
-      if (status === 404) {
-        // Erreur 404 silencieuse pour les endpoints B2B optionnels
-        // Essayer de récupérer depuis le cache en cas d'erreur
-        const cached = await offlineCacheService.get<Product[]>(CACHE_KEYS.PRODUCTS);
-        if (cached) {
-          return { results: cached, count: cached.length };
-        }
-        return rejectWithValue('Endpoint B2B non disponible');
+      // OPTION A: endpoint B2B "synced" est optionnel.
+      // Si le backend renvoie 404/503 ou "aucun produit synchronisé", on retourne simplement une liste vide.
+      const isNoSyncedProducts =
+        typeof serverMsg === 'string' &&
+        serverMsg.toLowerCase().includes('aucun produit synchronisé');
+      const isOptionalStatus = status === 404 || status === 400 || status === 503;
+      // Erreur réseau (pas de response) -> endpoint optionnel, on retourne vide
+      const isNetworkError = !status && !error?.response;
+      if (isOptionalStatus || isNoSyncedProducts || isNetworkError) {
+        return { results: [], count: 0 };
       }
       
       // Logger uniquement les autres erreurs

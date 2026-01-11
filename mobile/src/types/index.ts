@@ -32,6 +32,12 @@ export interface Product {
   description?: string;
   price: number;
   discount_price?: number;
+  // Champs promo (API inventory/B2B)
+  promo_price?: number;
+  has_promotion?: boolean;
+  discount_percent?: number;
+  promotion_start_date?: string;
+  promotion_end_date?: string;
   category: number;
   supplier?: number;
   brand?: string;

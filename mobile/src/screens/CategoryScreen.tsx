@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import {
   View,
   Text,
@@ -63,86 +63,81 @@ const CategoryScreen: React.FC = () => {
     return rayonType.replace(/_/g, ' ').replace(/\b\w/g, (l) => l.toUpperCase());
   };
 
-  // Log pour debug
-  console.log('[CategoryScreen] 📊 Total catégories reçues:', (categories || []).length);
-  if (categories && categories.length > 0) {
-    console.log('[CategoryScreen] 📋 Exemples catégories:', categories.slice(0, 5).map((c: Category) => ({
-      id: c.id,
-      name: c.name,
-      rayon_type: c.rayon_type,
-      level: c.level,
-      parent: c.parent,
-      has_rayon_type: !!c.rayon_type,
-      has_level: c.level !== undefined && c.level !== null
-    })));
-    
-    // Log toutes les catégories pour voir lesquelles ont rayon_type ou level
-    const categoriesWithRayonType = categories.filter((c: Category) => !!c.rayon_type);
-    const categoriesWithLevel = categories.filter((c: Category) => c.level !== undefined && c.level !== null);
-    console.log(`[CategoryScreen] 📊 Catégories avec rayon_type: ${categoriesWithRayonType.length}`);
-    console.log(`[CategoryScreen] 📊 Catégories avec level: ${categoriesWithLevel.length}`);
-    
-    if (categoriesWithRayonType.length > 0) {
-      console.log('[CategoryScreen] 📋 Catégories avec rayon_type:', categoriesWithRayonType.map((c: Category) => ({
-        id: c.id,
-        name: c.name,
-        rayon_type: c.rayon_type
-      })));
-    }
-    
-    if (categoriesWithLevel.length > 0) {
-      console.log('[CategoryScreen] 📋 Catégories avec level:', categoriesWithLevel.map((c: Category) => ({
-        id: c.id,
-        name: c.name,
-        level: c.level
-      })));
-    }
-  }
-
   // Filtrer uniquement les catégories B2B (avec rayon_type ou level défini)
   // Vérifier que rayon_type n'est pas null/undefined et que level n'est pas null/undefined
-  const b2bCategories = (categories || []).filter((c: Category) => 
-    (c.rayon_type !== null && c.rayon_type !== undefined) || 
-    (c.level !== null && c.level !== undefined)
-  );
-
-  console.log(`[CategoryScreen] 🎯 Catégories B2B filtrées: ${b2bCategories.length}`);
-  if (b2bCategories.length > 0) {
-    console.log('[CategoryScreen] 📋 Exemples catégories B2B:', b2bCategories.slice(0, 3).map((c: Category) => ({
-      id: c.id,
-      name: c.name,
-      rayon_type: c.rayon_type,
-      level: c.level
-    })));
-  }
+  const b2bCategories = useMemo(() => {
+    return (categories || []).filter((c: Category) =>
+      (c.rayon_type !== null && c.rayon_type !== undefined) ||
+      (c.level !== null && c.level !== undefined)
+    );
+  }, [categories]);
 
   // Organiser les catégories par rayon_type et niveau
   // Catégories de niveau 0 uniquement (comme sur le web)
-  const level0Categories = b2bCategories.filter((c: Category) => 
-    c.level === 0 || (c.level === null && !c.parent)
-  );
-
-  console.log(`[CategoryScreen] 📍 Catégories niveau 0: ${level0Categories.length}`);
+  const level0Categories = useMemo(() => {
+    return b2bCategories.filter((c: Category) =>
+      c.level === 0 || (c.level === null && !c.parent)
+    );
+  }, [b2bCategories]);
 
   // Grouper par rayon_type
-  const categoriesByRayon: { [key: string]: Category[] } = {};
-  level0Categories.forEach((category: Category) => {
-    const rayonType = category.rayon_type || 'Autres';
-    if (!categoriesByRayon[rayonType]) {
-      categoriesByRayon[rayonType] = [];
-    }
-    categoriesByRayon[rayonType].push(category);
-  });
-
-  // Trier les catégories dans chaque rayon
-  Object.keys(categoriesByRayon).forEach((rayonType) => {
-    categoriesByRayon[rayonType].sort((a: Category, b: Category) => {
-      if (a.order !== b.order) {
-        return a.order - b.order;
+  const categoriesByRayon: { [key: string]: Category[] } = useMemo(() => {
+    const byRayon: { [key: string]: Category[] } = {};
+    level0Categories.forEach((category: Category) => {
+      const rayonType = category.rayon_type || 'Autres';
+      if (!byRayon[rayonType]) {
+        byRayon[rayonType] = [];
       }
-      return a.name.localeCompare(b.name);
+      byRayon[rayonType].push(category);
     });
-  });
+
+    // Trier les catégories dans chaque rayon
+    Object.keys(byRayon).forEach((rayonType) => {
+      byRayon[rayonType].sort((a: Category, b: Category) => {
+        if (a.order !== b.order) {
+          return a.order - b.order;
+        }
+        return a.name.localeCompare(b.name);
+      });
+    });
+
+    return byRayon;
+  }, [level0Categories]);
+
+  // Logs debug: uniquement quand les compteurs changent (sinon spam au moindre rerender)
+  const prevTotalRef = useRef<number>(-1);
+  const prevB2BRef = useRef<number>(-1);
+  const prevLevel0Ref = useRef<number>(-1);
+  useEffect(() => {
+    if (!__DEV__) return;
+
+    const total = (categories || []).length;
+    if (total !== prevTotalRef.current) {
+      prevTotalRef.current = total;
+      console.log('[CategoryScreen] 📊 Total catégories reçues:', total);
+    }
+
+    if (b2bCategories.length !== prevB2BRef.current) {
+      prevB2BRef.current = b2bCategories.length;
+      console.log(`[CategoryScreen] 🎯 Catégories B2B filtrées: ${b2bCategories.length}`);
+      if (b2bCategories.length > 0) {
+        console.log(
+          '[CategoryScreen] 📋 Exemples catégories B2B:',
+          b2bCategories.slice(0, 3).map((c: Category) => ({
+            id: c.id,
+            name: c.name,
+            rayon_type: c.rayon_type,
+            level: c.level,
+          }))
+        );
+      }
+    }
+
+    if (level0Categories.length !== prevLevel0Ref.current) {
+      prevLevel0Ref.current = level0Categories.length;
+      console.log(`[CategoryScreen] 📍 Catégories niveau 0: ${level0Categories.length}`);
+    }
+  }, [categories, b2bCategories, level0Categories]);
 
   // Fonction récursive pour construire la hiérarchie complète (tous les niveaux)
   const buildCategoryHierarchy = (
