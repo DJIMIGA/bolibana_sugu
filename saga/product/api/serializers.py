@@ -168,6 +168,12 @@ class ProductListSerializer(serializers.ModelSerializer):
     def get_images(self, obj):
         """Compat B2B: images[] (liste d'URLs)"""
         try:
+            # Priorité B2B: si la synchro a stocké les URLs externes, on les renvoie directement
+            if obj.specifications and isinstance(obj.specifications, dict):
+                b2b_urls = obj.specifications.get('b2b_image_urls') or []
+                if isinstance(b2b_urls, list) and len(b2b_urls) > 0:
+                    return [u for u in b2b_urls if isinstance(u, str) and u]
+
             urls = []
             if hasattr(obj, 'get_all_image_urls'):
                 all_urls = obj.get_all_image_urls() or {}
@@ -178,11 +184,6 @@ class ProductListSerializer(serializers.ModelSerializer):
                 for u in gallery:
                     if u and u not in urls:
                         urls.append(self._abs(u))
-            # Fallback: URLs externes stockées dans specifications
-            if (not urls) and obj.specifications and isinstance(obj.specifications, dict):
-                b2b_urls = obj.specifications.get('b2b_image_urls') or []
-                if isinstance(b2b_urls, list):
-                    urls = [u for u in b2b_urls if isinstance(u, str)]
             return [u for u in urls if u]
         except Exception:
             return []
@@ -333,6 +334,10 @@ class ProductDetailSerializer(serializers.ModelSerializer):
 
     def get_image_url(self, obj):
         try:
+            if obj.specifications and isinstance(obj.specifications, dict):
+                b2b_urls = obj.specifications.get('b2b_image_urls') or []
+                if isinstance(b2b_urls, list) and len(b2b_urls) > 0 and isinstance(b2b_urls[0], str):
+                    return b2b_urls[0]
             url = obj.get_display_image_url() if hasattr(obj, 'get_display_image_url') else None
             return self._abs(url) if url else None
         except Exception:
@@ -340,6 +345,13 @@ class ProductDetailSerializer(serializers.ModelSerializer):
 
     def get_image_urls(self, obj):
         try:
+            if obj.specifications and isinstance(obj.specifications, dict):
+                b2b_urls = obj.specifications.get('b2b_image_urls') or []
+                if isinstance(b2b_urls, list) and len(b2b_urls) > 0:
+                    first = b2b_urls[0] if isinstance(b2b_urls[0], str) else None
+                    gallery = [u for u in b2b_urls if isinstance(u, str) and u]
+                    return {'main': first, 'gallery': gallery}
+
             if hasattr(obj, 'get_all_image_urls'):
                 all_urls = obj.get_all_image_urls() or {}
                 main = all_urls.get('main')
@@ -354,13 +366,7 @@ class ProductDetailSerializer(serializers.ModelSerializer):
 
     def get_gallery(self, obj):
         try:
-            urls = (self.get_image_urls(obj) or {}).get('gallery') or []
-            # Fallback specs
-            if not urls and obj.specifications and isinstance(obj.specifications, dict):
-                b2b_urls = obj.specifications.get('b2b_image_urls') or []
-                if isinstance(b2b_urls, list):
-                    return [u for u in b2b_urls if isinstance(u, str)]
-            return urls
+            return (self.get_image_urls(obj) or {}).get('gallery') or []
         except Exception:
             return []
 

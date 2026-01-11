@@ -1035,53 +1035,10 @@ class ProductSyncService:
         external_product.is_b2b = True
         external_product.save()
         
-        # Télécharger et sauvegarder les images si disponibles
-        if image_urls:
-            try:
-                # Télécharger la première image comme image principale
-                main_image_url = image_urls[0]
-                if not product.image or (created and main_image_url):
-                    image_path = self.download_and_save_image(main_image_url, product, is_main=True, order=0)
-                    if image_path:
-                        logger.info(f"Image principale téléchargée avec succès pour le produit {product.id}")
-                    else:
-                        logger.warning(f"Impossible de télécharger l'image principale pour le produit {product.id}")
-                else:
-                    logger.debug(f"Image principale déjà présente pour le produit {product.id}, pas de téléchargement")
-                
-                # Télécharger les images supplémentaires dans la galerie
-                if len(image_urls) > 1:
-                    for idx, gallery_image_url in enumerate(image_urls[1:], start=1):
-                        try:
-                            # Vérifier si l'image existe déjà à cet ordre
-                            existing_image = ImageProduct.objects.filter(
-                                product=product,
-                                ordre=idx
-                            ).first()
-                            
-                            if not existing_image or created:
-                                image_path = self.download_and_save_image(
-                                    gallery_image_url, 
-                                    product, 
-                                    is_main=False, 
-                                    order=idx
-                                )
-                                if image_path:
-                                    logger.info(f"Image de galerie {idx} téléchargée avec succès pour le produit {product.id}")
-                                else:
-                                    logger.warning(f"Impossible de télécharger l'image de galerie {idx} pour le produit {product.id}")
-                            else:
-                                logger.debug(f"Image de galerie {idx} déjà présente pour le produit {product.id}")
-                        except Exception as e:
-                            logger.error(f"Erreur lors du téléchargement de l'image de galerie {idx} pour le produit {product.id}: {str(e)}", exc_info=True)
-                            # Continuer avec les autres images même en cas d'erreur
-                
-                # Mettre à jour image_urls si nécessaire
-                product.update_image_urls()
-                
-            except Exception as e:
-                logger.error(f"Erreur lors du téléchargement des images pour le produit {product.id}: {str(e)}", exc_info=True)
-                # Ne pas faire échouer la synchronisation si les images ne peuvent pas être téléchargées
+        # IMPORTANT (choix produit):
+        # On NE télécharge PAS les images B2B.
+        # On conserve uniquement les URLs reçues (stockées dans specifications['b2b_image_urls'])
+        # et l'API les expose au mobile via les serializers (gallery/images/image_url).
         
         return {
             'product': product,
