@@ -54,7 +54,12 @@ class CategorySerializer(serializers.ModelSerializer):
                     'is_main': getattr(child, 'is_main', False),
                     'order': getattr(child, 'order', 0),
                     'category_type': getattr(child, 'category_type', 'MODEL') or 'MODEL',
-                    'product_count': getattr(child, 'product_count', 0) or 0,
+                    # Priorité à l'annotation (utilisée par /api/inventory/categories/synced/)
+                    'product_count': (
+                        getattr(child, 'b2b_product_count', None)
+                        if getattr(child, 'b2b_product_count', None) is not None
+                        else getattr(child, 'product_count', 0) or 0
+                    ),
                     'rayon_type': getattr(child, 'rayon_type', None),
                     'level': getattr(child, 'level', None),
                     'children': []  # Ne pas récurser pour éviter les problèmes
@@ -76,10 +81,11 @@ class CategorySerializer(serializers.ModelSerializer):
 
     def get_product_count(self, obj):
         """Retourne le nombre de produits disponibles dans cette catégorie"""
-        # Gérer le cas où product_count n'est pas annoté (pour les enfants récursifs)
-        if hasattr(obj, 'product_count'):
-            return obj.product_count
-        # Si product_count n'est pas annoté, utiliser la propriété du modèle
+        # IMPORTANT:
+        # - Category a déjà une property "product_count" (read-only), donc une annotation du même nom provoque un crash.
+        # - L'endpoint inventory annote maintenant "b2b_product_count".
+        if getattr(obj, 'b2b_product_count', None) is not None:
+            return obj.b2b_product_count
         try:
             return obj.product_count
         except (AttributeError, TypeError):

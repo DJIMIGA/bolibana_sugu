@@ -56,7 +56,8 @@ class CategoryViewSet(viewsets.ReadOnlyModelViewSet):
                 'children',
                 queryset=Category.objects.annotate(
                     # Product.category a related_name='products'
-                    product_count=Count('products', filter=Q(products__is_available=True))
+                    # IMPORTANT: ne pas utiliser "product_count" car Category a une property du même nom
+                    b2b_product_count=Count('products', filter=Q(products__is_available=True))
                 )
             )
             
@@ -64,7 +65,8 @@ class CategoryViewSet(viewsets.ReadOnlyModelViewSet):
                 id__in=category_ids
             ).annotate(
                 # Product.category a related_name='products'
-                product_count=Count('products', filter=Q(products__is_available=True))
+                # IMPORTANT: ne pas utiliser "product_count" car Category a une property du même nom
+                b2b_product_count=Count('products', filter=Q(products__is_available=True))
             ).select_related('parent').prefetch_related(children_prefetch)
             
             from product.api.serializers import CategorySerializer
