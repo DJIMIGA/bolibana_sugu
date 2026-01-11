@@ -7,6 +7,22 @@ import logging
 
 logger = logging.getLogger(__name__)
 
+def _mask_secret(value: str) -> str:
+    if not value:
+        return ""
+    v = str(value)
+    return f"{v[:6]}...{v[-4:]}" if len(v) > 10 else "***"
+
+def _is_valid_fernet_key(key_bytes: bytes) -> bool:
+    """
+    Une clé Fernet est un base64 url-safe qui decode en 32 bytes.
+    """
+    try:
+        raw = base64.urlsafe_b64decode(key_bytes)
+        return len(raw) == 32
+    except Exception:
+        return False
+
 
 class ApiKey(models.Model):
     """
@@ -92,6 +108,17 @@ class ApiKey(models.Model):
         
         if isinstance(encryption_key, str):
             encryption_key = encryption_key.encode()
+
+        # Log de diagnostic (sans exposer la clé)
+        try:
+            is_valid = _is_valid_fernet_key(encryption_key)
+            logger.info(
+                f"[ApiKey] INVENTORY_ENCRYPTION_KEY chargé: len={len(encryption_key)} "
+                f"valid_fernet={is_valid}"
+            )
+        except Exception:
+            # Ne jamais bloquer à cause d'un log
+            pass
         
         return encryption_key
     
@@ -106,7 +133,12 @@ class ApiKey(models.Model):
         api_key = cls.objects.filter(is_active=True).first()
         if api_key:
             try:
-                return api_key.get_key()
+                key = api_key.get_key()
+                logger.info(
+                    f"[ApiKey] Clé API active récupérée depuis BDD: "
+                    f"name='{api_key.name}', masked='{_mask_secret(key)}', len={len(key)}"
+                )
+                return key
             except Exception as e:
                 # Ne pas bloquer tout le système si la clé chiffrée est illisible
                 # (ex: INVENTORY_ENCRYPTION_KEY invalide, clé recréée, etc.)
@@ -116,7 +148,14 @@ class ApiKey(models.Model):
                     f"Erreur: {e}"
                 )
         # Fallback vers la clé globale depuis settings
-        return getattr(settings, 'B2B_API_KEY', '')
+        fallback = getattr(settings, 'B2B_API_KEY', '') or ''
+        if fallback:
+            logger.info(
+                f"[ApiKey] Fallback B2B_API_KEY utilisé: masked='{_mask_secret(fallback)}', len={len(fallback)}"
+            )
+        else:
+            logger.warning("[ApiKey] Aucune clé disponible (ni ApiKey active, ni B2B_API_KEY)")
+        return fallback
     
     def __str__(self):
         status = "Active" if self.is_active else "Inactive"

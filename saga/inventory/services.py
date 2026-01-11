@@ -766,15 +766,6 @@ class ProductSyncService:
                           external_data.get('made_to_order', False) or \
                           external_data.get('on_demand', False)
         
-        # Si le produit est au poids ET n'a pas de stock disponible, alors c'est un produit Salam
-        # Sinon, un produit au poids avec stock peut être vendu directement
-        if sold_by_weight and not is_salam_product:
-            # Vérifier si le stock/poids disponible est suffisant pour une vente directe
-            if weight_available is None or weight_available <= 0:
-                # Pas de stock disponible = produit sur commande
-                is_salam_product = True
-            # Si weight_available > 0, le produit peut être vendu directement (is_salam = False)
-        
         # Gérer le stock selon le type de produit
         # L'API B2B utilise 'quantity' (pas 'stock')
         stock_value = external_data.get('quantity') or external_data.get('stock') or external_data.get('available_quantity', 0)
@@ -794,6 +785,14 @@ class ProductSyncService:
         else:
             # Produit normal vendu à l'unité
             stock_units = to_number(stock_value, is_integer=True)
+
+        # Si le produit est au poids ET n'a pas de stock disponible, alors c'est un produit Salam
+        # (IMPORTANT: weight_available est calculé plus haut, pour éviter "variable not associated with a value")
+        if sold_by_weight and not is_salam_product:
+            if weight_available is None or weight_available <= 0:
+                is_salam_product = True
+                # Mettre à jour stock_units si nécessaire (produit au poids sur commande)
+                stock_units = 0
         
         # Gérer le prix selon le type de produit
         # L'API B2B utilise 'selling_price' (pas 'price')

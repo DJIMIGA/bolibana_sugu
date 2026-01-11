@@ -55,14 +55,16 @@ class CategoryViewSet(viewsets.ReadOnlyModelViewSet):
             children_prefetch = Prefetch(
                 'children',
                 queryset=Category.objects.annotate(
-                    product_count=Count('product', filter=Q(product__is_available=True))
+                    # Product.category a related_name='products'
+                    product_count=Count('products', filter=Q(products__is_available=True))
                 )
             )
             
             categories_with_count = Category.objects.filter(
                 id__in=category_ids
             ).annotate(
-                product_count=Count('product', filter=Q(product__is_available=True))
+                # Product.category a related_name='products'
+                product_count=Count('products', filter=Q(products__is_available=True))
             ).select_related('parent').prefetch_related(children_prefetch)
             
             from product.api.serializers import CategorySerializer

@@ -434,6 +434,14 @@ else:
         # Ne jamais afficher la clé en clair dans les logs
         print(f"[ERROR] INVENTORY_ENCRYPTION_KEY invalide (Fernet): {e}")
 
+# Logs de diagnostic (sans fuite de secrets)
+if B2B_API_KEY:
+    print(f"[INFO] B2B_API_KEY présent: len={len(B2B_API_KEY)}")
+else:
+    print("[WARN] B2B_API_KEY absent")
+if INVENTORY_ENCRYPTION_KEY:
+    print(f"[INFO] INVENTORY_ENCRYPTION_KEY présent: len={len(INVENTORY_ENCRYPTION_KEY)}")
+
 # ==================================================
 # CONFIGURATION REST FRAMEWORK
 # ==================================================
