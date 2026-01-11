@@ -643,15 +643,35 @@ class Product(models.Model):
                 pass
 
         # Mettre à jour image_urls si une image principale est définie
+        # IMPORTANT:
+        # - ProductImageStorage.location = "media/products"
+        # - Les chemins stockés dans image_urls doivent être RELATIFS à ce "location"
+        #   (ex: "main/2026/01/11/imprimante.jpg"), sinon on obtient des URLs du style
+        #   ".../media/products/media/products/main/..."
         if self.image:
             if not self.image_urls:
                 self.image_urls = {}
             storage = ProductImageStorage()
-            path = get_product_main_image_upload_path(self, self.image.name)
+            path = get_product_main_image_upload_path(self, self.image.name)  # ex: "main/YYYY/MM/DD/slug.jpg"
             final_path = storage.get_available_name(path)
-            self.image_urls['main'] = f"media/products/{final_path}"
+            self.image_urls['main'] = self._normalize_product_storage_path(final_path)
         
         super().save(*args, **kwargs)
+
+    def _normalize_product_storage_path(self, value):
+        """
+        Normalise un chemin stocké dans Product.image_urls pour éviter les doublons de préfixe.
+        On veut stocker un chemin relatif à ProductImageStorage.location ("media/products").
+        """
+        if not value:
+            return value
+        p = str(value).lstrip('/')
+        # Corriger les doublons éventuels
+        p = p.replace('media/products/media/products/', 'media/products/')
+        # Retirer le préfixe si présent (car location le remettra dans storage.url)
+        if p.startswith('media/products/'):
+            p = p[len('media/products/'):]
+        return p
 
     def get_absolute_url(self):
         return reverse('price_checker:product_detail', args=[self.slug])
@@ -667,14 +687,14 @@ class Product(models.Model):
             return self.image.url
         if self.image_urls and 'main' in self.image_urls:
             storage = ProductImageStorage()
-            return storage.url(self.image_urls['main'])
+            return storage.url(self._normalize_product_storage_path(self.image_urls['main']))
         return None
 
     def get_gallery_urls(self):
         """Retourne la liste des URLs complètes de la galerie"""
         if self.image_urls and 'gallery' in self.image_urls:
             storage = ProductImageStorage()
-            return [storage.url(url) for url in self.image_urls['gallery']]
+            return [storage.url(self._normalize_product_storage_path(url)) for url in self.image_urls['gallery']]
         return None
 
     def get_all_image_urls(self):
@@ -696,8 +716,8 @@ class Product(models.Model):
             storage = ProductImageStorage()
             path = get_product_main_image_upload_path(self, self.image.name)
             final_path = storage.get_available_name(path)
-            # Ajoute le préfixe media/products/
-            self.image_urls['main'] = f"media/products/{final_path}"
+            # Stocker un chemin RELATIF à "media/products"
+            self.image_urls['main'] = self._normalize_product_storage_path(final_path)
         else:
             # Supprimer l'URL de l'image principale si elle n'existe plus
             self.image_urls.pop('main', None)
@@ -709,8 +729,8 @@ class Product(models.Model):
                 storage = ProductImageStorage()
                 path = get_product_gallery_image_upload_path(self, image.image.name)
                 final_path = storage.get_available_name(path)
-                # Ajoute le préfixe media/products/
-                gallery_urls.add(f"media/products/{final_path}")
+                # Stocker un chemin RELATIF à "media/products"
+                gallery_urls.add(self._normalize_product_storage_path(final_path))
         
         # Mettre à jour ou supprimer la galerie
         if gallery_urls:
