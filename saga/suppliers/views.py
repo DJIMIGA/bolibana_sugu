@@ -765,7 +765,7 @@ class SupplierDetailView(DetailView):
             request=self.request,
             product_id=product.id,
             product_name=product.title,
-            category=product.category.name,
+            category=product.category.name if product.category else 'Sans catégorie',
             price=str(product.price)
         )
         
@@ -929,7 +929,7 @@ class PhoneDetailView(DetailView):
         context.update({
             'similar_products': similar_products,
             'product': product,
-            'category_slug': product.category.slug,
+            'category_slug': product.category.slug if product.category else None,
             'breadcrumbs': self.get_breadcrumbs(product),
             'main_categories': main_categories
         })
@@ -939,7 +939,7 @@ class PhoneDetailView(DetailView):
             request=self.request,
             product_id=product.id,
             product_name=product.title,
-            category=product.category.name,
+            category=product.category.name if product.category else 'Sans catégorie',
             price=str(product.price)
         )
         
@@ -1105,7 +1105,7 @@ class ClothingDetailView(DetailView):
         
         context.update({
             'similar_products': similar_products,
-            'category_slug': product.category.slug,
+            'category_slug': product.category.slug if product.category else None,
             'breadcrumbs': self.get_breadcrumbs(product),
             'main_categories': main_categories,
             'clothing': clothing  # Ajouter l'objet clothing au contexte
@@ -1116,7 +1116,7 @@ class ClothingDetailView(DetailView):
             request=self.request,
             product_id=product.id,
             product_name=product.title,
-            category=product.category.name,
+            category=product.category.name if product.category else 'Sans catégorie',
             price=str(product.price)
         )
         
@@ -1242,14 +1242,14 @@ class CulturalItemDetailView(DetailView):
         
         context['similar_products'] = similar_products
         context['cultural_item'] = cultural_item
-        context['category_slug'] = product.category.slug  # Ajouter le slug de la catégorie
+        context['category_slug'] = product.category.slug if product.category else None  # Ajouter le slug de la catégorie
         
         # Tracking de la vue de produit
         track_view_content(
             request=self.request,
             product_id=product.id,
             product_name=product.title,
-            category=product.category.name,
+            category=product.category.name if product.category else 'Sans catégorie',
             price=str(product.price)
         )
         
@@ -1360,14 +1360,14 @@ class FabricDetailView(DetailView):
         context['similar_products'] = similar_products
         context['reviews'] = reviews
         context['images'] = product.images.all()
-        context['category_slug'] = product.category.slug  # Ajouter le slug de la catégorie
+        context['category_slug'] = product.category.slug if product.category else None  # Ajouter le slug de la catégorie
         
         # Tracking de la vue de produit
         track_view_content(
             request=self.request,
             product_id=product.id,
             product_name=product.title,
-            category=product.category.name,
+            category=product.category.name if product.category else 'Sans catégorie',
             price=str(product.price)
         )
         
@@ -1523,7 +1523,7 @@ class ProductDetailView(DetailView):
             'similar_products': similar_products,
             'breadcrumbs': self.get_breadcrumbs(product),
             'images': images,
-            'category_slug': product.category.slug,
+            'category_slug': product.category.slug if product.category else None,
         })
         
         # Tracking de la vue de produit
@@ -1531,7 +1531,7 @@ class ProductDetailView(DetailView):
             request=self.request,
             product_id=product.id,
             product_name=product.title,
-            category=product.category.name,
+            category=product.category.name if product.category else 'Sans catégorie',
             price=str(product.price)
         )
         
@@ -1545,13 +1545,13 @@ class ProductDetailView(DetailView):
             facebook_conversions.send_pageview_event(
                 user_data=user_data,
                 content_name=f"Page Produit - {product.title}",
-                content_category=product.category.name
+                content_category=product.category.name if product.category else 'Sans catégorie'
             )
         else:
             # Pour les utilisateurs anonymes, envoyer sans données utilisateur
             facebook_conversions.send_pageview_event(
                 content_name=f"Page Produit - {product.title}",
-                content_category=product.category.name
+                content_category=product.category.name if product.category else 'Sans catégorie'
             )
         
         return context
