@@ -28,6 +28,52 @@ from inventory.utils import get_b2b_products
 
 logger = logging.getLogger(__name__)
 
+
+def log_product_images(product, view_name="PRODUCT DETAIL"):
+    """Fonction helper pour logger les informations sur les images d'un produit"""
+    logger.info(f"[{view_name}] Produit ID: {product.id}, Slug: {product.slug}, Titre: {product.title}")
+    logger.info(f"[{view_name}] Image principale (product.image): {product.image}")
+    if product.image:
+        try:
+            logger.info(f"[{view_name}] Image principale URL: {product.image.url}")
+        except Exception as e:
+            logger.error(f"[{view_name}] Erreur lors de l'accès à product.image.url: {str(e)}")
+    
+    images = product.images.all().order_by('ordre')
+    logger.info(f"[{view_name}] Nombre d'images dans la galerie: {images.count()}")
+    for idx, img in enumerate(images):
+        try:
+            logger.info(f"[{view_name}] Image galerie #{idx+1}: ID={img.id}, ordre={img.ordre}, image={img.image}, URL={img.image.url if img.image else 'None'}")
+        except Exception as e:
+            logger.error(f"[{view_name}] Erreur lors de l'accès à l'image galerie #{idx+1} (ID={img.id}): {str(e)}")
+    
+    # Vérifier get_display_image
+    try:
+        display_image = product.get_display_image()
+        logger.info(f"[{view_name}] get_display_image() retourne: {display_image}, type: {type(display_image)}")
+        if display_image:
+            if isinstance(display_image, str):
+                logger.info(f"[{view_name}] get_display_image() est une URL B2B: {display_image}")
+            else:
+                try:
+                    logger.info(f"[{view_name}] get_display_image() URL: {display_image.url}")
+                except Exception as e:
+                    logger.error(f"[{view_name}] Erreur lors de l'accès à display_image.url: {str(e)}")
+    except Exception as e:
+        logger.error(f"[{view_name}] Erreur lors de l'appel à get_display_image(): {str(e)}")
+    
+    # Vérifier get_display_image_url
+    try:
+        display_image_url = product.get_display_image_url()
+        logger.info(f"[{view_name}] get_display_image_url() retourne: {display_image_url}")
+    except Exception as e:
+        logger.error(f"[{view_name}] Erreur lors de l'appel à get_display_image_url(): {str(e)}")
+    
+    # Vérifier les spécifications B2B
+    if product.specifications and isinstance(product.specifications, dict):
+        b2b_image_url = product.specifications.get('b2b_image_url')
+        logger.info(f"[{view_name}] b2b_image_url dans specifications: {b2b_image_url}")
+
 def normalize_search_term(term):
     """
     Normalise un terme de recherche pour ignorer les accents et la casse.
@@ -747,9 +793,10 @@ class SupplierDetailView(DetailView):
             context['average_rating'] = reviews.aggregate(Avg('rating'))['rating__avg']
             context['review_count'] = reviews.count()
         
-        # Récupérer les images
+        # Récupérer les images avec logs de diagnostic
+        log_product_images(product, "PHONE DETAIL (get_context_data)")
         context['images'] = product.images.all().order_by('ordre')
-        
+
         # Si c'est un téléphone, ajouter les informations spécifiques
         if hasattr(product, 'phone'):
             context['phone'] = product.phone
@@ -822,7 +869,8 @@ class PhoneDetailView(DetailView):
         phone = self.get_object()
         product = phone.product
         
-        # Ajouter les images
+        # Ajouter les images avec logs de diagnostic
+        log_product_images(product, "PHONE DETAIL")
         context['images'] = product.images.all()
         
         # Ajouter les avis avec optimisation
@@ -999,10 +1047,11 @@ class ClothingDetailView(DetailView):
         context = super().get_context_data(**kwargs)
         product = self.get_object()
         clothing = product.clothing_product
-        
-        # Ajouter les images
+
+        # Ajouter les images avec logs de diagnostic
+        log_product_images(product, "CLOTHING DETAIL")
         context['images'] = product.images.all()
-        
+
         # Ajouter les avis
         reviews = product.reviews.all()
         context['reviews'] = reviews
@@ -1146,10 +1195,11 @@ class CulturalItemDetailView(DetailView):
         context = super().get_context_data(**kwargs)
         product = self.get_object()
         cultural_item = product.cultural_product
-        
-        # Ajouter les images
+
+        # Ajouter les images avec logs de diagnostic
+        log_product_images(product, "CULTURAL ITEM DETAIL")
         context['images'] = product.images.all()
-        
+
         # Ajouter les avis
         reviews = product.reviews.all()
         context['reviews'] = reviews
@@ -1357,11 +1407,14 @@ class FabricDetailView(DetailView):
             context['average_rating'] = sum(review.rating for review in reviews) / len(reviews)
             context['review_count'] = len(reviews)
         
+        # Ajouter les images avec logs de diagnostic
+        log_product_images(product, "FABRIC DETAIL")
+        
         context['similar_products'] = similar_products
         context['reviews'] = reviews
         context['images'] = product.images.all()
         context['category_slug'] = product.category.slug if product.category else None  # Ajouter le slug de la catégorie
-        
+
         # Tracking de la vue de produit
         track_view_content(
             request=self.request,
@@ -1514,8 +1567,11 @@ class ProductDetailView(DetailView):
             # Mettre en cache pour 1 heure
             cache.set(cache_key, similar_products, 3600)
         
-        # Récupérer les images
+        # Récupérer les images avec logs de diagnostic
         images = product.images.all().order_by('ordre')
+        
+        # Logs de diagnostic pour les images
+        log_product_images(product, "PRODUCT DETAIL")
         
         context.update({
             'reviews': reviews,
