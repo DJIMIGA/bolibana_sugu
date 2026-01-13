@@ -10,9 +10,9 @@ interface LogoProps {
 
 export const Logo: React.FC<LogoProps> = ({ size = 'medium', showText = true, textColor = COLORS.PRIMARY }) => {
   const sizeStyles = {
-    small: { width: 80, height: 80 },
-    medium: { width: 100, height: 100 },
-    large: { width: 120, height: 120 },
+    small: { width: 40, height: 40 },
+    medium: { width: 60, height: 60 },
+    large: { width: 80, height: 80 },
   };
 
   const currentSize = sizeStyles[size];
@@ -37,10 +37,12 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     maxWidth: '100%',
     overflow: 'hidden',
+    flexShrink: 1,
   },
   logo: {
     maxWidth: '100%',
     maxHeight: '100%',
+    flexShrink: 1,
   },
   appTitle: {
     fontWeight: 'bold',
