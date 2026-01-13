@@ -1,5 +1,8 @@
 """
 Commande de management pour diagnostiquer pourquoi tous les produits B2B ne sont pas dans B2C
+
+Usage:
+    python manage.py diagnostic_b2b_b2c
 """
 from django.core.management.base import BaseCommand
 from inventory.models import ExternalProduct, InventoryConnection, ApiKey
