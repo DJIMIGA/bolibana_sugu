@@ -691,15 +691,35 @@ class ProductSyncService:
             except Exception as e:
                 logger.error(f"Erreur lors de la récupération de la catégorie depuis l'API: {str(e)}")
         
-        # Si toujours pas de catégorie, lever une erreur explicite
+        # Si toujours pas de catégorie, créer une catégorie par défaut "Non catégorisé"
         if not category:
-            error_msg = (
-                f"Impossible de trouver ou créer la catégorie pour le produit B2B (ID externe: {external_id}). "
+            logger.warning(
+                f"Produit B2B (ID externe: {external_id}) sans catégorie. "
                 f"Category ID externe: {external_category_id}. "
-                f"Veuillez synchroniser les catégories avant de synchroniser les produits."
+                f"Création d'une catégorie par défaut 'Non catégorisé'."
             )
-            logger.error(error_msg)
-            raise ValidationError(error_msg)
+            try:
+                # Créer ou récupérer la catégorie par défaut
+                default_category, created = Category.objects.get_or_create(
+                    slug='non-categorise',
+                    defaults={
+                        'name': 'Non catégorisé',
+                        'description': 'Catégorie par défaut pour les produits B2B sans catégorie',
+                        'is_active': True,
+                    }
+                )
+                if created:
+                    logger.info(f"Catégorie par défaut 'Non catégorisé' créée (ID: {default_category.id})")
+                else:
+                    logger.info(f"Catégorie par défaut 'Non catégorisé' trouvée (ID: {default_category.id})")
+                category = default_category
+            except Exception as e:
+                error_msg = (
+                    f"Impossible de créer la catégorie par défaut pour le produit B2B (ID externe: {external_id}). "
+                    f"Erreur: {str(e)}"
+                )
+                logger.error(error_msg)
+                raise ValidationError(error_msg)
         
         # Fonction helper pour convertir en nombre
         def to_number(value, default=0, is_integer=False):
