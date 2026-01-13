@@ -135,7 +135,7 @@
       content_ids: [{{ product.id }}],
       content_type: 'product',
       content_name: '{{ product.title|escapejs }}',
-      content_category: '{{ product.category.name|escapejs }}'
+      content_category: '{% if product.category %}{{ product.category.name|escapejs }}{% else %}Sans catégorie{% endif %}'
     });
   }
 </script>
@@ -201,7 +201,11 @@
 
       <!-- Catégorie et SKU -->
       <div class="flex items-center space-x-4 text-sm text-gray-500">
+        {% if product.category %}
         <span>Catégorie: <a href="{% url 'suppliers:category_detail' product.category.slug %}" class="text-new hover:underline">{{ product.category.name }}</a></span>
+        {% else %}
+        <span>Catégorie: <span class="text-gray-400">Sans catégorie</span></span>
+        {% endif %}
         {% if product.sku %}
         <span>Réf: {{ product.sku }}</span>
         {% endif %}

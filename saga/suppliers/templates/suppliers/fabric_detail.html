@@ -135,29 +135,33 @@
                 <!-- Galerie d'images -->
                 <div class="space-y-4">
             <div class="bg-white rounded-lg shadow-md overflow-hidden">
-                {% if product.image %}
-                    <img id="main-image" src="{{ product.image.url }}" alt="{{ product.title }}" class="w-full h-auto object-cover">
+                {% with display_image_url=product.get_display_image_url %}
+                {% if display_image_url %}
+                    <img id="main-image" src="{{ display_image_url }}" alt="{{ product.title }}" class="w-full h-auto object-cover">
                 {% elif images %}
                     <img id="main-image" src="{{ images.0.image.url }}" alt="{{ product.title }}" class="w-full h-auto object-cover">
                 {% else %}
                     <img id="main-image" src="{% static 'images/no-image.svg' %}" alt="Image non disponible" class="w-full h-auto object-cover">
                 {% endif %}
+                {% endwith %}
                     </div>
-            {% if product.image or images %}
+            {% with display_image_url=product.get_display_image_url %}
+            {% if display_image_url or images %}
                 <div class="grid grid-cols-4 gap-2">
-                    {% if product.image %}
-                        <button onclick="changeMainImage('{{ product.image.url }}', this)" class="w-full h-24 rounded overflow-hidden focus:outline-none focus:ring-2 focus:ring-new ring-2 ring-new">
-                            <img src="{{ product.image.url }}" alt="{{ product.title }}" class="w-full h-full object-cover">
+                    {% if display_image_url %}
+                        <button onclick="changeMainImage('{{ display_image_url }}', this)" class="w-full h-24 rounded overflow-hidden focus:outline-none focus:ring-2 focus:ring-new ring-2 ring-new">
+                            <img src="{{ display_image_url }}" alt="{{ product.title }}" class="w-full h-full object-cover">
                         </button>
                     {% endif %}
                     {% for image in images %}
-                        <button onclick="changeMainImage('{{ image.image.url }}', this)" class="w-full h-24 rounded overflow-hidden focus:outline-none focus:ring-2 focus:ring-new {% if not product.image and forloop.first %}ring-2 ring-new{% endif %}">
+                        <button onclick="changeMainImage('{{ image.image.url }}', this)" class="w-full h-24 rounded overflow-hidden focus:outline-none focus:ring-2 focus:ring-new {% if not display_image_url and forloop.first %}ring-2 ring-new{% endif %}">
                             <img src="{{ image.image.url }}" alt="{{ product.title }}" class="w-full h-full object-cover">
                         </button>
-                        {% endfor %}
-                    </div>
-                    {% endif %}
+                    {% endfor %}
                 </div>
+            {% endif %}
+            {% endwith %}
+        </div>
 
                 <!-- Informations produit -->
                 <div class="space-y-6">
@@ -171,7 +175,11 @@
 
             <!-- Catégorie et SKU -->
             <div class="flex items-center space-x-4 text-sm text-gray-500">
+                {% if product.category %}
                 <span>Catégorie: <a href="{% url 'suppliers:category_detail' product.category.slug %}" class="text-new hover:underline">{{ product.category.name }}</a></span>
+                {% else %}
+                <span>Catégorie: <span class="text-gray-400">Sans catégorie</span></span>
+                {% endif %}
                 {% if product.sku %}
                     <span>Réf: {{ product.sku }}</span>
                 {% endif %}

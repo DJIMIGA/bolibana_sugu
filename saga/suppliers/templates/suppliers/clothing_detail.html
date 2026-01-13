@@ -15,8 +15,9 @@
         <!-- Galerie d'images -->
             <div class="lg:max-w-lg lg:self-start">
             <div class="aspect-h-1 aspect-w-1 overflow-hidden rounded-lg bg-gray-100">
-                    {% if product.image %}
-                        <img src="{{ product.image.url }}" 
+                    {% with display_image_url=product.get_display_image_url %}
+                    {% if display_image_url %}
+                        <img src="{{ display_image_url }}" 
                              alt="{{ product.title }}" 
                              class="h-full w-full object-contain object-center transition-transform duration-300 hover:scale-105"
                              loading="eager"
@@ -34,12 +35,14 @@
                              loading="eager"
                              decoding="async">
                     {% endif %}
+                    {% endwith %}
             </div>
-            {% if product.image or images %}
+            {% with display_image_url=product.get_display_image_url %}
+            {% if display_image_url or images %}
             <div class="mt-4 grid grid-cols-4 gap-4">
-                {% if product.image %}
+                {% if display_image_url %}
                 <div class="aspect-h-1 aspect-w-1 overflow-hidden rounded-lg cursor-pointer hover:opacity-75 transition-all duration-300 bg-gray-50 ring-2 ring-new">
-                        <img src="{{ product.image.url }}" 
+                        <img src="{{ display_image_url }}" 
                              alt="{{ product.title }}" 
                              class="h-full w-full object-cover object-center hover:scale-110 transition-transform duration-300"
                              loading="lazy"
@@ -57,6 +60,7 @@
                 {% endfor %}
             </div>
             {% endif %}
+            {% endwith %}
         </div>
 
         <!-- Informations produit -->
@@ -72,7 +76,11 @@
 
                     <!-- Catégorie et SKU -->
                     <div class="flex flex-wrap items-center gap-4 text-sm text-gray-500">
+                        {% if product.category %}
                         <span>Catégorie: <a href="{% url 'suppliers:category_detail' product.category.slug %}" class="text-new hover:underline">{{ product.category.name }}</a></span>
+                        {% else %}
+                        <span>Catégorie: <span class="text-gray-400">Sans catégorie</span></span>
+                        {% endif %}
                         {% if product.sku %}
                             <span>Réf: {{ product.sku }}</span>
                         {% endif %}
