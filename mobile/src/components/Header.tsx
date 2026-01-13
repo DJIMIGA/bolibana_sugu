@@ -199,7 +199,7 @@ export const Header: React.FC<HeaderProps> = ({
     <View style={styles.header}>
       <View style={styles.headerTop}>
         <View style={styles.logoContainer}>
-          <Logo size="medium" showText={false} />
+          <Logo size="small" showText={false} />
         </View>
         <View style={styles.offlineControls}>
           {/* Bouton combiné : Indicateur + Switch */}
@@ -315,6 +315,8 @@ const styles = StyleSheet.create({
   },
   logoContainer: {
     alignSelf: 'flex-start',
+    maxWidth: 120,
+    overflow: 'hidden',
   },
   offlineControls: {
     flexDirection: 'row',

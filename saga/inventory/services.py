@@ -382,11 +382,18 @@ class ProductSyncService:
             'created': 0,
             'updated': 0,
             'errors': 0,
-            'errors_list': []
+            'errors_list': [],
+            'skipped': 0,
+            'skipped_reasons': {}
         }
+        
+        logger.info("=" * 80)
+        logger.info("[SYNC B2B] 🚀 Démarrage synchronisation produits B2B")
+        logger.info("=" * 80)
         
         page = 1
         has_next = True
+        all_b2b_product_ids = []
         
         while has_next:
             try:
@@ -400,11 +407,14 @@ class ProductSyncService:
                     products = response if isinstance(response, list) else []
                     has_next = False
                 
+                logger.info(f"[SYNC B2B] 📄 Page {page}: {len(products)} produits récupérés")
+                
                 for product_data in products:
                     try:
                         # Récupérer les détails complets du produit pour avoir toutes les informations
                         external_id = product_data.get('id')
                         if external_id:
+                            all_b2b_product_ids.append(external_id)
                             try:
                                 # Récupérer les détails complets depuis l'API
                                 detailed_product_data = self.api_client.get_product_detail(external_id)
@@ -440,22 +450,91 @@ class ProductSyncService:
                         stats['total'] += 1
                         if result['created']:
                             stats['created'] += 1
+                            logger.info(f"[SYNC B2B] ✅ Produit {external_id} créé: {product_data.get('name', 'N/A')}")
                         else:
                             stats['updated'] += 1
+                            logger.debug(f"[SYNC B2B] 🔄 Produit {external_id} mis à jour: {product_data.get('name', 'N/A')}")
                     except Exception as e:
+                        external_id = product_data.get('id', 'N/A')
+                        error_msg = str(e)
                         stats['errors'] += 1
                         stats['errors_list'].append({
-                            'product_id': product_data.get('id'),
-                            'error': str(e)
+                            'product_id': external_id,
+                            'error': error_msg
                         })
-                        logger.error(f"Erreur lors de la synchronisation du produit {product_data.get('id')}: {str(e)}")
+                        
+                        # Catégoriser les erreurs pour statistiques
+                        if 'catégorie' in error_msg.lower() or 'category' in error_msg.lower():
+                            reason = 'category_missing'
+                        elif 'validation' in error_msg.lower():
+                            reason = 'validation_error'
+                        else:
+                            reason = 'other_error'
+                        
+                        if reason not in stats['skipped_reasons']:
+                            stats['skipped_reasons'][reason] = 0
+                        stats['skipped_reasons'][reason] += 1
+                        stats['skipped'] += 1
+                        
+                        logger.error(f"[SYNC B2B] ❌ Erreur produit {external_id}: {error_msg}")
                 
                 page += 1
                 
             except InventoryAPIError as e:
-                logger.error(f"Erreur API lors de la synchronisation: {str(e)}")
+                logger.error(f"[SYNC B2B] ❌ Erreur API page {page}: {str(e)}")
                 has_next = False
                 stats['errors'] += 1
+        
+        # Résumé final de la synchronisation
+        logger.info("=" * 80)
+        logger.info("[SYNC B2B] 📊 RÉSUMÉ SYNCHRONISATION")
+        logger.info("=" * 80)
+        logger.info(f"Total produits B2B dans l'API: {len(all_b2b_product_ids)}")
+        logger.info(f"Produits traités: {stats['total']}")
+        logger.info(f"  - Créés: {stats['created']}")
+        logger.info(f"  - Mis à jour: {stats['updated']}")
+        logger.info(f"  - Erreurs: {stats['errors']}")
+        logger.info(f"  - Ignorés: {stats['skipped']}")
+        
+        if stats['skipped_reasons']:
+            logger.info("Raisons des produits ignorés:")
+            for reason, count in stats['skipped_reasons'].items():
+                logger.info(f"  - {reason}: {count}")
+        
+        # Vérifier combien de produits synchronisés sont disponibles
+        from .models import ExternalProduct
+        synced_count = ExternalProduct.objects.filter(
+            external_id__in=all_b2b_product_ids,
+            sync_status='synced',
+            is_b2b=True
+        ).count()
+        
+        from product.models import Product
+        synced_with_product = ExternalProduct.objects.filter(
+            external_id__in=all_b2b_product_ids,
+            sync_status='synced',
+            is_b2b=True,
+            product__isnull=False
+        )
+        product_ids = [ep.product.id for ep in synced_with_product if ep.product]
+        available_count = Product.objects.filter(
+            id__in=product_ids,
+            is_available=True
+        ).count()
+        
+        logger.info(f"Produits synchronisés (sync_status='synced' + is_b2b=True): {synced_count}")
+        logger.info(f"Produits avec relation Product: {len(product_ids)}")
+        logger.info(f"Produits disponibles (is_available=True): {available_count}")
+        
+        gap = len(all_b2b_product_ids) - synced_count
+        if gap > 0:
+            logger.warning(f"⚠️  {gap} produits B2B ne sont pas synchronisés")
+        
+        gap_available = len(product_ids) - available_count
+        if gap_available > 0:
+            logger.warning(f"⚠️  {gap_available} produits synchronisés ne sont pas disponibles (is_available=False)")
+        
+        logger.info("=" * 80)
         
         return stats
     
@@ -785,6 +864,12 @@ class ProductSyncService:
                 # Slug existe déjà, utiliser le slug généré par Django
                 slug = None
         
+        # Déterminer is_available avec priorité
+        is_available_value = external_data.get('is_available_b2c', 
+                                            external_data.get('is_available', 
+                                            external_data.get('is_active', 
+                                            external_data.get('available', True))))
+        
         # Préparer les données du produit avec toutes les informations disponibles
         product_data = {
             'title': external_data.get('name') or external_data.get('title', 'Produit sans nom'),
@@ -793,10 +878,7 @@ class ProductSyncService:
             'category': category,
             'stock': stock_units,
             'sku': external_data.get('cug') or external_data.get('sku') or external_data.get('code', ''),
-            'is_available': external_data.get('is_available_b2c', 
-                                            external_data.get('is_available', 
-                                            external_data.get('is_active', 
-                                            external_data.get('available', True)))),
+            'is_available': is_available_value,
             'is_salam': is_salam_product,
             'external_id': external_id,
             'external_sku': external_data.get('cug') or external_data.get('sku') or external_data.get('code', ''),
@@ -1007,6 +1089,13 @@ class ProductSyncService:
         # IMPORTANT: ces produits proviennent de la synchro B2B → marquer is_b2b=True
         external_product.is_b2b = True
         external_product.save()
+        
+        # Logger le statut is_available pour diagnostic
+        if not is_available_value:
+            logger.warning(
+                f"[SYNC B2B] ⚠️  Produit {external_id} synchronisé mais is_available=False "
+                f"(ne sera pas visible dans l'API /api/inventory/products/synced/)"
+            )
         
         # IMPORTANT (choix produit):
         # On NE télécharge PAS les images B2B.

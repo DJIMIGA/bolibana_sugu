@@ -141,9 +141,13 @@ def sync_products_auto(force: bool = False, _lock_acquired: bool = False):
         cache.set(_PRODUCTS_LAST_SYNC_KEY, timezone.now(), 7200)  # Cache pour 2 heures
         
         logger.info(
-            f"Synchronisation automatique terminée: {stats['total']} produits, "
-            f"{stats['created']} créés, {stats['updated']} mis à jour"
+            f"[SYNC AUTO] Synchronisation automatique terminée: {stats['total']} produits, "
+            f"{stats['created']} créés, {stats['updated']} mis à jour, "
+            f"{stats.get('errors', 0)} erreurs, {stats.get('skipped', 0)} ignorés"
         )
+        
+        if stats.get('skipped_reasons'):
+            logger.info(f"[SYNC AUTO] Raisons des produits ignorés: {stats['skipped_reasons']}")
         
         return {
             'success': True,

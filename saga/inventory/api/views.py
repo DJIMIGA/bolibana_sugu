@@ -262,14 +262,36 @@ class ProductViewSet(viewsets.ReadOnlyModelViewSet):
                 is_available=True
             ).select_related('category', 'supplier').order_by('-id')
             products_count = products.count()
-            logger.info(f"[B2B API] Produits trouvés (disponibles): {products_count}")
+            
+            # Produits non disponibles pour diagnostic
+            unavailable_products = Product.objects.filter(
+                id__in=product_ids,
+                is_available=False
+            ).count()
+            
+            logger.info(f"[B2B API] Produits synchronisés: {external_count}")
+            logger.info(f"[B2B API] Produits avec Product valide: {len(product_ids)}")
+            logger.info(f"[B2B API] Produits disponibles (is_available=True): {products_count}")
+            logger.info(f"[B2B API] Produits non disponibles (is_available=False): {unavailable_products}")
+            
+            if unavailable_products > 0:
+                logger.warning(
+                    f"[B2B API] ⚠️  {unavailable_products} produits synchronisés ne sont pas disponibles "
+                    f"(is_available=False) et ne seront pas retournés par l'API"
+                )
             
             if products_count == 0:
-                logger.warning(f"[B2B API] Aucun produit trouvé pour les IDs: {product_ids[:5]}...")
+                logger.warning(f"[B2B API] Aucun produit disponible trouvé pour les IDs: {product_ids[:5]}...")
                 return Response({
-                    'error': 'Aucun produit trouvé pour les IDs synchronisés',
+                    'error': 'Aucun produit disponible trouvé pour les IDs synchronisés',
                     'count': 0,
-                    'results': []
+                    'results': [],
+                    'diagnostic': {
+                        'synced_count': external_count,
+                        'with_product_count': len(product_ids),
+                        'available_count': products_count,
+                        'unavailable_count': unavailable_products
+                    }
                 }, status=status.HTTP_404_NOT_FOUND)
             
             from product.api.serializers import ProductListSerializer
