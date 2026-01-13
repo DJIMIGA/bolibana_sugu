@@ -59,5 +59,9 @@ export const COLORS = {
   BACKGROUND: '#FFFFFF',
   TEXT: '#1F2937',
   TEXT_SECONDARY: '#6B7280',
+  // Accent chaud : beige, terre cuite, bordeaux
+  BEIGE: '#C08A5B', // Beige/Terre cuite
+  TERRACOTTA: '#C08A5B', // Terre cuite
+  BORDEAUX: '#8B4A4A', // Bordeaux léger
 } as const;
 

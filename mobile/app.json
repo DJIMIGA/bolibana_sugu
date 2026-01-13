@@ -23,7 +23,11 @@
         "foregroundImage": "./assets/logo.png",
         "backgroundColor": "#ffffff"
       },
-      "package": "com.bolibana.sugu"
+      "package": "com.bolibana.sugu",
+      "permissions": [
+        "android.permission.CAMERA",
+        "android.permission.RECORD_AUDIO"
+      ]
     },
     "web": {
       "favicon": "./assets/logo.png"
@@ -37,11 +41,11 @@
       ]
     ],
     "extra": {
+      "apiBaseUrl": "https://www.bolibana.com/api",
       "eas": {
-        "projectId": "your-project-id"
-      },
-      "apiBaseUrl": "https://www.bolibana.com/api"
-    }
+        "projectId": "408e7748-1d05-460b-92f4-0614d8b2a3c4"
+      }
+    },
+    "owner": "pymalien"
   }
 }
-

@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useRef } from 'react';
+import React, { useEffect, useState, useRef, useCallback } from 'react';
 import {
   View,
   Text,
@@ -11,17 +11,19 @@ import {
   SafeAreaView,
   ScrollView,
   Dimensions,
+  Keyboard,
 } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useAppDispatch, useAppSelector } from '../store/hooks';
 import { fetchProducts, fetchCategories, setSearchQuery, setFilters, clearFilters } from '../store/slices/productSlice';
-import { useNavigation, useRoute } from '@react-navigation/native';
+import { useNavigation, useRoute, useFocusEffect } from '@react-navigation/native';
 import { formatPrice } from '../utils/helpers';
 import { COLORS } from '../utils/constants';
 import { Product, Category } from '../types';
 import DynamicProductCard from '../components/DynamicProductCard';
 import { Header } from '../components/Header';
 import { LoadingScreen } from '../components/LoadingScreen';
+import SearchModal from '../components/SearchModal';
 
 const ProductListScreen: React.FC = () => {
   const dispatch = useAppDispatch();
@@ -31,8 +33,16 @@ const ProductListScreen: React.FC = () => {
     (state) => state.product
   );
   const [refreshing, setRefreshing] = useState(false);
-  const [localSearch, setLocalSearch] = useState(searchQuery);
+  const [searchModalVisible, setSearchModalVisible] = useState(false);
   const categoriesScrollRef = useRef<ScrollView>(null);
+
+  // Fermer le modal de recherche quand l'écran redevient actif
+  useFocusEffect(
+    useCallback(() => {
+      setSearchModalVisible(false);
+      Keyboard.dismiss();
+    }, [])
+  );
 
   useEffect(() => {
     const params = (route.params as any) || {};
@@ -66,14 +76,17 @@ const ProductListScreen: React.FC = () => {
   };
 
   const handleSearch = (text: string) => {
-    setLocalSearch(text);
     dispatch(setSearchQuery(text));
     dispatch(fetchProducts({ page: 1, search: text, filters }));
   };
 
+  const handleSearchFocus = () => {
+    setSearchModalVisible(true);
+  };
+
   const clearSearch = () => {
-    setLocalSearch('');
     dispatch(setSearchQuery(''));
+    dispatch(clearFilters());
     dispatch(fetchProducts({ page: 1, search: '', filters }));
   };
 
@@ -222,14 +235,27 @@ const ProductListScreen: React.FC = () => {
     <SafeAreaView style={styles.container}>
       <View style={styles.headerFixedContainer}>
         <Header
-          searchQuery={localSearch}
+          searchQuery={searchQuery}
           onSearchChange={handleSearch}
           onClearSearch={clearSearch}
+          openSearchModal={handleSearchFocus}
         />
       </View>
 
-      {/* Section Catégories */}
-      <View style={styles.categoriesSection}>
+      {/* Modal de recherche - remplace le contenu */}
+      {searchModalVisible ? (
+        <SearchModal
+          visible={searchModalVisible}
+          onClose={() => {
+            Keyboard.dismiss();
+            setSearchModalVisible(false);
+          }}
+          initialQuery={searchQuery}
+        />
+      ) : (
+        <>
+          {/* Section Catégories */}
+          <View style={styles.categoriesSection}>
         <ScrollView 
           ref={categoriesScrollRef}
           horizontal 
@@ -308,6 +334,8 @@ const ProductListScreen: React.FC = () => {
           ListEmptyComponent={renderEmpty}
           showsVerticalScrollIndicator={false}
         />
+      )}
+        </>
       )}
     </SafeAreaView>
   );

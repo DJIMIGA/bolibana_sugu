@@ -19,6 +19,7 @@ import CartScreen from '../screens/CartScreen';
 import CheckoutScreen from '../screens/CheckoutScreen';
 import ProfileScreen from '../screens/ProfileScreen';
 import CategoryScreen from '../screens/CategoryScreen';
+import SubCategoryScreen from '../screens/SubCategoryScreen';
 import WebViewScreen from '../screens/WebViewScreen';
 import PriceCheckScreen from '../screens/PriceCheckScreen';
 import AddressesScreen from '../screens/AddressesScreen';
@@ -33,6 +34,22 @@ const Tab = createBottomTabNavigator();
 const AuthStack = () => (
   <Stack.Navigator screenOptions={{ headerShown: false }}>
     <Stack.Screen name="Login" component={LoginScreen} />
+  </Stack.Navigator>
+);
+
+// Stack pour les catégories
+const CategoryStack = () => (
+  <Stack.Navigator>
+    <Stack.Screen 
+      name="CategoryMain" 
+      component={CategoryScreen}
+      options={{ headerShown: false }}
+    />
+    <Stack.Screen 
+      name="SubCategory" 
+      component={SubCategoryScreen}
+      options={{ headerShown: false }}
+    />
   </Stack.Navigator>
 );
 
@@ -148,7 +165,7 @@ const MainTabs = () => {
       />
       <Tab.Screen 
         name="Categories" 
-        component={CategoryScreen}
+        component={CategoryStack}
         options={{ 
           tabBarLabel: 'Catégories',
           tabBarIcon: ({ color, focused }) => (

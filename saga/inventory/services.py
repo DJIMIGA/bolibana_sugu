@@ -9,10 +9,11 @@ from django.core.exceptions import ValidationError
 from django.db import transaction
 from django.utils.text import slugify
 from django.conf import settings
-from django.core.files.base import ContentFile
-from django.core.files.storage import default_storage
-from io import BytesIO
-from PIL import Image
+# Imports pour téléchargement d'images supprimés - on ne stocke plus les images B2B localement
+# from django.core.files.base import ContentFile
+# from django.core.files.storage import default_storage
+# from io import BytesIO
+# from PIL import Image
 from .models import (
     ApiKey,
     ExternalProduct,
@@ -362,116 +363,9 @@ class ProductSyncService:
     def __init__(self):
         self.api_client = InventoryAPIClient()
     
-    def download_and_save_image(self, image_url: str, product: Product, is_main: bool = True, order: int = 0) -> Optional[str]:
-        """
-        Télécharge une image depuis une URL et la sauvegarde pour le produit
-        
-        Args:
-            image_url: URL de l'image à télécharger
-            product: Instance du produit
-            is_main: True si c'est l'image principale, False pour la galerie
-            order: Ordre d'affichage pour les images de galerie
-        
-        Returns:
-            Chemin de l'image sauvegardée ou None en cas d'erreur
-        """
-        if not image_url:
-            return None
-        
-        try:
-            # Télécharger l'image
-            response = requests.get(image_url, timeout=30, stream=True)
-            response.raise_for_status()
-            
-            # Vérifier que c'est bien une image
-            content_type = response.headers.get('content-type', '')
-            if not content_type.startswith('image/'):
-                logger.warning(f"URL {image_url} ne retourne pas une image (content-type: {content_type})")
-                return None
-            
-            # Lire le contenu de l'image
-            image_content = BytesIO(response.content)
-            
-            # Vérifier et optimiser l'image avec PIL
-            try:
-                img = Image.open(image_content)
-                # Convertir en RGB si nécessaire (pour les PNG avec transparence)
-                if img.mode in ('RGBA', 'LA', 'P'):
-                    rgb_img = Image.new('RGB', img.size, (255, 255, 255))
-                    if img.mode == 'P':
-                        img = img.convert('RGBA')
-                    rgb_img.paste(img, mask=img.split()[-1] if img.mode in ('RGBA', 'LA') else None)
-                    img = rgb_img
-                
-                # Sauvegarder dans un BytesIO
-                output = BytesIO()
-                img_format = img.format or 'JPEG'
-                img.save(output, format=img_format, quality=85, optimize=True)
-                output.seek(0)
-                image_content = output
-            except Exception as e:
-                logger.warning(f"Erreur lors du traitement de l'image {image_url}: {str(e)}")
-                # Utiliser l'image brute si le traitement échoue
-                image_content = BytesIO(response.content)
-            
-            # Déterminer l'extension du fichier
-            ext = 'jpg'
-            if 'png' in content_type.lower():
-                ext = 'png'
-            elif 'webp' in content_type.lower():
-                ext = 'webp'
-            elif 'gif' in content_type.lower():
-                ext = 'gif'
-            
-            # Générer un nom de fichier unique
-            filename = f"b2b_{product.id}_{product.slug or 'product'}.{ext}"
-            
-            if is_main:
-                # Sauvegarder comme image principale
-                product.image.save(
-                    filename,
-                    ContentFile(image_content.read()),
-                    save=False
-                )
-                logger.info(f"Image principale téléchargée et sauvegardée pour le produit {product.id}")
-                return product.image.name
-            else:
-                # Sauvegarder dans la galerie
-                # Vérifier si une image avec le même ordre existe déjà
-                existing_image = ImageProduct.objects.filter(
-                    product=product,
-                    ordre=order
-                ).first()
-                
-                if existing_image:
-                    # Mettre à jour l'image existante
-                    existing_image.image.save(
-                        filename,
-                        ContentFile(image_content.read()),
-                        save=True
-                    )
-                    logger.info(f"Image de galerie mise à jour (ordre {order}) pour le produit {product.id}")
-                    return existing_image.image.name
-                else:
-                    # Créer une nouvelle image
-                    image_product = ImageProduct.objects.create(
-                        product=product,
-                        ordre=order
-                    )
-                    image_product.image.save(
-                        filename,
-                        ContentFile(image_content.read()),
-                        save=True
-                    )
-                    logger.info(f"Image de galerie téléchargée et sauvegardée (ordre {order}) pour le produit {product.id}")
-                    return image_product.image.name
-                
-        except requests.exceptions.RequestException as e:
-            logger.error(f"Erreur lors du téléchargement de l'image {image_url}: {str(e)}")
-            return None
-        except Exception as e:
-            logger.error(f"Erreur lors de la sauvegarde de l'image {image_url}: {str(e)}", exc_info=True)
-            return None
+    # NOTE: Méthode de téléchargement d'images supprimée
+    # On ne stocke plus les images B2B localement, on conserve uniquement les URLs
+    # Les URLs sont stockées dans specifications['b2b_image_urls'] et exposées via l'API
     
     def sync_all_products(self, site_id: Optional[int] = None) -> Dict[str, Any]:
         """
@@ -514,9 +408,30 @@ class ProductSyncService:
                             try:
                                 # Récupérer les détails complets depuis l'API
                                 detailed_product_data = self.api_client.get_product_detail(external_id)
+                                
+                                # Log des images avant fusion pour debug
+                                list_images = product_data.get('images') or product_data.get('image_urls') or product_data.get('gallery') or product_data.get('image_url') or product_data.get('image')
+                                detail_images = detailed_product_data.get('images') or detailed_product_data.get('image_urls') or detailed_product_data.get('gallery') or detailed_product_data.get('image_url') or detailed_product_data.get('image')
+                                
+                                logger.info(f"[SYNC IMAGES] 📋 Avant fusion - Produit {external_id}:")
+                                logger.info(f"  - Images LISTE: {list_images}")
+                                logger.info(f"  - Images DÉTAIL: {detail_images}")
+                                
                                 # Fusionner les données de la liste avec les détails complets
                                 # Les détails complets ont priorité
                                 product_data = {**product_data, **detailed_product_data}
+                                
+                                # Log après fusion
+                                merged_images = product_data.get('images') or product_data.get('image_urls') or product_data.get('gallery') or product_data.get('image_url') or product_data.get('image')
+                                logger.info(f"  - Images APRÈS FUSION: {merged_images}")
+                                
+                                # Si le détail n'a pas d'images mais que la liste en a, les restaurer
+                                if not detail_images and list_images:
+                                    if isinstance(list_images, list):
+                                        product_data['images'] = list_images
+                                    else:
+                                        product_data['image_url'] = list_images
+                                    logger.info(f"[SYNC IMAGES] 🔄 Images de la liste restaurées (détail sans images) pour produit {external_id}")
                             except InventoryAPIError as e:
                                 logger.warning(f"Impossible de récupérer les détails du produit {external_id}: {str(e)}. Utilisation des données de base.")
                                 # Continuer avec les données de base si les détails ne sont pas disponibles
@@ -603,16 +518,27 @@ class ProductSyncService:
                     })
                     logger.error(f"Erreur lors de la synchronisation de la catégorie {category_data.get('id')}: {str(e)}")
             
-            # Deuxième passe : établir les relations parent/enfant
+            # Deuxième passe : établir les relations parent/enfant (pour les cas où l'ordre de création n'est pas hiérarchique)
             for category_data in categories_data:
                 external_id = category_data.get('id')
+                # Gérer parent_id qui peut être un entier ou un objet avec un id (comme dans create_or_update_category)
                 parent_id = category_data.get('parent_id')
+                if not parent_id and 'parent' in category_data:
+                    if isinstance(category_data['parent'], dict):
+                        parent_id = category_data['parent'].get('id')
+                    elif isinstance(category_data['parent'], int):
+                        parent_id = category_data['parent']
+                    elif category_data['parent'] is None:
+                        parent_id = None
                 
                 if external_id and parent_id and external_id in categories_by_id and parent_id in categories_by_id:
                     category = categories_by_id[external_id]
                     parent_category = categories_by_id[parent_id]
-                    category.parent = parent_category
-                    category.save(update_fields=['parent'])
+                    # Mettre à jour seulement si le parent a changé
+                    if category.parent != parent_category:
+                        category.parent = parent_category
+                        category.save(update_fields=['parent'])
+                        logger.debug(f"Relation parent/enfant mise à jour: {category.name} -> {parent_category.name}")
         
         except InventoryAPIError as e:
             logger.error(f"Erreur API lors de la synchronisation des catégories: {str(e)}")
@@ -933,40 +859,87 @@ class ProductSyncService:
         # Gérer les images - peut être une URL unique ou une liste d'URLs
         image_urls = []
         
+        # Log détaillé des images reçues depuis l'API B2B (pour debug)
+        logger.info(f"[SYNC IMAGES] Produit ID externe {external_id} - Images reçues depuis API B2B:")
+        logger.info(f"  - 'images': {external_data.get('images')}")
+        logger.info(f"  - 'image_urls': {external_data.get('image_urls')}")
+        logger.info(f"  - 'gallery': {external_data.get('gallery')}")
+        logger.info(f"  - 'image_url': {external_data.get('image_url')}")
+        logger.info(f"  - 'image': {external_data.get('image')}")
+        logger.info(f"  - 'main_image': {external_data.get('main_image')}")
+        logger.info(f"  - 'photo': {external_data.get('photo')}")
+        
         # Vérifier si c'est une liste d'images
         if 'images' in external_data and isinstance(external_data['images'], list):
             image_urls = [img for img in external_data['images'] if img]
+            logger.info(f"[SYNC IMAGES] Utilisation de 'images' (liste): {len(image_urls)} images")
         elif 'image_urls' in external_data and isinstance(external_data['image_urls'], list):
             image_urls = [img for img in external_data['image_urls'] if img]
+            logger.info(f"[SYNC IMAGES] Utilisation de 'image_urls' (liste): {len(image_urls)} images")
         elif 'gallery' in external_data and isinstance(external_data['gallery'], list):
             image_urls = [img for img in external_data['gallery'] if img]
+            logger.info(f"[SYNC IMAGES] Utilisation de 'gallery' (liste): {len(image_urls)} images")
+        
+        # Si on a une liste d'images, prioriser les images "processed" (traitées/optimisées)
+        if image_urls:
+            # Chercher les images "processed" en premier
+            processed_images = [img for img in image_urls if 'processed' in img.lower()]
+            if processed_images:
+                # Réorganiser : images processed en premier
+                other_images = [img for img in image_urls if 'processed' not in img.lower()]
+                image_urls = processed_images + other_images
+                logger.info(f"[SYNC IMAGES] 🔄 Réorganisation: {len(processed_images)} images 'processed' priorisées sur {len(image_urls)} total")
         else:
-            # Image unique
+            # Image unique - priorité selon l'ordre de vérification
             image_url = None
             if 'image_url' in external_data and external_data['image_url']:
                 image_url = external_data['image_url']
+                logger.info(f"[SYNC IMAGES] Utilisation de 'image_url': {image_url}")
             elif 'image' in external_data and external_data['image']:
                 image_url = external_data['image']
+                logger.info(f"[SYNC IMAGES] Utilisation de 'image': {image_url}")
             elif 'main_image' in external_data and external_data['main_image']:
                 image_url = external_data['main_image']
+                logger.info(f"[SYNC IMAGES] Utilisation de 'main_image': {image_url}")
             elif 'photo' in external_data and external_data['photo']:
                 image_url = external_data['photo']
+                logger.info(f"[SYNC IMAGES] Utilisation de 'photo': {image_url}")
             
             if image_url:
                 image_urls = [image_url]
         
-        # Stocker les URLs des images dans les spécifications pour référence
+        # Log final des URLs stockées
         if image_urls:
+            logger.info(f"[SYNC IMAGES] ✅ URLs finales stockées dans specifications['b2b_image_urls']: {image_urls}")
             specifications['b2b_image_urls'] = image_urls
             if len(image_urls) == 1:
                 specifications['b2b_image_url'] = image_urls[0]  # Pour compatibilité
+        else:
+            logger.warning(f"[SYNC IMAGES] ⚠️ Aucune image trouvée pour le produit ID externe {external_id}")
+        
+        # IMPORTANT: Sauvegarder les b2b_image_urls avant la fusion des specifications
+        # pour éviter qu'elles soient écrasées par les specifications de l'API
+        saved_b2b_image_urls = specifications.get('b2b_image_urls')
+        saved_b2b_image_url = specifications.get('b2b_image_url')
         
         # Ajouter les spécifications de l'API B2B (fusionner avec les spécifications existantes)
         if 'specifications' in external_data:
             if isinstance(external_data['specifications'], dict):
-                product_data['specifications'].update(external_data['specifications'])
+                # Fusionner les specifications mais préserver b2b_image_urls
+                external_specs = external_data['specifications'].copy()
+                # Retirer les clés d'images de external_specs pour éviter l'écrasement
+                external_specs.pop('b2b_image_urls', None)
+                external_specs.pop('b2b_image_url', None)
+                product_data['specifications'].update(external_specs)
             else:
                 product_data['specifications']['raw'] = external_data['specifications']
+        
+        # Restaurer les b2b_image_urls après la fusion (elles ont priorité)
+        if saved_b2b_image_urls:
+            product_data['specifications']['b2b_image_urls'] = saved_b2b_image_urls
+            logger.info(f"[SYNC IMAGES] 🔒 URLs restaurées après fusion specifications: {saved_b2b_image_urls}")
+        if saved_b2b_image_url:
+            product_data['specifications']['b2b_image_url'] = saved_b2b_image_url
         elif 'attributes' in external_data:
             if isinstance(external_data['attributes'], dict):
                 product_data['specifications'].update(external_data['attributes'])
@@ -1074,15 +1047,31 @@ class ProductSyncService:
                 parent_id = external_data['parent'].get('id')
             elif isinstance(external_data['parent'], int):
                 parent_id = external_data['parent']
+            elif external_data['parent'] is None:
+                parent_id = None
+        
+        # Normaliser rayon_type et level (gérer les chaînes vides et None)
+        rayon_type = external_data.get('rayon_type')
+        if rayon_type == '' or rayon_type is None:
+            rayon_type = None
+        
+        level = external_data.get('level')
+        if level is None:
+            # Essayer de déduire le level depuis parent_id
+            level = 0 if not parent_id else None
+        
+        # Récupérer is_rayon si présent dans les données B2B
+        is_rayon = external_data.get('is_rayon', False)
         
         category_data = {
             'name': external_data.get('name', 'Catégorie sans nom'),
             'description': external_data.get('description', ''),
             'external_id': external_id,
             'external_parent_id': parent_id,
-            'rayon_type': external_data.get('rayon_type'),
-            'level': external_data.get('level'),
+            'rayon_type': rayon_type,
+            'level': level,
             'order': external_data.get('order', 0),
+            'is_main': external_data.get('level', 0) == 0 if level is not None else (not parent_id),
         }
         
         # Gérer le slug - générer un slug unique
@@ -1127,16 +1116,21 @@ class ProductSyncService:
         if external_category:
             # Mettre à jour la catégorie existante
             category = external_category.category
+            # Mettre à jour tous les champs sauf ceux gérés séparément
             for key, value in category_data.items():
-                if key not in ['external_id', 'external_parent_id']:  # Ces champs sont gérés séparément
+                if key not in ['external_id', 'external_parent_id']:
                     setattr(category, key, value)
+            # Mettre à jour external_id et external_parent_id dans Category (champs directs du modèle)
+            category.external_id = external_id
+            category.external_parent_id = parent_id
             # Définir le parent
             category.parent = parent_category
             category.save()
             created = False
         else:
             # Créer une nouvelle catégorie
-            category = Category(**{k: v for k, v in category_data.items() if k not in ['external_id', 'external_parent_id']})
+            # Inclure external_id et external_parent_id car ce sont des champs du modèle Category
+            category = Category(**category_data)
             # S'assurer que le slug est défini
             if not category.slug:
                 category.slug = category_data['slug']
@@ -1153,7 +1147,8 @@ class ProductSyncService:
                 last_synced_at=timezone.now()
             )
         
-        # Mettre à jour ExternalCategory
+        # Mettre à jour ExternalCategory (y compris external_parent_id si changé)
+        external_category.external_parent_id = parent_id
         external_category.last_synced_at = timezone.now()
         external_category.save()
         

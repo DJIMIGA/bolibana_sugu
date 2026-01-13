@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import {
   View,
   Text,
@@ -7,23 +7,21 @@ import {
   TouchableOpacity,
   ActivityIndicator,
   Alert,
-  Image,
 } from 'react-native';
-import { useNavigation, useRoute } from '@react-navigation/native';
+import { useNavigation } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import { useAppDispatch, useAppSelector } from '../store/hooks';
 import { COLORS, API_ENDPOINTS } from '../utils/constants';
 import { formatPrice } from '../utils/helpers';
 import apiClient from '../services/api';
-import type { ShippingAddress, CartItem } from '../types';
+import type { ShippingAddress, CartItem, Product } from '../types';
 import * as WebBrowser from 'expo-web-browser';
 import { LoadingScreen } from '../components/LoadingScreen';
 
 const CheckoutScreen: React.FC = () => {
   const navigation = useNavigation();
-  const route = useRoute();
-  const dispatch = useAppDispatch();
   const { items, total, itemsCount } = useAppSelector((state) => state.cart);
+  const { sessionExpired, isAuthenticated } = useAppSelector((state) => state.auth);
   
   const [addresses, setAddresses] = useState<ShippingAddress[]>([]);
   const [selectedAddress, setSelectedAddress] = useState<ShippingAddress | null>(null);
@@ -31,9 +29,135 @@ const CheckoutScreen: React.FC = () => {
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [isProcessing, setIsProcessing] = useState<boolean>(false);
 
+  // Rediriger vers Login si l'utilisateur n'est pas authentifié
   useEffect(() => {
-    loadAddresses();
-  }, []);
+    if (!isAuthenticated && !sessionExpired) {
+      Alert.alert(
+        'Connexion requise',
+        'Vous devez être connecté pour passer une commande. Souhaitez-vous vous connecter ?',
+        [
+          { text: 'Annuler', style: 'cancel', onPress: () => navigation.goBack() },
+          {
+            text: 'Se connecter',
+            onPress: () => {
+              try {
+                (navigation as any).navigate('Profile', { screen: 'Login' });
+              } catch {
+                navigation.goBack();
+              }
+            },
+          },
+        ]
+      );
+    }
+  }, [isAuthenticated, sessionExpired, navigation]);
+
+  useEffect(() => {
+    if (isAuthenticated && !sessionExpired) {
+      loadAddresses();
+    }
+  }, [isAuthenticated, sessionExpired]);
+
+  useEffect(() => {
+    if (sessionExpired) {
+      // La session a expiré (callback global), on redirige vers Login
+      try {
+        (navigation as any).navigate('Profile', { screen: 'Login' });
+      } catch {
+        // no-op
+      }
+    }
+  }, [navigation, sessionExpired]);
+
+  const isSessionExpiredError = (error: any): boolean => {
+    const status = error?.response?.status;
+    const msg = (error?.message || '').toString().toLowerCase();
+    return status === 401 || msg.includes('session expirée') || msg.includes('session expiree');
+  };
+
+  const getProductTitle = (product?: Product | null): string => {
+    if (!product) return 'Produit';
+    return product.title || 'Produit';
+  };
+
+  const getVariantInfo = (product?: Product | null): string | null => {
+    const specs = product?.specifications;
+    if (!specs) return null;
+
+    const parts: string[] = [];
+    if (specs.color_name || specs.color) {
+      parts.push(specs.color_name || specs.color);
+    }
+    if (specs.storage) {
+      parts.push(`${specs.storage}Go`);
+    }
+    if (specs.ram) {
+      parts.push(`${specs.ram}Go RAM`);
+    }
+
+    return parts.length > 0 ? parts.join(' • ') : null;
+  };
+
+  // Vérifier si un produit est vendu au poids
+  const isWeightedProduct = (product: Product | null | undefined): boolean => {
+    if (!product) return false;
+    const specs = product.specifications || {};
+    return specs.sold_by_weight === true || 
+           specs.unit_type === 'weight' || 
+           specs.unit_type === 'kg' ||
+           specs.unit_type === 'kilogram';
+  };
+
+  // Obtenir le prix unitaire (au kg pour les produits au poids, unitaire pour les autres)
+  const getUnitPrice = (item: CartItem): number => {
+    const product = item.product;
+    if (isWeightedProduct(product)) {
+      const specs = product.specifications || {};
+      // Vérifier d'abord s'il y a un prix promotionnel au kg
+      const discountPricePerKg = specs.discount_price_per_kg;
+      if (discountPricePerKg && discountPricePerKg > 0) {
+        if (__DEV__) {
+          console.log('[CheckoutScreen] ⚖️ Prix unitaire (promo au kg):', {
+            productId: product.id,
+            productTitle: product.title,
+            discountPricePerKg,
+            quantity: item.quantity,
+          });
+        }
+        return discountPricePerKg;
+      }
+      // Sinon, utiliser le prix normal au kg
+      const pricePerKg = specs.price_per_kg;
+      if (pricePerKg) {
+        if (__DEV__) {
+          console.log('[CheckoutScreen] ⚖️ Prix unitaire (normal au kg):', {
+            productId: product.id,
+            productTitle: product.title,
+            pricePerKg,
+            quantity: item.quantity,
+          });
+        }
+        return pricePerKg;
+      }
+      // Fallback sur le prix du produit si price_per_kg n'est pas défini
+      if (__DEV__) {
+        console.log('[CheckoutScreen] ⚖️ Prix unitaire (fallback):', {
+          productId: product.id,
+          productTitle: product.title,
+          fallbackPrice: product.discount_price || product.price || 0,
+          quantity: item.quantity,
+        });
+      }
+      return product.discount_price || product.price || 0;
+    }
+    // Pour les produits normaux, utiliser discount_price ou price
+    return product.discount_price || product.price || 0;
+  };
+
+  const cartItemsSafe = useMemo(
+    () => (Array.isArray(items) ? items.filter((it) => it && it.product && it.id) : []),
+    [items]
+  );
 
   const loadAddresses = async () => {
     try {
@@ -52,6 +176,10 @@ const CheckoutScreen: React.FC = () => {
       if (error.isOfflineBlocked || error.message === 'OFFLINE_MODE_FORCED') {
         return;
       }
+      // Si session expirée, le callback global déclenche déjà l'UX (et on redirige via useEffect)
+      if (isSessionExpiredError(error)) {
+        return;
+      }
       console.error('[CheckoutScreen] Error loading addresses:', error);
     } finally {
       setIsLoading(false);
@@ -59,6 +187,28 @@ const CheckoutScreen: React.FC = () => {
   };
 
   const handlePlaceOrder = async () => {
+    // Vérifier l'authentification avant de procéder
+    if (!isAuthenticated) {
+      Alert.alert(
+        'Connexion requise',
+        'Vous devez être connecté pour passer une commande. Souhaitez-vous vous connecter ?',
+        [
+          { text: 'Annuler', style: 'cancel' },
+          {
+            text: 'Se connecter',
+            onPress: () => {
+              try {
+                (navigation as any).navigate('Profile', { screen: 'Login' });
+              } catch {
+                // no-op
+              }
+            },
+          },
+        ]
+      );
+      return;
+    }
+
     if (!selectedAddress) {
       Alert.alert('Erreur', 'Veuillez sélectionner une adresse de livraison');
       return;
@@ -105,6 +255,11 @@ const CheckoutScreen: React.FC = () => {
     }
   };
 
+  // Afficher un écran de chargement ou rediriger si non authentifié
+  if (!isAuthenticated) {
+    return <LoadingScreen />;
+  }
+
   if (isLoading) {
     return <LoadingScreen />;
   }
@@ -126,32 +281,54 @@ const CheckoutScreen: React.FC = () => {
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Résumé de la commande</Text>
           <View style={styles.summaryCard}>
-            {items.map((item) => (
+            {cartItemsSafe.map((item) => {
+              const product = item.product;
+              const unitPrice = getUnitPrice(item);
+              const variantInfo = getVariantInfo(product);
+              const isWeighted = isWeightedProduct(product);
+              return (
               <View key={item.id} style={styles.itemRow}>
                 <View style={styles.itemInfo}>
                   <Text style={styles.itemName} numberOfLines={1}>
-                    {item.product.name}
+                    {getProductTitle(product)}
                   </Text>
-                  {item.product.selected_color_name || item.product.selected_size_name ? (
-                    <Text style={styles.itemVariant}>
-                      {[item.product.selected_color_name, item.product.selected_size_name]
-                        .filter(Boolean)
-                        .join(' / ')}
-                    </Text>
-                  ) : null}
+                  {variantInfo ? <Text style={styles.itemVariant}>{variantInfo}</Text> : null}
                   <Text style={styles.itemQuantity}>
-                    Quantité: {item.quantity} × {formatPrice(item.product.discount_price || item.product.price)}
+                    {isWeighted ? 'Poids' : 'Quantité'}: {isWeighted ? `${item.quantity.toFixed(1)} kg` : item.quantity} × {formatPrice(unitPrice)} / {isWeighted ? 'kg' : 'unité'}
                   </Text>
                 </View>
                 <Text style={styles.itemSubtotal}>
-                  {formatPrice((item.product.discount_price || item.product.price) * item.quantity)}
+                  {formatPrice(unitPrice * item.quantity)}
                 </Text>
               </View>
-            ))}
+              );
+            })}
             <View style={styles.summaryDivider} />
             <View style={styles.summaryFooter}>
               <Text style={styles.summaryText}>{itemsCount} article(s)</Text>
-              <Text style={styles.summaryTotal}>{formatPrice(total)}</Text>
+              <Text style={styles.summaryTotal}>
+                {formatPrice(
+                  (() => {
+                    const calculatedTotal = cartItemsSafe.reduce((sum, item) => sum + (getUnitPrice(item) * item.quantity), 0);
+                    if (__DEV__) {
+                      console.log('[CheckoutScreen] ⚖️ Calcul total commande:', {
+                        itemsCount: cartItemsSafe.length,
+                        calculatedTotal,
+                        backendTotal: total,
+                        items: cartItemsSafe.map(item => ({
+                          productId: item.product.id,
+                          productTitle: item.product.title,
+                          isWeighted: isWeightedProduct(item.product),
+                          quantity: item.quantity,
+                          unitPrice: getUnitPrice(item),
+                          itemTotal: getUnitPrice(item) * item.quantity,
+                        })),
+                      });
+                    }
+                    return calculatedTotal;
+                  })()
+                )}
+              </Text>
             </View>
           </View>
         </View>

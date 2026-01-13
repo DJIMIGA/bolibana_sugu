@@ -154,10 +154,12 @@ def get_b2b_products(limit: Optional[int] = None) -> List[Product]:
     Returns:
         Liste des produits B2B synchronisés et disponibles avec toutes leurs relations
     """
-    # Récupérer les produits avec ExternalProduct et sync_status='synced'
+    # Récupérer les produits avec ExternalProduct et sync_status='synced' ET is_b2b=True
     # Inclure toutes les relations nécessaires pour avoir toutes les informations
+    # IMPORTANT: Filtrer is_b2b=True pour cohérence avec l'API mobile /api/inventory/products/synced/
     external_products = ExternalProduct.objects.filter(
-        sync_status='synced'
+        sync_status='synced',
+        is_b2b=True
     ).select_related(
         'product',
         'product__category',

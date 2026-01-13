@@ -21,6 +21,12 @@ const AddressesScreen: React.FC = () => {
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [isRefreshing, setIsRefreshing] = useState<boolean>(false);
 
+  const isSessionExpiredError = (error: any): boolean => {
+    const status = error?.response?.status;
+    const msg = (error?.message || '').toString().toLowerCase();
+    return status === 401 || msg.includes('session expirée') || msg.includes('session expiree');
+  };
+
   const loadAddresses = async (isRefresh = false) => {
     try {
       if (isRefresh) {
@@ -40,6 +46,15 @@ const AddressesScreen: React.FC = () => {
     } catch (error: any) {
       // Si c'est une erreur de mode hors ligne, gérer silencieusement
       if (error.isOfflineBlocked || error.message === 'OFFLINE_MODE_FORCED') {
+        return;
+      }
+      // Si session expirée, on laisse le flux global prendre la main (et on redirige vers Login)
+      if (isSessionExpiredError(error)) {
+        try {
+          (navigation as any).navigate('Login');
+        } catch {
+          // no-op
+        }
         return;
       }
       console.error('[AddressesScreen] Error loading addresses:', error);

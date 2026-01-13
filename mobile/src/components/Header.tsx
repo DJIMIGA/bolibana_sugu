@@ -18,29 +18,37 @@ import { connectivityService } from '../services/connectivityService';
 import { fetchProducts, fetchCategories } from '../store/slices/productSlice';
 import { fetchProfileAsync } from '../store/slices/authSlice';
 import { useAppDispatch } from '../store/hooks';
-import { Alert, ActivityIndicator } from 'react-native';
+import { Alert, ActivityIndicator, Keyboard } from 'react-native';
 import { offlineCacheService } from '../services/offlineCacheService';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { networkMonitor } from '../utils/networkMonitor';
 
 interface HeaderProps {
-  searchQuery: string;
-  onSearchChange: (text: string) => void;
+  searchQuery?: string;
+  onSearchChange?: (text: string) => void;
   onClearSearch?: () => void;
+  onSearchPress?: () => void;
   showCategories?: boolean;
   categories?: Category[];
   onCategoryPress?: (categoryId: number) => void;
   onExplorePress?: () => void;
+  openSearchModal?: () => void;
+  onBlurSearch?: () => void;
+  showSearch?: boolean;
 }
 
 export const Header: React.FC<HeaderProps> = ({
-  searchQuery,
+  searchQuery = '',
   onSearchChange,
   onClearSearch,
+  onSearchPress,
   showCategories = false,
   categories = [],
   onCategoryPress,
   onExplorePress,
+  openSearchModal,
+  onBlurSearch,
+  showSearch = true,
 }) => {
   const navigation = useNavigation();
   const dispatch = useAppDispatch();
@@ -49,6 +57,7 @@ export const Header: React.FC<HeaderProps> = ({
   const [isDownloading, setIsDownloading] = React.useState(false);
   const [downloadProgress, setDownloadProgress] = React.useState(0);
   const [forceOffline, setForceOffline] = React.useState(false);
+  const searchInputRef = React.useRef<TextInput>(null);
 
   // Charger l'état du mode forcé hors ligne au démarrage depuis le service
   React.useEffect(() => {
@@ -258,26 +267,35 @@ export const Header: React.FC<HeaderProps> = ({
           </TouchableOpacity>
         </View>
       </View>
-      <View style={styles.searchContainer}>
-        <View style={styles.searchInputContainer}>
-          <Ionicons name="search" size={20} color={COLORS.TEXT_SECONDARY} style={styles.searchIcon} />
-          <TextInput
-            style={styles.searchInput}
-            placeholder="Rechercher un produit..."
-            placeholderTextColor={COLORS.TEXT_SECONDARY}
-            value={searchQuery}
-            onChangeText={onSearchChange}
-          />
-          {searchQuery.length > 0 && onClearSearch && (
-            <TouchableOpacity
-              onPress={onClearSearch}
-              style={styles.clearButton}
-            >
-              <Ionicons name="close-circle" size={20} color={COLORS.TEXT_SECONDARY} />
-            </TouchableOpacity>
-          )}
+      {showSearch && (
+        <View style={styles.searchContainer}>
+          <View style={styles.searchInputContainer}>
+            <Ionicons name="search" size={20} color={COLORS.TEXT_SECONDARY} style={styles.searchIcon} />
+            <TextInput
+              ref={searchInputRef}
+              style={styles.searchInput}
+              placeholder="Rechercher un produit..."
+              placeholderTextColor={COLORS.TEXT_SECONDARY}
+              value={searchQuery}
+              onChangeText={onSearchChange}
+              onFocus={() => {
+                if (openSearchModal) {
+                  openSearchModal();
+                }
+              }}
+              editable={true}
+            />
+            {searchQuery && searchQuery.length > 0 && onClearSearch && (
+              <TouchableOpacity
+                onPress={onClearSearch}
+                style={styles.clearButton}
+              >
+                <Ionicons name="close-circle" size={20} color={COLORS.TEXT_SECONDARY} />
+              </TouchableOpacity>
+            )}
+          </View>
         </View>
-      </View>
+      )}
     </View>
   );
 };
@@ -309,9 +327,9 @@ const styles = StyleSheet.create({
     paddingHorizontal: 10,
     paddingVertical: 8,
     borderRadius: 8,
-    backgroundColor: '#F0FDF4',
+    backgroundColor: `${COLORS.PRIMARY}08`,
     borderWidth: 1,
-    borderColor: COLORS.PRIMARY,
+    borderColor: `${COLORS.PRIMARY}30`,
     gap: 6,
     height: 36, // Hauteur fixe pour alignement
   },
@@ -348,8 +366,8 @@ const styles = StyleSheet.create({
     alignSelf: 'flex-start',
   },
   offlineIndicatorActive: {
-    backgroundColor: '#FEF3C7',
-    borderColor: COLORS.WARNING,
+    backgroundColor: `${COLORS.SECONDARY}08`,
+    borderColor: `${COLORS.SECONDARY}30`,
   },
   offlineText: {
     fontSize: 12,
@@ -367,7 +385,7 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     backgroundColor: '#FFFFFF',
     borderWidth: 1.5,
-    borderColor: COLORS.PRIMARY,
+    borderColor: `${COLORS.PRIMARY}40`,
     gap: 6,
     minWidth: 44,
     justifyContent: 'center',
@@ -389,20 +407,26 @@ const styles = StyleSheet.create({
   searchInputContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#F9FAFB',
+    backgroundColor: '#FFFFFF',
     borderRadius: 12,
     paddingHorizontal: 16,
-    paddingVertical: 10, // Réduit de 12 à 10
+    paddingVertical: 10,
     borderWidth: 1.5,
-    borderColor: '#D1D5DB',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 4,
-    elevation: 2,
+    borderColor: `${COLORS.PRIMARY}30`,
+    shadowColor: COLORS.PRIMARY,
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.03,
+    shadowRadius: 2,
+    elevation: 1,
   },
   searchIcon: {
     marginRight: 12,
+  },
+  searchInput: {
+    flex: 1,
+    fontSize: 16,
+    color: COLORS.TEXT,
+    padding: 0,
   },
   searchInput: {
     flex: 1,

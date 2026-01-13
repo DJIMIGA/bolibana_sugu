@@ -13,6 +13,7 @@ import { formatPrice } from '../utils/helpers';
 import { COLORS } from '../utils/constants';
 import { useNavigation } from '@react-navigation/native';
 import { useAppSelector } from '../store/hooks';
+import ProductCardInfo from './ProductCardInfo';
 
 interface ProductCardSalamProps {
   product: Product;
@@ -65,7 +66,10 @@ const ProductCardSalam: React.FC<ProductCardSalamProps> = ({ product }) => {
         {/* Badge de promotion */}
         {discountPercentage > 0 && (
           <View style={styles.discountBadge}>
-            <Text style={styles.discountBadgeText}>-{discountPercentage}%</Text>
+            <View style={styles.discountBadgeInner}>
+              <Text style={styles.discountBadgeText}>-{discountPercentage}%</Text>
+            </View>
+            <View style={styles.discountBadgeTriangle} />
           </View>
         )}
 
@@ -87,12 +91,7 @@ const ProductCardSalam: React.FC<ProductCardSalamProps> = ({ product }) => {
 
       <View style={styles.infoContainer}>
         <Text style={styles.title} numberOfLines={2}>{product.title}</Text>
-        {product.brand && (
-          <View style={styles.brandContainer}>
-            <MaterialIcons name="business" size={12} color={COLORS.PRIMARY} />
-            <Text style={styles.brand}>{product.brand}</Text>
-          </View>
-        )}
+        <ProductCardInfo product={product} showBrand={true} showSpecs={false} />
         <View style={styles.priceContainer}>
           {hasDiscount ? (
             <>
@@ -111,18 +110,19 @@ const ProductCardSalam: React.FC<ProductCardSalamProps> = ({ product }) => {
 const styles = StyleSheet.create({
   card: {
     width: CARD_WIDTH,
-    backgroundColor: COLORS.BACKGROUND,
-    borderRadius: 16,
+    backgroundColor: '#FFFFFF',
+    borderRadius: 12,
     overflow: 'hidden',
     marginBottom: 16,
     marginHorizontal: 8,
-    shadowColor: COLORS.SECONDARY,
+    shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.15,
-    shadowRadius: 6,
-    elevation: 4,
+    shadowOpacity: 0.08,
+    shadowRadius: 4,
+    elevation: 3,
     borderWidth: 2,
     borderColor: COLORS.SECONDARY,
+    position: 'relative',
   },
   imageContainer: {
     width: '100%',
@@ -163,10 +163,14 @@ const styles = StyleSheet.create({
   },
   discountBadge: {
     position: 'absolute',
-    top: 8,
-    right: 8,
+    top: 6,
+    right: 6,
+    zIndex: 10,
+    alignItems: 'center',
+  },
+  discountBadgeInner: {
     backgroundColor: COLORS.DANGER,
-    paddingHorizontal: 8,
+    paddingHorizontal: 6,
     paddingVertical: 4,
     borderRadius: 6,
     shadowColor: '#000',
@@ -175,11 +179,22 @@ const styles = StyleSheet.create({
     shadowRadius: 3,
     elevation: 4,
   },
+  discountBadgeTriangle: {
+    width: 0,
+    height: 0,
+    borderLeftWidth: 6,
+    borderRightWidth: 6,
+    borderTopWidth: 6,
+    borderLeftColor: 'transparent',
+    borderRightColor: 'transparent',
+    borderTopColor: '#DC2626',
+    marginTop: -1,
+  },
   discountBadgeText: {
     color: '#FFFFFF',
-    fontSize: 11,
+    fontSize: 12,
     fontWeight: '900',
-    letterSpacing: 0.3,
+    letterSpacing: 0.5,
   },
   cartBadge: {
     position: 'absolute',
@@ -229,17 +244,6 @@ const styles = StyleSheet.create({
     marginBottom: 6,
     lineHeight: 18,
     minHeight: 36,
-  },
-  brandContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 8,
-  },
-  brand: {
-    fontSize: 11,
-    color: COLORS.PRIMARY,
-    marginLeft: 4,
-    fontWeight: '600',
   },
   priceContainer: {
     flexDirection: 'row',

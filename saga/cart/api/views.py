@@ -6,6 +6,7 @@ from django.db import transaction
 from django.shortcuts import get_object_or_404
 from django.conf import settings
 from django.urls import reverse
+from decimal import Decimal
 from .serializers import CartSerializer, CartItemSerializer
 from cart.models import Cart, CartItem, Order, OrderItem
 from product.models import Product, Phone, ShippingMethod
@@ -77,7 +78,9 @@ class CartViewSet(viewsets.ModelViewSet):
         
         product_id = request.data.get('product')
         variant_id = request.data.get('variant')
-        quantity = int(request.data.get('quantity', 1))
+        # Préserver les décimales pour les produits au poids
+        quantity_raw = request.data.get('quantity', 1)
+        quantity = Decimal(str(quantity_raw)) if quantity_raw else Decimal('1')
         colors = request.data.get('colors', [])
         sizes = request.data.get('sizes', [])
 
@@ -107,7 +110,7 @@ class CartViewSet(viewsets.ModelViewSet):
         if variant_id:
             try:
                 variant = Phone.objects.get(id=variant_id, product=product)
-                if variant.stock < quantity:
+                if variant.stock < float(quantity):
                     return Response(
                         {'error': f'Stock insuffisant pour cette variante. Disponible: {variant.stock}'},
                         status=status.HTTP_400_BAD_REQUEST
@@ -327,14 +330,14 @@ class CartViewSet(viewsets.ModelViewSet):
                     
                     line_items = []
                     for item in order.items.all():
-                        line_items.append({
-                            'price_data': {
-                                'currency': 'xof',
-                                'product_data': {'name': item.product.title},
-                                'unit_amount': int(item.price),
-                            },
-                            'quantity': item.quantity,
-                        })
+                    line_items.append({
+                        'price_data': {
+                            'currency': 'xof',
+                            'product_data': {'name': item.product.title},
+                            'unit_amount': int(item.price),
+                        },
+                        'quantity': int(float(item.quantity)),  # Stripe nécessite un entier pour quantity
+                    })
                     
                     # Ajouter les frais de livraison
                     line_items.append({

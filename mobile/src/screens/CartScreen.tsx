@@ -12,10 +12,10 @@ import {
   ScrollView,
 } from 'react-native';
 import { useAppDispatch, useAppSelector } from '../store/hooks';
-import { fetchCart, updateCartItem, removeFromCart, clearCart, optimisticUpdateQuantity } from '../store/slices/cartSlice';
-import { fetchCategories, setSearchQuery, searchProducts, fetchProducts } from '../store/slices/productSlice';
+import { fetchCart, updateCartItem, removeFromCart, clearCart, optimisticUpdateQuantity, enrichCartProducts } from '../store/slices/cartSlice';
+import { fetchCategories } from '../store/slices/productSlice';
 import { useNavigation } from '@react-navigation/native';
-import { formatPrice, debounce } from '../utils/helpers';
+import { formatPrice } from '../utils/helpers';
 import { COLORS } from '../utils/constants';
 import { CartItem } from '../types';
 import { Header } from '../components/Header';
@@ -26,45 +26,171 @@ const CartScreen: React.FC = () => {
   const navigation = useNavigation();
   const { cart, items, total, itemsCount, isLoading } = useAppSelector((state) => state.cart);
   const { categories, searchQuery } = useAppSelector((state) => state.product);
+  const { isAuthenticated } = useAppSelector((state) => state.auth);
   const [refreshing, setRefreshing] = useState(false);
-  const [localSearch, setLocalSearch] = useState(searchQuery);
 
-  // Fonction pour envoyer la mise à jour au serveur (débouncée)
-  const debouncedUpdate = useCallback(
-    debounce((itemId: number, quantity: number) => {
-      dispatch(updateCartItem({ itemId, quantity }));
-    }, 500),
-    [dispatch]
-  );
 
   useEffect(() => {
-    dispatch(fetchCart());
+    const loadCart = async () => {
+      await dispatch(fetchCart());
+      // Enrichir les produits avec leurs spécifications (nécessaire pour les produits au poids)
+      dispatch(enrichCartProducts());
+    };
+    loadCart();
     dispatch(fetchCategories());
   }, [dispatch]);
 
   const onRefresh = async () => {
     setRefreshing(true);
     await dispatch(fetchCart());
+    await dispatch(enrichCartProducts());
     setRefreshing(false);
   };
 
-  const handleUpdateQuantity = (itemId: number, newQuantity: number) => {
+  // Vérifier si un produit est vendu au poids
+  const isWeightedProduct = (product: any): boolean => {
+    if (!product) {
+      if (__DEV__) {
+        console.log('[CartScreen] ⚖️ isWeightedProduct: product is null/undefined');
+      }
+      return false;
+    }
+    const specs = product?.specifications || {};
+    const isWeighted = specs.sold_by_weight === true || 
+           specs.unit_type === 'weight' || 
+           specs.unit_type === 'kg' ||
+           specs.unit_type === 'kilogram';
+    
+    if (__DEV__) {
+      console.log('[CartScreen] ⚖️ isWeightedProduct check:', {
+        productId: product.id,
+        productTitle: product.title,
+        hasSpecs: !!product.specifications,
+        specs: specs,
+        sold_by_weight: specs.sold_by_weight,
+        unit_type: specs.unit_type,
+        isWeighted,
+      });
+    }
+    
+    return isWeighted;
+  };
+
+  // Fonction helper pour formater la quantité (évite d'arrondir 0.999 à 1.0)
+  const formatQuantity = (qty: number, specs?: any): string => {
+    if (specs?.formatted_quantity) {
+      return specs.formatted_quantity;
+    }
+    // Formater avec 3 décimales et retirer les zéros finaux
+    const formatted = qty.toFixed(3).replace(/\.?0+$/, '');
+    return formatted;
+  };
+
+  // Fonction helper pour formater le poids disponible
+  const formatAvailableWeight = (weight: number): string => {
+    if (weight === undefined || weight === null) return '0';
+    // Formater avec 3 décimales et retirer les zéros finaux
+    const formatted = weight.toFixed(3).replace(/\.?0+$/, '');
+    return formatted;
+  };
+
+  const handleUpdateQuantity = async (itemId: number, newQuantity: number) => {
     if (newQuantity <= 0) {
       handleRemoveItem(itemId);
       return;
     }
     
     const item = items.find(i => i.id === itemId);
-    if (item && item.product.stock !== undefined && item.product.stock > 0 && newQuantity > item.product.stock) {
-      Alert.alert('Stock insuffisant', `Stock disponible: ${item.product.stock}`);
-      return;
+    if (!item) return;
+
+    const isWeighted = isWeightedProduct(item.product);
+    const specs = item.product.specifications || {};
+
+    // Vérifier les limites de stock
+    if (!item.product.is_salam) {
+      if (isWeighted) {
+        // Pour les produits au poids, vérifier le poids disponible
+        const availableWeight = specs.available_weight_kg || 0;
+        if (availableWeight > 0 && newQuantity > availableWeight) {
+          Alert.alert(
+            'Stock insuffisant',
+            `Poids disponible: ${formatAvailableWeight(availableWeight)} kg. Veuillez réduire la quantité.`
+          );
+          return;
+        }
+        // Vérifier le minimum (0.5 kg)
+        if (newQuantity < 0.5) {
+          Alert.alert('Quantité minimale', 'La quantité minimale est de 0.5 kg');
+          return;
+        }
+      } else {
+        // Pour les produits normaux, vérifier le stock en unités
+        if (item.product.stock !== undefined && item.product.stock > 0 && newQuantity > item.product.stock) {
+          Alert.alert('Stock insuffisant', `Stock disponible: ${item.product.stock}`);
+          return;
+        }
+      }
     }
     
     // 1. Mise à jour visuelle instantanée
     dispatch(optimisticUpdateQuantity({ itemId, quantity: newQuantity }));
     
-    // 2. Programmation de la mise à jour serveur
-    debouncedUpdate(itemId, newQuantity);
+    // 2. Mise à jour serveur avec gestion d'erreur
+    try {
+      await dispatch(updateCartItem({ itemId, quantity: newQuantity })).unwrap();
+    } catch (error: any) {
+      // Si l'article n'existe plus, recharger le panier
+      if (error?.response?.status === 404 || error?.message?.includes('introuvable') || error?.message?.includes('Pas trouvé')) {
+        if (__DEV__) {
+          console.warn('[CartScreen] ⚠️ Article introuvable, rechargement du panier:', itemId);
+        }
+        // Recharger le panier pour synchroniser avec le serveur
+        dispatch(fetchCart());
+        Alert.alert('Erreur', 'L\'article a été modifié. Le panier a été mis à jour.');
+      } else {
+        // Autre erreur, restaurer la quantité précédente
+        const previousItem = items.find(i => i.id === itemId);
+        if (previousItem) {
+          dispatch(optimisticUpdateQuantity({ itemId, quantity: previousItem.quantity }));
+        }
+        Alert.alert('Erreur', error?.message || 'Impossible de mettre à jour la quantité');
+      }
+    }
+  };
+
+  // Gérer l'incrément pour les produits au poids
+  const handleUpdateWeight = (itemId: number, increment: number) => {
+    const item = items.find(i => i.id === itemId);
+    if (!item) return;
+    
+    const currentWeight = item.quantity;
+    const specs = item.product.specifications || {};
+    const availableWeight = specs.available_weight_kg;
+    
+    // Calculer le nouveau poids
+    let newWeight = currentWeight + increment;
+    
+    // Appliquer le minimum de 0.5 kg
+    if (newWeight < 0.5) {
+      newWeight = 0.5;
+    }
+    
+    // Si on augmente et qu'il y a un poids disponible, vérifier qu'il reste assez
+    if (increment > 0 && availableWeight !== undefined && availableWeight > 0) {
+      // Vérifier qu'on peut ajouter au moins 0.5 kg
+      if ((currentWeight + 0.5) > availableWeight) {
+        // Pas assez de poids disponible pour ajouter 0.5 kg
+        Alert.alert(
+          'Stock insuffisant',
+          `Poids disponible: ${formatAvailableWeight(availableWeight)} kg. Impossible d'ajouter 0.5 kg.`
+        );
+        return;
+      }
+      // Clamper au maximum disponible
+      newWeight = Math.min(newWeight, availableWeight);
+    }
+    
+    handleUpdateQuantity(itemId, newWeight);
   };
 
   const handleRemoveItem = async (itemId: number) => {
@@ -114,26 +240,33 @@ const CartScreen: React.FC = () => {
       Alert.alert('Panier vide', 'Votre panier est vide');
       return;
     }
+    
+    // Vérifier l'authentification avant de naviguer vers le checkout
+    if (!isAuthenticated) {
+      Alert.alert(
+        'Connexion requise',
+        'Vous devez être connecté pour passer une commande. Souhaitez-vous vous connecter ?',
+        [
+          { text: 'Annuler', style: 'cancel' },
+          {
+            text: 'Se connecter',
+            onPress: () => {
+              try {
+                (navigation as any).navigate('Profile', { screen: 'Login' });
+              } catch {
+                // no-op
+              }
+            },
+          },
+        ]
+      );
+      return;
+    }
+    
     // Navigation vers l'écran de checkout
     navigation.navigate('Checkout' as never);
   };
 
-  const handleSearch = (text: string) => {
-    setLocalSearch(text);
-    if (text.trim()) {
-      dispatch(setSearchQuery(text));
-      dispatch(searchProducts(text));
-    } else {
-      dispatch(setSearchQuery(''));
-      dispatch(fetchProducts({ page: 1 }));
-    }
-  };
-
-  const handleClearSearch = () => {
-    setLocalSearch('');
-    dispatch(setSearchQuery(''));
-    dispatch(fetchProducts({ page: 1 }));
-  };
 
   const getVariantInfo = (item: CartItem): string | null => {
     const specs = item.product.specifications;
@@ -154,11 +287,53 @@ const CartScreen: React.FC = () => {
   };
 
   const getUnitPrice = (item: CartItem): number => {
+    // Pour les produits au poids, utiliser le prix au kg depuis les spécifications
+    if (isWeightedProduct(item.product)) {
+      const specs = item.product.specifications || {};
+      // Vérifier d'abord s'il y a un prix promotionnel au kg
+      const discountPricePerKg = specs.discount_price_per_kg;
+      if (discountPricePerKg && discountPricePerKg > 0) {
+        if (__DEV__) {
+          console.log('[CartScreen] ⚖️ Prix unitaire (promo au kg):', {
+            productId: item.product.id,
+            productTitle: item.product.title,
+            discountPricePerKg,
+            quantity: item.quantity,
+          });
+        }
+        return discountPricePerKg;
+      }
+      // Sinon, utiliser le prix normal au kg
+      const pricePerKg = specs.price_per_kg;
+      if (pricePerKg) {
+        if (__DEV__) {
+          console.log('[CartScreen] ⚖️ Prix unitaire (normal au kg):', {
+            productId: item.product.id,
+            productTitle: item.product.title,
+            pricePerKg,
+            quantity: item.quantity,
+          });
+        }
+        return pricePerKg;
+      }
+      // Fallback sur le prix du produit si price_per_kg n'est pas défini
+      if (__DEV__) {
+        console.log('[CartScreen] ⚖️ Prix unitaire (fallback):', {
+          productId: item.product.id,
+          productTitle: item.product.title,
+          fallbackPrice: item.product.discount_price || item.product.price,
+          quantity: item.quantity,
+        });
+      }
+      return item.product.discount_price || item.product.price;
+    }
+    // Pour les produits normaux, utiliser discount_price ou price
     return item.product.discount_price || item.product.price;
   };
 
   const getTotalItemPrice = (item: CartItem): number => {
-    return getUnitPrice(item) * item.quantity;
+    const unitPrice = getUnitPrice(item);
+    return unitPrice * item.quantity;
   };
 
   const renderItem = ({ item }: { item: CartItem }) => {
@@ -167,10 +342,29 @@ const CartScreen: React.FC = () => {
       return null;
     }
 
+    const isWeighted = isWeightedProduct(item.product);
     const unitPrice = getUnitPrice(item);
     const totalItemPrice = getTotalItemPrice(item);
     const variantInfo = getVariantInfo(item);
-    const hasDiscount = item.product.discount_price && item.product.discount_price < item.product.price;
+    
+    // Déterminer s'il y a une réduction (pour les produits au poids, vérifier discount_price_per_kg)
+    const hasDiscount = isWeighted
+      ? (item.product.specifications?.discount_price_per_kg && 
+         item.product.specifications.discount_price_per_kg < (item.product.specifications?.price_per_kg || item.product.price))
+      : (item.product.discount_price && item.product.discount_price < item.product.price);
+
+    if (__DEV__ && isWeighted) {
+      console.log('[CartScreen] ⚖️ Rendu article au poids:', {
+        productId: item.product.id,
+        productTitle: item.product.title,
+        isWeighted,
+        quantity: item.quantity,
+        unitPrice,
+        totalItemPrice,
+        hasDiscount,
+        specs: item.product.specifications,
+      });
+    }
 
     return (
       <View style={styles.itemContainer}>
@@ -215,7 +409,7 @@ const CartScreen: React.FC = () => {
                   {formatPrice(totalItemPrice)}
                 </Text>
                 <Text style={styles.unitPrice}>
-                  {formatPrice(unitPrice)} / unité
+                  {formatPrice(unitPrice)} / {isWeightedProduct(item.product) ? 'kg' : 'unité'}
                 </Text>
               </View>
             ) : (
@@ -224,42 +418,72 @@ const CartScreen: React.FC = () => {
                   {formatPrice(totalItemPrice)}
                 </Text>
                 <Text style={styles.unitPrice}>
-                  {formatPrice(unitPrice)} / unité
+                  {formatPrice(unitPrice)} / {isWeightedProduct(item.product) ? 'kg' : 'unité'}
                 </Text>
               </View>
             )}
           </View>
 
-          {/* Contrôle de quantité */}
-          <View style={styles.quantityContainer}>
-            <TouchableOpacity
-              style={[styles.quantityButton, item.quantity <= 1 && styles.quantityButtonDisabled]}
-              onPress={() => handleUpdateQuantity(item.id, item.quantity - 1)}
-              disabled={item.quantity <= 1}
-              hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-            >
-              <Text style={styles.quantityButtonText}>-</Text>
-            </TouchableOpacity>
-            <Text style={styles.quantityValue}>{item.quantity}</Text>
-            <TouchableOpacity
-              style={[
-                styles.quantityButton,
-                item.product.stock !== undefined && 
-                item.product.stock > 0 && 
-                item.quantity >= item.product.stock && 
-                styles.quantityButtonDisabled
-              ]}
-              onPress={() => handleUpdateQuantity(item.id, item.quantity + 1)}
-              disabled={
-                item.product.stock !== undefined && 
-                item.product.stock > 0 && 
-                item.quantity >= item.product.stock
-              }
-              hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-            >
-              <Text style={styles.quantityButtonText}>+</Text>
-            </TouchableOpacity>
-          </View>
+          {/* Contrôle de quantité/poids */}
+          {isWeightedProduct(item.product) ? (() => {
+            const specs = item.product.specifications || {};
+            const availableWeight = specs.available_weight_kg;
+            const canIncrease = !availableWeight || availableWeight === 0 || (item.quantity + 0.5) <= availableWeight;
+            
+            return (
+              <View style={styles.quantityContainer}>
+                <TouchableOpacity
+                  style={[styles.quantityButton, item.quantity <= 0.5 && styles.quantityButtonDisabled]}
+                  onPress={() => handleUpdateWeight(item.id, -0.5)}
+                  disabled={item.quantity <= 0.5}
+                  hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                >
+                  <Text style={styles.quantityButtonText}>-</Text>
+                </TouchableOpacity>
+                <Text style={styles.quantityValue}>
+                  {formatQuantity(item.quantity, item.product.specifications)} kg
+                </Text>
+                <TouchableOpacity
+                  style={[styles.quantityButton, !canIncrease && styles.quantityButtonDisabled]}
+                  onPress={() => handleUpdateWeight(item.id, 0.5)}
+                  disabled={!canIncrease}
+                  hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                >
+                  <Text style={styles.quantityButtonText}>+</Text>
+                </TouchableOpacity>
+              </View>
+            );
+          })() : (
+            <View style={styles.quantityContainer}>
+              <TouchableOpacity
+                style={[styles.quantityButton, item.quantity <= 1 && styles.quantityButtonDisabled]}
+                onPress={() => handleUpdateQuantity(item.id, item.quantity - 1)}
+                disabled={item.quantity <= 1}
+                hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+              >
+                <Text style={styles.quantityButtonText}>-</Text>
+              </TouchableOpacity>
+              <Text style={styles.quantityValue}>{item.quantity}</Text>
+              <TouchableOpacity
+                style={[
+                  styles.quantityButton,
+                  item.product.stock !== undefined && 
+                  item.product.stock > 0 && 
+                  item.quantity >= item.product.stock && 
+                  styles.quantityButtonDisabled
+                ]}
+                onPress={() => handleUpdateQuantity(item.id, item.quantity + 1)}
+                disabled={
+                  item.product.stock !== undefined && 
+                  item.product.stock > 0 && 
+                  item.quantity >= item.product.stock
+                }
+                hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+              >
+                <Text style={styles.quantityButtonText}>+</Text>
+              </TouchableOpacity>
+            </View>
+          )}
 
           {/* Avertissement stock */}
           {item.product.stock !== undefined && 
@@ -287,12 +511,10 @@ const CartScreen: React.FC = () => {
   return (
     <View style={styles.container}>
       <Header
-        searchQuery={localSearch}
-        onSearchChange={handleSearch}
-        onClearSearch={handleClearSearch}
         showCategories={true}
         categories={categories}
         onCategoryPress={(categoryId: number) => (navigation as any).navigate('Products', { categoryId })}
+        showSearch={false}
       />
       {items.length === 0 ? (
         <View style={styles.emptyContainer}>
@@ -345,7 +567,28 @@ const CartScreen: React.FC = () => {
               </View>
               <View style={styles.summaryRow}>
                 <Text style={styles.summaryLabel}>Total:</Text>
-                <Text style={styles.totalPrice}>{formatPrice(total)}</Text>
+                <Text style={styles.totalPrice}>
+                  {formatPrice(
+                    (() => {
+                      const calculatedTotal = items.reduce((sum, item) => sum + getTotalItemPrice(item), 0);
+                      if (__DEV__) {
+                        console.log('[CartScreen] ⚖️ Calcul total panier:', {
+                          itemsCount: items.length,
+                          calculatedTotal,
+                          backendTotal: total,
+                          items: items.map(item => ({
+                            productId: item.product.id,
+                            productTitle: item.product.title,
+                            isWeighted: isWeightedProduct(item.product),
+                            quantity: item.quantity,
+                            itemTotal: getTotalItemPrice(item),
+                          })),
+                        });
+                      }
+                      return calculatedTotal;
+                    })()
+                  )}
+                </Text>
               </View>
             </View>
             <TouchableOpacity 

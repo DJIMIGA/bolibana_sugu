@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState, useCallback } from 'react';
 import {
   View,
   Text,
@@ -13,10 +13,11 @@ import {
   StatusBar,
   FlatList,
   ActivityIndicator,
+  Keyboard,
 } from 'react-native';
 import { Ionicons, MaterialIcons } from '@expo/vector-icons';
 import { useAppDispatch, useAppSelector } from '../store/hooks';
-import { fetchProducts, fetchCategories, setSearchQuery, searchProducts, clearFilters, setFilters, fetchB2BProducts } from '../store/slices/productSlice';
+import { fetchProducts, fetchCategories, setSearchQuery, searchProducts, clearFilters, setFilters } from '../store/slices/productSlice';
 import { useNavigation, NavigationProp, useFocusEffect } from '@react-navigation/native';
 import { HomeScreenNavigationProp } from '../types/navigation';
 import { formatPrice } from '../utils/helpers';
@@ -24,15 +25,17 @@ import { COLORS, API_ENDPOINTS } from '../utils/constants';
 import { Product, Category } from '../types';
 import { Header } from '../components/Header';
 import { LoadingScreen } from '../components/LoadingScreen';
+import ProductCardInfo from '../components/ProductCardInfo';
+import SearchModal from '../components/SearchModal';
 import apiClient from '../services/api';
 import { mapProductFromBackend } from '../utils/mappers';
 
 const HomeScreen: React.FC = () => {
   const dispatch = useAppDispatch();
   const navigation = useNavigation<HomeScreenNavigationProp>();
-  const { products, categories, isLoading, isFetchingMore, pagination, b2bProducts, isFetchingB2B } = useAppSelector((state) => state.product);
+  const { products, categories, isLoading, isFetchingMore, pagination, searchQuery } = useAppSelector((state) => state.product);
   const [refreshing, setRefreshing] = React.useState(false);
-  const [searchQuery, setSearchQueryLocal] = useState('');
+  const [searchModalVisible, setSearchModalVisible] = useState(false);
   const [currentInfoCardIndex, setCurrentInfoCardIndex] = useState(0);
   const intervalRef = React.useRef<any>(null);
   const fadeAnim = React.useRef(new Animated.Value(1)).current;
@@ -48,21 +51,16 @@ const HomeScreen: React.FC = () => {
     // Charger les produits et catégories au montage
     dispatch(fetchProducts({ page: 1, filters: {} }));
     dispatch(fetchCategories());
-    // Charger les produits B2B
-    dispatch(fetchB2BProducts({ pageSize: 8 }));
   }, [dispatch]);
 
-  // Logger les changements de produits B2B (seulement quand le nombre change significativement)
-  const prevB2BCountRef = React.useRef(0);
-  useEffect(() => {
-    const currentCount = b2bProducts.length;
-    const countChanged = currentCount !== prevB2BCountRef.current;
-    const justFinishedLoading = prevB2BCountRef.current === 0 && currentCount > 0 && !isFetchingB2B;
-    
-    if (justFinishedLoading || (countChanged && currentCount > 0)) {
-      prevB2BCountRef.current = currentCount;
-    }
-  }, [b2bProducts.length, isFetchingB2B]);
+  // Fermer le modal de recherche quand l'écran redevient actif
+  useFocusEffect(
+    useCallback(() => {
+      setSearchModalVisible(false);
+      Keyboard.dismiss();
+    }, [])
+  );
+
 
   // Charger les produits par TYPE (Exactement comme sur le Web avec filtres API)
   // Utilise les mêmes filtres que le web : has_phone, has_clothing, has_fabric, has_cultural
@@ -98,33 +96,11 @@ const HomeScreen: React.FC = () => {
         const allFabrics = mapProductsSafely(fabricsRes.data.results || fabricsRes.data || []);
         const allCultural = mapProductsSafely(culturalRes.data.results || culturalRes.data || []);
 
-        // Filtrer pour ne garder que les produits B2B (dans des catégories B2B)
-        // Note: b2bCategoryIds sera disponible après le chargement des catégories
-        const getB2BCategoryIds = () => {
-          const ids = new Set<number>();
-          (categories || []).forEach((c: Category) => {
-            if ((c.rayon_type !== null && c.rayon_type !== undefined) || 
-                (c.level !== null && c.level !== undefined)) {
-              ids.add(c.id);
-            }
-          });
-          return ids;
-        };
-        
-        const b2bCatIds = getB2BCategoryIds();
-        // Log uniquement si on a des catégories (sinon bruit au boot)
-        if (b2bCatIds.size > 0) {
-          console.log(`[HomeScreen] 🎯 Filtrage produits par type - Catégories B2B: ${b2bCatIds.size}`);
-        }
-        
-        const phones = allPhones.filter((p: Product) => b2bCatIds.has(p.category));
-        const clothing = allClothing.filter((p: Product) => b2bCatIds.has(p.category));
-        const fabrics = allFabrics.filter((p: Product) => b2bCatIds.has(p.category));
-        const cultural = allCultural.filter((p: Product) => b2bCatIds.has(p.category));
-        
-        if (b2bCatIds.size > 0) {
-          console.log(`[HomeScreen] 📊 Produits filtrés - Téléphones: ${phones.length}/${allPhones.length}, Vêtements: ${clothing.length}/${allClothing.length}, Tissus: ${fabrics.length}/${allFabrics.length}, Culturels: ${cultural.length}/${allCultural.length}`);
-        }
+        // Tous les produits sont B2B maintenant, pas besoin de filtrer
+        const phones = allPhones;
+        const clothing = allClothing;
+        const fabrics = allFabrics;
+        const cultural = allCultural;
 
         // Log silencieux - données chargées
 
@@ -211,9 +187,6 @@ const HomeScreen: React.FC = () => {
         apiClient.get(`${API_ENDPOINTS.PRODUCTS}?is_available=true&has_cultural=true&ordering=-created_at&page_size=8`)
       ]);
       
-      // Recharger les produits B2B
-      dispatch(fetchB2BProducts({ pageSize: 8 }));
-
       // Mapper les produits avec gestion d'erreur
       const mapProductsSafely = (products: any[]): Product[] => {
         return products
@@ -244,70 +217,44 @@ const HomeScreen: React.FC = () => {
   }, [dispatch]);
 
   const handleSearch = (text: string) => {
-    setSearchQueryLocal(text);
+    dispatch(setSearchQuery(text));
+    // Si le modal n'est pas ouvert, l'ouvrir automatiquement
+    if (!searchModalVisible && text.trim().length > 0) {
+      setSearchModalVisible(true);
+    }
+    // Déclencher la recherche avec debounce
     if (text.trim()) {
-      dispatch(setSearchQuery(text));
       dispatch(searchProducts(text));
     } else {
-      dispatch(setSearchQuery(''));
       dispatch(clearFilters());
       dispatch(fetchProducts({ page: 1, filters: {} }));
     }
   };
 
-  // Filtrer les catégories B2B pour identifier les produits B2B
-  const b2bCategoryIds = useMemo(() => {
-    const ids = new Set<number>();
-    (categories || []).forEach((c: Category) => {
-      if ((c.rayon_type !== null && c.rayon_type !== undefined) ||
-          (c.level !== null && c.level !== undefined)) {
-        ids.add(c.id);
-      }
-    });
-    return ids;
-  }, [categories]);
+  const handleSearchFocus = () => {
+    setSearchModalVisible(true);
+  };
 
-  const b2bProductsFiltered = useMemo(() => {
-    return (products || []).filter((p: Product) => b2bCategoryIds.has(p.category));
-  }, [products, b2bCategoryIds]);
+  const trendingProducts = (products || []).filter((p: Product) => p.is_trending).slice(0, 6);
 
-  // Réduire le bruit: log uniquement quand ça change vraiment
-  const prevB2BCategoryCountRef = React.useRef<number>(-1);
-  const prevB2BFilteredCountRef = React.useRef<number>(-1);
-  useEffect(() => {
-    if (b2bCategoryIds.size !== prevB2BCategoryCountRef.current) {
-      prevB2BCategoryCountRef.current = b2bCategoryIds.size;
-      console.log(`[HomeScreen] 🎯 Catégories B2B identifiées: ${b2bCategoryIds.size}`);
-    }
-  }, [b2bCategoryIds.size]);
-
-  useEffect(() => {
-    if (b2bProductsFiltered.length !== prevB2BFilteredCountRef.current) {
-      prevB2BFilteredCountRef.current = b2bProductsFiltered.length;
-      console.log(`[HomeScreen] 🔍 Produits après filtre B2B: ${b2bProductsFiltered.length} sur ${(products || []).length}`);
-    }
-  }, [b2bProductsFiltered.length, products?.length]);
-
-  const trendingProducts = b2bProductsFiltered.filter((p: Product) => p.is_trending).slice(0, 6);
-
-  // Nouveaux produits (basés sur la date de création) - uniquement B2B
-  const newProducts = [...b2bProductsFiltered]
+  // Nouveaux produits (basés sur la date de création)
+  const newProducts = [...(products || [])]
     .filter((p: Product) => p.created_at)
     .sort(
       (a: Product, b: Product) =>
         new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
     )
-    .slice(0, 4);
+    .slice(0, 8);
 
   // Produits en promotion (avec discount_price)
-  const promoProducts = b2bProductsFiltered.filter((p: Product) => {
+  const promoProducts = (products || []).filter((p: Product) => {
     return p.discount_price && p.discount_price < p.price && p.discount_price > 0;
   });
   
-  // Si pas de produits en promotion, utiliser les produits tendance ou les premiers produits - uniquement B2B
+  // Si pas de produits en promotion, utiliser les produits tendance ou les premiers produits
   const displayPromoProducts = promoProducts.length > 0 
     ? promoProducts.slice(0, 10) 
-    : (trendingProducts.length > 0 ? trendingProducts.slice(0, 10) : b2bProductsFiltered.slice(0, Math.min(10, b2bProductsFiltered.length)));
+    : (trendingProducts.length > 0 ? trendingProducts.slice(0, 10) : (products || []).slice(0, Math.min(10, products.length)));
   
   // S'assurer qu'on a toujours quelque chose à afficher
   // Afficher uniquement les catégories sans parent (catégories principales)
@@ -358,6 +305,65 @@ const HomeScreen: React.FC = () => {
         append: true 
       }));
     }
+  };
+
+  // Fonction helper pour rendre une carte de produit uniforme
+  const renderProductCard = (product: Product, showNewBadge: boolean = false) => {
+    const discountPercentage = product.discount_price && product.price > 0
+      ? Math.round(((product.price - product.discount_price) / product.price) * 100)
+      : 0;
+    const hasDiscount = product.discount_price && product.discount_price < product.price && product.discount_price > 0;
+    
+    return (
+      <TouchableOpacity
+        key={product.id}
+        style={styles.promoCard}
+        onPress={() => navigation.navigate('Products', { screen: 'ProductDetail', params: { slug: product.slug } })}
+        activeOpacity={0.8}
+      >
+        {/* Badge de réduction */}
+        {discountPercentage > 0 && (
+          <View style={styles.promoBadge}>
+            <View style={styles.promoBadgeInner}>
+              <Text style={styles.promoBadgeText}>-{discountPercentage}%</Text>
+            </View>
+            <View style={styles.promoBadgeTriangle} />
+          </View>
+        )}
+        {/* Badge NOUVEAU */}
+        {showNewBadge && (
+          <View style={styles.newBadge}>
+            <Text style={styles.newBadgeText}>NOUVEAU</Text>
+          </View>
+        )}
+        <View style={styles.promoImageContainer}>
+          {product.image ? (
+            <Image source={{ uri: product.image }} style={styles.promoImage} resizeMode="cover" />
+          ) : (
+            <View style={styles.promoImageFallback}>
+              <MaterialIcons name="image-not-supported" size={48} color={COLORS.TEXT_SECONDARY} />
+            </View>
+          )}
+        </View>
+        <View style={styles.promoCardContent}>
+          <Text style={styles.promoProductTitle} numberOfLines={1}>{product.title}</Text>
+          <ProductCardInfo product={product} showBrand={true} showSpecs={false} compact={true} />
+          <View style={styles.promoPriceContainer}>
+            <View style={styles.promoPriceRow}>
+              <Text style={styles.promoNewPrice}>{formatPrice(product.discount_price || product.price)}</Text>
+              {product.is_salam && (
+                <View style={styles.salamBadge}>
+                  <Text style={styles.salamBadgeText}>SALAM</Text>
+                </View>
+              )}
+            </View>
+            {hasDiscount && (
+              <Text style={styles.promoOldPrice}>{formatPrice(product.price)}</Text>
+            )}
+          </View>
+        </View>
+      </TouchableOpacity>
+    );
   };
 
   const renderProductItem = ({ item }: { item: Product }) => (
@@ -433,7 +439,7 @@ const HomeScreen: React.FC = () => {
         </ScrollView>
       </View>
 
-      {/* Section combinée : Cartes d'informations + Titre Promo */}
+      {/* Section combinée : Cartes d'informations */}
       <View style={styles.combinedSection}>
         <View style={styles.combinedRow}>
           <Animated.View 
@@ -442,7 +448,7 @@ const HomeScreen: React.FC = () => {
               { 
                 opacity: fadeAnim,
                 transform: [{ translateY: slideAnim }],
-                flex: 2,
+                flex: 1,
               }
             ]}
           >
@@ -474,33 +480,30 @@ const HomeScreen: React.FC = () => {
               </>
             )}
           </Animated.View>
-
-          {displayPromoProducts.length > 0 && (
-            <View style={styles.promoHeaderInline}>
-              <View style={styles.promoHeaderIconContainer}>
-                <MaterialIcons name="local-offer" size={20} color={COLORS.DANGER} />
-              </View>
-              <View style={styles.promoHeaderTextContainer}>
-                <Text style={styles.promoSectionTitleInline}>Promo Flash</Text>
-                <Text style={styles.promoSectionSubtitleInline}>Économie</Text>
-                {displayPromoProducts.length > 5 && (
-                  <TouchableOpacity
-                    style={styles.promoSeeAllButtonInline}
-                    onPress={() => navigation.navigate('Products', { screen: 'ProductList', params: { promo: true } })}
-                  >
-                    <Text style={styles.promoSeeAllTextInline}>Voir</Text>
-                    <Ionicons name="chevron-forward" size={14} color={COLORS.PRIMARY} />
-                  </TouchableOpacity>
-                )}
-              </View>
-            </View>
-          )}
         </View>
       </View>
 
       {/* Section Promo - Carrousel */}
       {displayPromoProducts.length > 0 && (
         <View style={styles.promoSection}>
+          <View style={styles.promoHeaderInline}>
+            <View style={styles.promoHeaderIconContainer}>
+              <MaterialIcons name="local-offer" size={20} color={COLORS.DANGER} />
+            </View>
+            <View style={styles.promoHeaderTextContainer}>
+              <Text style={styles.promoSectionTitleInline}>Promo Flash</Text>
+              <Text style={styles.promoSectionSubtitleInline}>Économie</Text>
+              {displayPromoProducts.length > 5 && (
+                <TouchableOpacity
+                  style={styles.promoSeeAllButtonInline}
+                  onPress={() => navigation.navigate('Products', { screen: 'ProductList', params: { promo: true } })}
+                >
+                  <Text style={styles.promoSeeAllTextInline}>Voir</Text>
+                  <Ionicons name="chevron-forward" size={14} color={COLORS.PRIMARY} />
+                </TouchableOpacity>
+              )}
+            </View>
+          </View>
           <ScrollView
             horizontal
             showsHorizontalScrollIndicator={false}
@@ -510,54 +513,7 @@ const HomeScreen: React.FC = () => {
             snapToAlignment="start"
             pagingEnabled={false}
           >
-            {displayPromoProducts.slice(0, 8).map((product: Product) => {
-              const discountPercentage = product.discount_price && product.price > 0
-                ? Math.round(((product.price - product.discount_price) / product.price) * 100)
-                : 0;
-              
-              return (
-                <TouchableOpacity
-                  key={product.id}
-                  style={styles.promoCard}
-                  onPress={() => navigation.navigate('Products', { screen: 'ProductDetail', params: { slug: product.slug } })}
-                  activeOpacity={0.8}
-                >
-                  {discountPercentage > 0 && (
-                    <View style={styles.promoBadge}>
-                      <View style={styles.promoBadgeInner}>
-                        <Text style={styles.promoBadgeText}>-{discountPercentage}%</Text>
-                      </View>
-                      <View style={styles.promoBadgeTriangle} />
-                    </View>
-                  )}
-                  <View style={styles.promoImageContainer}>
-                    {product.image ? (
-                      <Image source={{ uri: product.image }} style={styles.promoImage} resizeMode="cover" />
-                    ) : (
-                      <View style={styles.promoImageFallback}>
-                        <MaterialIcons name="image-not-supported" size={48} color={COLORS.TEXT_SECONDARY} />
-                      </View>
-                    )}
-                  </View>
-                  <View style={styles.promoCardContent}>
-                    <Text style={styles.promoProductTitle} numberOfLines={1}>{product.title}</Text>
-                    <View style={styles.promoPriceContainer}>
-                      <View style={styles.promoPriceRow}>
-                        <Text style={styles.promoNewPrice}>{formatPrice(product.discount_price || product.price)}</Text>
-                        {product.is_salam && (
-                          <View style={styles.salamBadge}>
-                            <Text style={styles.salamBadgeText}>SALAM</Text>
-                          </View>
-                        )}
-                      </View>
-                      {product.discount_price && product.discount_price < product.price && (
-                        <Text style={styles.promoOldPrice}>{formatPrice(product.price)}</Text>
-                      )}
-                    </View>
-                  </View>
-                </TouchableOpacity>
-              );
-            })}
+            {displayPromoProducts.slice(0, 8).map((product: Product) => renderProductCard(product, false))}
           </ScrollView>
         </View>
       )}
@@ -583,33 +539,7 @@ const HomeScreen: React.FC = () => {
             snapToAlignment="start"
             pagingEnabled={false}
           >
-            {newProducts.slice(0, 8).map((product: Product) => (
-              <TouchableOpacity
-                key={product.id}
-                style={styles.promoCard}
-                onPress={() => navigation.navigate('Products', { screen: 'ProductDetail', params: { slug: product.slug } })}
-                activeOpacity={0.8}
-              >
-                <View style={styles.newBadge}>
-                  <Text style={styles.newBadgeText}>NOUVEAU</Text>
-                </View>
-                <View style={styles.promoImageContainer}>
-                  {product.image ? (
-                    <Image source={{ uri: product.image }} style={styles.promoImage} resizeMode="cover" />
-                  ) : (
-                    <View style={styles.promoImageFallback}>
-                      <MaterialIcons name="image-not-supported" size={48} color={COLORS.TEXT_SECONDARY} />
-                    </View>
-                  )}
-                </View>
-                <View style={styles.promoCardContent}>
-                  <Text style={styles.promoProductTitle} numberOfLines={1}>{product.title}</Text>
-                  <View style={styles.promoPriceContainer}>
-                    <Text style={styles.promoNewPrice}>{formatPrice(product.discount_price || product.price)}</Text>
-                  </View>
-                </View>
-              </TouchableOpacity>
-            ))}
+            {newProducts.slice(0, 8).map((product: Product) => renderProductCard(product, true))}
           </ScrollView>
         </View>
       )}
@@ -635,92 +565,10 @@ const HomeScreen: React.FC = () => {
             snapToAlignment="start"
             pagingEnabled={false}
           >
-            {phoneProducts.map((product: Product) => (
-              <TouchableOpacity
-                key={product.id}
-                style={styles.promoCard}
-                onPress={() => navigation.navigate('Products', { screen: 'ProductDetail', params: { slug: product.slug } })}
-                activeOpacity={0.8}
-              >
-                <View style={styles.promoImageContainer}>
-                  {product.image ? (
-                    <Image source={{ uri: product.image }} style={styles.promoImage} resizeMode="cover" />
-                  ) : (
-                    <View style={styles.promoImageFallback}>
-                      <MaterialIcons name="image-not-supported" size={48} color={COLORS.TEXT_SECONDARY} />
-                    </View>
-                  )}
-                </View>
-                <View style={styles.promoCardContent}>
-                  <Text style={styles.promoProductTitle} numberOfLines={1}>{product.title}</Text>
-                  <View style={styles.promoPriceContainer}>
-                    <Text style={styles.promoNewPrice}>{formatPrice(product.discount_price || product.price)}</Text>
-                  </View>
-                </View>
-              </TouchableOpacity>
-            ))}
+            {phoneProducts.map((product: Product) => renderProductCard(product, false))}
           </ScrollView>
         </View>
       )}
-
-      {/* Section Produits B2B */}
-      {b2bProducts.length > 0 && (() => {
-        // Filtrer uniquement les produits valides avec ID et titre
-        const validB2BProducts = b2bProducts.filter((p: Product) => p && p.id && p.title);
-        // Logs désactivés pour réduire la pollution de la console
-        // console.log(`[HOME] 🎯 Section B2B - b2bProducts.length: ${b2bProducts.length}, validB2BProducts.length: ${validB2BProducts.length}`);
-        if (validB2BProducts.length > 0) {
-          const displayedIds = validB2BProducts.map(p => p.id);
-          // console.log(`[HOME] 🔢 IDs produits B2B à afficher: [${displayedIds.join(', ')}]`);
-        }
-        return (
-          <View style={styles.promoSection}>
-            <View style={styles.promoHeaderInline}>
-              <View style={styles.promoHeaderIconContainer}>
-                <MaterialIcons name="inventory" size={20} color={COLORS.SECONDARY} />
-              </View>
-              <View style={styles.promoHeaderTextContainer}>
-                <Text style={styles.promoSectionTitleInline}>Produits B2B</Text>
-                <Text style={styles.promoSectionSubtitleInline}>Stock disponible</Text>
-              </View>
-            </View>
-            <ScrollView
-              horizontal
-              showsHorizontalScrollIndicator={false}
-              contentContainerStyle={styles.promoCarouselContent}
-              snapToInterval={156}
-              decelerationRate="fast"
-              snapToAlignment="start"
-              pagingEnabled={false}
-            >
-              {validB2BProducts.map((product: Product) => (
-              <TouchableOpacity
-                key={product.id}
-                style={styles.promoCard}
-                onPress={() => navigation.navigate('Products', { screen: 'ProductDetail', params: { slug: product.slug } })}
-                activeOpacity={0.8}
-              >
-                <View style={styles.promoImageContainer}>
-                  {product.image ? (
-                    <Image source={{ uri: product.image }} style={styles.promoImage} resizeMode="cover" />
-                  ) : (
-                    <View style={styles.promoImageFallback}>
-                      <MaterialIcons name="image-not-supported" size={48} color={COLORS.TEXT_SECONDARY} />
-                    </View>
-                  )}
-                </View>
-                <View style={styles.promoCardContent}>
-                  <Text style={styles.promoProductTitle} numberOfLines={1}>{product.title}</Text>
-                  <View style={styles.promoPriceContainer}>
-                    <Text style={styles.promoNewPrice}>{formatPrice(product.discount_price || product.price)}</Text>
-                  </View>
-                </View>
-              </TouchableOpacity>
-              ))}
-            </ScrollView>
-          </View>
-        );
-      })()}
 
       {/* Titre pour "Autres produits" */}
       <View style={styles.sectionHeader}>
@@ -749,28 +597,43 @@ const HomeScreen: React.FC = () => {
           searchQuery={searchQuery}
           onSearchChange={handleSearch}
           onClearSearch={handleClearSearch}
+          openSearchModal={handleSearchFocus}
         />
       </View>
 
-      {isLoading && products.length === 0 ? (
-        <LoadingScreen />
-      ) : (
-        <FlatList
-          data={products}
-          renderItem={renderProductItem}
-          keyExtractor={(item) => item.id.toString()}
-          ListHeaderComponent={renderHeader}
-          ListFooterComponent={renderFooter}
-          onEndReached={handleLoadMore}
-          onEndReachedThreshold={0.5}
-          refreshControl={
-            <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
-          }
-          numColumns={2}
-          columnWrapperStyle={styles.columnWrapper}
-          contentContainerStyle={styles.flatListContent}
-          showsVerticalScrollIndicator={false}
+      {/* Modal de recherche - remplace le contenu */}
+      {searchModalVisible ? (
+        <SearchModal
+          visible={searchModalVisible}
+          onClose={() => {
+            Keyboard.dismiss();
+            setSearchModalVisible(false);
+          }}
+          initialQuery={searchQuery}
         />
+      ) : (
+        <>
+          {isLoading && products.length === 0 ? (
+            <LoadingScreen />
+          ) : (
+            <FlatList
+              data={products}
+              renderItem={renderProductItem}
+              keyExtractor={(item) => item.id.toString()}
+              ListHeaderComponent={renderHeader}
+              ListFooterComponent={renderFooter}
+              onEndReached={handleLoadMore}
+              onEndReachedThreshold={0.5}
+              refreshControl={
+                <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+              }
+              numColumns={2}
+              columnWrapperStyle={styles.columnWrapper}
+              contentContainerStyle={styles.flatListContent}
+              showsVerticalScrollIndicator={false}
+            />
+          )}
+        </>
       )}
     </SafeAreaView>
   );
@@ -1044,6 +907,7 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     marginRight: 6,
     overflow: 'hidden',
+    position: 'relative',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.08,

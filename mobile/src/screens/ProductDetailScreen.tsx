@@ -38,6 +38,30 @@ const ProductDetailScreen: React.FC = () => {
   // Vérifier si le produit est déjà dans le panier
   const itemInCart = selectedProduct ? items.find(item => item.product.id === selectedProduct.id) : null;
 
+  // Réinitialiser la quantité quand le produit change
+  useEffect(() => {
+    if (selectedProduct) {
+      const specs = selectedProduct.specifications || {};
+      const isWeighted = specs.sold_by_weight === true || 
+                         specs.unit_type === 'weight' || 
+                         specs.unit_type === 'kg' ||
+                         specs.unit_type === 'kilogram';
+      // Pour les produits au poids, initialiser à 0.5 kg (minimum)
+      if (isWeighted) {
+        setQuantity(0.5);
+        if (__DEV__) {
+          console.log('[ProductDetailScreen] ⚖️ Initialisation quantité au poids:', {
+            productId: selectedProduct.id,
+            initialQuantity: 0.5,
+            isWeighted: true,
+          });
+        }
+      } else {
+        setQuantity(1);
+      }
+    }
+  }, [selectedProduct?.id]);
+
   useEffect(() => {
     if (slug) {
       dispatch(fetchProductDetail(slug));
@@ -88,6 +112,22 @@ const ProductDetailScreen: React.FC = () => {
       carouselCount: images.length,
       galleryPreview: (selectedProduct.image_urls?.gallery || []).slice(0, 3),
     });
+    
+    // Log détaillé de toutes les URLs d'images (y compris champs non typés)
+    const productAny = selectedProduct as any;
+    console.log('[ProductDetailScreen] 📸 URLs Images Complètes:', {
+      productId: selectedProduct.id,
+      slug: selectedProduct.slug,
+      'image (principale)': selectedProduct.image,
+      'image_url (string)': productAny.image_url,
+      'image_urls.main': selectedProduct.image_urls?.main,
+      'image_urls.gallery (toutes)': selectedProduct.image_urls?.gallery || [],
+      'images (carrousel final)': images,
+      'feature_image': productAny.feature_image,
+      'gallery (array)': productAny.gallery,
+      'images (array)': productAny.images,
+      'image_urls (objet complet)': productAny.image_urls,
+    });
     console.log('[ProductDetailScreen] 🏷️ Promo:', {
       productId: selectedProduct.id,
       slug: selectedProduct.slug,
@@ -100,7 +140,64 @@ const ProductDetailScreen: React.FC = () => {
       promotion_end_date: selectedProduct.promotion_end_date,
       computedDiscountPercentageUI: discountPercentage,
     });
+
+    // Détection des produits au poids
+    const specs = selectedProduct.specifications || {};
+    const isWeighted = specs.sold_by_weight === true || 
+                       specs.unit_type === 'weight' || 
+                       specs.unit_type === 'kg' ||
+                       specs.unit_type === 'kilogram';
+    
+    console.log('[ProductDetailScreen] ⚖️ Produit au poids:', {
+      productId: selectedProduct.id,
+      slug: selectedProduct.slug,
+      isWeighted: isWeighted,
+      sold_by_weight: specs.sold_by_weight,
+      unit_type: specs.unit_type,
+      price_per_kg: specs.price_per_kg,
+      available_weight_kg: specs.available_weight_kg,
+      weight: selectedProduct.weight,
+      stock: selectedProduct.stock,
+      is_salam: selectedProduct.is_salam,
+      specifications: specs,
+    });
   }, [selectedProduct?.id, images.length]);
+
+  // Fonction helper pour formater le poids (définie avant handleAddToCart)
+  const formatAvailableWeight = (weight: number | undefined): string => {
+    if (weight === undefined || weight === null) return '0';
+    const specs = selectedProduct?.specifications || {};
+    // Utiliser la valeur formatée depuis les spécifications si disponible (évite l'arrondi)
+    if (specs.formatted_quantity) {
+      return specs.formatted_quantity;
+    }
+    // Sinon, formater avec précision (jusqu'à 3 décimales pour éviter l'arrondi à 1.00)
+    if (weight % 1 !== 0) {
+      // Garder les décimales significatives sans arrondir
+      const str = weight.toString();
+      if (str.includes('.')) {
+        const parts = str.split('.');
+        const decimals = parts[1].length;
+        // Garder jusqu'à 3 décimales, mais ne pas arrondir
+        return decimals <= 3 ? str : weight.toFixed(3);
+      }
+      return weight.toFixed(3);
+    }
+    return weight.toFixed(0);
+  };
+
+  // Formater la quantité pour l'affichage (évite l'arrondi à 1.0)
+  const formatQuantity = (qty: number): string => {
+    // Si c'est un entier, afficher sans décimales
+    if (qty % 1 === 0) {
+      return qty.toString();
+    }
+    // Pour les décimales, garder la précision exacte (jusqu'à 3 décimales)
+    // Utiliser toFixed avec le nombre de décimales nécessaires, puis supprimer les zéros de fin
+    const fixed = qty.toFixed(3);
+    // Supprimer les zéros de fin inutiles
+    return fixed.replace(/\.?0+$/, '');
+  };
 
   const handleAddToCart = async () => {
     if (!selectedProduct) return;
@@ -111,14 +208,41 @@ const ProductDetailScreen: React.FC = () => {
       return;
     }
 
+    // Détecter si c'est un produit au poids (utiliser la même logique que dans le JSX)
+    const specs = selectedProduct.specifications || {};
+    const isWeightedProduct = specs.sold_by_weight === true || 
+                              specs.unit_type === 'weight' || 
+                              specs.unit_type === 'kg' ||
+                              specs.unit_type === 'kilogram';
+
     // Vérifier le stock (sauf pour les produits Salam)
-    if (!selectedProduct.is_salam && selectedProduct.stock !== undefined && selectedProduct.stock > 0) {
-      if (quantity > selectedProduct.stock) {
-        Alert.alert(
-          'Stock insuffisant',
-          `Stock disponible: ${selectedProduct.stock}. Veuillez réduire la quantité.`
-        );
-        return;
+    if (!selectedProduct.is_salam) {
+      if (isWeightedProduct) {
+        // Pour les produits au poids, vérifier le poids disponible
+        const availableWeight = specs.available_weight_kg || 0;
+        if (availableWeight > 0 && quantity > availableWeight) {
+          Alert.alert(
+            'Stock insuffisant',
+            `Poids disponible: ${formatAvailableWeight(availableWeight)} kg. Veuillez réduire la quantité.`
+          );
+          return;
+        }
+        // Vérifier le minimum (0.5 kg)
+        if (quantity < 0.5) {
+          Alert.alert('Quantité minimale', 'La quantité minimale est de 0.5 kg');
+          return;
+        }
+      } else {
+        // Pour les produits normaux, vérifier le stock en unités
+        if (selectedProduct.stock !== undefined && selectedProduct.stock > 0) {
+          if (quantity > selectedProduct.stock) {
+            Alert.alert(
+              'Stock insuffisant',
+              `Stock disponible: ${selectedProduct.stock}. Veuillez réduire la quantité.`
+            );
+            return;
+          }
+        }
       }
     }
 
@@ -131,6 +255,15 @@ const ProductDetailScreen: React.FC = () => {
     }
 
     try {
+      if (__DEV__) {
+        console.log('[ProductDetailScreen] ⚖️ Ajout au panier:', {
+          productId: selectedProduct.id,
+          productTitle: selectedProduct.title,
+          isWeighted: isWeightedProduct,
+          quantity,
+          specs: selectedProduct.specifications,
+        });
+      }
       await dispatch(
         addToCart({
           product: selectedProduct.id,
@@ -148,13 +281,67 @@ const ProductDetailScreen: React.FC = () => {
     return <LoadingScreen />;
   }
 
-  const hasDiscount = selectedProduct.discount_price &&
-                     selectedProduct.discount_price > 0 &&
-                     selectedProduct.price > 0 &&
-                     selectedProduct.discount_price < selectedProduct.price;
+  // Vérifier si c'est un produit au poids
+  const specs = selectedProduct.specifications || {};
+  const isWeighted = specs.sold_by_weight === true || 
+                     specs.unit_type === 'weight' || 
+                     specs.unit_type === 'kg' ||
+                     specs.unit_type === 'kilogram';
+
+  // Log pour déboguer
+  if (__DEV__ && isWeighted) {
+    console.log('[ProductDetailScreen] ⚖️ Contrôle poids:', {
+      productId: selectedProduct.id,
+      isWeighted: isWeighted,
+      currentQuantity: quantity,
+      availableWeight: specs.available_weight_kg,
+      sold_by_weight: specs.sold_by_weight,
+      unit_type: specs.unit_type,
+    });
+  }
+
+  // Vérifier la disponibilité du stock (poids pour les produits au poids, unités pour les autres)
+  const hasStock = isWeighted 
+    ? (specs.available_weight_kg !== undefined && specs.available_weight_kg > 0)
+    : (selectedProduct.stock !== undefined && selectedProduct.stock > 0);
   
-  const discountPercentage = hasDiscount && selectedProduct.price > 0
-    ? Math.round(((selectedProduct.price - selectedProduct.discount_price!) / selectedProduct.price) * 100)
+  const availableStock = isWeighted
+    ? specs.available_weight_kg
+    : selectedProduct.stock;
+
+
+  // Obtenir le prix unitaire (au kg pour les produits au poids, unitaire pour les autres)
+  const getUnitPrice = (): number => {
+    if (isWeighted) {
+      // Pour les produits au poids, utiliser price_per_kg depuis les spécifications
+      const pricePerKg = specs.price_per_kg;
+      if (pricePerKg) {
+        return pricePerKg;
+      }
+    }
+    return selectedProduct.price;
+  };
+
+  const getDiscountPrice = (): number | undefined => {
+    if (isWeighted) {
+      // Pour les produits au poids, vérifier s'il y a un discount_price_per_kg
+      const discountPricePerKg = specs.discount_price_per_kg;
+      if (discountPricePerKg) {
+        return discountPricePerKg;
+      }
+    }
+    return selectedProduct.discount_price;
+  };
+
+  const unitPrice = getUnitPrice();
+  const discountPrice = getDiscountPrice();
+  const hasDiscount = discountPrice &&
+                     discountPrice > 0 &&
+                     unitPrice > 0 &&
+                     discountPrice < unitPrice;
+  
+  const discountPercentage = hasDiscount && unitPrice > 0
+    ? Math.round(((unitPrice - discountPrice!) / unitPrice) * 100)
     : 0;
 
   const hasImages = images.length > 0;
@@ -240,12 +427,68 @@ const ProductDetailScreen: React.FC = () => {
       <View style={styles.mainContent}>
         {/* En-tête avec titre et marque */}
         <View style={styles.header}>
-          {selectedProduct.brand && (
-            <View style={styles.brandContainer}>
-              <MaterialIcons name="business" size={18} color={COLORS.PRIMARY} />
-              <Text style={styles.brand}>{selectedProduct.brand}</Text>
-            </View>
-          )}
+          {(() => {
+            // Fonction helper pour extraire et nettoyer une valeur de marque
+            // Basée sur la logique du template tag get_brand_name du web
+            const extractBrand = (value: any): string | null => {
+              if (!value) return null;
+              
+              // Si c'est un objet/dict (comme {id: 10, name: 'nike'})
+              if (typeof value === 'object' && !Array.isArray(value) && value !== null) {
+                // Chercher la propriété name en priorité (comme dans get_brand_name)
+                if (value.name) {
+                  const brandName = String(value.name).trim();
+                  if (brandName.length > 0) return brandName;
+                }
+                // Si pas de name, retourner la représentation string de l'objet (comme dans get_brand_name)
+                return String(value);
+              }
+              
+              // Si c'est une string
+              if (typeof value === 'string') {
+                const trimmed = value.trim();
+                // Si la string ressemble à un dict (commence par {), essayer de parser
+                if (trimmed.startsWith('{')) {
+                  try {
+                    const parsed = JSON.parse(trimmed);
+                    if (parsed && typeof parsed === 'object' && parsed.name) {
+                      return String(parsed.name).trim();
+                    }
+                  } catch {
+                    // Si le parsing JSON échoue, essayer d'extraire avec regex (comme dans get_brand_name)
+                    const match = trimmed.match(/'name':\s*['"]([^'"]+)['"]/);
+                    if (match && match[1]) {
+                      return match[1].trim();
+                    }
+                  }
+                }
+                return trimmed.length > 0 ? trimmed : null;
+              }
+              
+              // Convertir en string si possible
+              try {
+                const str = String(value).trim();
+                return str.length > 0 ? str : null;
+              } catch {
+                return null;
+              }
+            };
+
+            // Extraire la marque depuis plusieurs sources possibles (dans l'ordre de priorité)
+            const brand = 
+              extractBrand(selectedProduct.brand) ||
+              extractBrand(selectedProduct.specifications?.brand) ||
+              extractBrand(selectedProduct.specifications?.manufacturer) ||
+              extractBrand(selectedProduct.specifications?.brand_name) ||
+              null;
+
+            return brand ? (
+              <View style={styles.brandContainer}>
+                <MaterialIcons name="business" size={18} color={COLORS.PRIMARY} />
+                <Text style={styles.brand}>{brand}</Text>
+              </View>
+            ) : null;
+          })()}
           {selectedProduct.category && (() => {
             const category = categories.find(c => c.id === selectedProduct.category);
             return category ? (
@@ -274,31 +517,41 @@ const ProductDetailScreen: React.FC = () => {
             <View style={styles.priceContainer}>
               <View style={styles.priceRow}>
                 <Text style={styles.discountPrice}>
-                  {formatPrice(selectedProduct.discount_price!)}
+                  {formatPrice(discountPrice!)}
                 </Text>
                 <Text style={styles.oldPrice}>
-                  {formatPrice(selectedProduct.price)}
+                  {formatPrice(unitPrice)}
                 </Text>
+                <Text style={styles.priceUnit}> / {isWeighted ? 'kg' : 'unité'}</Text>
                 <View style={styles.discountTag}>
                   <Text style={styles.discountTagText}>PROMO</Text>
                 </View>
               </View>
             </View>
           ) : (
-            <Text style={styles.price}>{formatPrice(selectedProduct.price)}</Text>
+            <View style={styles.priceRow}>
+              <Text style={styles.price}>{formatPrice(unitPrice)}</Text>
+              <Text style={styles.priceUnit}> / {isWeighted ? 'kg' : 'unité'}</Text>
+            </View>
           )}
         </View>
 
         {/* Indicateur de stock */}
-        {selectedProduct.stock !== undefined && (
+        {(selectedProduct.stock !== undefined || (isWeighted && specs.available_weight_kg !== undefined)) && (
           <View style={styles.stockContainer}>
-            {selectedProduct.stock > 0 ? (
+            {hasStock ? (
               <View style={styles.stockAvailable}>
                 <View style={styles.stockDot} />
                 <Text style={styles.stockText}>
-                  {selectedProduct.stock > 10 
-                    ? 'En stock' 
-                    : `Plus que ${selectedProduct.stock} disponible${selectedProduct.stock > 1 ? 's' : ''}`}
+                  {isWeighted ? (
+                    availableStock && availableStock > 0
+                      ? `${formatAvailableWeight(availableStock)} kg disponible${availableStock > 1 ? 's' : ''}`
+                      : 'En stock'
+                  ) : (
+                    availableStock && availableStock > 10
+                      ? 'En stock'
+                      : `Plus que ${availableStock} disponible${availableStock > 1 ? 's' : ''}`
+                  )}
                 </Text>
               </View>
             ) : (
@@ -310,40 +563,116 @@ const ProductDetailScreen: React.FC = () => {
           </View>
         )}
 
-        {/* Contrôle de quantité */}
+        {/* Contrôle de quantité/poids */}
         <View style={styles.quantitySection}>
-          <Text style={styles.quantityLabel}>Quantité</Text>
+          <Text style={styles.quantityLabel}>{isWeighted ? 'Poids' : 'Quantité'}</Text>
           <View style={styles.quantityContainer}>
-            <TouchableOpacity
-              style={[styles.quantityButton, quantity === 1 && styles.quantityButtonDisabled]}
-              onPress={() => setQuantity(Math.max(1, quantity - 1))}
-              disabled={quantity === 1}
-            >
-              <Ionicons 
-                name="remove" 
-                size={20} 
-                color={quantity === 1 ? COLORS.TEXT_SECONDARY : COLORS.TEXT} 
-              />
-            </TouchableOpacity>
-            <View style={styles.quantityValueContainer}>
-              <Text style={styles.quantityValue}>{quantity}</Text>
-            </View>
-            <TouchableOpacity
-              style={styles.quantityButton}
-              onPress={() => setQuantity(quantity + 1)}
-            >
-              <Ionicons name="add" size={20} color={COLORS.TEXT} />
-            </TouchableOpacity>
+            {isWeighted ? (
+              <>
+                <TouchableOpacity
+                  style={[styles.quantityButton, quantity <= 0.5 && styles.quantityButtonDisabled]}
+                  onPress={() => {
+                    const decrement = 0.5;
+                    const newWeight = Math.max(0.5, quantity - decrement);
+                    if (__DEV__) {
+                      console.log('[ProductDetailScreen] ⚖️ Diminution poids:', {
+                        currentQuantity: quantity,
+                        decrement: decrement,
+                        newWeight: newWeight,
+                      });
+                    }
+                    setQuantity(newWeight);
+                  }}
+                  disabled={quantity <= 0.5}
+                >
+                  <Ionicons 
+                    name="remove" 
+                    size={20} 
+                    color={quantity <= 0.5 ? COLORS.TEXT_SECONDARY : COLORS.TEXT} 
+                  />
+                </TouchableOpacity>
+                <View style={styles.quantityValueContainer}>
+                  <Text style={styles.quantityValue}>{formatQuantity(quantity)}</Text>
+                  <Text style={styles.quantityUnit}>kg</Text>
+                </View>
+                <TouchableOpacity
+                  style={[
+                    styles.quantityButton,
+                    (availableStock && (quantity >= availableStock || (quantity + 0.5) > availableStock)) && styles.quantityButtonDisabled
+                  ]}
+                  onPress={() => {
+                    const increment = 0.5;
+                    // Vérifier qu'il y a assez de poids disponible pour ajouter 0.5 kg
+                    if (availableStock && (quantity + increment) > availableStock) {
+                      return; // Ne pas ajouter si pas assez de poids disponible
+                    }
+                    const newWeight = quantity + increment;
+                    if (__DEV__) {
+                      console.log('[ProductDetailScreen] ⚖️ Augmentation poids:', {
+                        currentQuantity: quantity,
+                        increment: increment,
+                        newWeight: newWeight,
+                        availableStock: availableStock,
+                      });
+                    }
+                    setQuantity(newWeight);
+                  }}
+                  disabled={availableStock ? (quantity >= availableStock || (quantity + 0.5) > availableStock) : false}
+                >
+                  <Ionicons 
+                    name="add" 
+                    size={20} 
+                    color={(availableStock && (quantity >= availableStock || (quantity + 0.5) > availableStock)) ? COLORS.TEXT_SECONDARY : COLORS.TEXT} 
+                  />
+                </TouchableOpacity>
+              </>
+            ) : (
+              <>
+                <TouchableOpacity
+                  style={[styles.quantityButton, quantity === 1 && styles.quantityButtonDisabled]}
+                  onPress={() => setQuantity(Math.max(1, quantity - 1))}
+                  disabled={quantity === 1}
+                >
+                  <Ionicons 
+                    name="remove" 
+                    size={20} 
+                    color={quantity === 1 ? COLORS.TEXT_SECONDARY : COLORS.TEXT} 
+                  />
+                </TouchableOpacity>
+                <View style={styles.quantityValueContainer}>
+                  <Text style={styles.quantityValue}>{quantity}</Text>
+                </View>
+                <TouchableOpacity
+                  style={[
+                    styles.quantityButton,
+                    availableStock && quantity >= availableStock && styles.quantityButtonDisabled
+                  ]}
+                  onPress={() => {
+                    const newQty = availableStock 
+                      ? Math.min(availableStock, quantity + 1)
+                      : quantity + 1;
+                    setQuantity(newQty);
+                  }}
+                  disabled={availableStock ? quantity >= availableStock : false}
+                >
+                  <Ionicons 
+                    name="add" 
+                    size={20} 
+                    color={(availableStock && quantity >= availableStock) ? COLORS.TEXT_SECONDARY : COLORS.TEXT} 
+                  />
+                </TouchableOpacity>
+              </>
+            )}
           </View>
         </View>
 
         <TouchableOpacity
           style={[
             styles.addToCartButton, 
-            (!selectedProduct.is_available || (selectedProduct.stock !== undefined && selectedProduct.stock <= 0) || isReadOnly) && styles.disabledButton
+            (!selectedProduct.is_available || !hasStock || isReadOnly) && styles.disabledButton
           ]}
           onPress={handleAddToCart}
-          disabled={!selectedProduct.is_available || (selectedProduct.stock !== undefined && selectedProduct.stock <= 0) || isAddingToCart}
+          disabled={!selectedProduct.is_available || !hasStock || isAddingToCart}
           activeOpacity={0.8}
         >
           {isAddingToCart ? (
@@ -351,7 +680,7 @@ const ProductDetailScreen: React.FC = () => {
           ) : (
             <View style={styles.addToCartContent}>
               <MaterialIcons 
-                name={isReadOnly ? "cloud-off" : (selectedProduct.is_available && (selectedProduct.stock === undefined || selectedProduct.stock > 0) ? "shopping-cart" : "block")} 
+                name={isReadOnly ? "cloud-off" : (selectedProduct.is_available && hasStock ? "shopping-cart" : "block")} 
                 size={24} 
                 color="#FFFFFF" 
               />
@@ -360,7 +689,7 @@ const ProductDetailScreen: React.FC = () => {
                   ? 'Mode lecture seule'
                   : (itemInCart 
                       ? `Dans le panier (${itemInCart.quantity})` 
-                      : (selectedProduct.is_available && (selectedProduct.stock === undefined || selectedProduct.stock > 0) ? 'Ajouter au panier' : 'Indisponible'))}
+                      : (selectedProduct.is_available && hasStock ? 'Ajouter au panier' : 'Indisponible'))}
               </Text>
             </View>
           )}
@@ -374,97 +703,6 @@ const ProductDetailScreen: React.FC = () => {
               <Text style={styles.sectionTitle}>Description</Text>
             </View>
             <Text style={styles.description}>{selectedProduct.description}</Text>
-          </View>
-        )}
-
-        {/* Caractéristiques techniques avec cartes individuelles */}
-        {selectedProduct.specifications && Object.keys(selectedProduct.specifications).length > 0 && (
-          <View style={styles.specsSection}>
-            <View style={styles.sectionHeader}>
-              <MaterialIcons name="settings" size={20} color={COLORS.PRIMARY} />
-              <Text style={styles.sectionTitle}>Caractéristiques techniques</Text>
-            </View>
-            <View style={styles.specsGrid}>
-              {Object.entries(selectedProduct.specifications).map(([key, value]) => {
-                // Traduire les clés en français
-                const translateKey = (specKey: string): string => {
-                  const lowerKey = specKey.toLowerCase();
-                  const translations: Record<string, string> = {
-                    'brand': 'Marque',
-                    'model': 'Modèle',
-                    'color': 'Couleur',
-                    'color_name': 'Couleur',
-                    'condition': 'État',
-                    'is_new': 'État',
-                    'storage': 'Stockage',
-                    'ram': 'RAM',
-                    'screen_size': 'Taille d\'écran',
-                    'resolution': 'Résolution',
-                    'operating_system': 'Système d\'exploitation',
-                    'processor': 'Processeur',
-                    'battery_capacity': 'Batterie',
-                    'camera_main': 'Caméra principale',
-                    'camera_front': 'Caméra frontale',
-                    'network': 'Réseau',
-                    'box_included': 'Boîte incluse',
-                    'accessories': 'Accessoires',
-                  };
-                  
-                  // Chercher une correspondance exacte ou partielle
-                  for (const [enKey, frValue] of Object.entries(translations)) {
-                    if (lowerKey === enKey || lowerKey.includes(enKey)) {
-                      return frValue;
-                    }
-                  }
-                  
-                  // Si pas de traduction, capitaliser la première lettre
-                  return specKey.charAt(0).toUpperCase() + specKey.slice(1).replace(/_/g, ' ');
-                };
-
-                // Déterminer l'icône selon la clé
-                const getIcon = (specKey: string) => {
-                  const lowerKey = specKey.toLowerCase();
-                  if (lowerKey.includes('marque') || lowerKey.includes('brand')) return 'business';
-                  if (lowerKey.includes('modèle') || lowerKey.includes('model')) return 'phone-android';
-                  if (lowerKey.includes('couleur') || lowerKey.includes('color')) return 'palette';
-                  if (lowerKey.includes('état') || lowerKey.includes('condition') || lowerKey.includes('is_new')) return 'verified';
-                  if (lowerKey.includes('stockage') || lowerKey.includes('storage')) return 'storage';
-                  if (lowerKey.includes('ram')) return 'memory';
-                  if (lowerKey.includes('écran') || lowerKey.includes('screen')) return 'screen-lock-portrait';
-                  if (lowerKey.includes('résolution') || lowerKey.includes('resolution')) return 'high-quality';
-                  if (lowerKey.includes('système') || lowerKey.includes('os') || lowerKey.includes('operating')) return 'settings';
-                  if (lowerKey.includes('processeur') || lowerKey.includes('processor')) return 'speed';
-                  if (lowerKey.includes('batterie') || lowerKey.includes('battery')) return 'battery-charging-full';
-                  if (lowerKey.includes('réseau') || lowerKey.includes('network')) return 'network-cell';
-                  if (lowerKey.includes('caméra') || lowerKey.includes('camera')) return 'camera-alt';
-                  if (lowerKey.includes('box') || lowerKey.includes('accessories')) return 'inventory';
-                  return 'info';
-                };
-
-                const translatedKey = translateKey(key);
-                const displayValue = String(value);
-
-                return (
-                  <View key={key} style={styles.specCard}>
-                    <View style={styles.specCardContent}>
-                      <View style={styles.specIconContainer}>
-                        <MaterialIcons 
-                          name={getIcon(key) as any} 
-                          size={20} 
-                          color={COLORS.PRIMARY} 
-                        />
-                      </View>
-                      <View style={styles.specCardText}>
-                        <Text style={styles.specCardLabel}>{translatedKey}</Text>
-                        <Text style={styles.specCardValue} numberOfLines={1}>
-                          {displayValue}
-                        </Text>
-                      </View>
-                    </View>
-                  </View>
-                );
-              })}
-            </View>
           </View>
         )}
 
@@ -718,8 +956,9 @@ const styles = StyleSheet.create({
     flexDirection: 'column',
   },
   priceRow: {
-    flexDirection: 'column',
-    alignItems: 'flex-start',
+    flexDirection: 'row',
+    alignItems: 'center',
+    flexWrap: 'wrap',
     marginBottom: 8,
   },
   price: {
@@ -727,6 +966,12 @@ const styles = StyleSheet.create({
     fontWeight: '900',
     color: COLORS.DANGER,
     letterSpacing: -0.5,
+  },
+  priceUnit: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: COLORS.TEXT_SECONDARY,
+    marginLeft: 6,
   },
   discountPrice: {
     fontSize: 32,
@@ -844,6 +1089,12 @@ const styles = StyleSheet.create({
     minWidth: 40,
     textAlign: 'center',
   },
+  quantityUnit: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: COLORS.TEXT_SECONDARY,
+    marginTop: 2,
+  },
   addToCartButton: {
     backgroundColor: COLORS.PRIMARY,
     borderRadius: 12,
@@ -876,15 +1127,10 @@ const styles = StyleSheet.create({
   section: {
     marginBottom: 32,
   },
-  specsSection: {
-    marginBottom: 24,
-    paddingHorizontal: 0,
-  },
   sectionHeader: {
     flexDirection: 'row',
     alignItems: 'center',
     marginBottom: 12,
-    paddingHorizontal: 20,
   },
   sectionTitle: {
     fontSize: 20,
@@ -892,63 +1138,17 @@ const styles = StyleSheet.create({
     color: COLORS.TEXT,
     marginLeft: 8,
   },
+  descriptionContainer: {
+    backgroundColor: '#FAFAFA',
+    borderRadius: 12,
+    padding: 16,
+    borderWidth: 1,
+    borderColor: '#F3F4F6',
+  },
   description: {
     fontSize: 16,
-    color: COLORS.TEXT_SECONDARY,
-    lineHeight: 24,
-  },
-  specsGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 6,
-    marginTop: 4,
-    paddingHorizontal: 0,
-    width: '100%',
-  },
-  specCard: {
-    width: '48.5%',
-    backgroundColor: '#FFFFFF',
-    borderRadius: 10,
-    padding: 8,
-    borderWidth: 1,
-    borderColor: '#E5E7EB',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 2,
-    elevation: 2,
-    minHeight: 65,
-  },
-  specCardContent: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    flex: 1,
-  },
-  specIconContainer: {
-    width: 30,
-    height: 30,
-    borderRadius: 8,
-    backgroundColor: `${COLORS.PRIMARY}15`,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: 8,
-    flexShrink: 0,
-  },
-  specCardText: {
-    flex: 1,
-    minWidth: 0,
-  },
-  specCardLabel: {
-    fontSize: 10,
-    fontWeight: '600',
-    color: COLORS.TEXT_SECONDARY,
-    marginBottom: 2,
-  },
-  specCardValue: {
-    fontSize: 12,
-    fontWeight: '700',
     color: COLORS.TEXT,
-    lineHeight: 15,
+    lineHeight: 26,
   },
   infoSection: {
     flexDirection: 'row',

@@ -27,17 +27,19 @@ class AutoSyncB2BMiddleware:
         if request.path in self.sync_trigger_paths:
             # Déclencher en arrière-plan (non bloquant).
             # L'intervalle mini est géré par inventory.tasks (INVENTORY_SYNC_FREQUENCY).
+            # NOTE: Les vues API déclenchent aussi la sync, mais le lock dans should_sync_products()
+            # évite les doublons. On garde les deux pour robustesse (si middleware désactivé).
             try:
                 if trigger_products_sync_async(force=False):
-                    logger.info(f"Déclenchement async sync produits via {request.path}")
+                    logger.info(f"[Middleware] Déclenchement async sync produits via {request.path}")
             except Exception as e:
-                logger.error(f"Erreur déclenchement async sync produits: {str(e)}")
+                logger.error(f"[Middleware] Erreur déclenchement async sync produits: {str(e)}")
 
             try:
                 if trigger_categories_sync_async(force=False):
-                    logger.info(f"Déclenchement async sync catégories via {request.path}")
+                    logger.info(f"[Middleware] Déclenchement async sync catégories via {request.path}")
             except Exception as e:
-                logger.error(f"Erreur déclenchement async sync catégories: {str(e)}")
+                logger.error(f"[Middleware] Erreur déclenchement async sync catégories: {str(e)}")
         
         response = self.get_response(request)
         return response

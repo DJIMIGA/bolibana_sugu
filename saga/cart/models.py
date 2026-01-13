@@ -4,7 +4,9 @@ from django.db.models import Sum, F
 from product.models import Product, Color, Size, ShippingMethod
 from django.conf import settings
 from django.core.exceptions import ValidationError
+from django.core.validators import MinValueValidator
 from django.utils import timezone
+from decimal import Decimal
 
 User = get_user_model()
 
@@ -45,8 +47,23 @@ class Cart(models.Model):
         for item in self.get_classic_items():
             if not item.product.has_stock():
                 errors.append(f"Le produit '{item.product.title}' n'est plus en stock")
-            elif item.product.stock < item.quantity:
-                errors.append(f"Stock insuffisant pour '{item.product.title}' (disponible: {item.product.stock}, demandé: {item.quantity})")
+            else:
+                # Pour les produits au poids, vérifier le poids disponible
+                if hasattr(item.product, 'specifications') and item.product.specifications:
+                    specs = item.product.specifications
+                    if specs.get('sold_by_weight') or specs.get('unit_type') in ['weight', 'kg', 'kilogram']:
+                        available_weight = specs.get('available_weight_kg', 0)
+                        from decimal import Decimal
+                        if Decimal(str(available_weight)) < Decimal(str(item.quantity)):
+                            errors.append(f"Poids insuffisant pour '{item.product.title}' (disponible: {available_weight} kg, demandé: {item.quantity} kg)")
+                    else:
+                        # Produit normal : vérifier le stock en unités
+                        if item.product.stock < float(item.quantity):
+                            errors.append(f"Stock insuffisant pour '{item.product.title}' (disponible: {item.product.stock}, demandé: {int(item.quantity)})")
+                else:
+                    # Pas de spécifications, vérifier le stock normal
+                    if item.product.stock < float(item.quantity):
+                        errors.append(f"Stock insuffisant pour '{item.product.title}' (disponible: {item.product.stock}, demandé: {int(item.quantity)})")
         return errors
 
     def validate_salam_products(self):
@@ -105,7 +122,7 @@ class CartItem(models.Model):
     cart = models.ForeignKey(Cart, related_name='cart_items', on_delete=models.CASCADE)
     product = models.ForeignKey(Product, on_delete=models.CASCADE, null=True, blank=True)
     variant = models.ForeignKey('product.Phone', on_delete=models.CASCADE, null=True, blank=True)
-    quantity = models.PositiveIntegerField(default=1)
+    quantity = models.DecimalField(max_digits=10, decimal_places=3, default=1, validators=[MinValueValidator(0.001)])
     colors = models.ManyToManyField(Color, blank=True)
     sizes = models.ManyToManyField(Size, blank=True)
 
@@ -115,19 +132,45 @@ class CartItem(models.Model):
         return f"{self.quantity} de {self.product.title} dans le panier {self.cart.id}"
     
     def get_total_price(self):
+        # Pour les produits au poids, utiliser le prix au kg depuis les spécifications
+        if self.product and hasattr(self.product, 'specifications') and self.product.specifications:
+            specs = self.product.specifications
+            if specs.get('sold_by_weight') or specs.get('unit_type') in ['weight', 'kg', 'kilogram']:
+                # Produit au poids : utiliser price_per_kg
+                price_per_kg = specs.get('discount_price_per_kg') or specs.get('price_per_kg')
+                if price_per_kg:
+                    from decimal import Decimal
+                    return Decimal(str(price_per_kg)) * Decimal(str(self.quantity))
+        
         if self.variant:
             # Utiliser le prix promotionnel si disponible, sinon le prix normal
             price = self.variant.discount_price if hasattr(self.variant, 'discount_price') and self.variant.discount_price else self.variant.price
-            return price * self.quantity
+            from decimal import Decimal
+            return Decimal(str(price)) * Decimal(str(self.quantity))
         # Utiliser le prix promotionnel si disponible, sinon le prix normal
         price = self.product.discount_price if hasattr(self.product, 'discount_price') and self.product.discount_price else self.product.price
-        return price * self.quantity
+        from decimal import Decimal
+        return Decimal(str(price)) * Decimal(str(self.quantity))
     
     def get_unit_price(self):
         """Retourne le prix unitaire (promo si disponible)"""
+        # Pour les produits au poids, utiliser le prix au kg depuis les spécifications
+        if self.product and hasattr(self.product, 'specifications') and self.product.specifications:
+            specs = self.product.specifications
+            if specs.get('sold_by_weight') or specs.get('unit_type') in ['weight', 'kg', 'kilogram']:
+                # Produit au poids : utiliser price_per_kg
+                price_per_kg = specs.get('discount_price_per_kg') or specs.get('price_per_kg')
+                if price_per_kg:
+                    from decimal import Decimal
+                    return Decimal(str(price_per_kg))
+        
         if self.variant:
-            return self.variant.discount_price if hasattr(self.variant, 'discount_price') and self.variant.discount_price else self.variant.price
-        return self.product.discount_price if hasattr(self.product, 'discount_price') and self.product.discount_price else self.product.price
+            from decimal import Decimal
+            price = self.variant.discount_price if hasattr(self.variant, 'discount_price') and self.variant.discount_price else self.variant.price
+            return Decimal(str(price))
+        from decimal import Decimal
+        price = self.product.discount_price if hasattr(self.product, 'discount_price') and self.product.discount_price else self.product.price
+        return Decimal(str(price))
     
 
 
@@ -266,7 +309,7 @@ class Order(models.Model):
 class OrderItem(models.Model):
     order = models.ForeignKey(Order, related_name='items', on_delete=models.CASCADE, null=True, blank=True)
     product = models.ForeignKey('product.Product', on_delete=models.PROTECT, null=True, blank=True)
-    quantity = models.PositiveIntegerField()
+    quantity = models.DecimalField(max_digits=10, decimal_places=3, validators=[MinValueValidator(Decimal('0.001'))])
     price = models.DecimalField(max_digits=10, decimal_places=2)
     colors = models.ManyToManyField('product.Color', blank=True)
     sizes = models.ManyToManyField('product.Size', blank=True)
@@ -275,10 +318,22 @@ class OrderItem(models.Model):
         return f"{self.quantity} of {self.product.title} in Order {self.order.id}"
     
     def get_total_price(self):
+        # Pour les produits au poids, utiliser le prix au kg depuis les spécifications
+        if self.product and hasattr(self.product, 'specifications') and self.product.specifications:
+            specs = self.product.specifications
+            if specs.get('sold_by_weight') or specs.get('unit_type') in ['weight', 'kg', 'kilogram']:
+                # Produit au poids : utiliser price_per_kg
+                price_per_kg = specs.get('discount_price_per_kg') or specs.get('price_per_kg')
+                if price_per_kg:
+                    from decimal import Decimal
+                    return Decimal(str(price_per_kg)) * Decimal(str(self.quantity))
+        
         # Utiliser le prix promotionnel si disponible, sinon le prix normal
         price = self.product.discount_price if hasattr(self.product, 'discount_price') and self.product.discount_price else self.product.price
-        return price * self.quantity
+        from decimal import Decimal
+        return Decimal(str(price)) * Decimal(str(self.quantity))
 
     def save(self, *args, **kwargs):
-        self.total_price = self.price * self.quantity
+        from decimal import Decimal
+        self.total_price = Decimal(str(self.price)) * Decimal(str(self.quantity))
         super().save(*args, **kwargs)

@@ -13,6 +13,7 @@ import { formatPrice } from '../utils/helpers';
 import { COLORS } from '../utils/constants';
 import { useNavigation } from '@react-navigation/native';
 import { useAppSelector } from '../store/hooks';
+import ProductCardInfo from './ProductCardInfo';
 
 interface ProductCardPhoneProps {
   product: Product;
@@ -89,7 +90,10 @@ const ProductCardPhone: React.FC<ProductCardPhoneProps> = ({ product }) => {
         {/* Badge de promotion */}
         {discountPercentage > 0 && (
           <View style={styles.discountBadge}>
-            <Text style={styles.discountBadgeText}>-{discountPercentage}%</Text>
+            <View style={styles.discountBadgeInner}>
+              <Text style={styles.discountBadgeText}>-{discountPercentage}%</Text>
+            </View>
+            <View style={styles.discountBadgeTriangle} />
           </View>
         )}
 
@@ -120,53 +124,8 @@ const ProductCardPhone: React.FC<ProductCardPhoneProps> = ({ product }) => {
         {/* Titre */}
         <Text style={styles.title} numberOfLines={2}>{product.title}</Text>
         
-        {/* Marque et modèle */}
-        {(phoneData.brand || product.brand) && (
-          <View style={styles.brandContainer}>
-            <MaterialIcons name="business" size={12} color={COLORS.PRIMARY} />
-            <Text style={styles.brand}>
-              {phoneData.brand || product.brand}
-              {phoneData.model && ` ${phoneData.model}`}
-            </Text>
-          </View>
-        )}
-
-        {/* Spécifications techniques compactes */}
-        <View style={styles.specsContainer}>
-          {/* État */}
-          <View style={[styles.specBadge, isNew ? styles.specBadgeNew : styles.specBadgeUsed]}>
-            <Text style={[styles.specBadgeText, isNew ? styles.specBadgeTextNew : styles.specBadgeTextUsed]}>
-              {isNew ? 'Neuf' : 'Occasion'}
-            </Text>
-          </View>
-
-          {/* Stockage */}
-          {phoneData.storage && (
-            <View style={[styles.specBadge, styles.specBadgePurple]}>
-              <Text style={[styles.specBadgeText, styles.specBadgeTextPurple]}>
-                {phoneData.storage} GB
-              </Text>
-            </View>
-          )}
-
-          {/* RAM */}
-          {phoneData.ram && (
-            <View style={[styles.specBadge, styles.specBadgeBlue]}>
-              <Text style={[styles.specBadgeText, styles.specBadgeTextBlue]}>
-                {phoneData.ram} GB RAM
-              </Text>
-            </View>
-          )}
-
-          {/* Garantie - si le produit a une garantie */}
-          {product.has_warranty && (
-            <View style={[styles.specBadge, styles.specBadgeYellow]}>
-              <Text style={[styles.specBadgeText, styles.specBadgeTextYellow]}>
-                Garantie
-              </Text>
-            </View>
-          )}
-        </View>
+        {/* Informations supplémentaires (marque, modèle, spécifications) */}
+        <ProductCardInfo product={product} showBrand={true} showSpecs={true} />
 
         {/* Prix */}
         <View style={styles.priceContainer}>
@@ -187,18 +146,18 @@ const ProductCardPhone: React.FC<ProductCardPhoneProps> = ({ product }) => {
 const styles = StyleSheet.create({
   card: {
     width: CARD_WIDTH,
-    backgroundColor: COLORS.BACKGROUND,
-    borderRadius: 16,
+    backgroundColor: '#FFFFFF',
+    borderRadius: 12,
     overflow: 'hidden',
     marginBottom: 16,
     marginHorizontal: 8,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 6,
-    elevation: 4,
-    borderWidth: 1,
-    borderColor: '#F3F4F6',
+    shadowOpacity: 0.08,
+    shadowRadius: 4,
+    elevation: 3,
+    borderWidth: 0,
+    borderColor: 'transparent',
     position: 'relative',
   },
   colorBorder: {
@@ -317,68 +276,6 @@ const styles = StyleSheet.create({
     marginBottom: 6,
     lineHeight: 18,
     minHeight: 36,
-  },
-  brandContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 8,
-  },
-  brand: {
-    fontSize: 11,
-    color: COLORS.PRIMARY,
-    marginLeft: 4,
-    fontWeight: '600',
-  },
-  specsContainer: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 4,
-    marginBottom: 8,
-  },
-  specBadge: {
-    paddingHorizontal: 6,
-    paddingVertical: 3,
-    borderRadius: 8,
-    borderWidth: 1,
-  },
-  specBadgeNew: {
-    backgroundColor: '#D1FAE5',
-    borderColor: '#A7F3D0',
-  },
-  specBadgeUsed: {
-    backgroundColor: '#FED7AA',
-    borderColor: '#FDBA74',
-  },
-  specBadgePurple: {
-    backgroundColor: '#E9D5FF',
-    borderColor: '#D8B4FE',
-  },
-  specBadgeBlue: {
-    backgroundColor: '#DBEAFE',
-    borderColor: '#BFDBFE',
-  },
-  specBadgeYellow: {
-    backgroundColor: '#FEF3C7',
-    borderColor: '#FDE68A',
-  },
-  specBadgeText: {
-    fontSize: 9,
-    fontWeight: '700',
-  },
-  specBadgeTextNew: {
-    color: '#065F46',
-  },
-  specBadgeTextUsed: {
-    color: '#9A3412',
-  },
-  specBadgeTextPurple: {
-    color: '#6B21A8',
-  },
-  specBadgeTextBlue: {
-    color: '#1E40AF',
-  },
-  specBadgeTextYellow: {
-    color: '#92400E',
   },
   priceContainer: {
     flexDirection: 'row',
