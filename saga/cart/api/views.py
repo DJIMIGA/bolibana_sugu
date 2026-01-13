@@ -330,14 +330,14 @@ class CartViewSet(viewsets.ModelViewSet):
                     
                     line_items = []
                     for item in order.items.all():
-                    line_items.append({
-                        'price_data': {
-                            'currency': 'xof',
-                            'product_data': {'name': item.product.title},
-                            'unit_amount': int(item.price),
-                        },
-                        'quantity': int(float(item.quantity)),  # Stripe nécessite un entier pour quantity
-                    })
+                        line_items.append({
+                            'price_data': {
+                                'currency': 'xof',
+                                'product_data': {'name': item.product.title},
+                                'unit_amount': int(item.price),
+                            },
+                            'quantity': int(float(item.quantity)),  # Stripe nécessite un entier pour quantity
+                        })
                     
                     # Ajouter les frais de livraison
                     line_items.append({
