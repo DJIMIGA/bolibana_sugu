@@ -833,18 +833,6 @@ class PhoneDetailView(DetailView):
             context['review_count'] = len(reviews)
         
         # Ajouter les produits similaires avec optimisation et priorité
-        # Récupérer toutes les catégories liées (catégorie actuelle + sous-catégories)
-        category_ids = [product.category.id]
-        
-        # Ajouter les sous-catégories directes
-        direct_children = product.category.children.all()
-        category_ids.extend(direct_children.values_list('id', flat=True))
-        
-        # Ajouter les sous-sous-catégories
-        for child in direct_children:
-            grand_children = child.children.all()
-            category_ids.extend(grand_children.values_list('id', flat=True))
-        
         # Construire les conditions de base
         similar_conditions = Q(phone__isnull=False)
         
@@ -860,37 +848,56 @@ class PhoneDetailView(DetailView):
             characteristic_conditions |= Q(phone__ram=phone.ram)
         
         # Construire la requête avec priorité
-        # Priorité 1: Même catégorie exacte + caractéristiques similaires
-        priority_1 = Q(category=product.category)
-        if characteristic_conditions:
-            priority_1 &= characteristic_conditions
-        
-        # Priorité 2: Même catégorie exacte
-        priority_2 = Q(category=product.category)
-        
-        # Priorité 3: Sous-catégories + caractéristiques similaires
-        priority_3 = Q(category__in=direct_children)
-        if characteristic_conditions:
-            priority_3 &= characteristic_conditions
-        
-        # Priorité 4: Sous-catégories
-        priority_4 = Q(category__in=direct_children)
-        
-        # Priorité 5: Sous-sous-catégories + caractéristiques similaires
-        grand_children_ids = []
-        for child in direct_children:
-            grand_children_ids.extend(child.children.values_list('id', flat=True))
-        priority_5 = Q(category__id__in=grand_children_ids)
-        if characteristic_conditions:
-            priority_5 &= characteristic_conditions
-        
-        # Priorité 6: Sous-sous-catégories
-        priority_6 = Q(category__id__in=grand_children_ids)
-        
-        # Combiner toutes les priorités
-        similar_conditions = (
-            priority_1 | priority_2 | priority_3 | priority_4 | priority_5 | priority_6
-        )
+        # Priorité 1: Même catégorie exacte + caractéristiques similaires (si catégorie existe)
+        if product.category:
+            # Récupérer toutes les catégories liées (catégorie actuelle + sous-catégories)
+            category_ids = [product.category.id]
+            
+            # Ajouter les sous-catégories directes
+            direct_children = product.category.children.all()
+            category_ids.extend(direct_children.values_list('id', flat=True))
+            
+            # Ajouter les sous-sous-catégories
+            for child in direct_children:
+                grand_children = child.children.all()
+                category_ids.extend(grand_children.values_list('id', flat=True))
+            
+            priority_1 = Q(category=product.category)
+            if characteristic_conditions:
+                priority_1 &= characteristic_conditions
+            
+            # Priorité 2: Même catégorie exacte
+            priority_2 = Q(category=product.category)
+            
+            # Priorité 3: Sous-catégories + caractéristiques similaires
+            priority_3 = Q(category__in=direct_children)
+            if characteristic_conditions:
+                priority_3 &= characteristic_conditions
+            
+            # Priorité 4: Sous-catégories
+            priority_4 = Q(category__in=direct_children)
+            
+            # Priorité 5: Sous-sous-catégories + caractéristiques similaires
+            grand_children_ids = []
+            for child in direct_children:
+                grand_children_ids.extend(child.children.values_list('id', flat=True))
+            priority_5 = Q(category__id__in=grand_children_ids)
+            if characteristic_conditions:
+                priority_5 &= characteristic_conditions
+            
+            # Priorité 6: Sous-sous-catégories
+            priority_6 = Q(category__id__in=grand_children_ids)
+            
+            # Combiner toutes les priorités
+            similar_conditions = (
+                priority_1 | priority_2 | priority_3 | priority_4 | priority_5 | priority_6
+            )
+        else:
+            # Si pas de catégorie, utiliser uniquement les caractéristiques
+            if characteristic_conditions:
+                similar_conditions = characteristic_conditions
+            else:
+                similar_conditions = Q(pk__in=[])  # Condition qui ne retourne rien
         
         similar_products = Product.objects.filter(
             similar_conditions,
@@ -1004,18 +1011,6 @@ class ClothingDetailView(DetailView):
             context['review_count'] = len(reviews)
         
         # Ajouter les produits similaires avec optimisation et priorité
-        # Récupérer toutes les catégories liées (catégorie actuelle + sous-catégories)
-        category_ids = [product.category.id]
-        
-        # Ajouter les sous-catégories directes
-        direct_children = product.category.children.all()
-        category_ids.extend(direct_children.values_list('id', flat=True))
-        
-        # Ajouter les sous-sous-catégories
-        for child in direct_children:
-            grand_children = child.children.all()
-            category_ids.extend(grand_children.values_list('id', flat=True))
-        
         # Construire les conditions de base
         similar_conditions = Q(clothing_product__isnull=False)
         
@@ -1029,37 +1024,56 @@ class ClothingDetailView(DetailView):
             characteristic_conditions |= Q(clothing_product__gender=clothing.gender)
         
         # Construire la requête avec priorité
-        # Priorité 1: Même catégorie exacte + caractéristiques similaires
-        priority_1 = Q(category=product.category)
-        if characteristic_conditions:
-            priority_1 &= characteristic_conditions
-        
-        # Priorité 2: Même catégorie exacte
-        priority_2 = Q(category=product.category)
-        
-        # Priorité 3: Sous-catégories + caractéristiques similaires
-        priority_3 = Q(category__in=direct_children)
-        if characteristic_conditions:
-            priority_3 &= characteristic_conditions
-        
-        # Priorité 4: Sous-catégories
-        priority_4 = Q(category__in=direct_children)
-        
-        # Priorité 5: Sous-sous-catégories + caractéristiques similaires
-        grand_children_ids = []
-        for child in direct_children:
-            grand_children_ids.extend(child.children.values_list('id', flat=True))
-        priority_5 = Q(category__id__in=grand_children_ids)
-        if characteristic_conditions:
-            priority_5 &= characteristic_conditions
-        
-        # Priorité 6: Sous-sous-catégories
-        priority_6 = Q(category__id__in=grand_children_ids)
-        
-        # Combiner toutes les priorités
-        similar_conditions = (
-            priority_1 | priority_2 | priority_3 | priority_4 | priority_5 | priority_6
-        )
+        # Priorité 1: Même catégorie exacte + caractéristiques similaires (si catégorie existe)
+        if product.category:
+            # Récupérer toutes les catégories liées (catégorie actuelle + sous-catégories)
+            category_ids = [product.category.id]
+            
+            # Ajouter les sous-catégories directes
+            direct_children = product.category.children.all()
+            category_ids.extend(direct_children.values_list('id', flat=True))
+            
+            # Ajouter les sous-sous-catégories
+            for child in direct_children:
+                grand_children = child.children.all()
+                category_ids.extend(grand_children.values_list('id', flat=True))
+            
+            priority_1 = Q(category=product.category)
+            if characteristic_conditions:
+                priority_1 &= characteristic_conditions
+            
+            # Priorité 2: Même catégorie exacte
+            priority_2 = Q(category=product.category)
+            
+            # Priorité 3: Sous-catégories + caractéristiques similaires
+            priority_3 = Q(category__in=direct_children)
+            if characteristic_conditions:
+                priority_3 &= characteristic_conditions
+            
+            # Priorité 4: Sous-catégories
+            priority_4 = Q(category__in=direct_children)
+            
+            # Priorité 5: Sous-sous-catégories + caractéristiques similaires
+            grand_children_ids = []
+            for child in direct_children:
+                grand_children_ids.extend(child.children.values_list('id', flat=True))
+            priority_5 = Q(category__id__in=grand_children_ids)
+            if characteristic_conditions:
+                priority_5 &= characteristic_conditions
+            
+            # Priorité 6: Sous-sous-catégories
+            priority_6 = Q(category__id__in=grand_children_ids)
+            
+            # Combiner toutes les priorités
+            similar_conditions = (
+                priority_1 | priority_2 | priority_3 | priority_4 | priority_5 | priority_6
+            )
+        else:
+            # Si pas de catégorie, utiliser uniquement les caractéristiques
+            if characteristic_conditions:
+                similar_conditions = characteristic_conditions
+            else:
+                similar_conditions = Q(pk__in=[])  # Condition qui ne retourne rien
         
         similar_products = Product.objects.filter(
             similar_conditions,
@@ -1144,18 +1158,6 @@ class CulturalItemDetailView(DetailView):
             context['review_count'] = len(reviews)
         
         # Ajouter les produits similaires avec conditions robustes et priorité
-        # Récupérer toutes les catégories liées (catégorie actuelle + sous-catégories)
-        category_ids = [product.category.id]
-        
-        # Ajouter les sous-catégories directes
-        direct_children = product.category.children.all()
-        category_ids.extend(direct_children.values_list('id', flat=True))
-        
-        # Ajouter les sous-sous-catégories
-        for child in direct_children:
-            grand_children = child.children.all()
-            category_ids.extend(grand_children.values_list('id', flat=True))
-        
         # Construire les conditions de base
         similar_conditions = Q(cultural_product__isnull=False)
         
@@ -1171,37 +1173,56 @@ class CulturalItemDetailView(DetailView):
                 characteristic_conditions |= Q(title__icontains=first_word)
         
         # Construire la requête avec priorité
-        # Priorité 1: Même catégorie exacte + caractéristiques similaires
-        priority_1 = Q(category=product.category)
-        if characteristic_conditions:
-            priority_1 &= characteristic_conditions
-        
-        # Priorité 2: Même catégorie exacte
-        priority_2 = Q(category=product.category)
-        
-        # Priorité 3: Sous-catégories + caractéristiques similaires
-        priority_3 = Q(category__in=direct_children)
-        if characteristic_conditions:
-            priority_3 &= characteristic_conditions
-        
-        # Priorité 4: Sous-catégories
-        priority_4 = Q(category__in=direct_children)
-        
-        # Priorité 5: Sous-sous-catégories + caractéristiques similaires
-        grand_children_ids = []
-        for child in direct_children:
-            grand_children_ids.extend(child.children.values_list('id', flat=True))
-        priority_5 = Q(category__id__in=grand_children_ids)
-        if characteristic_conditions:
-            priority_5 &= characteristic_conditions
-        
-        # Priorité 6: Sous-sous-catégories
-        priority_6 = Q(category__id__in=grand_children_ids)
-        
-        # Combiner toutes les priorités
-        similar_conditions = (
-            priority_1 | priority_2 | priority_3 | priority_4 | priority_5 | priority_6
-        )
+        # Priorité 1: Même catégorie exacte + caractéristiques similaires (si catégorie existe)
+        if product.category:
+            # Récupérer toutes les catégories liées (catégorie actuelle + sous-catégories)
+            category_ids = [product.category.id]
+            
+            # Ajouter les sous-catégories directes
+            direct_children = product.category.children.all()
+            category_ids.extend(direct_children.values_list('id', flat=True))
+            
+            # Ajouter les sous-sous-catégories
+            for child in direct_children:
+                grand_children = child.children.all()
+                category_ids.extend(grand_children.values_list('id', flat=True))
+            
+            priority_1 = Q(category=product.category)
+            if characteristic_conditions:
+                priority_1 &= characteristic_conditions
+            
+            # Priorité 2: Même catégorie exacte
+            priority_2 = Q(category=product.category)
+            
+            # Priorité 3: Sous-catégories + caractéristiques similaires
+            priority_3 = Q(category__in=direct_children)
+            if characteristic_conditions:
+                priority_3 &= characteristic_conditions
+            
+            # Priorité 4: Sous-catégories
+            priority_4 = Q(category__in=direct_children)
+            
+            # Priorité 5: Sous-sous-catégories + caractéristiques similaires
+            grand_children_ids = []
+            for child in direct_children:
+                grand_children_ids.extend(child.children.values_list('id', flat=True))
+            priority_5 = Q(category__id__in=grand_children_ids)
+            if characteristic_conditions:
+                priority_5 &= characteristic_conditions
+            
+            # Priorité 6: Sous-sous-catégories
+            priority_6 = Q(category__id__in=grand_children_ids)
+            
+            # Combiner toutes les priorités
+            similar_conditions = (
+                priority_1 | priority_2 | priority_3 | priority_4 | priority_5 | priority_6
+            )
+        else:
+            # Si pas de catégorie, utiliser uniquement les caractéristiques
+            if characteristic_conditions:
+                similar_conditions = characteristic_conditions
+            else:
+                similar_conditions = Q(pk__in=[])  # Condition qui ne retourne rien
         
         similar_products = Product.objects.filter(
             similar_conditions,
@@ -1253,18 +1274,6 @@ class FabricDetailView(DetailView):
         product = self.get_object()
         
         # Récupérer les produits similaires avec conditions robustes et priorité
-        # Récupérer toutes les catégories liées (catégorie actuelle + sous-catégories)
-        category_ids = [product.category.id]
-        
-        # Ajouter les sous-catégories directes
-        direct_children = product.category.children.all()
-        category_ids.extend(direct_children.values_list('id', flat=True))
-        
-        # Ajouter les sous-sous-catégories
-        for child in direct_children:
-            grand_children = child.children.all()
-            category_ids.extend(grand_children.values_list('id', flat=True))
-        
         # Construire les conditions de base
         similar_conditions = Q(fabric_product__isnull=False)
         
@@ -1276,37 +1285,56 @@ class FabricDetailView(DetailView):
             characteristic_conditions |= Q(fabric_product__quality=product.fabric_product.quality)
         
         # Construire la requête avec priorité
-        # Priorité 1: Même catégorie exacte + caractéristiques similaires
-        priority_1 = Q(category=product.category)
-        if characteristic_conditions:
-            priority_1 &= characteristic_conditions
-        
-        # Priorité 2: Même catégorie exacte
-        priority_2 = Q(category=product.category)
-        
-        # Priorité 3: Sous-catégories + caractéristiques similaires
-        priority_3 = Q(category__in=direct_children)
-        if characteristic_conditions:
-            priority_3 &= characteristic_conditions
-        
-        # Priorité 4: Sous-catégories
-        priority_4 = Q(category__in=direct_children)
-        
-        # Priorité 5: Sous-sous-catégories + caractéristiques similaires
-        grand_children_ids = []
-        for child in direct_children:
-            grand_children_ids.extend(child.children.values_list('id', flat=True))
-        priority_5 = Q(category__id__in=grand_children_ids)
-        if characteristic_conditions:
-            priority_5 &= characteristic_conditions
-        
-        # Priorité 6: Sous-sous-catégories
-        priority_6 = Q(category__id__in=grand_children_ids)
-        
-        # Combiner toutes les priorités
-        similar_conditions = (
-            priority_1 | priority_2 | priority_3 | priority_4 | priority_5 | priority_6
-        )
+        # Priorité 1: Même catégorie exacte + caractéristiques similaires (si catégorie existe)
+        if product.category:
+            # Récupérer toutes les catégories liées (catégorie actuelle + sous-catégories)
+            category_ids = [product.category.id]
+            
+            # Ajouter les sous-catégories directes
+            direct_children = product.category.children.all()
+            category_ids.extend(direct_children.values_list('id', flat=True))
+            
+            # Ajouter les sous-sous-catégories
+            for child in direct_children:
+                grand_children = child.children.all()
+                category_ids.extend(grand_children.values_list('id', flat=True))
+            
+            priority_1 = Q(category=product.category)
+            if characteristic_conditions:
+                priority_1 &= characteristic_conditions
+            
+            # Priorité 2: Même catégorie exacte
+            priority_2 = Q(category=product.category)
+            
+            # Priorité 3: Sous-catégories + caractéristiques similaires
+            priority_3 = Q(category__in=direct_children)
+            if characteristic_conditions:
+                priority_3 &= characteristic_conditions
+            
+            # Priorité 4: Sous-catégories
+            priority_4 = Q(category__in=direct_children)
+            
+            # Priorité 5: Sous-sous-catégories + caractéristiques similaires
+            grand_children_ids = []
+            for child in direct_children:
+                grand_children_ids.extend(child.children.values_list('id', flat=True))
+            priority_5 = Q(category__id__in=grand_children_ids)
+            if characteristic_conditions:
+                priority_5 &= characteristic_conditions
+            
+            # Priorité 6: Sous-sous-catégories
+            priority_6 = Q(category__id__in=grand_children_ids)
+            
+            # Combiner toutes les priorités
+            similar_conditions = (
+                priority_1 | priority_2 | priority_3 | priority_4 | priority_5 | priority_6
+            )
+        else:
+            # Si pas de catégorie, utiliser uniquement les caractéristiques
+            if characteristic_conditions:
+                similar_conditions = characteristic_conditions
+            else:
+                similar_conditions = Q(pk__in=[])  # Condition qui ne retourne rien
         
         similar_products = Product.objects.filter(
             similar_conditions
@@ -1428,33 +1456,38 @@ class ProductDetailView(DetailView):
         similar_products = cache.get(cache_key)
         
         if similar_products is None:
-            # Récupérer toutes les catégories liées (catégorie actuelle + sous-catégories)
-            category_ids = [product.category.id]
-            
-            # Ajouter les sous-catégories directes
-            direct_children = product.category.children.all()
-            category_ids.extend(direct_children.values_list('id', flat=True))
-            
-            # Ajouter les sous-sous-catégories
-            for child in direct_children:
-                grand_children = child.children.all()
-                category_ids.extend(grand_children.values_list('id', flat=True))
-            
-            # Construire la requête avec priorité
-            # Priorité 1: Même catégorie exacte
-            priority_1 = Q(category=product.category)
-            
-            # Priorité 2: Sous-catégories
-            priority_2 = Q(category__in=direct_children)
-            
-            # Priorité 3: Sous-sous-catégories
-            grand_children_ids = []
-            for child in direct_children:
-                grand_children_ids.extend(child.children.values_list('id', flat=True))
-            priority_3 = Q(category__id__in=grand_children_ids)
-            
-            # Combiner toutes les priorités
-            similar_conditions = priority_1 | priority_2 | priority_3
+            # Vérifier si le produit a une catégorie
+            if product.category:
+                # Récupérer toutes les catégories liées (catégorie actuelle + sous-catégories)
+                category_ids = [product.category.id]
+                
+                # Ajouter les sous-catégories directes
+                direct_children = product.category.children.all()
+                category_ids.extend(direct_children.values_list('id', flat=True))
+                
+                # Ajouter les sous-sous-catégories
+                for child in direct_children:
+                    grand_children = child.children.all()
+                    category_ids.extend(grand_children.values_list('id', flat=True))
+                
+                # Construire la requête avec priorité
+                # Priorité 1: Même catégorie exacte
+                priority_1 = Q(category=product.category)
+                
+                # Priorité 2: Sous-catégories
+                priority_2 = Q(category__in=direct_children)
+                
+                # Priorité 3: Sous-sous-catégories
+                grand_children_ids = []
+                for child in direct_children:
+                    grand_children_ids.extend(child.children.values_list('id', flat=True))
+                priority_3 = Q(category__id__in=grand_children_ids)
+                
+                # Combiner toutes les priorités
+                similar_conditions = priority_1 | priority_2 | priority_3
+            else:
+                # Si pas de catégorie, utiliser une condition vide (pas de produits similaires basés sur catégorie)
+                similar_conditions = Q(pk__in=[])  # Condition qui ne retourne rien
             
             similar_products = Product.objects.filter(
                 similar_conditions,

@@ -199,7 +199,8 @@ export const Header: React.FC<HeaderProps> = ({
     <View style={styles.header}>
       <View style={styles.headerTop}>
         <View style={styles.logoContainer}>
-          <Logo size="medium" showText={true} />
+          <Logo size="large" showText={false} />
+          <Text style={styles.logoText}>Sugu</Text>
         </View>
         <View style={styles.offlineControls}>
           {/* Bouton combiné : Indicateur + Switch */}
@@ -311,12 +312,23 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: -4, // Espace négatif pour rapprocher le logo et le champ de recherche
+    marginBottom: -12,
   },
   logoContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
     alignSelf: 'flex-start',
-    maxWidth: 120,
+    maxWidth: 250,
     overflow: 'hidden',
+    flexShrink: 1,
+    gap: 8,
+  },
+  logoText: {
+    fontWeight: 'bold',
+    fontSize: 20,
+    letterSpacing: 1,
+    textTransform: 'uppercase',
+    color: COLORS.PRIMARY,
   },
   offlineControls: {
     flexDirection: 'row',
@@ -404,7 +416,7 @@ const styles = StyleSheet.create({
   },
   searchContainer: {
     width: '100%',
-    marginTop: -4, // Espace négatif pour rapprocher du logo
+    marginTop: -12,
   },
   searchInputContainer: {
     flexDirection: 'row',

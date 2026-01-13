@@ -6,13 +6,14 @@ interface LogoProps {
   size?: 'small' | 'medium' | 'large';
   showText?: boolean;
   textColor?: string;
+  customText?: string;
 }
 
-export const Logo: React.FC<LogoProps> = ({ size = 'medium', showText = true, textColor = COLORS.PRIMARY }) => {
+export const Logo: React.FC<LogoProps> = ({ size = 'medium', showText = true, textColor = COLORS.PRIMARY, customText }) => {
   const sizeStyles = {
-    small: { width: 40, height: 40 },
-    medium: { width: 60, height: 60 },
-    large: { width: 80, height: 80 },
+    small: { width: 50, height: 50 },
+    medium: { width: 70, height: 70 },
+    large: { width: 100, height: 100 },
   };
 
   const currentSize = sizeStyles[size];
@@ -25,7 +26,9 @@ export const Logo: React.FC<LogoProps> = ({ size = 'medium', showText = true, te
         resizeMode="contain"
       />
       {showText && (
-        <Text style={[styles.appTitle, { color: textColor }]}>BoliBana Sugu</Text>
+        <Text style={[styles.appTitle, { color: textColor }]}>
+          {customText || 'BoliBana Sugu'}
+        </Text>
       )}
     </View>
   );

@@ -2,8 +2,8 @@ import 'react-native-get-random-values'; // DOIT être le premier import pour cr
 import React, { useEffect, useState, useCallback } from 'react';
 import * as SplashScreen from 'expo-splash-screen';
 
-// Garder le splash screen visible pendant que l'app charge
-SplashScreen.preventAutoHideAsync().catch(() => {
+// Masquer immédiatement le splash screen natif pour utiliser notre composant personnalisé avec logo réduit
+SplashScreen.hideAsync().catch(() => {
   /* ignore error */
 });
 
@@ -15,6 +15,7 @@ import { store, persistor } from './src/store/store';
 import AppNavigator from './src/navigation/AppNavigator';
 import { ErrorBoundary } from './src/components/ErrorBoundary';
 import { LoadingScreen } from './src/components/LoadingScreen';
+import { CustomSplashScreen } from './src/components/CustomSplashScreen';
 import { setSessionExpiredCallback } from './src/services/api';
 import { setSessionExpired } from './src/store/slices/authSlice';
 
@@ -49,7 +50,7 @@ export default function App() {
   }, [appIsReady]);
 
   if (!appIsReady) {
-    return null;
+    return <CustomSplashScreen />;
   }
 
   return (
