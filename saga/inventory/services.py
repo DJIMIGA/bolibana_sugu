@@ -691,35 +691,14 @@ class ProductSyncService:
             except Exception as e:
                 logger.error(f"Erreur lors de la récupération de la catégorie depuis l'API: {str(e)}")
         
-        # Si toujours pas de catégorie, créer une catégorie par défaut "Non catégorisé"
+        # Si toujours pas de catégorie, permettre la synchronisation sans catégorie
         if not category:
             logger.warning(
                 f"Produit B2B (ID externe: {external_id}) sans catégorie. "
                 f"Category ID externe: {external_category_id}. "
-                f"Création d'une catégorie par défaut 'Non catégorisé'."
+                f"Synchronisation sans catégorie (category=None)."
             )
-            try:
-                # Créer ou récupérer la catégorie par défaut
-                default_category, created = Category.objects.get_or_create(
-                    slug='non-categorise',
-                    defaults={
-                        'name': 'Non catégorisé',
-                        'description': 'Catégorie par défaut pour les produits B2B sans catégorie',
-                        'is_active': True,
-                    }
-                )
-                if created:
-                    logger.info(f"Catégorie par défaut 'Non catégorisé' créée (ID: {default_category.id})")
-                else:
-                    logger.info(f"Catégorie par défaut 'Non catégorisé' trouvée (ID: {default_category.id})")
-                category = default_category
-            except Exception as e:
-                error_msg = (
-                    f"Impossible de créer la catégorie par défaut pour le produit B2B (ID externe: {external_id}). "
-                    f"Erreur: {str(e)}"
-                )
-                logger.error(error_msg)
-                raise ValidationError(error_msg)
+            # category reste None - le produit sera synchronisé sans catégorie
         
         # Fonction helper pour convertir en nombre
         def to_number(value, default=0, is_integer=False):
@@ -895,7 +874,6 @@ class ProductSyncService:
             'title': external_data.get('name') or external_data.get('title', 'Produit sans nom'),
             'description': external_data.get('description') or external_data.get('description_text', ''),
             'price': price_per_unit,
-            'category': category,
             'stock': stock_units,
             'sku': external_data.get('cug') or external_data.get('sku') or external_data.get('code', ''),
             'is_available': is_available_value,
@@ -904,6 +882,10 @@ class ProductSyncService:
             'external_sku': external_data.get('cug') or external_data.get('sku') or external_data.get('code', ''),
             'specifications': specifications,
         }
+        
+        # Ajouter la catégorie seulement si elle existe
+        if category:
+            product_data['category'] = category
         
         # Ajouter le slug B2B si disponible et unique
         if slug:

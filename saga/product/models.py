@@ -305,7 +305,7 @@ class Product(models.Model):
     slug = models.SlugField(max_length=200, unique=True, blank=True, null=True)
     description = models.TextField(verbose_name='Description', null=True, blank=True)
     price = models.DecimalField(max_digits=10, decimal_places=0, verbose_name='Prix (FCFA)')
-    category = models.ForeignKey('Category', on_delete=models.CASCADE, related_name='products', verbose_name='Catégorie')
+    category = models.ForeignKey('Category', on_delete=models.SET_NULL, null=True, blank=True, related_name='products', verbose_name='Catégorie')
     supplier = models.ForeignKey('suppliers.Supplier', on_delete=models.SET_NULL, null=True, blank=True, related_name='products', verbose_name='Fournisseur')
     brand = models.CharField(max_length=100, blank=True, null=True, verbose_name='Marque')
     is_available = models.BooleanField(default=True, verbose_name='Disponible')

@@ -199,7 +199,7 @@ export const Header: React.FC<HeaderProps> = ({
     <View style={styles.header}>
       <View style={styles.headerTop}>
         <View style={styles.logoContainer}>
-          <Logo size="small" showText={false} />
+          <Logo size="medium" showText={true} />
         </View>
         <View style={styles.offlineControls}>
           {/* Bouton combiné : Indicateur + Switch */}
