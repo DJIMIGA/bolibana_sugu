@@ -442,6 +442,11 @@ class Product(models.Model):
                 # Retourner une chaîne pour les URLs externes
                 # Le template vérifiera si c'est une URL HTTP
                 return b2b_image_url
+
+            b2b_image_urls = self.specifications.get('b2b_image_urls')
+            if isinstance(b2b_image_urls, list) and b2b_image_urls:
+                # Prendre la première image disponible
+                return b2b_image_urls[0]
         
         # En dernier recours, vérifier les images de la galerie
         if hasattr(self, 'images') and self.images.exists():

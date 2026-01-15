@@ -28,6 +28,12 @@
                              class="h-full w-full object-contain object-center transition-transform duration-300 hover:scale-105"
                              loading="eager"
                              decoding="async">
+                    {% elif b2b_image_urls %}
+                        <img src="{{ b2b_image_urls.0 }}" 
+                             alt="{{ product.title }}" 
+                             class="h-full w-full object-contain object-center transition-transform duration-300 hover:scale-105"
+                             loading="eager"
+                             decoding="async">
                     {% else %}
                         <img src="{% static 'images/no-image.svg' %}" 
                              alt="Image non disponible" 
@@ -38,7 +44,7 @@
                     {% endwith %}
             </div>
             {% with display_image_url=product.get_display_image_url %}
-            {% if display_image_url or images %}
+            {% if display_image_url or images or b2b_image_urls %}
             <div class="mt-4 grid grid-cols-4 gap-4">
                 {% if display_image_url %}
                 <div class="aspect-h-1 aspect-w-1 overflow-hidden rounded-lg cursor-pointer hover:opacity-75 transition-all duration-300 bg-gray-50 ring-2 ring-new">
@@ -57,6 +63,18 @@
                              loading="lazy"
                              decoding="async">
                 </div>
+                {% endfor %}
+                {% for url in b2b_image_urls %}
+                    {% if display_image_url and display_image_url == url %}
+                    {% else %}
+                <div class="aspect-h-1 aspect-w-1 overflow-hidden rounded-lg cursor-pointer hover:opacity-75 transition-all duration-300 bg-gray-50">
+                        <img src="{{ url }}" 
+                             alt="{{ product.title }}" 
+                             class="h-full w-full object-cover object-center hover:scale-110 transition-transform duration-300"
+                             loading="lazy"
+                             decoding="async">
+                </div>
+                    {% endif %}
                 {% endfor %}
             </div>
             {% endif %}

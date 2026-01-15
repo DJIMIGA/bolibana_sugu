@@ -160,13 +160,15 @@
             {% endif %}
         {% elif images %}
         <img id="main-image" src="{{ images.0.image.url }}" alt="{{ product.title }}" class="w-full h-auto object-cover">
+        {% elif b2b_image_urls %}
+        <img id="main-image" src="{{ b2b_image_urls.0 }}" alt="{{ product.title }}" class="w-full h-auto object-cover">
         {% else %}
         <img id="main-image" src="{% static 'images/no-image.svg' %}" alt="Image non disponible" class="w-full h-auto object-cover">
         {% endif %}
         {% endwith %}
             </div>
             {% with display_image=product.get_display_image %}
-            {% if display_image or images %}
+            {% if display_image or images or b2b_image_urls %}
       <div class="grid grid-cols-4 gap-2">
                 {% if display_image %}
                     {% if display_image|slice:":4" == "http" %}
@@ -183,6 +185,14 @@
         <button onclick="changeMainImage('{{ image.image.url }}', this)" class="w-full h-24 rounded overflow-hidden focus:outline-none focus:ring-2 focus:ring-new {% if not product.image and forloop.first %}ring-2 ring-new{% endif %}">
           <img src="{{ image.image.url }}" alt="{{ product.title }}" class="w-full h-full object-cover">
         </button>
+                {% endfor %}
+                {% for url in b2b_image_urls %}
+                    {% if display_image and display_image|slice:":4" == "http" and display_image == url %}
+                    {% else %}
+        <button onclick="changeMainImage('{{ url }}', this)" class="w-full h-24 rounded overflow-hidden focus:outline-none focus:ring-2 focus:ring-new">
+          <img src="{{ url }}" alt="{{ product.title }}" class="w-full h-full object-cover">
+        </button>
+                    {% endif %}
                 {% endfor %}
             </div>
             {% endif %}

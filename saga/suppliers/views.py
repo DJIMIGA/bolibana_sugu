@@ -29,6 +29,16 @@ from inventory.utils import get_b2b_products
 logger = logging.getLogger(__name__)
 
 
+def get_b2b_image_urls(product):
+    """Retourne la liste des URLs d'images B2B nettoyée."""
+    if not product.specifications or not isinstance(product.specifications, dict):
+        return []
+    urls = product.specifications.get('b2b_image_urls')
+    if not isinstance(urls, list):
+        return []
+    return [url for url in urls if url]
+
+
 def log_product_images(product, view_name="PRODUCT DETAIL"):
     """Fonction helper pour logger les informations sur les images d'un produit"""
     logger.info(f"[{view_name}] Produit ID: {product.id}, Slug: {product.slug}, Titre: {product.title}")
@@ -73,6 +83,8 @@ def log_product_images(product, view_name="PRODUCT DETAIL"):
     if product.specifications and isinstance(product.specifications, dict):
         b2b_image_url = product.specifications.get('b2b_image_url')
         logger.info(f"[{view_name}] b2b_image_url dans specifications: {b2b_image_url}")
+        b2b_image_urls = product.specifications.get('b2b_image_urls')
+        logger.info(f"[{view_name}] b2b_image_urls dans specifications: {b2b_image_urls}")
 
 def normalize_search_term(term):
     """
@@ -796,6 +808,7 @@ class SupplierDetailView(DetailView):
         # Récupérer les images avec logs de diagnostic
         log_product_images(product, "PHONE DETAIL (get_context_data)")
         context['images'] = product.images.all().order_by('ordre')
+        context['b2b_image_urls'] = get_b2b_image_urls(product)
 
         # Si c'est un téléphone, ajouter les informations spécifiques
         if hasattr(product, 'phone'):
@@ -872,6 +885,7 @@ class PhoneDetailView(DetailView):
         # Ajouter les images avec logs de diagnostic
         log_product_images(product, "PHONE DETAIL")
         context['images'] = product.images.all()
+        context['b2b_image_urls'] = get_b2b_image_urls(product)
         
         # Ajouter les avis avec optimisation
         reviews = product.reviews.select_related('user').all()
@@ -1051,6 +1065,7 @@ class ClothingDetailView(DetailView):
         # Ajouter les images avec logs de diagnostic
         log_product_images(product, "CLOTHING DETAIL")
         context['images'] = product.images.all()
+        context['b2b_image_urls'] = get_b2b_image_urls(product)
 
         # Ajouter les avis
         reviews = product.reviews.all()
@@ -1199,6 +1214,7 @@ class CulturalItemDetailView(DetailView):
         # Ajouter les images avec logs de diagnostic
         log_product_images(product, "CULTURAL ITEM DETAIL")
         context['images'] = product.images.all()
+        context['b2b_image_urls'] = get_b2b_image_urls(product)
 
         # Ajouter les avis
         reviews = product.reviews.all()
@@ -1413,6 +1429,7 @@ class FabricDetailView(DetailView):
         context['similar_products'] = similar_products
         context['reviews'] = reviews
         context['images'] = product.images.all()
+        context['b2b_image_urls'] = get_b2b_image_urls(product)
         context['category_slug'] = product.category.slug if product.category else None  # Ajouter le slug de la catégorie
 
         # Tracking de la vue de produit
@@ -1569,6 +1586,7 @@ class ProductDetailView(DetailView):
         
         # Récupérer les images avec logs de diagnostic
         images = product.images.all().order_by('ordre')
+        b2b_image_urls = get_b2b_image_urls(product)
         
         # Logs de diagnostic pour les images
         log_product_images(product, "PRODUCT DETAIL")
@@ -1579,6 +1597,7 @@ class ProductDetailView(DetailView):
             'similar_products': similar_products,
             'breadcrumbs': self.get_breadcrumbs(product),
             'images': images,
+            'b2b_image_urls': b2b_image_urls,
             'category_slug': product.category.slug if product.category else None,
         })
         
