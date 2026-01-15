@@ -114,22 +114,30 @@ document.addEventListener('DOMContentLoaded', function() {
 
 // pour les images de produits et la galerie d'images
 function changeMainImage(imageUrl, button) {
-    // Mettre à jour l'image principale
     const mainImage = document.getElementById('main-image');
+    if (!mainImage) {
+      return;
+    }
+
     mainImage.src = imageUrl;
 
-    // Optionnel : Mettre à jour l'état visuel des boutons
-    const tabs = document.querySelectorAll('[role="tab"]');
-    tabs.forEach(tab => {
-      tab.setAttribute('aria-selected', 'false');
-      tab.classList.remove('ring-indigo-500'); // Retirer la classe de sélection
-      tab.classList.add('ring-transparent'); // Ajouter la classe non sélectionnée
+    if (!button) {
+      return;
+    }
+
+    const thumbs = document.querySelectorAll('.js-gallery-thumb');
+    if (!thumbs.length) {
+      return;
+    }
+
+    thumbs.forEach(thumb => {
+      thumb.setAttribute('aria-selected', 'false');
+      thumb.classList.remove('ring-2', 'ring-new', 'ring-green-500', 'ring-indigo-500');
     });
 
-    // Mettre à jour le bouton sélectionné
+    const ringClass = button.dataset.ringClass || 'ring-new';
     button.setAttribute('aria-selected', 'true');
-    button.classList.remove('ring-transparent'); // Retirer la classe non sélectionnée
-    button.classList.add('ring-indigo-500'); // Ajouter la classe de sélection
+    button.classList.add('ring-2', ringClass);
   }
 
 document.addEventListener('DOMContentLoaded', function() {

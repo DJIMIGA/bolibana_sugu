@@ -381,10 +381,29 @@ def is_b2b_technical_field(key):
     Détermine si un champ est technique B2B et ne doit pas être affiché dans les spécifications principales.
     """
     technical_fields = [
+        # Champs techniques B2B
         'b2b_slug',
         'b2b_image_url',
+        'b2b_image_urls',
         'b2b_created_at',
         'b2b_updated_at',
+        'b2b_category_name',
+        # Champs issus du stock B2B / interne
+        'ean',
+        'barcode',
+        'unit_display',
+        'formatted_quantity',
+        'unit_type',
+        'weight_unit',
+        'price_per_kg',
+        'sold_by_weight',
+        'available_weight_kg',
+        'image_url',
+        'image_urls',
+        'images',
+        'gallery',
+        'main_image',
+        'photo',
         'alert_threshold',  # Seuil d'alerte - champ technique interne
     ]
     return key in technical_fields
@@ -394,13 +413,7 @@ def is_important_spec(key):
     """
     Détermine si une spécification est importante et doit être affichée en premier.
     """
-    important_fields = [
-        'ean',
-        'barcode',
-        'unit_display',
-        'formatted_quantity',
-        'b2b_category_name',
-    ]
+    important_fields = []
     return key in important_fields
 
 

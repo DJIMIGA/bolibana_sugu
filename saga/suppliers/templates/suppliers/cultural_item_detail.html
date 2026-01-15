@@ -147,19 +147,19 @@
             {% if display_image_url or images or b2b_image_urls %}
                 <div class="grid grid-cols-4 gap-2">
                     {% if display_image_url %}
-                        <button onclick="changeMainImage('{{ display_image_url }}', this)" class="w-full h-24 rounded overflow-hidden focus:outline-none focus:ring-2 focus:ring-green-500 ring-2 ring-green-500">
+                        <button onclick="changeMainImage('{{ display_image_url }}', this)" class="js-gallery-thumb w-full h-24 rounded overflow-hidden focus:outline-none focus:ring-2 focus:ring-green-500 ring-2 ring-green-500" data-ring-class="ring-green-500" aria-selected="true">
                             <img src="{{ display_image_url }}" alt="{{ product.title }}" class="w-full h-full object-cover">
                         </button>
                     {% endif %}
                     {% for image in images %}
-                        <button onclick="changeMainImage('{{ image.image.url }}', this)" class="w-full h-24 rounded overflow-hidden focus:outline-none focus:ring-2 focus:ring-green-500 {% if not display_image_url and forloop.first %}ring-2 ring-green-500{% endif %}">
+                        <button onclick="changeMainImage('{{ image.image.url }}', this)" class="js-gallery-thumb w-full h-24 rounded overflow-hidden focus:outline-none focus:ring-2 focus:ring-green-500 {% if not display_image_url and forloop.first %}ring-2 ring-green-500{% endif %}" data-ring-class="ring-green-500" aria-selected="{% if not display_image_url and forloop.first %}true{% else %}false{% endif %}">
                             <img src="{{ image.image.url }}" alt="{{ product.title }}" class="w-full h-full object-cover">
                         </button>
                     {% endfor %}
                     {% for url in b2b_image_urls %}
                         {% if display_image_url and display_image_url == url %}
                         {% else %}
-                        <button onclick="changeMainImage('{{ url }}', this)" class="w-full h-24 rounded overflow-hidden focus:outline-none focus:ring-2 focus:ring-green-500">
+                        <button onclick="changeMainImage('{{ url }}', this)" class="js-gallery-thumb w-full h-24 rounded overflow-hidden focus:outline-none focus:ring-2 focus:ring-green-500" data-ring-class="ring-green-500" aria-selected="false">
                             <img src="{{ url }}" alt="{{ product.title }}" class="w-full h-full object-cover">
                         </button>
                         {% endif %}
