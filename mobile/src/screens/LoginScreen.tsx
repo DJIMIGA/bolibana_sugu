@@ -220,18 +220,21 @@ const styles = StyleSheet.create({
   content: {
     flex: 1,
     justifyContent: 'center',
-    padding: 20,
+    padding: 16,
   },
   logoContainer: {
     alignItems: 'center',
-    marginBottom: 24,
+    marginBottom: 12,
+    backgroundColor: 'rgba(0, 128, 255, 0.12)',
   },
   appTitle: {
     fontSize: 32,
     fontWeight: 'bold',
     color: COLORS.PRIMARY,
-    marginTop: -4,
+    marginTop: -20,
+    lineHeight: 34,
     letterSpacing: 1,
+    backgroundColor: 'rgba(255, 128, 0, 0.12)',
   },
   title: {
     fontSize: 32,

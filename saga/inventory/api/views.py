@@ -35,6 +35,17 @@ class CategoryViewSet(viewsets.ReadOnlyModelViewSet):
         from django.core.exceptions import ValidationError
         
         logger.info(f"[CategoryViewSet] Appel de l'endpoint synced depuis {request.META.get('REMOTE_ADDR')}")
+
+        # Déclencher une synchronisation automatique non bloquante si nécessaire
+        try:
+            from inventory.tasks import trigger_categories_sync_async
+            force_sync = request.query_params.get('force', 'false').lower() == 'true'
+            if force_sync:
+                logger.info("[CategoryViewSet] 🔄 Synchronisation forcée demandée via ?force=true")
+            triggered = trigger_categories_sync_async(force=force_sync)
+            logger.info(f"[CategoryViewSet] ✅ Sync auto catégories déclenchée: {triggered}")
+        except Exception as e:
+            logger.warning(f"[CategoryViewSet] ⚠️ Impossible de déclencher la sync auto catégories: {str(e)}")
         
         try:
             categories = get_synced_categories()

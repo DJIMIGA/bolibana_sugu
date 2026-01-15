@@ -13,7 +13,7 @@ export const Logo: React.FC<LogoProps> = ({ size = 'medium', showText = true, te
   const sizeStyles = {
     small: { width: 50, height: 50 },
     medium: { width: 70, height: 70 },
-    large: { width: 100, height: 100 },
+    large: { width: 140, height: 140 },
   };
 
   const currentSize = sizeStyles[size];

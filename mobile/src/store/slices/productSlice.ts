@@ -367,14 +367,28 @@ export const fetchB2BProducts = createAsyncThunk(
     try {
       // L'endpoint synced ne supporte pas la pagination, on récupère tout
       const endpoint = API_ENDPOINTS.B2B.PRODUCTS;
-      // Logs désactivés pour réduire la pollution de la console
-      // console.log('[B2B] 🚀 Début fetchB2BProducts, endpoint:', endpoint);
+      console.log('[B2B] 🚀 Début sync produits B2B, endpoint:', endpoint);
       
       const response = await apiClient.get(endpoint);
 
       // Mapper les produits du backend
       const rawProducts = response.data.results || response.data || [];
-      // console.log(`[B2B] 📊 Réponse API - count: ${response.data.count || 'N/A'}, results length: ${Array.isArray(rawProducts) ? rawProducts.length : 'N/A'}`);
+      const rawLength = Array.isArray(rawProducts) ? rawProducts.length : 0;
+      console.log(
+        `[B2B] 📊 Réponse API - count: ${response.data.count || 'N/A'}, results length: ${rawLength}`
+      );
+      if (rawLength > 0) {
+        console.log(
+          '[B2B] 📋 Exemples produits bruts:',
+          rawProducts.slice(0, 3).map((p: any) => ({
+            id: p?.id,
+            title: p?.title,
+            category: p?.category,
+            category_name: p?.category_name,
+            is_available: p?.is_available,
+          }))
+        );
+      }
       
       // Logger les IDs bruts avant mapping (désactivé)
       // if (Array.isArray(rawProducts) && rawProducts.length > 0) {
@@ -396,6 +410,18 @@ export const fetchB2BProducts = createAsyncThunk(
           return null;
         }
       }).filter((p: Product | null): p is Product => p !== null);
+      console.log(`[B2B] ✅ Produits mappés: ${allProducts.length}`);
+      if (allProducts.length > 0) {
+        console.log(
+          '[B2B] 📋 Exemples produits mappés:',
+          allProducts.slice(0, 3).map((p) => ({
+            id: p.id,
+            title: p.title,
+            category: p.category,
+            is_available: p.is_available,
+          }))
+        );
+      }
       
       // Logger les IDs après mapping (désactivé pour réduire la pollution)
       // if (allProducts.length > 0) {
@@ -411,8 +437,9 @@ export const fetchB2BProducts = createAsyncThunk(
       const products = params.pageSize && params.pageSize > 0 
         ? allProducts.slice(0, params.pageSize)
         : allProducts;
-      
-      // Log silencieux si pas de changement significatif
+      if (params.pageSize && params.pageSize > 0) {
+        console.log(`[B2B] 🔎 Limite client pageSize=${params.pageSize}, produits retournés=${products.length}`);
+      }
 
       return {
         ...response.data,
@@ -435,6 +462,10 @@ export const fetchB2BProducts = createAsyncThunk(
       // Erreur réseau (pas de response) -> endpoint optionnel, on retourne vide
       const isNetworkError = !status && !error?.response;
       if (isOptionalStatus || isNoSyncedProducts || isNetworkError) {
+        console.log('[B2B] ℹ️ Aucun produit synchronisé (endpoint optionnel)', {
+          status,
+          message: serverMsg,
+        });
         return { results: [], count: 0 };
       }
       
@@ -449,6 +480,7 @@ export const fetchB2BProducts = createAsyncThunk(
       // Essayer de récupérer depuis le cache en cas d'erreur
       const cached = await offlineCacheService.get<Product[]>(CACHE_KEYS.PRODUCTS);
       if (cached) {
+        console.log(`[B2B] 📦 Cache utilisé (produits=${cached.length})`);
         return { results: cached, count: cached.length };
       }
       
@@ -572,21 +604,20 @@ const productSlice = createSlice({
         state.isFetchingB2B = false;
         const data = action.payload;
         const products = data.results || [];
-        // Logs désactivés pour réduire la pollution de la console
-        // console.log(`[B2B] 📥 Reducer - Produits reçus: ${products.length}, count API: ${data.count || 'N/A'}`);
+        console.log(`[B2B] 📥 Reducer - Produits reçus: ${products.length}, count API: ${data.count || 'N/A'}`);
         
         // S'assurer que seuls les produits valides sont stockés
         const validProducts = products.filter((p: Product) => p && p.id && p.title);
-        // console.log(`[B2B] ✅ Reducer - Produits valides après filtre: ${validProducts.length}`);
+        console.log(`[B2B] ✅ Reducer - Produits valides après filtre: ${validProducts.length}`);
         
         if (validProducts.length > 0) {
           const validIds = validProducts.map(p => p.id);
-          // console.log(`[B2B] 🔢 Reducer - IDs produits valides: [${validIds.join(', ')}]`);
+          console.log(`[B2B] 🔢 Reducer - IDs produits valides: [${validIds.join(', ')}]`);
           
           // Vérifier que tous les produits ont bien un ID unique
           const uniqueIds = new Set(validProducts.map(p => p.id));
           if (uniqueIds.size !== validProducts.length) {
-            // Produits dupliqués détectés et filtrés silencieusement
+            console.warn('[B2B] ⚠️ Produits dupliqués détectés et filtrés');
           }
         }
         

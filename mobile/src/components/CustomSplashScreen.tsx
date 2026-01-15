@@ -6,7 +6,7 @@ export const CustomSplashScreen: React.FC = () => {
   return (
     <View style={styles.container}>
       <Image
-        source={require('../../assets/logo.png')}
+        source={require('../../assets/app-logo.png')}
         style={styles.logo}
         resizeMode="contain"
       />
@@ -24,9 +24,9 @@ const styles = StyleSheet.create({
     padding: 20,
   },
   logo: {
-    width: 25,
-    height: 25,
-    marginBottom: 8,
+    width: 160,
+    height: 160,
+    marginBottom: 16,
     maxWidth: '100%',
     maxHeight: '100%',
   },

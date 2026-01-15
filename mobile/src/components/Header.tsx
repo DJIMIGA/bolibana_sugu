@@ -303,16 +303,17 @@ export const Header: React.FC<HeaderProps> = ({
 
 const styles = StyleSheet.create({
   header: {
-    padding: 12, // Réduit de 16 à 12
-    paddingTop: 16, // Ajout d'un padding en haut
-    paddingBottom: 10, // Padding en bas réduit
+    padding: 4,
+    paddingHorizontal: 8,
+    paddingTop: 0,
+    paddingBottom: 4, // Padding en bas réduit
     backgroundColor: '#FFFFFF',
   },
   headerTop: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: -12,
+    marginBottom: -4,
   },
   logoContainer: {
     flexDirection: 'row',
@@ -321,7 +322,7 @@ const styles = StyleSheet.create({
     maxWidth: 250,
     overflow: 'hidden',
     flexShrink: 1,
-    gap: 8,
+    gap: 4,
   },
   logoText: {
     fontWeight: 'bold',
@@ -416,15 +417,15 @@ const styles = StyleSheet.create({
   },
   searchContainer: {
     width: '100%',
-    marginTop: -12,
+    marginTop: -46,
   },
   searchInputContainer: {
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: '#FFFFFF',
     borderRadius: 12,
-    paddingHorizontal: 16,
-    paddingVertical: 10,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
     borderWidth: 1.5,
     borderColor: `${COLORS.PRIMARY}30`,
     shadowColor: COLORS.PRIMARY,

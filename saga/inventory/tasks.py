@@ -51,19 +51,6 @@ def should_sync_products(ignore_lock: bool = False) -> bool:
         logger.info("Synchronisation produits déjà en cours, ignorée")
         return False
     
-    # Vérifier le cache pour éviter les synchronisations trop fréquentes
-    last_sync = cache.get(_PRODUCTS_LAST_SYNC_KEY)
-    if last_sync:
-        # Ne pas synchroniser plus souvent que l'intervalle configuré
-        time_since_sync = (timezone.now() - last_sync).total_seconds()
-        min_seconds = _min_interval_seconds()
-        if time_since_sync < min_seconds:
-            logger.info(
-                f"Synchronisation produits récente ({int(time_since_sync/60)} minutes), ignorée "
-                f"(min={int(min_seconds/60)} min)"
-            )
-            return False
-    
     return True
 
 
@@ -87,19 +74,6 @@ def should_sync_categories(ignore_lock: bool = False) -> bool:
     if not ignore_lock and cache.get(_CATEGORIES_LOCK_KEY):
         logger.info("Synchronisation catégories déjà en cours, ignorée")
         return False
-    
-    # Vérifier le cache pour éviter les synchronisations trop fréquentes
-    last_sync = cache.get(_CATEGORIES_LAST_SYNC_KEY)
-    if last_sync:
-        # Ne pas synchroniser plus souvent que l'intervalle configuré
-        time_since_sync = (timezone.now() - last_sync).total_seconds()
-        min_seconds = _min_interval_seconds()
-        if time_since_sync < min_seconds:
-            logger.info(
-                f"Synchronisation catégories récente ({int(time_since_sync/60)} minutes), ignorée "
-                f"(min={int(min_seconds/60)} min)"
-            )
-            return False
     
     return True
 

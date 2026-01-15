@@ -128,15 +128,19 @@ class ProductViewSet(viewsets.ModelViewSet):
         
         queryset = super().get_queryset()
         
-        # Filtrer pour ne garder que les produits dans des catégories B2B
-        # Comme sur le web : uniquement les produits dans des catégories avec external_category OU rayon_type
+        # Filtrer pour ne garder que les produits B2B
+        # Inclure:
+        # - catégories B2B (external_category ou rayon_type)
+        # - produits synchronisés B2B même sans catégorie (external_product.is_b2b)
         queryset = queryset.filter(
-            Q(category__external_category__isnull=False) | Q(category__rayon_type__isnull=False)
+            Q(category__external_category__isnull=False) |
+            Q(category__rayon_type__isnull=False) |
+            Q(external_product__is_b2b=True)
         ).distinct()
         
         # Log pour debug
         product_count = queryset.count()
-        logger.info(f"[ProductViewSet.get_queryset] 🔍 Produits B2B après filtre: {product_count}")
+        logger.info(f"[ProductViewSet.get_queryset] 🔍 Produits B2B après filtre (catégorie ou external): {product_count}")
         if product_count > 0:
             sample_products = list(queryset[:3])
             for p in sample_products:
@@ -192,6 +196,26 @@ class ProductViewSet(viewsets.ModelViewSet):
             queryset = queryset.filter(cultural_product__isnull=False)
 
         return queryset
+
+    def list(self, request, *args, **kwargs):
+        """
+        Déclenche une synchronisation B2B non bloquante avant de lister.
+        Utile pour le mobile qui consomme /api/products/ (pas /inventory/...).
+        """
+        import logging
+        logger = logging.getLogger(__name__)
+
+        try:
+            from inventory.tasks import trigger_products_sync_async
+            force_sync = request.query_params.get('force_sync', 'false').lower() == 'true'
+            if force_sync:
+                logger.info("[ProductViewSet.list] 🔄 Synchronisation forcée demandée via ?force_sync=true")
+            triggered = trigger_products_sync_async(force=force_sync)
+            logger.info(f"[ProductViewSet.list] ✅ Sync auto déclenchée: {triggered}")
+        except Exception as e:
+            logger.warning(f"[ProductViewSet.list] ⚠️ Impossible de déclencher la sync auto: {str(e)}")
+
+        return super().list(request, *args, **kwargs)
 
     def get_serializer_context(self):
         """Passe le contexte de la requête au serializer pour les URLs absolues"""

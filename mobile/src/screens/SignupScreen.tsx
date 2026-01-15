@@ -413,19 +413,22 @@ const styles = StyleSheet.create({
   content: {
     flex: 1,
     justifyContent: 'center',
-    padding: 20,
+    padding: 16,
   },
   logoContainer: {
     alignItems: 'center',
-    marginBottom: 8,
+    marginBottom: 4,
+    backgroundColor: 'rgba(128, 0, 255, 0.12)',
   },
   appTitle: {
     fontSize: 32,
     fontWeight: 'bold',
     color: COLORS.PRIMARY,
-    marginTop: -4,
+    marginTop: -20,
+    lineHeight: 34,
     letterSpacing: 1,
     textAlign: 'center',
+    backgroundColor: 'rgba(0, 200, 120, 0.12)',
   },
   subtitle: {
     fontSize: 16,
