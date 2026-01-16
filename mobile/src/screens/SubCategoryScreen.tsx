@@ -221,6 +221,17 @@ const SubCategoryScreen: React.FC = () => {
   }
 
   const categoryColor = getCategoryColor(parentCategory.color);
+  const parentImageUrl = parentCategory.image_url || parentCategory.image;
+
+  useEffect(() => {
+    if (!__DEV__) return;
+    console.log('[SubCategoryScreen] 🏷️ Titre parent image:', {
+      id: parentCategory.id,
+      name: parentCategory.name,
+      hasImageUrl: !!parentCategory.image_url,
+      hasImage: !!parentCategory.image,
+    });
+  }, [parentCategory.id, parentCategory.name, parentCategory.image_url, parentCategory.image]);
 
   return (
     <SafeAreaView style={styles.container}>
@@ -255,8 +266,8 @@ const SubCategoryScreen: React.FC = () => {
           {/* En-tête de la catégorie parente */}
           <View style={[styles.parentHeader, { borderTopColor: `${categoryColor}50`, backgroundColor: `${categoryColor}05` }]}>
             <View style={[styles.parentIconContainer, { backgroundColor: `${categoryColor}15` }]}>
-              {parentCategory.image ? (
-                <Image source={{ uri: parentCategory.image }} style={styles.parentImage} />
+              {parentImageUrl ? (
+                <Image source={{ uri: parentImageUrl }} style={styles.parentImage} />
               ) : (
                 <Ionicons 
                   name={getCategoryIcon(parentCategory.slug) as any} 
@@ -283,6 +294,7 @@ const SubCategoryScreen: React.FC = () => {
               {directChildren.map((subcategory: Category) => {
                 const subCategoryColor = getCategoryColor(subcategory.color);
                 const hasNested = nestedChildren[subcategory.id]?.length > 0;
+                const subCategoryImageUrl = subcategory.image_url || subcategory.image;
 
                 return (
                   <View key={subcategory.id} style={styles.subcategoryCardWrapper}>
@@ -291,13 +303,21 @@ const SubCategoryScreen: React.FC = () => {
                       onPress={() => handleCategoryPress(subcategory.id)}
                       activeOpacity={0.8}
                     >
-                      <View style={[styles.subcategoryImageContainer, { backgroundColor: `${subCategoryColor}06` }]}>
-                        {subcategory.image ? (
-                          <Image source={{ uri: subcategory.image }} style={styles.subcategoryImage} />
+                      <View
+                        style={[
+                          styles.subcategoryImageContainer,
+                          {
+                            backgroundColor: `${subCategoryColor}06`,
+                            borderColor: `${subCategoryColor}40`,
+                          },
+                        ]}
+                      >
+                        {subCategoryImageUrl ? (
+                          <Image source={{ uri: subCategoryImageUrl }} style={styles.subcategoryImage} />
                         ) : (
                           <Ionicons 
                             name={getCategoryIcon(subcategory.slug) as any} 
-                            size={32} 
+                            size={20} 
                             color={subCategoryColor} 
                           />
                         )}
@@ -321,6 +341,7 @@ const SubCategoryScreen: React.FC = () => {
                       <View style={[styles.nestedContainer, { borderLeftColor: `${subCategoryColor}40` }]}>
                         {nestedChildren[subcategory.id].map((nestedCategory: Category) => {
                           const nestedColor = getCategoryColor(nestedCategory.color);
+                          const nestedImageUrl = nestedCategory.image_url || nestedCategory.image;
                           return (
                             <TouchableOpacity
                               key={nestedCategory.id}
@@ -329,8 +350,8 @@ const SubCategoryScreen: React.FC = () => {
                               activeOpacity={0.8}
                             >
                               <View style={[styles.nestedIconContainer, { backgroundColor: `${nestedColor}08` }]}>
-                                {nestedCategory.image ? (
-                                  <Image source={{ uri: nestedCategory.image }} style={styles.nestedImage} />
+                                {nestedImageUrl ? (
+                                  <Image source={{ uri: nestedImageUrl }} style={styles.nestedImage} />
                                 ) : (
                                   <Ionicons 
                                     name={getCategoryIcon(nestedCategory.slug) as any} 
@@ -445,18 +466,22 @@ const styles = StyleSheet.create({
   subcategoriesGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    paddingHorizontal: 12,
-    paddingTop: 4,
+    paddingHorizontal: 8,
+    paddingTop: 2,
     justifyContent: 'space-between',
   },
   subcategoryCardWrapper: {
     width: (width - 48) / 2,
-    marginBottom: 14,
+    marginBottom: 10,
   },
   subcategoryCard: {
     backgroundColor: '#FFFFFF',
     borderRadius: 12,
     overflow: 'hidden',
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 8,
+    paddingHorizontal: 8,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.03,
@@ -466,26 +491,30 @@ const styles = StyleSheet.create({
     borderColor: '#F5F5F5',
   },
   subcategoryImageContainer: {
-    width: '100%',
-    height: 100,
+    width: 44,
+    height: 44,
+    borderRadius: 22,
     justifyContent: 'center',
     alignItems: 'center',
+    overflow: 'hidden',
+    borderWidth: 1,
   },
   subcategoryImage: {
     width: '100%',
     height: '100%',
     resizeMode: 'cover',
+    borderRadius: 22,
   },
   subcategoryContent: {
-    padding: 12,
-    paddingTop: 10,
+    flex: 1,
+    marginLeft: 8,
   },
   subcategoryName: {
-    fontSize: 14,
-    fontWeight: '600',
+    fontSize: 12,
+    fontWeight: '700',
     color: COLORS.TEXT,
-    marginBottom: 5,
-    lineHeight: 19,
+    marginBottom: 2,
+    lineHeight: 16,
   },
   subcategoryCountBadge: {
     alignSelf: 'flex-start',
@@ -494,7 +523,7 @@ const styles = StyleSheet.create({
     borderRadius: 3,
   },
   subcategoryCount: {
-    fontSize: 11,
+    fontSize: 9,
     fontWeight: '700',
   },
   nestedContainer: {

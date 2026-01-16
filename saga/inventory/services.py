@@ -1154,6 +1154,12 @@ class ProductSyncService:
         # Récupérer is_rayon si présent dans les données B2B
         is_rayon = external_data.get('is_rayon', False)
         
+        raw_image_url = external_data.get('image_url') or external_data.get('image')
+        if isinstance(raw_image_url, dict):
+            raw_image_url = raw_image_url.get('url') or raw_image_url.get('image') or raw_image_url.get('image_url')
+        if raw_image_url and not isinstance(raw_image_url, str):
+            raw_image_url = None
+
         category_data = {
             'name': external_data.get('name', 'Catégorie sans nom'),
             'description': external_data.get('description', ''),
@@ -1163,6 +1169,7 @@ class ProductSyncService:
             'level': level,
             'order': external_data.get('order', 0),
             'is_main': external_data.get('level', 0) == 0 if level is not None else (not parent_id),
+            'image_url': raw_image_url or None,
         }
         
         # Gérer le slug - générer un slug unique

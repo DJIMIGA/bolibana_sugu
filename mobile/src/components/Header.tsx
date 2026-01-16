@@ -417,7 +417,8 @@ const styles = StyleSheet.create({
   },
   searchContainer: {
     width: '100%',
-    marginTop: -46,
+    marginTop: -36,
+    marginBottom: 4,
   },
   searchInputContainer: {
     flexDirection: 'row',

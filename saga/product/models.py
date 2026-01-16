@@ -66,6 +66,12 @@ class Category(models.Model):
         help_text="Image de la catégorie",
         validators=[validate_image_file]
     )
+    image_url = models.URLField(
+        max_length=500,
+        blank=True,
+        null=True,
+        help_text="URL externe de l'image (B2B)"
+    )
     description = models.TextField(blank=True, null=True)
     color = models.CharField(
         max_length=20,

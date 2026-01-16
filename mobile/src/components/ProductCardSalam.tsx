@@ -2,18 +2,18 @@ import React from 'react';
 import {
   View,
   Text,
-  Image,
   TouchableOpacity,
   StyleSheet,
   Dimensions,
 } from 'react-native';
 import { MaterialIcons, Ionicons } from '@expo/vector-icons';
 import { Product } from '../types';
-import { formatPrice } from '../utils/helpers';
+import { formatPrice, getProductImageUrl } from '../utils/helpers';
 import { COLORS } from '../utils/constants';
 import { useNavigation } from '@react-navigation/native';
 import { useAppSelector } from '../store/hooks';
 import ProductCardInfo from './ProductCardInfo';
+import ProductImage from './ProductImage';
 
 interface ProductCardSalamProps {
   product: Product;
@@ -42,21 +42,21 @@ const ProductCardSalam: React.FC<ProductCardSalamProps> = ({ product }) => {
   const discountPercentage = hasDiscount && product.price > 0
     ? Math.round(((product.price - product.discount_price) / product.price) * 100)
     : 0;
+  const imageUrl = getProductImageUrl(product);
 
   return (
     <TouchableOpacity style={styles.card} onPress={handlePress} activeOpacity={0.8}>
       <View style={styles.imageContainer}>
-        {product.image || product.image_urls?.main ? (
-          <Image 
-            source={{ uri: product.image || product.image_urls?.main }} 
-            style={styles.image}
-            resizeMode="cover"
-          />
-        ) : (
-          <View style={styles.imagePlaceholder}>
-            <MaterialIcons name="image-not-supported" size={32} color={COLORS.TEXT_SECONDARY} />
-          </View>
-        )}
+        <ProductImage
+          uri={imageUrl}
+          style={styles.image}
+          resizeMode="cover"
+          fallback={
+            <View style={styles.imagePlaceholder}>
+              <MaterialIcons name="image-not-supported" size={32} color={COLORS.TEXT_SECONDARY} />
+            </View>
+          }
+        />
         
         {/* Badge SALAM */}
         <View style={styles.salamBadgeContainer}>

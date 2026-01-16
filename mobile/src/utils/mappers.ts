@@ -255,6 +255,7 @@ export const mapCategoryFromBackend = (backendCategory: any): Category => {
     slug: backendCategory.slug,
     parent: parentId,
     // Certaines API renvoient `image_url` au lieu de `image`
+    image_url: ensureAbsoluteUrl(backendCategory.image_url || backendCategory.image),
     image: ensureAbsoluteUrl(backendCategory.image || backendCategory.image_url),
     description: backendCategory.description || undefined,
     color: backendCategory.color || '#10B981', // Couleur par défaut

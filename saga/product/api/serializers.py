@@ -9,6 +9,7 @@ logger = logging.getLogger(__name__)
 class CategorySerializer(serializers.ModelSerializer):
     children = serializers.SerializerMethodField()
     image = serializers.SerializerMethodField()
+    image_url = serializers.SerializerMethodField()
     product_count = serializers.SerializerMethodField()
     parent = serializers.SerializerMethodField()
     slug = serializers.CharField(required=False, allow_null=True, allow_blank=True)
@@ -17,7 +18,7 @@ class CategorySerializer(serializers.ModelSerializer):
         model = Category
         fields = [
             'id', 'name', 'slug', 'parent', 'children',
-            'image', 'description', 'color', 'is_main', 'order',
+            'image', 'image_url', 'description', 'color', 'is_main', 'order',
             'category_type', 'product_count', 'rayon_type', 'level'
         ]
         extra_kwargs = {
@@ -49,6 +50,7 @@ class CategorySerializer(serializers.ModelSerializer):
                     'slug': child.slug or '',
                     'parent': child.parent_id if hasattr(child, 'parent_id') else None,
                     'image': self.get_image(child),
+                    'image_url': self.get_image_url(child),
                     'description': child.description or '',
                     'color': child.color or 'blue',
                     'is_main': getattr(child, 'is_main', False),
@@ -78,6 +80,11 @@ class CategorySerializer(serializers.ModelSerializer):
                 return request.build_absolute_uri(obj.image.url)
             return obj.image.url
         return None
+
+    def get_image_url(self, obj):
+        if getattr(obj, 'image_url', None):
+            return obj.image_url
+        return self.get_image(obj)
 
     def get_product_count(self, obj):
         """Retourne le nombre de produits disponibles dans cette catégorie"""

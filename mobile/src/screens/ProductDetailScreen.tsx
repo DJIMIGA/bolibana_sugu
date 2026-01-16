@@ -4,7 +4,6 @@ import {
   Text,
   StyleSheet,
   ScrollView,
-  Image,
   TouchableOpacity,
   ActivityIndicator,
   Alert,
@@ -22,6 +21,7 @@ import { COLORS } from '../utils/constants';
 import { Product } from '../types';
 import DynamicProductCard from '../components/DynamicProductCard';
 import { LoadingScreen } from '../components/LoadingScreen';
+import ProductImage from '../components/ProductImage';
 
 const ProductDetailScreen: React.FC = () => {
   const dispatch = useAppDispatch();
@@ -378,10 +378,15 @@ const ProductDetailScreen: React.FC = () => {
               }}
               keyExtractor={(_, index) => `image-${index}`}
               renderItem={({ item }) => (
-                <Image
-                  source={{ uri: item }}
+                <ProductImage
+                  uri={item}
                   style={styles.carouselImage}
                   resizeMode="contain"
+                  fallback={
+                    <View style={styles.imagePlaceholder}>
+                      <MaterialIcons name="image-not-supported" size={64} color={COLORS.TEXT_SECONDARY} />
+                    </View>
+                  }
                 />
               )}
             />

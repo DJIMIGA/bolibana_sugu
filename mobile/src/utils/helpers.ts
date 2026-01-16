@@ -1,5 +1,6 @@
 // Fonctions utilitaires
 import { MAX_RETRY_ATTEMPTS, RETRY_BACKOFF_BASE } from './constants';
+import { Product } from '../types';
 
 export const formatPrice = (price: number): string => {
   return `${price.toLocaleString('fr-FR')} FCFA`;
@@ -150,6 +151,20 @@ export const cleanErrorForLog = (error: any): string => {
   
   // Priorité 3: error.toString()
   return cleanLogData(error.toString());
+};
+
+export const getProductImageUrl = (product?: Product | null): string | undefined => {
+  if (!product) return undefined;
+  const main = product.image || product.image_urls?.main;
+  if (main && String(main).trim().length > 0) return main;
+  const galleryFirst = product.image_urls?.gallery?.[0];
+  if (galleryFirst && String(galleryFirst).trim().length > 0) return galleryFirst;
+  const specs = product.specifications || {};
+  const specsImage =
+    (typeof specs.b2b_image_url === 'string' && specs.b2b_image_url) ||
+    (Array.isArray(specs.b2b_image_urls) ? specs.b2b_image_urls[0] : undefined);
+  if (specsImage && String(specsImage).trim().length > 0) return specsImage;
+  return undefined;
 };
 
 

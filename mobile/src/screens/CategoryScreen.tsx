@@ -26,7 +26,7 @@ const { width } = Dimensions.get('window');
 
 const CategoryScreen: React.FC = () => {
   const dispatch = useAppDispatch();
-  const navigation = useNavigation();
+  const navigation = useNavigation<any>();
   const { categories, isLoading, searchQuery } = useAppSelector((state) => state.product);
   const [refreshing, setRefreshing] = useState(false);
   const [searchModalVisible, setSearchModalVisible] = useState(false);
@@ -92,40 +92,7 @@ const CategoryScreen: React.FC = () => {
     });
   }, [b2bCategories]);
 
-  // Logs debug: uniquement quand les compteurs changent (sinon spam au moindre rerender)
-  const prevTotalRef = useRef<number>(-1);
-  const prevB2BRef = useRef<number>(-1);
-  const prevLevel0Ref = useRef<number>(-1);
-  useEffect(() => {
-    if (!__DEV__) return;
-
-    const total = (categories || []).length;
-    if (total !== prevTotalRef.current) {
-      prevTotalRef.current = total;
-      console.log('[CategoryScreen] 📊 Total catégories reçues:', total);
-    }
-
-    if (b2bCategories.length !== prevB2BRef.current) {
-      prevB2BRef.current = b2bCategories.length;
-      console.log(`[CategoryScreen] 🎯 Catégories B2B filtrées: ${b2bCategories.length}`);
-      if (b2bCategories.length > 0) {
-        console.log(
-          '[CategoryScreen] 📋 Exemples catégories B2B:',
-          b2bCategories.slice(0, 3).map((c: Category) => ({
-            id: c.id,
-            name: c.name,
-            rayon_type: c.rayon_type,
-            level: c.level,
-          }))
-        );
-      }
-    }
-
-    if (level0Categories.length !== prevLevel0Ref.current) {
-      prevLevel0Ref.current = level0Categories.length;
-      console.log(`[CategoryScreen] 📍 Catégories niveau 0: ${level0Categories.length}`);
-    }
-  }, [categories, b2bCategories, level0Categories]);
+  // Logs debug supprimés pour nettoyage
 
   // Fonction récursive pour construire la hiérarchie complète (tous les niveaux)
   const buildCategoryHierarchy = (
@@ -261,6 +228,7 @@ const CategoryScreen: React.FC = () => {
 
   const renderSubCategoryCard = ({ item }: { item: Category }) => {
     const categoryColor = getCategoryColor(item.color);
+    const categoryImageUrl = item.image_url || item.image;
     
     return (
       <TouchableOpacity
@@ -269,8 +237,8 @@ const CategoryScreen: React.FC = () => {
         activeOpacity={0.8}
       >
         <View style={[styles.subCategoryImageContainer, { backgroundColor: `${categoryColor}15` }]}>
-          {item.image ? (
-            <Image source={{ uri: item.image }} style={styles.subCategoryImage} />
+          {categoryImageUrl ? (
+            <Image source={{ uri: categoryImageUrl }} style={styles.subCategoryImage} />
           ) : (
             <View style={styles.subCategoryIconContainer}>
               <Ionicons 
@@ -332,6 +300,7 @@ const CategoryScreen: React.FC = () => {
                   {level0Categories.map((category: Category) => {
                     const categoryColor = getCategoryColor(category.color);
                     const hasChildren = categoryHierarchy[category.id]?.children.length > 0;
+                    const categoryImageUrl = category.image_url || category.image;
                     
                     return (
                       <View
@@ -344,9 +313,17 @@ const CategoryScreen: React.FC = () => {
                           onPress={() => handleCategoryPress(category.id)}
                           activeOpacity={0.8}
                         >
-                          <View style={[styles.gridImageContainer, { backgroundColor: `${categoryColor}10` }]}>
-                            {category.image ? (
-                              <Image source={{ uri: category.image }} style={styles.gridImage} />
+                          <View
+                            style={[
+                              styles.gridImageContainer,
+                              {
+                                backgroundColor: `${categoryColor}10`,
+                                borderColor: `${categoryColor}40`,
+                              },
+                            ]}
+                          >
+                            {categoryImageUrl ? (
+                              <Image source={{ uri: categoryImageUrl }} style={styles.gridImage} />
                             ) : (
                               <View style={styles.gridIconContainer}>
                                 <Ionicons 
@@ -475,16 +452,16 @@ const styles = StyleSheet.create({
   gridContainer: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    paddingHorizontal: 12,
-    paddingTop: 8,
+    paddingHorizontal: 8,
+    paddingTop: 6,
     justifyContent: 'space-between',
-    gap: 8,
+    gap: 6,
   },
   gridItem: {
     width: (width - 48) / 2,
     backgroundColor: '#FFFFFF',
     borderRadius: 10,
-    marginBottom: 8,
+    marginBottom: 6,
     overflow: 'hidden',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 1 },
@@ -495,22 +472,25 @@ const styles = StyleSheet.create({
     borderColor: '#F3F4F6',
   },
   categoryMainArea: {
-    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 8,
+    paddingHorizontal: 8,
   },
   subcategoryButton: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingVertical: 8,
-    paddingHorizontal: 10,
+    paddingVertical: 6,
+    paddingHorizontal: 8,
     borderTopWidth: 1,
-    marginTop: 4,
+    marginTop: 2,
   },
   subcategoryButtonText: {
-    fontSize: 11,
+    fontSize: 10,
     fontWeight: '600',
     flex: 1,
-    marginLeft: 6,
+    marginLeft: 4,
   },
   subCategoryCard: {
     width: (width - 48) / 2,
@@ -555,15 +535,19 @@ const styles = StyleSheet.create({
     fontWeight: '500',
   },
   gridImageContainer: {
-    width: '100%',
-    height: 90,
+    width: 44,
+    height: 44,
+    borderRadius: 22,
     justifyContent: 'center',
     alignItems: 'center',
+    overflow: 'hidden',
+    borderWidth: 1,
   },
   gridImage: {
     width: '100%',
     height: '100%',
     resizeMode: 'cover',
+    borderRadius: 22,
   },
   gridIconContainer: {
     width: '100%',
@@ -572,18 +556,18 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   gridContent: {
-    padding: 10,
-    paddingTop: 8,
+    flex: 1,
+    marginLeft: 6,
   },
   gridCategoryName: {
-    fontSize: 14,
+    fontSize: 12,
     fontWeight: '700',
     color: COLORS.TEXT,
-    marginBottom: 4,
-    lineHeight: 18,
+    marginBottom: 2,
+    lineHeight: 16,
   },
   gridCategoryCount: {
-    fontSize: 10,
+    fontSize: 9,
     fontWeight: '600',
   },
   horizontalCard: {

@@ -69,6 +69,7 @@ export interface Category {
   slug: string;
   parent?: number;
   image?: string;
+  image_url?: string;
   description?: string;
   color: string;
   is_main: boolean;

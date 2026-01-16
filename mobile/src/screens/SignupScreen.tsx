@@ -418,17 +418,14 @@ const styles = StyleSheet.create({
   logoContainer: {
     alignItems: 'center',
     marginBottom: 4,
-    backgroundColor: 'rgba(128, 0, 255, 0.12)',
   },
   appTitle: {
     fontSize: 32,
     fontWeight: 'bold',
     color: COLORS.PRIMARY,
-    marginTop: -20,
-    lineHeight: 34,
+    marginTop: -2,
     letterSpacing: 1,
     textAlign: 'center',
-    backgroundColor: 'rgba(0, 200, 120, 0.12)',
   },
   subtitle: {
     fontSize: 16,

@@ -1,14 +1,11 @@
-import React, { useEffect, useMemo, useState, useCallback } from 'react';
+import React, { useEffect, useState, useCallback, useMemo } from 'react';
 import {
   View,
   Text,
   StyleSheet,
   ScrollView,
   TouchableOpacity,
-  Image,
   RefreshControl,
-  TextInput,
-  Animated,
   SafeAreaView,
   StatusBar,
   FlatList,
@@ -16,11 +13,12 @@ import {
   Keyboard,
 } from 'react-native';
 import { Ionicons, MaterialIcons } from '@expo/vector-icons';
+import { Image } from 'expo-image';
 import { useAppDispatch, useAppSelector } from '../store/hooks';
 import { fetchProducts, fetchCategories, setSearchQuery, searchProducts, clearFilters, setFilters } from '../store/slices/productSlice';
 import { useNavigation, NavigationProp, useFocusEffect } from '@react-navigation/native';
 import { HomeScreenNavigationProp } from '../types/navigation';
-import { formatPrice } from '../utils/helpers';
+import { formatPrice, getProductImageUrl } from '../utils/helpers';
 import { COLORS, API_ENDPOINTS } from '../utils/constants';
 import { Product, Category } from '../types';
 import { Header } from '../components/Header';
@@ -29,6 +27,9 @@ import ProductCardInfo from '../components/ProductCardInfo';
 import SearchModal from '../components/SearchModal';
 import apiClient from '../services/api';
 import { mapProductFromBackend } from '../utils/mappers';
+import ProductImage from '../components/ProductImage';
+import HomeInfoCarousel from '../components/HomeInfoCarousel';
+import HomeProductSection from '../components/HomeProductSection';
 
 const HomeScreen: React.FC = () => {
   const dispatch = useAppDispatch();
@@ -36,10 +37,8 @@ const HomeScreen: React.FC = () => {
   const { products, categories, isLoading, isFetchingMore, pagination, searchQuery } = useAppSelector((state) => state.product);
   const [refreshing, setRefreshing] = React.useState(false);
   const [searchModalVisible, setSearchModalVisible] = useState(false);
-  const [currentInfoCardIndex, setCurrentInfoCardIndex] = useState(0);
-  const intervalRef = React.useRef<any>(null);
-  const fadeAnim = React.useRef(new Animated.Value(1)).current;
-  const slideAnim = React.useRef(new Animated.Value(0)).current;
+  const [homePromoProducts, setHomePromoProducts] = useState<Product[]>([]);
+  const [homeNewProducts, setHomeNewProducts] = useState<Product[]>([]);
   
   // États pour stocker les produits par catégorie (comme sur le web)
   const [phoneProducts, setPhoneProducts] = useState<Product[]>([]);
@@ -52,6 +51,18 @@ const HomeScreen: React.FC = () => {
     dispatch(fetchProducts({ page: 1, filters: {} }));
     dispatch(fetchCategories());
   }, [dispatch]);
+
+  useEffect(() => {
+    if (!products || products.length === 0) return;
+    const urls = products
+      .slice(0, 12)
+      .map((p: Product) => getProductImageUrl(p))
+      .filter((u): u is string => !!u);
+    const unique = Array.from(new Set(urls));
+    unique.forEach((url) => {
+      Image.prefetch(url);
+    });
+  }, [products]);
 
   // Fermer le modal de recherche quand l'écran redevient actif
   useFocusEffect(
@@ -124,52 +135,6 @@ const HomeScreen: React.FC = () => {
     }, [dispatch])
   );
 
-  // Fonction pour démarrer l'animation du contenu des cartes d'informations
-  const startAutoScroll = React.useCallback(() => {
-    clearInterval(intervalRef.current);
-    intervalRef.current = setInterval(() => {
-      // Animation combinée : fade out + slide up
-      Animated.parallel([
-        Animated.timing(fadeAnim, {
-          toValue: 0,
-          duration: 400,
-          useNativeDriver: true,
-        }),
-        Animated.timing(slideAnim, {
-          toValue: -20,
-          duration: 400,
-          useNativeDriver: true,
-        }),
-      ]).start(() => {
-        // Réinitialiser la position pour le slide in
-        slideAnim.setValue(20);
-        // Changer le contenu
-        setCurrentInfoCardIndex((prevIndex) => {
-          const nextIndex = (prevIndex + 1) % 3; // 3 contenus au total
-          return nextIndex;
-        });
-        // Animation combinée : fade in + slide in
-        Animated.parallel([
-          Animated.timing(fadeAnim, {
-            toValue: 1,
-            duration: 400,
-            useNativeDriver: true,
-          }),
-          Animated.timing(slideAnim, {
-            toValue: 0,
-            duration: 400,
-            useNativeDriver: true,
-          }),
-        ]).start();
-      });
-    }, 3000); // Change toutes les 3 secondes
-  }, [fadeAnim, slideAnim]);
-
-  // Effet pour gérer l'animation au montage/démontage
-  useEffect(() => {
-    startAutoScroll();
-    return () => clearInterval(intervalRef.current);
-  }, [startAutoScroll]);
   const onRefresh = React.useCallback(async () => {
     setRefreshing(true);
     dispatch(clearFilters());
@@ -235,26 +200,29 @@ const HomeScreen: React.FC = () => {
     setSearchModalVisible(true);
   };
 
-  const trendingProducts = (products || []).filter((p: Product) => p.is_trending).slice(0, 6);
+  useEffect(() => {
+    if (!products || products.length === 0) return;
+    if (pagination.page !== 1) return;
 
-  // Nouveaux produits (basés sur la date de création)
-  const newProducts = [...(products || [])]
-    .filter((p: Product) => p.created_at)
-    .sort(
-      (a: Product, b: Product) =>
-        new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
-    )
-    .slice(0, 8);
+    const trending = products.filter((p: Product) => p.is_trending).slice(0, 6);
+    const promo = products.filter((p: Product) => {
+      return p.discount_price && p.discount_price < p.price && p.discount_price > 0;
+    });
+    const displayPromo = promo.length > 0
+      ? promo.slice(0, 10)
+      : (trending.length > 0 ? trending.slice(0, 10) : products.slice(0, Math.min(10, products.length)));
 
-  // Produits en promotion (avec discount_price)
-  const promoProducts = (products || []).filter((p: Product) => {
-    return p.discount_price && p.discount_price < p.price && p.discount_price > 0;
-  });
-  
-  // Si pas de produits en promotion, utiliser les produits tendance ou les premiers produits
-  const displayPromoProducts = promoProducts.length > 0 
-    ? promoProducts.slice(0, 10) 
-    : (trendingProducts.length > 0 ? trendingProducts.slice(0, 10) : (products || []).slice(0, Math.min(10, products.length)));
+    const newOnes = [...products]
+      .filter((p: Product) => p.created_at)
+      .sort(
+        (a: Product, b: Product) =>
+          new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+      )
+      .slice(0, 8);
+
+    setHomePromoProducts(displayPromo.slice(0, 8));
+    setHomeNewProducts(newOnes);
+  }, [products, pagination.page]);
   
   // S'assurer qu'on a toujours quelque chose à afficher
   // Afficher uniquement les catégories sans parent (catégories principales)
@@ -291,7 +259,6 @@ const HomeScreen: React.FC = () => {
 
 
   const handleClearSearch = () => {
-    setSearchQueryLocal('');
     dispatch(setSearchQuery(''));
     dispatch(clearFilters());
     dispatch(fetchProducts({ page: 1, filters: {} }));
@@ -307,79 +274,26 @@ const HomeScreen: React.FC = () => {
     }
   };
 
-  // Fonction helper pour rendre une carte de produit uniforme
-  const renderProductCard = (product: Product, showNewBadge: boolean = false) => {
-    const discountPercentage = product.discount_price && product.price > 0
-      ? Math.round(((product.price - product.discount_price) / product.price) * 100)
-      : 0;
-    const hasDiscount = product.discount_price && product.discount_price < product.price && product.discount_price > 0;
-    
-    return (
-      <TouchableOpacity
-        key={product.id}
-        style={styles.promoCard}
-        onPress={() => navigation.navigate('Products', { screen: 'ProductDetail', params: { slug: product.slug } })}
-        activeOpacity={0.8}
-      >
-        {/* Badge de réduction */}
-        {discountPercentage > 0 && (
-          <View style={styles.promoBadge}>
-            <View style={styles.promoBadgeInner}>
-              <Text style={styles.promoBadgeText}>-{discountPercentage}%</Text>
-            </View>
-            <View style={styles.promoBadgeTriangle} />
-          </View>
-        )}
-        {/* Badge NOUVEAU */}
-        {showNewBadge && (
-          <View style={styles.newBadge}>
-            <Text style={styles.newBadgeText}>NOUVEAU</Text>
-          </View>
-        )}
-        <View style={styles.promoImageContainer}>
-          {product.image ? (
-            <Image source={{ uri: product.image }} style={styles.promoImage} resizeMode="cover" />
-          ) : (
-            <View style={styles.promoImageFallback}>
-              <MaterialIcons name="image-not-supported" size={48} color={COLORS.TEXT_SECONDARY} />
-            </View>
-          )}
-        </View>
-        <View style={styles.promoCardContent}>
-          <Text style={styles.promoProductTitle} numberOfLines={1}>{product.title}</Text>
-          <ProductCardInfo product={product} showBrand={true} showSpecs={false} compact={true} />
-          <View style={styles.promoPriceContainer}>
-            <View style={styles.promoPriceRow}>
-              <Text style={styles.promoNewPrice}>{formatPrice(product.discount_price || product.price)}</Text>
-              {product.is_salam && (
-                <View style={styles.salamBadge}>
-                  <Text style={styles.salamBadgeText}>SALAM</Text>
-                </View>
-              )}
-            </View>
-            {hasDiscount && (
-              <Text style={styles.promoOldPrice}>{formatPrice(product.price)}</Text>
-            )}
-          </View>
-        </View>
-      </TouchableOpacity>
-    );
-  };
 
-  const renderProductItem = ({ item }: { item: Product }) => (
+  const renderProductItem = ({ item }: { item: Product }) => {
+    const imageUrl = getProductImageUrl(item);
+    return (
     <TouchableOpacity
       key={item.id}
       style={styles.gridProductCard}
       onPress={() => navigation.navigate('Products', { screen: 'ProductDetail', params: { slug: item.slug } })}
     >
       <View style={styles.gridProductImageContainer}>
-        {item.image ? (
-          <Image source={{ uri: item.image }} style={styles.gridProductImage} />
-        ) : (
-          <View style={styles.gridProductImageFallback}>
-            <MaterialIcons name="image-not-supported" size={40} color={COLORS.TEXT_SECONDARY} />
-          </View>
-        )}
+        <ProductImage
+          uri={imageUrl}
+          style={styles.gridProductImage}
+          resizeMode="cover"
+          fallback={
+            <View style={styles.gridProductImageFallback}>
+              <MaterialIcons name="image-not-supported" size={40} color={COLORS.TEXT_SECONDARY} />
+            </View>
+          }
+        />
         {item.discount_price && item.discount_price < item.price && (
           <View style={styles.gridProductBadge}>
             <Text style={styles.gridProductBadgeText}>
@@ -401,8 +315,9 @@ const HomeScreen: React.FC = () => {
       </View>
     </TouchableOpacity>
   );
+  };
 
-  const renderHeader = () => (
+  const headerContent = useMemo(() => (
     <>
       {/* Catégories (Défilent avec le contenu) */}
       <View style={styles.categoriesSection}>
@@ -418,14 +333,12 @@ const HomeScreen: React.FC = () => {
                 <TouchableOpacity
                   key={category.id}
                   style={styles.categoryCard}
-                  onPress={() => {
-                    navigation.navigate('Products', {
-                      screen: 'ProductList',
-                      params: { categoryId: category.id },
-                    });
-                  }}
+                  onPress={() => navigation.navigate('Products', {
+                    screen: 'ProductList',
+                    params: { categoryId: category.id },
+                  })}
                 >
-                  <Text style={styles.categoryName}>
+                  <Text style={styles.categoryName} numberOfLines={1} ellipsizeMode="tail">
                     {category.name || `Catégorie ${category.id}`}
                   </Text>
                 </TouchableOpacity>
@@ -440,108 +353,33 @@ const HomeScreen: React.FC = () => {
       </View>
 
       {/* Section combinée : Cartes d'informations */}
-      <View style={styles.combinedSection}>
-        <View style={styles.combinedRow}>
-          <Animated.View 
-            style={[
-              styles.infoCard, 
-              { 
-                opacity: fadeAnim,
-                transform: [{ translateY: slideAnim }],
-                flex: 1,
-              }
-            ]}
-          >
-            {currentInfoCardIndex === 0 && (
-              <>
-                <MaterialIcons name="local-shipping" size={24} color={COLORS.PRIMARY} />
-                <View style={styles.infoCardContent}>
-                  <Text style={styles.infoCardTitle}>Livraisons gratuites</Text>
-                  <Text style={styles.infoCardSubtitle}>sur tous les articles Salam</Text>
-                </View>
-              </>
-            )}
-            {currentInfoCardIndex === 1 && (
-              <>
-                <MaterialIcons name="assignment-return" size={24} color={COLORS.PRIMARY} />
-                <View style={styles.infoCardContent}>
-                  <Text style={styles.infoCardTitle}>Retours gratuits</Text>
-                  <Text style={styles.infoCardSubtitle}>sur des milliers de produits</Text>
-                </View>
-              </>
-            )}
-            {currentInfoCardIndex === 2 && (
-              <>
-                <MaterialIcons name="flash-on" size={24} color={COLORS.SECONDARY} />
-                <View style={styles.infoCardContent}>
-                  <Text style={styles.infoCardTitle}>Livraison rapide</Text>
-                  <Text style={styles.infoCardSubtitle}>remboursement si défectueux</Text>
-                </View>
-              </>
-            )}
-          </Animated.View>
-        </View>
-      </View>
+      <HomeInfoCarousel />
 
       {/* Section Promo - Carrousel */}
-      {displayPromoProducts.length > 0 && (
-        <View style={styles.promoSection}>
-          <View style={styles.promoHeaderInline}>
-            <View style={styles.promoHeaderIconContainer}>
-              <MaterialIcons name="local-offer" size={20} color={COLORS.DANGER} />
-            </View>
-            <View style={styles.promoHeaderTextContainer}>
-              <Text style={styles.promoSectionTitleInline}>Promo Flash</Text>
-              <Text style={styles.promoSectionSubtitleInline}>Économie</Text>
-              {displayPromoProducts.length > 5 && (
-                <TouchableOpacity
-                  style={styles.promoSeeAllButtonInline}
-                  onPress={() => navigation.navigate('Products', { screen: 'ProductList', params: { promo: true } })}
-                >
-                  <Text style={styles.promoSeeAllTextInline}>Voir</Text>
-                  <Ionicons name="chevron-forward" size={14} color={COLORS.PRIMARY} />
-                </TouchableOpacity>
-              )}
-            </View>
-          </View>
-          <ScrollView
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            contentContainerStyle={styles.promoCarouselContent}
-            snapToInterval={162}
-            decelerationRate="fast"
-            snapToAlignment="start"
-            pagingEnabled={false}
-          >
-            {displayPromoProducts.slice(0, 8).map((product: Product) => renderProductCard(product, false))}
-          </ScrollView>
-        </View>
+      {homePromoProducts.length > 0 && (
+        <HomeProductSection
+          title="Promo Flash"
+          subtitle="Économie"
+          iconName="local-offer"
+          iconColor={COLORS.DANGER}
+          products={homePromoProducts}
+          showSeeAll={homePromoProducts.length > 5}
+          onPressSeeAll={() => navigation.navigate('Products', { screen: 'ProductList', params: { promo: true } })}
+          onPressProduct={(product) => navigation.navigate('Products', { screen: 'ProductDetail', params: { slug: product.slug } })}
+        />
       )}
 
       {/* Section Nouveaux produits */}
-      {newProducts.length > 0 && (
-        <View style={styles.promoSection}>
-          <View style={styles.promoHeaderInline}>
-            <View style={styles.promoHeaderIconContainer}>
-              <MaterialIcons name="new-releases" size={20} color={COLORS.PRIMARY} />
-            </View>
-            <View style={styles.promoHeaderTextContainer}>
-              <Text style={styles.promoSectionTitleInline}>Nouveaux</Text>
-              <Text style={styles.promoSectionSubtitleInline}>Produits</Text>
-            </View>
-          </View>
-          <ScrollView
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            contentContainerStyle={styles.promoCarouselContent}
-            snapToInterval={162}
-            decelerationRate="fast"
-            snapToAlignment="start"
-            pagingEnabled={false}
-          >
-            {newProducts.slice(0, 8).map((product: Product) => renderProductCard(product, true))}
-          </ScrollView>
-        </View>
+      {homeNewProducts.length > 0 && (
+        <HomeProductSection
+          title="Nouveaux"
+          subtitle="Produits"
+          iconName="new-releases"
+          iconColor={COLORS.PRIMARY}
+          products={homeNewProducts}
+          showNewBadge={true}
+          onPressProduct={(product) => navigation.navigate('Products', { screen: 'ProductDetail', params: { slug: product.slug } })}
+        />
       )}
 
       {/* Section Téléphones */}
@@ -565,7 +403,44 @@ const HomeScreen: React.FC = () => {
             snapToAlignment="start"
             pagingEnabled={false}
           >
-            {phoneProducts.map((product: Product) => renderProductCard(product, false))}
+            {phoneProducts.map((product: Product) => (
+              <React.Fragment key={product.id}>
+                {(
+                  <TouchableOpacity
+                    style={styles.promoCard}
+                    onPress={() => navigation.navigate('Products', { screen: 'ProductDetail', params: { slug: product.slug } })}
+                    activeOpacity={0.8}
+                  >
+                    <View style={styles.promoImageContainer}>
+                      <ProductImage
+                        uri={getProductImageUrl(product)}
+                        style={styles.promoImage}
+                        resizeMode="cover"
+                        fallback={
+                          <View style={styles.promoImageFallback}>
+                            <MaterialIcons name="image-not-supported" size={48} color={COLORS.TEXT_SECONDARY} />
+                          </View>
+                        }
+                      />
+                    </View>
+                    <View style={styles.promoCardContent}>
+                      <Text style={styles.promoProductTitle} numberOfLines={1}>{product.title}</Text>
+                      <ProductCardInfo product={product} showBrand={true} showSpecs={false} compact={true} />
+                      <View style={styles.promoPriceContainer}>
+                        <View style={styles.promoPriceRow}>
+                          <Text style={styles.promoNewPrice}>{formatPrice(product.discount_price || product.price)}</Text>
+                          {product.is_salam && (
+                            <View style={styles.salamBadge}>
+                              <Text style={styles.salamBadgeText}>SALAM</Text>
+                            </View>
+                          )}
+                        </View>
+                      </View>
+                    </View>
+                  </TouchableOpacity>
+                )}
+              </React.Fragment>
+            ))}
           </ScrollView>
         </View>
       )}
@@ -575,7 +450,7 @@ const HomeScreen: React.FC = () => {
         <Text style={styles.sectionTitle}>Découvrez d'autres produits</Text>
       </View>
     </>
-  );
+  ), [displayCategories, homePromoProducts, homeNewProducts, phoneProducts, navigation]);
 
   const renderFooter = () => {
     if (!isFetchingMore) return <View style={{ height: 20 }} />;
@@ -620,7 +495,7 @@ const HomeScreen: React.FC = () => {
               data={products}
               renderItem={renderProductItem}
               keyExtractor={(item) => item.id.toString()}
-              ListHeaderComponent={renderHeader}
+              ListHeaderComponent={headerContent}
               ListFooterComponent={renderFooter}
               onEndReached={handleLoadMore}
               onEndReachedThreshold={0.5}
@@ -678,15 +553,16 @@ const styles = StyleSheet.create({
   },
   categoriesScrollContent: {
     paddingLeft: 0,
-    paddingRight: 20,
+    paddingRight: 12,
   },
   categoryCard: {
     backgroundColor: '#FFFFFF',
-    paddingHorizontal: 12,
-    paddingVertical: 8,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
     borderRadius: 20,
-    marginRight: 8,
-    minWidth: 80,
+    marginRight: 6,
+    minWidth: 72,
+    maxWidth: 160,
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 1.5,
@@ -708,6 +584,7 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: COLORS.TEXT,
     textAlign: 'center',
+    flexShrink: 1,
   },
   exploreCardText: {
     color: '#FFFFFF',
@@ -764,42 +641,6 @@ const styles = StyleSheet.create({
     color: COLORS.TEXT_SECONDARY,
     textDecorationLine: 'line-through',
     fontWeight: '500',
-  },
-  combinedSection: {
-    paddingHorizontal: 12,
-    paddingTop: 0,
-    paddingBottom: 4,
-  },
-  combinedRow: {
-    flexDirection: 'row',
-    gap: 6,
-    alignItems: 'stretch',
-  },
-  infoCard: {
-    flexDirection: 'row',
-    backgroundColor: '#F9FAFB',
-    borderRadius: 12,
-    paddingVertical: 10,
-    paddingHorizontal: 16,
-    alignItems: 'center',
-    borderWidth: 1,
-    borderColor: '#E5E7EB',
-    marginRight: 0,
-  },
-  infoCardContent: {
-    flex: 1,
-    marginLeft: 12,
-  },
-  infoCardTitle: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: COLORS.TEXT,
-    marginBottom: 4,
-  },
-  infoCardSubtitle: {
-    fontSize: 11,
-    color: COLORS.TEXT_SECONDARY,
-    lineHeight: 16,
   },
   promoSection: {
     paddingBottom: 2,

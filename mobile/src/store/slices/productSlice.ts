@@ -155,74 +155,20 @@ export const fetchCategories = createAsyncThunk(
     };
 
     try {
-      console.log('[CATEGORIES] 🚀 Début fetchCategories');
-      console.log('[CATEGORIES] 🌐 BaseURL:', apiClient.defaults.baseURL);
-
       // Priorité: endpoint B2B (celui qui contient `rayon_type` / `level`)
-      console.log('[CATEGORIES] 📍 Endpoint B2B:', API_ENDPOINTS.B2B.CATEGORIES);
       let allCategories = await fetchAllPages(API_ENDPOINTS.B2B.CATEGORIES);
 
       // Fallback: endpoint normal si B2B vide / non dispo
       if (!Array.isArray(allCategories) || allCategories.length === 0) {
-        console.log('[CATEGORIES] ⚠️ Endpoint B2B vide, fallback vers endpoint normal:', API_ENDPOINTS.CATEGORIES);
         allCategories = await fetchAllPages(API_ENDPOINTS.CATEGORIES);
       }
 
-      console.log(`[CATEGORIES] ✅ Total catégories récupérées: ${allCategories.length}`);
-
       if (!Array.isArray(allCategories) || allCategories.length === 0) {
-        console.log('[CATEGORIES] ❌ Aucune catégorie trouvée (B2B + fallback)');
         return rejectWithValue('Aucune catégorie trouvée');
       }
 
-      // Log des données brutes avant mapping pour debug
-      console.log('[CATEGORIES] 📋 Exemples catégories brutes (avant mapping):', allCategories.slice(0, 5).map((c: any) => ({
-        id: c.id,
-        name: c.name,
-        rayon_type: c.rayon_type,
-        level: c.level,
-        parent: c.parent,
-        external_category: c.external_category ? 'présent' : 'absent'
-      })));
-
       // Mapper les catégories du backend
       const categories = allCategories.map((c: any) => mapCategoryFromBackend(c));
-      console.log(`[CATEGORIES] 🗺️ Catégories mappées: ${categories.length}`);
-
-      // Log des catégories mappées pour voir si rayon_type et level sont présents
-      console.log('[CATEGORIES] 📋 Exemples catégories mappées:', categories.slice(0, 5).map((c: Category) => ({
-        id: c.id,
-        name: c.name,
-        rayon_type: c.rayon_type,
-        level: c.level,
-        parent: c.parent
-      })));
-
-      // Filtrer les catégories B2B pour debug
-      const b2bCategories = categories.filter((c: Category) => 
-        c.rayon_type || c.level !== undefined
-      );
-      console.log(`[CATEGORIES] 🎯 Catégories B2B après mapping: ${b2bCategories.length}`);
-      if (b2bCategories.length > 0) {
-        console.log('[CATEGORIES] 📋 Exemples catégories B2B mappées:', b2bCategories.slice(0, 3).map((c: Category) => ({
-          id: c.id,
-          name: c.name,
-          rayon_type: c.rayon_type,
-          level: c.level,
-          parent: c.parent
-        })));
-      } else {
-        console.log('[CATEGORIES] ⚠️ Aucune catégorie B2B trouvée - Vérifiez que les catégories ont rayon_type ou level');
-        // Log toutes les catégories pour voir ce qui manque
-        console.log('[CATEGORIES] 📋 Toutes les catégories:', categories.map((c: Category) => ({
-          id: c.id,
-          name: c.name,
-          rayon_type: c.rayon_type,
-          level: c.level,
-          has_rayon_type: !!c.rayon_type,
-          has_level: c.level !== undefined && c.level !== null
-        })));
-      }
 
       // Mettre en cache si en ligne
     if (connectivityService.getIsOnline()) {

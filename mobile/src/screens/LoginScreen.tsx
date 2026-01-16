@@ -225,16 +225,13 @@ const styles = StyleSheet.create({
   logoContainer: {
     alignItems: 'center',
     marginBottom: 12,
-    backgroundColor: 'rgba(0, 128, 255, 0.12)',
   },
   appTitle: {
     fontSize: 32,
     fontWeight: 'bold',
     color: COLORS.PRIMARY,
-    marginTop: -20,
-    lineHeight: 34,
+    marginTop: -2,
     letterSpacing: 1,
-    backgroundColor: 'rgba(255, 128, 0, 0.12)',
   },
   title: {
     fontSize: 32,
