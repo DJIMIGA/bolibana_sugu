@@ -61,6 +61,7 @@ def should_sync_categories(ignore_lock: bool = False) -> bool:
     Returns:
         bool: True si une synchronisation est nécessaire
     """
+    logger.info("[SYNC AUTO CAT] Vérification besoin de sync catégories")
     # Vérifier si une clé API est configurée
     try:
         if not ApiKey.get_active_key():
@@ -72,7 +73,7 @@ def should_sync_categories(ignore_lock: bool = False) -> bool:
 
     # Éviter les synchronisations concurrentes
     if not ignore_lock and cache.get(_CATEGORIES_LOCK_KEY):
-        logger.info("Synchronisation catégories déjà en cours, ignorée")
+        logger.info("Synchronisation catégories déjà en cours, ignorée (lock actif)")
         return False
     
     return True
@@ -157,9 +158,11 @@ def sync_categories_auto(force: bool = False, _lock_acquired: bool = False):
     Returns:
         dict: Statistiques de synchronisation
     """
+    logger.info(f"[SYNC AUTO CAT] Déclenchement sync_categories_auto force={force} lock_acquis={_lock_acquired}")
     # Prendre un lock (anti-concurrence)
     if not _lock_acquired:
         if not cache.add(_CATEGORIES_LOCK_KEY, True, timeout=_LOCK_TTL_SECONDS):
+            logger.warning("[SYNC AUTO CAT] Lock déjà actif, synchronisation annulée")
             return {
                 'success': False,
                 'message': 'Synchronisation catégories déjà en cours',
@@ -167,6 +170,7 @@ def sync_categories_auto(force: bool = False, _lock_acquired: bool = False):
             }
 
     if not force and not should_sync_categories(ignore_lock=True):
+        logger.info("[SYNC AUTO CAT] Synchronisation non nécessaire (should_sync_categories=False)")
         cache.delete(_CATEGORIES_LOCK_KEY)
         return {
             'success': False,
@@ -175,7 +179,7 @@ def sync_categories_auto(force: bool = False, _lock_acquired: bool = False):
         }
     
     try:
-        logger.info("Démarrage de la synchronisation automatique des catégories B2B")
+        logger.info("[SYNC AUTO CAT] Démarrage de la synchronisation automatique des catégories B2B")
         
         sync_service = ProductSyncService()
         stats = sync_service.sync_categories()
@@ -184,9 +188,12 @@ def sync_categories_auto(force: bool = False, _lock_acquired: bool = False):
         cache.set(_CATEGORIES_LAST_SYNC_KEY, timezone.now(), 7200)  # Cache pour 2 heures
         
         logger.info(
-            f"Synchronisation automatique des catégories terminée: {stats['total']} catégories, "
-            f"{stats['created']} créées, {stats['updated']} mises à jour"
+            "[SYNC AUTO CAT] Synchronisation terminée: "
+            f"{stats['total']} catégories, {stats['created']} créées, "
+            f"{stats['updated']} mises à jour, {stats.get('errors', 0)} erreurs"
         )
+        if stats.get('errors_list'):
+            logger.warning(f"[SYNC AUTO CAT] Détails erreurs: {stats['errors_list']}")
         
         return {
             'success': True,
@@ -235,15 +242,19 @@ def trigger_categories_sync_async(force: bool = False) -> bool:
     Déclenche une sync catégories en arrière-plan (non bloquante).
     Retourne True si un déclenchement a été fait.
     """
+    logger.info(f"[SYNC AUTO CAT] trigger_categories_sync_async force={force}")
     if not force and not should_sync_categories():
+        logger.info("[SYNC AUTO CAT] Déclenchement ignoré: should_sync_categories=False")
         return False
     # Lock dès maintenant pour éviter que plusieurs requêtes lancent plusieurs threads
     if not cache.add(_CATEGORIES_LOCK_KEY, True, timeout=_LOCK_TTL_SECONDS):
+        logger.info("[SYNC AUTO CAT] Déclenchement ignoré: lock déjà actif")
         return False
 
     def _run():
         sync_categories_auto(force=force, _lock_acquired=True)
 
     threading.Thread(target=_run, daemon=True).start()
+    logger.info("[SYNC AUTO CAT] Thread de synchronisation catégories lancé")
     return True
 

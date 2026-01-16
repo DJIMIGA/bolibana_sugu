@@ -571,7 +571,9 @@ class ProductSyncService:
         }
         
         try:
+            logger.info("[SYNC CAT] Récupération des catégories depuis l'API B2B")
             categories_data = self.api_client.get_categories_list()
+            logger.info(f"[SYNC CAT] Catégories reçues: {len(categories_data)}")
             
             # Créer un mapping des catégories par ID externe pour gérer la hiérarchie
             categories_by_id = {}
@@ -579,6 +581,8 @@ class ProductSyncService:
             # Première passe : créer/mettre à jour toutes les catégories
             for category_data in categories_data:
                 try:
+                    external_id = category_data.get('id')
+                    logger.debug(f"[SYNC CAT] Traitement catégorie externe id={external_id}")
                     result = self.create_or_update_category(category_data)
                     stats['total'] += 1
                     if result['created']:
@@ -586,7 +590,6 @@ class ProductSyncService:
                     else:
                         stats['updated'] += 1
                     
-                    external_id = category_data.get('id')
                     if external_id:
                         categories_by_id[external_id] = result['category']
                 except Exception as e:
@@ -618,11 +621,16 @@ class ProductSyncService:
                         category.parent = parent_category
                         category.save(update_fields=['parent'])
                         logger.debug(f"Relation parent/enfant mise à jour: {category.name} -> {parent_category.name}")
-        
         except InventoryAPIError as e:
             logger.error(f"Erreur API lors de la synchronisation des catégories: {str(e)}")
             stats['errors'] += 1
         
+        logger.info(
+            "[SYNC CAT] Résumé: "
+            f"total={stats['total']} created={stats['created']} "
+            f"updated={stats['updated']} errors={stats.get('errors', 0)}"
+        )
+
         return stats
     
     @transaction.atomic
