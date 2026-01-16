@@ -802,6 +802,11 @@ LOGGING = {
             'level': 'INFO',
             'propagate': True,
         },
+        'inventory': {
+            'handlers': ['file', 'console', 'heroku_console'],
+            'level': 'INFO',
+            'propagate': False,
+        },
         'security': {
             'handlers': ['security_file', 'console', 'heroku_console'],
             'level': 'WARNING',

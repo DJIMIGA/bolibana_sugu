@@ -327,6 +327,17 @@ class ProductViewSet(viewsets.ReadOnlyModelViewSet):
             }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
+@api_view(['GET'])
+def sync_status_view(request):
+    """
+    Retourne l'état de la synchronisation automatique (timestamps + locks).
+    """
+    from inventory.tasks import get_sync_status
+    status_payload = get_sync_status()
+    logger.info("[SyncStatus] Consultation du statut de synchronisation auto")
+    return Response(status_payload)
+
+
 # Vue simple pour tester l'endpoint synced directement
 @api_view(['GET'])
 def synced_products_view(request):

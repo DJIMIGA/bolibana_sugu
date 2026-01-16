@@ -3,6 +3,7 @@ Tâches de synchronisation automatique des produits B2B
 """
 import logging
 import threading
+from datetime import timedelta
 from django.utils import timezone
 from django.core.cache import cache
 from django.conf import settings
@@ -263,4 +264,35 @@ def trigger_categories_sync_async(force: bool = False) -> bool:
     threading.Thread(target=_run, daemon=True).start()
     logger.info("[SYNC AUTO CAT] Thread de synchronisation catégories lancé")
     return True
+
+
+def get_sync_status() -> dict:
+    """
+    Retourne l'état de la synchronisation automatique (timestamps + locks).
+    """
+    now = timezone.now()
+    min_interval = _min_interval_seconds()
+
+    products_last_sync = cache.get(_PRODUCTS_LAST_SYNC_KEY)
+    categories_last_sync = cache.get(_CATEGORIES_LAST_SYNC_KEY)
+
+    def _next_allowed(last_sync):
+        if not last_sync:
+            return None
+        return last_sync + timedelta(seconds=min_interval)
+
+    return {
+        'server_time': now.isoformat(),
+        'min_interval_seconds': min_interval,
+        'products': {
+            'last_sync': products_last_sync.isoformat() if products_last_sync else None,
+            'next_allowed': _next_allowed(products_last_sync).isoformat() if products_last_sync else None,
+            'lock_active': bool(cache.get(_PRODUCTS_LOCK_KEY)),
+        },
+        'categories': {
+            'last_sync': categories_last_sync.isoformat() if categories_last_sync else None,
+            'next_allowed': _next_allowed(categories_last_sync).isoformat() if categories_last_sync else None,
+            'lock_active': bool(cache.get(_CATEGORIES_LOCK_KEY)),
+        },
+    }
 

@@ -12,4 +12,5 @@ urlpatterns = [
     # URL alternative pour l'endpoint synced (au cas où le router ne la génère pas correctement)
     path('products/synced/', views.synced_products_view, name='inventory-product-synced-alt'),
     path('categories/synced/', views.synced_categories_view, name='inventory-category-synced-alt'),
+    path('sync/status/', views.sync_status_view, name='inventory-sync-status'),
 ]
