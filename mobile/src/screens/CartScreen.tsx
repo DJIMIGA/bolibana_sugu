@@ -37,7 +37,7 @@ const CartScreen: React.FC = () => {
       dispatch(enrichCartProducts());
     };
     loadCart();
-    dispatch(fetchCategories());
+    dispatch(fetchCategories({ forceRefresh: true }));
   }, [dispatch]);
 
   const onRefresh = async () => {

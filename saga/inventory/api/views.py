@@ -228,7 +228,8 @@ class ProductViewSet(viewsets.ReadOnlyModelViewSet):
             # Le lock dans trigger_products_sync_async évite les synchronisations concurrentes
             if force_sync:
                 logger.info("[B2B API] 🔄 Synchronisation forcée demandée via paramètre ?force=true")
-            trigger_products_sync_async(force=force_sync)
+            triggered = trigger_products_sync_async(force=force_sync)
+            logger.info(f"[B2B API] ✅ Sync auto produits déclenchée: {triggered}")
         except Exception as e:
             logger.warning(f"Erreur lors de la synchronisation automatique: {str(e)}")
         

@@ -32,7 +32,7 @@ const CategoryScreen: React.FC = () => {
   const [searchModalVisible, setSearchModalVisible] = useState(false);
 
   useEffect(() => {
-    dispatch(fetchCategories());
+    dispatch(fetchCategories({ forceRefresh: true }));
   }, [dispatch]);
 
   // Fermer le modal de recherche quand l'écran redevient actif
@@ -65,7 +65,7 @@ const CategoryScreen: React.FC = () => {
 
   const onRefresh = async () => {
     setRefreshing(true);
-    await dispatch(fetchCategories());
+      await dispatch(fetchCategories({ forceRefresh: true }));
     setRefreshing(false);
   };
 

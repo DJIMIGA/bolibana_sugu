@@ -49,7 +49,7 @@ const HomeScreen: React.FC = () => {
   useEffect(() => {
     // Charger les produits et catégories au montage
     dispatch(fetchProducts({ page: 1, filters: {} }));
-    dispatch(fetchCategories());
+    dispatch(fetchCategories({ forceRefresh: true }));
   }, [dispatch]);
 
   useEffect(() => {
@@ -140,7 +140,7 @@ const HomeScreen: React.FC = () => {
     dispatch(clearFilters());
     await Promise.all([
       dispatch(fetchProducts({ page: 1, filters: {} })),
-      dispatch(fetchCategories()),
+      dispatch(fetchCategories({ forceRefresh: true })),
     ]);
     
     // Recharger les produits par type (Exactement comme sur le Web)

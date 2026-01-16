@@ -48,7 +48,7 @@ def should_sync_products(ignore_lock: bool = False) -> bool:
 
     # Éviter les synchronisations concurrentes
     if not ignore_lock and cache.get(_PRODUCTS_LOCK_KEY):
-        logger.info("Synchronisation produits déjà en cours, ignorée")
+        logger.info("Synchronisation produits déjà en cours, ignorée (lock actif)")
         return False
     
     return True
@@ -92,6 +92,7 @@ def sync_products_auto(force: bool = False, _lock_acquired: bool = False):
     # Prendre un lock (anti-concurrence)
     if not _lock_acquired:
         if not cache.add(_PRODUCTS_LOCK_KEY, True, timeout=_LOCK_TTL_SECONDS):
+            logger.warning("[SYNC AUTO] Lock produits déjà actif, synchronisation annulée")
             return {
                 'success': False,
                 'message': 'Synchronisation déjà en cours',
@@ -99,6 +100,7 @@ def sync_products_auto(force: bool = False, _lock_acquired: bool = False):
             }
 
     if not force and not should_sync_products(ignore_lock=True):
+        logger.info("[SYNC AUTO] Synchronisation produits non nécessaire")
         cache.delete(_PRODUCTS_LOCK_KEY)
         return {
             'success': False,
@@ -224,16 +226,20 @@ def trigger_products_sync_async(force: bool = False) -> bool:
     Déclenche une sync produits en arrière-plan (non bloquante).
     Retourne True si un déclenchement a été fait.
     """
+    logger.info(f"[SYNC AUTO] trigger_products_sync_async force={force}")
     if not force and not should_sync_products():
+        logger.info("[SYNC AUTO] Déclenchement ignoré: should_sync_products=False")
         return False
     # Lock dès maintenant pour éviter que plusieurs requêtes lancent plusieurs threads
     if not cache.add(_PRODUCTS_LOCK_KEY, True, timeout=_LOCK_TTL_SECONDS):
+        logger.info("[SYNC AUTO] Déclenchement ignoré: lock déjà actif")
         return False
 
     def _run():
         sync_products_auto(force=force, _lock_acquired=True)
 
     threading.Thread(target=_run, daemon=True).start()
+    logger.info("[SYNC AUTO] Thread de synchronisation produits lancé")
     return True
 
 

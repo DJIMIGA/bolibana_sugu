@@ -66,7 +66,7 @@ const ProductListScreen: React.FC = () => {
     if (!isPromo) {
       dispatch(fetchProducts({ page: 1, search: searchQuery, filters }));
     }
-    dispatch(fetchCategories());
+    dispatch(fetchCategories({ forceRefresh: true }));
   }, [dispatch, searchQuery, filters, route]);
 
   const onRefresh = async () => {

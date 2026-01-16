@@ -53,7 +53,7 @@ const SubCategoryScreen: React.FC = () => {
   };
 
   useEffect(() => {
-    dispatch(fetchCategories());
+    dispatch(fetchCategories({ forceRefresh: true }));
   }, [dispatch]);
 
   // Fermer le modal de recherche quand l'écran redevient actif
@@ -66,7 +66,7 @@ const SubCategoryScreen: React.FC = () => {
 
   const onRefresh = async () => {
     setRefreshing(true);
-    await dispatch(fetchCategories());
+      await dispatch(fetchCategories({ forceRefresh: true }));
     setRefreshing(false);
   };
 

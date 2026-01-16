@@ -124,7 +124,7 @@ export const fetchProducts = createAsyncThunk(
 // Thunk pour récupérer les catégories
 export const fetchCategories = createAsyncThunk(
   'product/fetchCategories',
-  async (_, { rejectWithValue }) => {
+  async (params: { forceRefresh?: boolean } = {}, { rejectWithValue }) => {
     const fetchAllPages = async (initialUrl: string) => {
       let all: any[] = [];
       let nextUrl: string | null = initialUrl;
@@ -155,6 +155,13 @@ export const fetchCategories = createAsyncThunk(
     };
 
     try {
+      const forceRefresh = !!params.forceRefresh;
+      const isOnline = connectivityService.getIsOnline();
+
+      if (forceRefresh && isOnline) {
+        await offlineCacheService.remove(CACHE_KEYS.CATEGORIES);
+      }
+
       // Priorité: endpoint B2B (celui qui contient `rayon_type` / `level`)
       let allCategories = await fetchAllPages(API_ENDPOINTS.B2B.CATEGORIES);
 
@@ -177,6 +184,9 @@ export const fetchCategories = createAsyncThunk(
 
       return categories;
     } catch (error: any) {
+      const forceRefresh = !!params.forceRefresh;
+      const isOnline = connectivityService.getIsOnline();
+
       // Si c'est une erreur de mode hors ligne bloqué, utiliser le cache
       if (error.isOfflineBlocked) {
         const cached = await offlineCacheService.get<Category[]>(CACHE_KEYS.CATEGORIES);
@@ -192,6 +202,11 @@ export const fetchCategories = createAsyncThunk(
         // Erreur silencieuse en production
       }
       
+      // Si on force un refresh en ligne, éviter d'afficher un cache obsolète
+      if (forceRefresh && isOnline) {
+        return rejectWithValue(error.response?.data?.detail || error.message || 'Erreur de chargement des catégories');
+      }
+
       // Essayer de récupérer depuis le cache
       const cached = await offlineCacheService.get<Category[]>(CACHE_KEYS.CATEGORIES);
       if (cached) {

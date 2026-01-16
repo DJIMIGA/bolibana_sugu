@@ -66,10 +66,17 @@ class SyncService {
   }
 
   async syncQueue(): Promise<void> {
-    if (this.isSyncing) return;
-    if (!connectivityService.getIsOnline()) return;
+    if (this.isSyncing) {
+      console.log('[SyncService] Sync ignorée: déjà en cours');
+      return;
+    }
+    if (!connectivityService.getIsOnline()) {
+      console.log('[SyncService] Sync ignorée: hors ligne');
+      return;
+    }
 
     this.isSyncing = true;
+    console.log('[SyncService] Démarrage synchronisation automatique de la file');
 
     try {
       const queue = await this.getQueue();
@@ -78,6 +85,7 @@ class SyncService {
       );
 
       if (pendingItems.length === 0) {
+        console.log('[SyncService] Aucun item à synchroniser');
         this.isSyncing = false;
         return;
       }
@@ -183,6 +191,7 @@ export const syncService = new SyncService();
 // Écouter les changements de connectivité pour synchroniser automatiquement
 connectivityService.on('connectivityChange', (state) => {
   if (state.isOnline) {
+    console.log('[SyncService] Connectivité en ligne: déclenchement sync auto');
     syncService.syncQueue();
   }
 });
