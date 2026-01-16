@@ -566,6 +566,7 @@ class ProductSyncService:
             'total': 0,
             'created': 0,
             'updated': 0,
+            'deleted': 0,
             'errors': 0,
             'errors_list': []
         }
@@ -574,6 +575,11 @@ class ProductSyncService:
             logger.info("[SYNC CAT] Récupération des catégories depuis l'API B2B")
             categories_data = self.api_client.get_categories_list()
             logger.info(f"[SYNC CAT] Catégories reçues: {len(categories_data)}")
+            external_ids = {
+                int(cat_id) for cat_id in (
+                    category_data.get('id') for category_data in categories_data
+                ) if cat_id is not None
+            }
             
             # Créer un mapping des catégories par ID externe pour gérer la hiérarchie
             categories_by_id = {}
@@ -621,6 +627,27 @@ class ProductSyncService:
                         category.parent = parent_category
                         category.save(update_fields=['parent'])
                         logger.debug(f"Relation parent/enfant mise à jour: {category.name} -> {parent_category.name}")
+
+            # Nettoyer les catégories supprimées côté B2B (supprimer le mapping externe)
+            stale_qs = ExternalCategory.objects.exclude(external_id__in=external_ids)
+            stale_count = stale_qs.count()
+            if stale_count:
+                stale_preview = list(
+                    stale_qs.select_related('category')
+                    .values_list('external_id', 'category__name')[:10]
+                )
+                logger.warning(
+                    f"[SYNC CAT] {stale_count} catégories supprimées côté B2B détectées. "
+                    f"Exemples: {stale_preview}"
+                )
+                for stale in stale_qs.select_related('category'):
+                    # Garder la catégorie locale mais retirer la référence B2B
+                    category = stale.category
+                    category.external_id = None
+                    category.external_parent_id = None
+                    category.save(update_fields=['external_id', 'external_parent_id'])
+                stale_qs.delete()
+                stats['deleted'] = stale_count
         except InventoryAPIError as e:
             logger.error(f"Erreur API lors de la synchronisation des catégories: {str(e)}")
             stats['errors'] += 1
@@ -628,7 +655,8 @@ class ProductSyncService:
         logger.info(
             "[SYNC CAT] Résumé: "
             f"total={stats['total']} created={stats['created']} "
-            f"updated={stats['updated']} errors={stats.get('errors', 0)}"
+            f"updated={stats['updated']} deleted={stats.get('deleted', 0)} "
+            f"errors={stats.get('errors', 0)}"
         )
 
         return stats
