@@ -131,6 +131,7 @@ class ProductListSerializer(serializers.ModelSerializer):
     clothing_product = serializers.SerializerMethodField()
     fabric_product = serializers.SerializerMethodField()
     cultural_product = serializers.SerializerMethodField()
+    specifications = serializers.SerializerMethodField()
 
     class Meta:
         model = Product
@@ -139,7 +140,7 @@ class ProductListSerializer(serializers.ModelSerializer):
             'category', 'brand', 'feature_image',
             'image_url', 'images', 'image_urls', 'gallery',
             'promo_price', 'has_promotion', 'discount_percent', 'promotion_start_date', 'promotion_end_date',
-            'is_available', 'is_trending', 'is_salam', 'stock',
+            'is_available', 'is_trending', 'is_salam', 'stock', 'specifications',
             'phone', 'clothing_product', 'fabric_product', 'cultural_product', 'created_at'
         ]
 
@@ -202,6 +203,24 @@ class ProductListSerializer(serializers.ModelSerializer):
     def get_image_urls(self, obj):
         """Compat B2B: image_urls[] (liste d'URLs)"""
         return self.get_images(obj)
+
+    def get_specifications(self, obj):
+        """Expose uniquement les champs utiles pour le poids dans les listes/paniers."""
+        try:
+            if not obj.specifications or not isinstance(obj.specifications, dict):
+                return {}
+            specs = obj.specifications
+            allowed_keys = {
+                'sold_by_weight',
+                'unit_type',
+                'weight_unit',
+                'price_per_kg',
+                'discount_price_per_kg',
+                'available_weight_kg',
+            }
+            return {key: specs.get(key) for key in allowed_keys if key in specs}
+        except Exception:
+            return {}
 
     def get_has_promotion(self, obj):
         try:

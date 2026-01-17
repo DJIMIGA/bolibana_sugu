@@ -15,7 +15,7 @@ import { useAppDispatch, useAppSelector } from '../store/hooks';
 import { fetchCart, updateCartItem, removeFromCart, clearCart, optimisticUpdateQuantity, enrichCartProducts } from '../store/slices/cartSlice';
 import { fetchCategories } from '../store/slices/productSlice';
 import { useNavigation } from '@react-navigation/native';
-import { formatPrice } from '../utils/helpers';
+import { formatPrice, isWeightedProduct as isWeightedProductHelper, formatWeightQuantity } from '../utils/helpers';
 import { COLORS } from '../utils/constants';
 import { CartItem } from '../types';
 import { Header } from '../components/Header';
@@ -49,23 +49,12 @@ const CartScreen: React.FC = () => {
 
   // Vérifier si un produit est vendu au poids
   const isWeightedProduct = (product: any): boolean => {
-    if (!product) {
-      return false;
-    }
-    const specs = product?.specifications || {};
-    const isWeighted = specs.sold_by_weight === true || 
-           specs.unit_type === 'weight' || 
-           specs.unit_type === 'kg' ||
-           specs.unit_type === 'kilogram';
-    
-    return isWeighted;
+    return isWeightedProductHelper(product);
   };
 
   // Fonction helper pour formater la quantité (évite d'arrondir 0.999 à 1.0)
   const formatQuantity = (qty: number): string => {
-    // Formater avec 3 décimales et retirer les zéros finaux
-    const formatted = qty.toFixed(3).replace(/\.?0+$/, '');
-    return formatted;
+    return formatWeightQuantity(qty);
   };
 
   // Fonction helper pour formater le poids disponible
@@ -391,7 +380,7 @@ const CartScreen: React.FC = () => {
                   <Text style={styles.quantityButtonText}>-</Text>
                 </TouchableOpacity>
                 <Text style={styles.quantityValue}>
-                  {formatQuantity(item.quantity, item.product.specifications)} kg
+                  {formatQuantity(item.quantity)} kg
                 </Text>
                 <TouchableOpacity
                   style={[styles.quantityButton, !canIncrease && styles.quantityButtonDisabled]}

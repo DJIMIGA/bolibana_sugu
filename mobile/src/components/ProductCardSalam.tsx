@@ -8,7 +8,7 @@ import {
 } from 'react-native';
 import { MaterialIcons, Ionicons } from '@expo/vector-icons';
 import { Product } from '../types';
-import { formatPrice, getProductImageUrl } from '../utils/helpers';
+import { formatPrice, getProductImageUrl, getCartQuantityLabel } from '../utils/helpers';
 import { COLORS } from '../utils/constants';
 import { useNavigation } from '@react-navigation/native';
 import { useAppSelector } from '../store/hooks';
@@ -29,6 +29,7 @@ const ProductCardSalam: React.FC<ProductCardSalamProps> = ({ product }) => {
   // Vérifier si le produit est dans le panier
   const itemInCart = items.find(item => item.product.id === product.id);
   const quantityInCart = itemInCart ? itemInCart.quantity : 0;
+  const cartQuantityLabel = itemInCart ? getCartQuantityLabel(product, quantityInCart) : '';
 
   const handlePress = () => {
     navigation.navigate('Products' as never, { screen: 'ProductDetail', params: { slug: product.slug } } as never);
@@ -77,7 +78,7 @@ const ProductCardSalam: React.FC<ProductCardSalamProps> = ({ product }) => {
         {quantityInCart > 0 && (
           <View style={styles.cartBadge}>
             <Ionicons name="cart" size={12} color="#FFFFFF" />
-            <Text style={styles.cartBadgeText}>{quantityInCart}</Text>
+            <Text style={styles.cartBadgeText}>{cartQuantityLabel}</Text>
           </View>
         )}
 

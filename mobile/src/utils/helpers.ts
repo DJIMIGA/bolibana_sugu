@@ -167,4 +167,33 @@ export const getProductImageUrl = (product?: Product | null): string | undefined
   return undefined;
 };
 
+export const isWeightedProduct = (product?: Product | null): boolean => {
+  if (!product) return false;
+  const specs = product.specifications || {};
+  const soldByWeight = specs.sold_by_weight;
+  const isSoldByWeight = soldByWeight === true || (
+    typeof soldByWeight === 'string' && ['true', '1', 'yes'].includes(soldByWeight.toLowerCase())
+  );
+  const unitTypeRaw = specs.unit_type;
+  const unitType = unitTypeRaw ? String(unitTypeRaw).toLowerCase() : '';
+  const hasWeightPricing =
+    specs.price_per_kg !== undefined ||
+    specs.discount_price_per_kg !== undefined ||
+    specs.available_weight_kg !== undefined;
+  return isSoldByWeight || ['weight', 'kg', 'kilogram'].includes(unitType) || hasWeightPricing;
+};
+
+export const formatWeightQuantity = (qty: number): string => {
+  if (!qty || Number.isNaN(qty)) return '0';
+  return qty.toFixed(3).replace(/\.?0+$/, '');
+};
+
+export const getCartQuantityLabel = (product: Product, quantity: number): string => {
+  if (!quantity || Number.isNaN(quantity)) return '0';
+  if (isWeightedProduct(product)) {
+    return `${formatWeightQuantity(quantity)} kg`;
+  }
+  return `${Math.round(quantity)}`;
+};
+
 
