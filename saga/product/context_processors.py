@@ -162,10 +162,10 @@ def dropdown_categories_processor(request):
         name = category.name or ''
         return (rayon_type, level, order, name)
     
-    # Récupérer UNIQUEMENT les catégories B2B de niveau 0 (premier niveau)
+    # Récupérer UNIQUEMENT les catégories réellement synchronisées (mapping ExternalCategory)
     # Filtrer par level=0 OU (level is None ET external_parent_id is None)
     main_categories = Category.objects.filter(
-        Q(external_category__isnull=False) | Q(rayon_type__isnull=False)
+        external_category__isnull=False
     ).filter(
         Q(level=0) | (Q(level__isnull=True) & Q(external_category__external_parent_id__isnull=True))
     ).select_related('external_category').order_by('rayon_type', 'order', 'name')
@@ -181,9 +181,9 @@ def dropdown_categories_processor(request):
     
     logger.info(f"[DROPDOWN] Catégories principales triées: {[cat.name for cat in main_categories]}")
 
-    # Récupérer toutes les catégories B2B pour trouver les enfants
+    # Récupérer toutes les catégories B2B réellement synchronisées pour trouver les enfants
     all_b2b_categories = Category.objects.filter(
-        Q(external_category__isnull=False) | Q(rayon_type__isnull=False)
+        external_category__isnull=False
     ).select_related('external_category')
     
     # Fonction récursive pour construire la hiérarchie complète (tous les niveaux)
