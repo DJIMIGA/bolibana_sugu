@@ -36,6 +36,22 @@ const isWeightedCartItem = (item: CartItem): boolean => {
     specs.unit_type === 'kilogram';
 };
 
+const getCartItemUnitPrice = (item: CartItem): number => {
+  if (!item || !item.product) return 0;
+  if (isWeightedCartItem(item)) {
+    const specs = item.product.specifications || {};
+    const discountPricePerKg = specs.discount_price_per_kg;
+    if (discountPricePerKg && discountPricePerKg > 0) {
+      return discountPricePerKg;
+    }
+    const pricePerKg = specs.price_per_kg;
+    if (pricePerKg && pricePerKg > 0) {
+      return pricePerKg;
+    }
+  }
+  return item.product.discount_price || item.product.price || 0;
+};
+
 // Fonction utilitaire pour calculer le nombre total d'articles
 const calculateItemsCount = (items: CartItem[]): number => {
   return items.reduce((sum, item) => {
@@ -151,26 +167,10 @@ export const updateCartItem = createAsyncThunk(
         // S'assurer que la quantité est bien un nombre (préserver les décimales pour les produits au poids)
         const quantity = typeof data.quantity === 'number' ? data.quantity : parseFloat(String(data.quantity));
         
-        if (__DEV__) {
-          console.log('[cartSlice] ⚖️ Mise à jour panier - quantité envoyée:', {
-            itemId: data.itemId,
-            quantity: data.quantity,
-            quantityType: typeof data.quantity,
-            parsedQuantity: quantity,
-          });
-        }
-
         const response = await apiClient.patch(`${API_ENDPOINTS.CART}${data.itemId}/`, {
           quantity: quantity,
         });
-        
-        if (__DEV__) {
-          console.log('[cartSlice] ⚖️ Réponse backend après mise à jour:', {
-            responseData: response.data,
-            items: response.data?.items || response.data?.cart_items || [],
-          });
-        }
-        
+
         return mapCartFromBackend(response.data);
       }
       return null;
@@ -260,17 +260,6 @@ export const enrichCartProducts = createAsyncThunk(
             const productResponse = await apiClient.get(`${API_ENDPOINTS.PRODUCTS}${productSlug}/`);
             const enrichedProduct = mapProductFromBackend(productResponse.data);
             
-            if (__DEV__) {
-              console.log('[cartSlice] ⚖️ Produit enrichi avec spécifications:', {
-                productId: item.product.id,
-                productSlug,
-                productTitle: item.product.title,
-                hadSpecs: !!item.product.specifications,
-                hasSpecsNow: !!enrichedProduct.specifications,
-                specsKeys: Object.keys(enrichedProduct.specifications || {}),
-              });
-            }
-
             // Mettre à jour le produit avec les spécifications enrichies
             return {
               ...item,
@@ -320,7 +309,7 @@ const cartSlice = createSlice({
         state.itemsCount = calculateItemsCount(state.items);
         
         // Recalculer le prix total approximatif
-        const unitPrice = item.product.discount_price || item.product.price;
+        const unitPrice = getCartItemUnitPrice(item);
         state.total = state.total + (unitPrice * (quantity - oldQuantity));
       }
     }
@@ -329,12 +318,10 @@ const cartSlice = createSlice({
     const handleFulfilled = (state: CartState, action: PayloadAction<Cart | null>) => {
       // Ignorer si une mise à jour plus récente a été faite localement (moins de 2 secondes)
       if (Date.now() - state.lastUpdateTimestamp < 2000 && action.type.includes('updateCartItem')) {
-        console.log(`[cartSlice] 🛡️ Réponse serveur ignorée pour protéger l'UI optimiste`);
         state.isLoading = false;
         return;
       }
       
-      console.log(`[cartSlice] 💾 Mise à jour du state Redux avec les nouvelles données`);
       state.isLoading = false;
       
       // Si on reçoit null (souvent en mode hors ligne ou après un vidage sans retour)
@@ -410,11 +397,6 @@ const cartSlice = createSlice({
         if (action.payload && Array.isArray(action.payload)) {
           // Mettre à jour les items avec les produits enrichis
           state.items = action.payload;
-          if (__DEV__) {
-            console.log('[cartSlice] ⚖️ Panier enrichi avec spécifications:', {
-              itemsCount: action.payload.length,
-            });
-          }
         }
       })
       .addCase(fetchCart.rejected, (state, action) => {

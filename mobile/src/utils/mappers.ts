@@ -352,29 +352,6 @@ export const mapCartFromBackend = (backendCart: any): Cart => {
         
         const product = mapProductFromBackend(item.product);
         
-        // Log pour déboguer les produits au poids dans le panier
-        if (__DEV__) {
-          const specs = product.specifications || {};
-          const isWeighted = specs.sold_by_weight === true || 
-                            specs.unit_type === 'weight' || 
-                            specs.unit_type === 'kg' ||
-                            specs.unit_type === 'kilogram';
-          console.log('[mapCartFromBackend] ⚖️ Mapping item panier:', {
-            productId: product.id,
-            productTitle: product.title,
-            rawQuantity: item.quantity,
-            quantityType: typeof item.quantity,
-            isWeighted,
-            hasSpecs: !!product.specifications,
-            specsKeys: product.specifications ? Object.keys(product.specifications) : [],
-            sold_by_weight: specs.sold_by_weight,
-            unit_type: specs.unit_type,
-            price_per_kg: specs.price_per_kg,
-            discount_price_per_kg: specs.discount_price_per_kg,
-            backendProductSpecs: item.product?.specifications,
-          });
-        }
-        
         // Si une variante existe, mettre à jour le produit avec les infos de la variante
         if (item.variant) {
           const variant = item.variant;
@@ -417,19 +394,6 @@ export const mapCartFromBackend = (backendCart: any): Cart => {
         } else {
           // Si quantity est undefined ou null, utiliser 1 comme fallback
           quantity = 1;
-        }
-
-        if (__DEV__) {
-          console.log('[mapCartFromBackend] ⚖️ Mapping quantité:', {
-            productId: product.id,
-            productTitle: product.title,
-            rawQuantity: item.quantity,
-            rawQuantityType: typeof item.quantity,
-            parsedQuantity: quantity,
-            parsedQuantityType: typeof quantity,
-            // Avertir si la quantité est 0 (suspect pour un produit au poids)
-            warning: quantity === 0 ? 'Quantité à 0 - possible problème backend' : undefined,
-          });
         }
 
         return {

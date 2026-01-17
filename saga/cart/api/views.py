@@ -22,6 +22,16 @@ logger = logging.getLogger(__name__)
 class CartViewSet(viewsets.ModelViewSet):
     serializer_class = CartSerializer
     permission_classes = [AllowAny]  # Permettre aux utilisateurs anonymes d'accéder au panier
+    
+    def _is_weighted_product(self, product):
+        specs = product.specifications or {}
+        sold_by_weight = specs.get('sold_by_weight')
+        is_sold_by_weight = sold_by_weight is True or (
+            isinstance(sold_by_weight, str) and sold_by_weight.lower() in ['true', '1', 'yes']
+        )
+        unit_type_raw = specs.get('unit_type')
+        unit_type = str(unit_type_raw).lower() if unit_type_raw is not None else ''
+        return is_sold_by_weight or unit_type in ['weight', 'kg', 'kilogram']
 
     def get_queryset(self):
         """Retourne le panier de l'utilisateur connecté ou anonyme"""
@@ -99,11 +109,26 @@ class CartViewSet(viewsets.ModelViewSet):
             )
 
         # Vérifier le stock si ce n'est pas un produit Salam
-        if not product.is_salam and product.stock < quantity:
-            return Response(
-                {'error': f'Stock insuffisant. Disponible: {product.stock}'},
-                status=status.HTTP_400_BAD_REQUEST
-            )
+        if not product.is_salam:
+            specs = product.specifications or {}
+            is_weighted = self._is_weighted_product(product)
+            if is_weighted:
+                available_weight = specs.get('available_weight_kg', 0)
+                if Decimal(str(available_weight)) < quantity:
+                    return Response(
+                        {'error': f'Stock insuffisant. Disponible: {available_weight} kg'},
+                        status=status.HTTP_400_BAD_REQUEST
+                    )
+                if quantity < Decimal('0.5'):
+                    return Response(
+                        {'error': 'La quantité minimale est de 0.5 kg'},
+                        status=status.HTTP_400_BAD_REQUEST
+                    )
+            elif product.stock < float(quantity):
+                return Response(
+                    {'error': f'Stock insuffisant. Disponible: {product.stock}'},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
 
         # Vérifier si une variante est spécifiée
         variant = None
@@ -131,6 +156,22 @@ class CartViewSet(viewsets.ModelViewSet):
         if cart_item:
             # Mettre à jour la quantité
             new_quantity = cart_item.quantity + quantity
+            # Revalider le stock pour les produits au poids
+            if not product.is_salam:
+                specs = product.specifications or {}
+                is_weighted = self._is_weighted_product(product)
+                if is_weighted:
+                    available_weight = specs.get('available_weight_kg', 0)
+                    if Decimal(str(available_weight)) < new_quantity:
+                        return Response(
+                            {'error': f'Stock insuffisant. Disponible: {available_weight} kg'},
+                            status=status.HTTP_400_BAD_REQUEST
+                        )
+                    if new_quantity < Decimal('0.5'):
+                        return Response(
+                            {'error': 'La quantité minimale est de 0.5 kg'},
+                            status=status.HTTP_400_BAD_REQUEST
+                        )
             cart_item.quantity = new_quantity
             cart_item.save()
         else:
@@ -196,27 +237,54 @@ class CartViewSet(viewsets.ModelViewSet):
                         status=status.HTTP_404_NOT_FOUND
                     )
 
-                quantity = request.data.get('quantity')
-                if quantity is not None:
-                    quantity = int(quantity)
+                quantity_raw = request.data.get('quantity')
+                if quantity_raw is not None:
+                    try:
+                        quantity = Decimal(str(quantity_raw))
+                    except Exception:
+                        return Response(
+                            {'error': 'Quantité invalide'},
+                            status=status.HTTP_400_BAD_REQUEST
+                        )
+
                     if quantity <= 0:
                         cart_item.delete()
                     else:
                         # Vérifier le stock
                         product = cart_item.product
                         variant = cart_item.variant
-                        
+                        specs = product.specifications or {}
+                        is_weighted = self._is_weighted_product(product)
+
                         if variant:
-                            if variant.stock < quantity:
+                            if variant.stock < float(quantity):
                                 return Response(
                                     {'error': f'Stock insuffisant. Disponible: {variant.stock}'},
                                     status=status.HTTP_400_BAD_REQUEST
                                 )
-                        elif not product.is_salam and product.stock < quantity:
-                            return Response(
-                                {'error': f'Stock insuffisant. Disponible: {product.stock}'},
-                                status=status.HTTP_400_BAD_REQUEST
-                            )
+                            # Pour les variantes, on garde une quantité entière
+                            quantity = Decimal(int(quantity))
+                        elif not product.is_salam:
+                            if is_weighted:
+                                available_weight = specs.get('available_weight_kg', 0)
+                                if Decimal(str(available_weight)) < quantity:
+                                    return Response(
+                                        {'error': f'Stock insuffisant. Disponible: {available_weight} kg'},
+                                        status=status.HTTP_400_BAD_REQUEST
+                                    )
+                                if quantity < Decimal('0.5'):
+                                    return Response(
+                                        {'error': 'La quantité minimale est de 0.5 kg'},
+                                        status=status.HTTP_400_BAD_REQUEST
+                                    )
+                            elif product.stock < float(quantity):
+                                return Response(
+                                    {'error': f'Stock insuffisant. Disponible: {product.stock}'},
+                                    status=status.HTTP_400_BAD_REQUEST
+                                )
+                            else:
+                                # Produits à l'unité -> forcer à l'entier
+                                quantity = Decimal(int(quantity))
                         
                         cart_item.quantity = quantity
                         cart_item.save()

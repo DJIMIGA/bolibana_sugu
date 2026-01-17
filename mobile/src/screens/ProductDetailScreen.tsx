@@ -49,13 +49,6 @@ const ProductDetailScreen: React.FC = () => {
       // Pour les produits au poids, initialiser à 0.5 kg (minimum)
       if (isWeighted) {
         setQuantity(0.5);
-        if (__DEV__) {
-          console.log('[ProductDetailScreen] ⚖️ Initialisation quantité au poids:', {
-            productId: selectedProduct.id,
-            initialQuantity: 0.5,
-            isWeighted: true,
-          });
-        }
       } else {
         setQuantity(1);
       }
@@ -86,82 +79,6 @@ const ProductDetailScreen: React.FC = () => {
     }
     return imgs;
   }, [selectedProduct?.id, selectedProduct?.image, selectedProduct?.image_urls?.gallery]);
-
-  // Logs debug (galerie + promo) — uniquement en dev, et uniquement quand le produit change
-  useEffect(() => {
-    if (!__DEV__) return;
-    if (!selectedProduct) return;
-
-    const hasDiscount =
-      !!selectedProduct.discount_price &&
-      selectedProduct.discount_price > 0 &&
-      selectedProduct.price > 0 &&
-      selectedProduct.discount_price < selectedProduct.price;
-
-    const discountPercentage =
-      hasDiscount && selectedProduct.price > 0
-        ? Math.round(((selectedProduct.price - selectedProduct.discount_price!) / selectedProduct.price) * 100)
-        : 0;
-
-    console.log('[ProductDetailScreen] 🖼️ Galerie:', {
-      productId: selectedProduct.id,
-      slug: selectedProduct.slug,
-      image: selectedProduct.image,
-      main: selectedProduct.image_urls?.main,
-      galleryCount: selectedProduct.image_urls?.gallery?.length || 0,
-      carouselCount: images.length,
-      galleryPreview: (selectedProduct.image_urls?.gallery || []).slice(0, 3),
-    });
-    
-    // Log détaillé de toutes les URLs d'images (y compris champs non typés)
-    const productAny = selectedProduct as any;
-    console.log('[ProductDetailScreen] 📸 URLs Images Complètes:', {
-      productId: selectedProduct.id,
-      slug: selectedProduct.slug,
-      'image (principale)': selectedProduct.image,
-      'image_url (string)': productAny.image_url,
-      'image_urls.main': selectedProduct.image_urls?.main,
-      'image_urls.gallery (toutes)': selectedProduct.image_urls?.gallery || [],
-      'images (carrousel final)': images,
-      'feature_image': productAny.feature_image,
-      'gallery (array)': productAny.gallery,
-      'images (array)': productAny.images,
-      'image_urls (objet complet)': productAny.image_urls,
-    });
-    console.log('[ProductDetailScreen] 🏷️ Promo:', {
-      productId: selectedProduct.id,
-      slug: selectedProduct.slug,
-      price: selectedProduct.price,
-      discount_price_used: selectedProduct.discount_price,
-      promo_price_raw: selectedProduct.promo_price,
-      has_promotion: selectedProduct.has_promotion,
-      discount_percent: selectedProduct.discount_percent,
-      promotion_start_date: selectedProduct.promotion_start_date,
-      promotion_end_date: selectedProduct.promotion_end_date,
-      computedDiscountPercentageUI: discountPercentage,
-    });
-
-    // Détection des produits au poids
-    const specs = selectedProduct.specifications || {};
-    const isWeighted = specs.sold_by_weight === true || 
-                       specs.unit_type === 'weight' || 
-                       specs.unit_type === 'kg' ||
-                       specs.unit_type === 'kilogram';
-    
-    console.log('[ProductDetailScreen] ⚖️ Produit au poids:', {
-      productId: selectedProduct.id,
-      slug: selectedProduct.slug,
-      isWeighted: isWeighted,
-      sold_by_weight: specs.sold_by_weight,
-      unit_type: specs.unit_type,
-      price_per_kg: specs.price_per_kg,
-      available_weight_kg: specs.available_weight_kg,
-      weight: selectedProduct.weight,
-      stock: selectedProduct.stock,
-      is_salam: selectedProduct.is_salam,
-      specifications: specs,
-    });
-  }, [selectedProduct?.id, images.length]);
 
   // Fonction helper pour formater le poids (définie avant handleAddToCart)
   const formatAvailableWeight = (weight: number | undefined): string => {
@@ -255,15 +172,6 @@ const ProductDetailScreen: React.FC = () => {
     }
 
     try {
-      if (__DEV__) {
-        console.log('[ProductDetailScreen] ⚖️ Ajout au panier:', {
-          productId: selectedProduct.id,
-          productTitle: selectedProduct.title,
-          isWeighted: isWeightedProduct,
-          quantity,
-          specs: selectedProduct.specifications,
-        });
-      }
       await dispatch(
         addToCart({
           product: selectedProduct.id,
@@ -287,18 +195,6 @@ const ProductDetailScreen: React.FC = () => {
                      specs.unit_type === 'weight' || 
                      specs.unit_type === 'kg' ||
                      specs.unit_type === 'kilogram';
-
-  // Log pour déboguer
-  if (__DEV__ && isWeighted) {
-    console.log('[ProductDetailScreen] ⚖️ Contrôle poids:', {
-      productId: selectedProduct.id,
-      isWeighted: isWeighted,
-      currentQuantity: quantity,
-      availableWeight: specs.available_weight_kg,
-      sold_by_weight: specs.sold_by_weight,
-      unit_type: specs.unit_type,
-    });
-  }
 
   // Vérifier la disponibilité du stock (poids pour les produits au poids, unités pour les autres)
   const hasStock = isWeighted 
@@ -579,13 +475,6 @@ const ProductDetailScreen: React.FC = () => {
                   onPress={() => {
                     const decrement = 0.5;
                     const newWeight = Math.max(0.5, quantity - decrement);
-                    if (__DEV__) {
-                      console.log('[ProductDetailScreen] ⚖️ Diminution poids:', {
-                        currentQuantity: quantity,
-                        decrement: decrement,
-                        newWeight: newWeight,
-                      });
-                    }
                     setQuantity(newWeight);
                   }}
                   disabled={quantity <= 0.5}
@@ -612,14 +501,6 @@ const ProductDetailScreen: React.FC = () => {
                       return; // Ne pas ajouter si pas assez de poids disponible
                     }
                     const newWeight = quantity + increment;
-                    if (__DEV__) {
-                      console.log('[ProductDetailScreen] ⚖️ Augmentation poids:', {
-                        currentQuantity: quantity,
-                        increment: increment,
-                        newWeight: newWeight,
-                        availableStock: availableStock,
-                      });
-                    }
                     setQuantity(newWeight);
                   }}
                   disabled={availableStock ? (quantity >= availableStock || (quantity + 0.5) > availableStock) : false}
@@ -692,9 +573,7 @@ const ProductDetailScreen: React.FC = () => {
               <Text style={styles.addToCartText}>
                 {isReadOnly 
                   ? 'Mode lecture seule'
-                  : (itemInCart 
-                      ? `Dans le panier (${itemInCart.quantity})` 
-                      : (selectedProduct.is_available && hasStock ? 'Ajouter au panier' : 'Indisponible'))}
+                  : (selectedProduct.is_available && hasStock ? 'Ajouter au panier' : 'Indisponible')}
               </Text>
             </View>
           )}

@@ -73,22 +73,10 @@ export const fetchProducts = createAsyncThunk(
       }
 
       const endpoint = `${API_ENDPOINTS.PRODUCTS}?${queryParams.toString()}`;
-      console.log('[PRODUCTS] 🚀 Début fetchProducts, endpoint:', endpoint);
       const response = await apiClient.get(endpoint);
 
       // Mapper les produits du backend
       const products = (response.data.results || response.data).map((p: any) => mapProductFromBackend(p));
-      console.log(`[PRODUCTS] ✅ Produits récupérés et mappés: ${products.length}`);
-      
-      // Log des premiers produits pour debug
-      if (products.length > 0) {
-        console.log('[PRODUCTS] 📋 Exemples produits:', products.slice(0, 3).map((p: Product) => ({
-          id: p.id,
-          title: p.title,
-          category: p.category,
-          is_available: p.is_available
-        })));
-      }
 
       // Mettre en cache si en ligne
       if (connectivityService.getIsOnline()) {
@@ -246,12 +234,6 @@ export const fetchProductDetail = createAsyncThunk(
       }
 
       if (!inventoryMatch) {
-        if (__DEV__) {
-          console.log('[ProductDetail] ℹ️ Enrichissement inventory: aucun match', {
-            slug,
-            b2cId: b2cProduct.id,
-          });
-        }
         return b2cProduct;
       }
 
@@ -274,18 +256,6 @@ export const fetchProductDetail = createAsyncThunk(
         // discount_price: si B2C n'en a pas, prendre celle calculée via inventory
         discount_price: b2cProduct.discount_price ?? invMapped.discount_price,
       };
-
-      if (__DEV__) {
-        console.log('[ProductDetail] ✅ Enrichi depuis inventory', {
-          slug,
-          b2cId: b2cProduct.id,
-          inventoryId: invMapped.id,
-          galleryCount: enriched.image_urls?.gallery?.length || 0,
-          hasPromotion: enriched.has_promotion,
-          promoPrice: enriched.promo_price,
-          discountPriceUsed: enriched.discount_price,
-        });
-      }
 
       return enriched;
     } catch (error: any) {

@@ -28,7 +28,7 @@ const ProductListScreen: React.FC = () => {
   const dispatch = useAppDispatch();
   const navigation = useNavigation();
   const route = useRoute();
-  const { products, categories, isLoading, searchQuery, filters, pagination } = useAppSelector(
+  const { products, categories, isLoading, isFetchingMore, searchQuery, filters, pagination } = useAppSelector(
     (state) => state.product
   );
   const [refreshing, setRefreshing] = useState(false);
@@ -90,30 +90,31 @@ const ProductListScreen: React.FC = () => {
     }, [])
   );
 
+  const routeCategoryId = (route.params as any)?.categoryId;
+  const routeIsPromo = (route.params as any)?.promo === true;
+
   useEffect(() => {
-    const params = (route.params as any) || {};
-    const categoryId = params.categoryId;
-    const isPromo = params.promo === true;
-    
-    if (categoryId) {
-      dispatch(setFilters({ category: categoryId }));
+    if (routeCategoryId) {
+      dispatch(setFilters({ category: routeCategoryId }));
     }
     
     // Si c'est la page promo, charger tous les produits pour filtrer côté client
-    if (isPromo) {
+    if (routeIsPromo) {
       dispatch(clearFilters());
       dispatch(fetchProducts({ page: 1, search: '', filters: {} }));
     }
-  }, [dispatch, route]);
+  }, [dispatch, routeCategoryId, routeIsPromo]);
 
   useEffect(() => {
-    const isPromo = (route.params as any)?.promo === true;
+    dispatch(fetchCategories({ forceRefresh: true }));
+  }, [dispatch]);
+
+  useEffect(() => {
     // Ne pas recharger si on est en mode promo (on filtre côté client)
-    if (!isPromo) {
+    if (!routeIsPromo) {
       dispatch(fetchProducts({ page: 1, search: searchQuery, filters: requestFilters }));
     }
-    dispatch(fetchCategories({ forceRefresh: true }));
-  }, [dispatch, searchQuery, requestFilters, route]);
+  }, [dispatch, searchQuery, requestFilters, routeIsPromo]);
 
   const onRefresh = async () => {
     setRefreshing(true);
@@ -137,9 +138,16 @@ const ProductListScreen: React.FC = () => {
   };
 
   const loadMore = () => {
-    if (pagination.hasNext && !isLoading) {
-      dispatch(fetchProducts({ page: pagination.page + 1, search: searchQuery, filters: requestFilters }));
+    if (isPromo) return;
+    if (!pagination.hasNext || isLoading || isFetchingMore || products.length === 0) {
+      return;
     }
+    dispatch(fetchProducts({
+      page: pagination.page + 1,
+      search: searchQuery,
+      filters: requestFilters,
+      append: true,
+    }));
   };
 
   // Log pour debug
@@ -147,7 +155,7 @@ const ProductListScreen: React.FC = () => {
   console.log('[ProductListScreen] 📊 Total catégories reçues:', (categories || []).length);
 
   // Vérifier si on est en mode promo
-  const isPromo = (route.params as any)?.promo === true;
+  const isPromo = routeIsPromo;
   
   // Tous les produits visibles viennent déjà de l'API B2B côté backend
   const filteredProducts = products || [];

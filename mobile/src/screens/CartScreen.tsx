@@ -50,9 +50,6 @@ const CartScreen: React.FC = () => {
   // Vérifier si un produit est vendu au poids
   const isWeightedProduct = (product: any): boolean => {
     if (!product) {
-      if (__DEV__) {
-        console.log('[CartScreen] ⚖️ isWeightedProduct: product is null/undefined');
-      }
       return false;
     }
     const specs = product?.specifications || {};
@@ -61,26 +58,11 @@ const CartScreen: React.FC = () => {
            specs.unit_type === 'kg' ||
            specs.unit_type === 'kilogram';
     
-    if (__DEV__) {
-      console.log('[CartScreen] ⚖️ isWeightedProduct check:', {
-        productId: product.id,
-        productTitle: product.title,
-        hasSpecs: !!product.specifications,
-        specs: specs,
-        sold_by_weight: specs.sold_by_weight,
-        unit_type: specs.unit_type,
-        isWeighted,
-      });
-    }
-    
     return isWeighted;
   };
 
   // Fonction helper pour formater la quantité (évite d'arrondir 0.999 à 1.0)
-  const formatQuantity = (qty: number, specs?: any): string => {
-    if (specs?.formatted_quantity) {
-      return specs.formatted_quantity;
-    }
+  const formatQuantity = (qty: number): string => {
     // Formater avec 3 décimales et retirer les zéros finaux
     const formatted = qty.toFixed(3).replace(/\.?0+$/, '');
     return formatted;
@@ -163,12 +145,17 @@ const CartScreen: React.FC = () => {
     const item = items.find(i => i.id === itemId);
     if (!item) return;
     
-    const currentWeight = item.quantity;
+    const currentWeight = typeof item.quantity === 'number'
+      ? item.quantity
+      : parseFloat(String(item.quantity)) || 0;
     const specs = item.product.specifications || {};
     const availableWeight = specs.available_weight_kg;
     
     // Calculer le nouveau poids
     let newWeight = currentWeight + increment;
+    
+    // Normaliser au pas de 0.5 kg pour éviter les accumulations flottantes
+    newWeight = Math.round(newWeight * 2) / 2;
     
     // Appliquer le minimum de 0.5 kg
     if (newWeight < 0.5) {
@@ -293,38 +280,14 @@ const CartScreen: React.FC = () => {
       // Vérifier d'abord s'il y a un prix promotionnel au kg
       const discountPricePerKg = specs.discount_price_per_kg;
       if (discountPricePerKg && discountPricePerKg > 0) {
-        if (__DEV__) {
-          console.log('[CartScreen] ⚖️ Prix unitaire (promo au kg):', {
-            productId: item.product.id,
-            productTitle: item.product.title,
-            discountPricePerKg,
-            quantity: item.quantity,
-          });
-        }
         return discountPricePerKg;
       }
       // Sinon, utiliser le prix normal au kg
       const pricePerKg = specs.price_per_kg;
       if (pricePerKg) {
-        if (__DEV__) {
-          console.log('[CartScreen] ⚖️ Prix unitaire (normal au kg):', {
-            productId: item.product.id,
-            productTitle: item.product.title,
-            pricePerKg,
-            quantity: item.quantity,
-          });
-        }
         return pricePerKg;
       }
       // Fallback sur le prix du produit si price_per_kg n'est pas défini
-      if (__DEV__) {
-        console.log('[CartScreen] ⚖️ Prix unitaire (fallback):', {
-          productId: item.product.id,
-          productTitle: item.product.title,
-          fallbackPrice: item.product.discount_price || item.product.price,
-          quantity: item.quantity,
-        });
-      }
       return item.product.discount_price || item.product.price;
     }
     // Pour les produits normaux, utiliser discount_price ou price
@@ -352,19 +315,6 @@ const CartScreen: React.FC = () => {
       ? (item.product.specifications?.discount_price_per_kg && 
          item.product.specifications.discount_price_per_kg < (item.product.specifications?.price_per_kg || item.product.price))
       : (item.product.discount_price && item.product.discount_price < item.product.price);
-
-    if (__DEV__ && isWeighted) {
-      console.log('[CartScreen] ⚖️ Rendu article au poids:', {
-        productId: item.product.id,
-        productTitle: item.product.title,
-        isWeighted,
-        quantity: item.quantity,
-        unitPrice,
-        totalItemPrice,
-        hasDiscount,
-        specs: item.product.specifications,
-      });
-    }
 
     return (
       <View style={styles.itemContainer}>
@@ -571,20 +521,6 @@ const CartScreen: React.FC = () => {
                   {formatPrice(
                     (() => {
                       const calculatedTotal = items.reduce((sum, item) => sum + getTotalItemPrice(item), 0);
-                      if (__DEV__) {
-                        console.log('[CartScreen] ⚖️ Calcul total panier:', {
-                          itemsCount: items.length,
-                          calculatedTotal,
-                          backendTotal: total,
-                          items: items.map(item => ({
-                            productId: item.product.id,
-                            productTitle: item.product.title,
-                            isWeighted: isWeightedProduct(item.product),
-                            quantity: item.quantity,
-                            itemTotal: getTotalItemPrice(item),
-                          })),
-                        });
-                      }
                       return calculatedTotal;
                     })()
                   )}

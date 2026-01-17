@@ -286,13 +286,14 @@ const HomeScreen: React.FC = () => {
   };
 
   const handleLoadMore = () => {
-    if (!isLoading && !isFetchingMore && pagination.hasNext) {
-      dispatch(fetchProducts({ 
-        page: pagination.page + 1, 
-        filters: {}, 
-        append: true 
-      }));
+    if (!pagination.hasNext || isLoading || isFetchingMore || products.length === 0) {
+      return;
     }
+    dispatch(fetchProducts({ 
+      page: pagination.page + 1, 
+      filters: {}, 
+      append: true 
+    }));
   };
 
 
