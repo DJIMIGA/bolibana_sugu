@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useRef, useCallback } from 'react';
+import React, { useEffect, useState, useRef, useCallback, useMemo } from 'react';
 import {
   View,
   Text,
@@ -10,7 +10,6 @@ import {
   ActivityIndicator,
   SafeAreaView,
   ScrollView,
-  Dimensions,
   Keyboard,
 } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
@@ -35,6 +34,53 @@ const ProductListScreen: React.FC = () => {
   const [refreshing, setRefreshing] = useState(false);
   const [searchModalVisible, setSearchModalVisible] = useState(false);
   const categoriesScrollRef = useRef<ScrollView>(null);
+  const categoryLayoutsRef = useRef<Record<number, { x: number; width: number }>>({});
+  const categoriesScrollWidthRef = useRef(0);
+  const categoriesContentWidthRef = useRef(0);
+  const categoriesScrollRetryRef = useRef(0);
+
+  const getDescendantCategoryIds = useCallback((rootId: number, allCategories: Category[]) => {
+    const byParent = new Map<number, number[]>();
+    allCategories.forEach((category: Category) => {
+      if (category.parent) {
+        const list = byParent.get(category.parent) || [];
+        list.push(category.id);
+        byParent.set(category.parent, list);
+      }
+    });
+
+    const ids = new Set<number>();
+    const queue: number[] = [rootId];
+    while (queue.length > 0) {
+      const currentId = queue.shift();
+      if (currentId === undefined || ids.has(currentId)) continue;
+      ids.add(currentId);
+      const children = byParent.get(currentId) || [];
+      children.forEach((childId) => {
+        if (!ids.has(childId)) {
+          queue.push(childId);
+        }
+      });
+    }
+
+    return Array.from(ids);
+  }, []);
+
+  const categoryIdsForFilter = useMemo(() => {
+    if (!filters.category) return [];
+    return getDescendantCategoryIds(filters.category, categories || []);
+  }, [filters.category, categories, getDescendantCategoryIds]);
+
+  const requestFilters = useMemo(() => {
+    if (categoryIdsForFilter.length > 0) {
+      const { category, ...rest } = filters;
+      return {
+        ...rest,
+        category_ids: categoryIdsForFilter.join(','),
+      };
+    }
+    return filters;
+  }, [filters, categoryIdsForFilter]);
 
   // Fermer le modal de recherche quand l'écran redevient actif
   useFocusEffect(
@@ -64,20 +110,20 @@ const ProductListScreen: React.FC = () => {
     const isPromo = (route.params as any)?.promo === true;
     // Ne pas recharger si on est en mode promo (on filtre côté client)
     if (!isPromo) {
-      dispatch(fetchProducts({ page: 1, search: searchQuery, filters }));
+      dispatch(fetchProducts({ page: 1, search: searchQuery, filters: requestFilters }));
     }
     dispatch(fetchCategories({ forceRefresh: true }));
-  }, [dispatch, searchQuery, filters, route]);
+  }, [dispatch, searchQuery, requestFilters, route]);
 
   const onRefresh = async () => {
     setRefreshing(true);
-    await dispatch(fetchProducts({ page: 1, search: searchQuery, filters }));
+    await dispatch(fetchProducts({ page: 1, search: searchQuery, filters: requestFilters }));
     setRefreshing(false);
   };
 
   const handleSearch = (text: string) => {
     dispatch(setSearchQuery(text));
-    dispatch(fetchProducts({ page: 1, search: text, filters }));
+    dispatch(fetchProducts({ page: 1, search: text, filters: requestFilters }));
   };
 
   const handleSearchFocus = () => {
@@ -92,7 +138,7 @@ const ProductListScreen: React.FC = () => {
 
   const loadMore = () => {
     if (pagination.hasNext && !isLoading) {
-      dispatch(fetchProducts({ page: pagination.page + 1, search: searchQuery, filters }));
+      dispatch(fetchProducts({ page: pagination.page + 1, search: searchQuery, filters: requestFilters }));
     }
   };
 
@@ -119,7 +165,7 @@ const ProductListScreen: React.FC = () => {
     : null;
 
   // Afficher les catégories principales, et ajouter la sous-catégorie sélectionnée si elle existe
-  const mainCategories = (categories || []).filter((c: Category) => !c.parent).slice(0, 8);
+  const mainCategories = (categories || []).filter((c: Category) => !c.parent);
   
   let displayCategories: Category[] = [...mainCategories];
   
@@ -139,31 +185,34 @@ const ProductListScreen: React.FC = () => {
   // La catégorie à mettre en focus est directement celle sélectionnée
   const categoryToFocus = filters.category;
 
+  const scrollToSelectedCategory = useCallback(() => {
+    if (!categoryToFocus || !categoriesScrollRef.current) return;
+
+    const layout = categoryLayoutsRef.current[categoryToFocus];
+    const scrollWidth = categoriesScrollWidthRef.current;
+    const contentWidth = categoriesContentWidthRef.current;
+
+    if (!layout || scrollWidth === 0) {
+      if (categoriesScrollRetryRef.current < 5) {
+        categoriesScrollRetryRef.current += 1;
+        setTimeout(scrollToSelectedCategory, 80);
+      }
+      return;
+    }
+
+    const targetCenter = layout.x + layout.width / 2;
+    const desiredX = targetCenter - scrollWidth / 2;
+    const maxX = Math.max(0, contentWidth - scrollWidth);
+    const clampedX = Math.max(0, Math.min(desiredX, maxX));
+
+    categoriesScrollRef.current.scrollTo({ x: clampedX, animated: true });
+  }, [categoryToFocus]);
+
   // Défilement automatique vers la catégorie sélectionnée
   useEffect(() => {
-    if (categoryToFocus && categoriesScrollRef.current) {
-      const selectedIndex = displayCategories.findIndex((c: Category) => c.id === categoryToFocus);
-      if (selectedIndex !== -1) {
-        // Calculer la position approximative
-        // Largeur d'une carte: ~88px (80px minWidth + 8px marginRight)
-        const cardWidth = 88;
-        const screenWidth = Dimensions.get('window').width;
-        
-        // Position de la catégorie sélectionnée
-        const categoryX = selectedIndex * cardWidth;
-        
-        // Centrer la catégorie avec un offset vers la droite
-        const scrollToX = categoryX - (screenWidth / 2) + (cardWidth / 2) + 40;
-        
-        setTimeout(() => {
-          categoriesScrollRef.current?.scrollTo({
-            x: Math.max(0, scrollToX),
-            animated: true,
-          });
-        }, 100);
-      }
-    }
-  }, [categoryToFocus, displayCategories]);
+    categoriesScrollRetryRef.current = 0;
+    requestAnimationFrame(scrollToSelectedCategory);
+  }, [categoryToFocus, displayCategories, scrollToSelectedCategory]);
 
   const renderProduct = ({ item }: { item: Product }) => (
     <DynamicProductCard product={item} />
@@ -244,6 +293,12 @@ const ProductListScreen: React.FC = () => {
           showsHorizontalScrollIndicator={false}
           contentContainerStyle={styles.categoriesScrollContent}
           nestedScrollEnabled={true}
+          onLayout={(event) => {
+            categoriesScrollWidthRef.current = event.nativeEvent.layout.width;
+          }}
+          onContentSizeChange={(width) => {
+            categoriesContentWidthRef.current = width;
+          }}
         >
           {displayCategories.length > 0 ? (
             displayCategories.map((category: Category) => {
@@ -256,6 +311,10 @@ const ProductListScreen: React.FC = () => {
                     styles.categoryCard,
                     isSelected && styles.categoryCardActive
                   ]}
+                  onLayout={(event) => {
+                    const { x, width } = event.nativeEvent.layout;
+                    categoryLayoutsRef.current[category.id] = { x, width };
+                  }}
                   onPress={() => {
                     console.log(
                       'PRODUCT_LIST / clic catégorie horizontale :',
@@ -264,11 +323,15 @@ const ProductListScreen: React.FC = () => {
                       category.name
                     );
                     dispatch(setFilters({ category: category.id }));
+                    const nextCategoryIds = getDescendantCategoryIds(category.id, categories || []);
+                    const { category: _category, ...restFilters } = filters;
                     dispatch(
                       fetchProducts({
                         page: 1,
                         search: searchQuery,
-                        filters: { ...filters, category: category.id },
+                        filters: nextCategoryIds.length > 0
+                          ? { ...restFilters, category_ids: nextCategoryIds.join(',') }
+                          : { ...filters, category: category.id },
                       })
                     );
                   }}

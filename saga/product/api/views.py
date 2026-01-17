@@ -169,6 +169,16 @@ class ProductViewSet(viewsets.ModelViewSet):
                 Q(is_available=False) | 
                 Q(external_product__sync_status='synced')
             ).distinct()
+
+        category_ids_param = self.request.query_params.get('category_ids')
+        if category_ids_param:
+            raw_ids = [item.strip() for item in category_ids_param.split(',') if item.strip()]
+            try:
+                category_ids = [int(item) for item in raw_ids if item.isdigit()]
+            except ValueError:
+                category_ids = []
+            if category_ids:
+                queryset = queryset.filter(category_id__in=category_ids)
         
         # Filtre pour les produits en promotion
         promo = self.request.query_params.get('promo')

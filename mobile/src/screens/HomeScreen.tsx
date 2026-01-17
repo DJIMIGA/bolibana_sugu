@@ -224,9 +224,30 @@ const HomeScreen: React.FC = () => {
     setHomeNewProducts(newOnes);
   }, [products, pagination.page]);
   
+  // Catégories B2B (même logique que CategoryScreen)
+  const b2bCategories = useMemo(() => {
+    return (categories || []).filter((c: Category) =>
+      (c.rayon_type !== null && c.rayon_type !== undefined) ||
+      (c.level !== null && c.level !== undefined)
+    );
+  }, [categories]);
+
+  // Catégories de niveau 0 uniquement, triées
+  const level0Categories = useMemo(() => {
+    const level0 = b2bCategories.filter((c: Category) =>
+      c.level === 0 || (c.level === null && !c.parent)
+    );
+
+    return level0.sort((a: Category, b: Category) => {
+      if (a.order !== b.order) {
+        return a.order - b.order;
+      }
+      return a.name.localeCompare(b.name);
+    });
+  }, [b2bCategories]);
+
   // S'assurer qu'on a toujours quelque chose à afficher
-  // Afficher uniquement les catégories sans parent (catégories principales)
-  const displayCategories = (categories || []).filter((c: Category) => !c.parent).slice(0, 8);
+  const displayCategories = level0Categories;
 
   // Helpers de catégorisation (même logique que DynamicProductCard)
   const findCategoryWithParents = (categoryId: number, allCategories: Category[]): Category | null => {

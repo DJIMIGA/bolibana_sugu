@@ -11,7 +11,7 @@ interface CartState {
   cart: Cart | null;
   items: CartItem[];
   total: number;
-  itemsCount: number; // Nombre total d'articles (somme des quantités)
+  itemsCount: number; // Nombre total d'articles (produits au poids comptés comme 1)
   isLoading: boolean;
   error: string | null;
   lastUpdateTimestamp: number;
@@ -27,9 +27,25 @@ const initialState: CartState = {
   lastUpdateTimestamp: 0,
 };
 
+// Déterminer si un item est vendu au poids
+const isWeightedCartItem = (item: CartItem): boolean => {
+  const specs = item?.product?.specifications || {};
+  return specs.sold_by_weight === true ||
+    specs.unit_type === 'weight' ||
+    specs.unit_type === 'kg' ||
+    specs.unit_type === 'kilogram';
+};
+
 // Fonction utilitaire pour calculer le nombre total d'articles
 const calculateItemsCount = (items: CartItem[]): number => {
-  return items.reduce((sum, item) => sum + (item.quantity || 0), 0);
+  return items.reduce((sum, item) => {
+    if (!item || !item.product) return sum;
+    const quantity = typeof item.quantity === 'number' && !isNaN(item.quantity) ? item.quantity : 0;
+    if (isWeightedCartItem(item)) {
+      return sum + (quantity > 0 ? 1 : 0);
+    }
+    return sum + Math.round(quantity);
+  }, 0);
 };
 
 // Thunk pour récupérer le panier
