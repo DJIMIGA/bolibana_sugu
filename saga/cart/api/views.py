@@ -50,9 +50,21 @@ class CartViewSet(viewsets.ModelViewSet):
         unit = self._get_weight_unit(product)
         if unit == 'g':
             available_g = specs.get('available_weight_g')
-            return Decimal(str(available_g)) if available_g is not None else Decimal('0')
+            if available_g is not None:
+                return Decimal(str(available_g))
+            # Fallback: convertir le stock kg -> g si dispo
+            available_kg = specs.get('available_weight_kg')
+            if available_kg is not None:
+                return Decimal(str(available_kg)) * Decimal('1000')
+            return Decimal('0')
         available_kg = specs.get('available_weight_kg')
-        return Decimal(str(available_kg)) if available_kg is not None else Decimal('0')
+        if available_kg is not None:
+            return Decimal(str(available_kg))
+        # Fallback: convertir le stock g -> kg si dispo
+        available_g = specs.get('available_weight_g')
+        if available_g is not None:
+            return Decimal(str(available_g)) / Decimal('1000')
+        return Decimal('0')
 
     def get_queryset(self):
         """Retourne le panier de l'utilisateur connecté ou anonyme"""
