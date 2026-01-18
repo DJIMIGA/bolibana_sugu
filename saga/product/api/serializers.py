@@ -214,9 +214,12 @@ class ProductListSerializer(serializers.ModelSerializer):
                 'sold_by_weight',
                 'unit_type',
                 'weight_unit',
+                'unit_display',
                 'price_per_kg',
+                'price_per_g',
                 'discount_price_per_kg',
                 'available_weight_kg',
+                'available_weight_g',
             }
             return {key: specs.get(key) for key in allowed_keys if key in specs}
         except Exception:

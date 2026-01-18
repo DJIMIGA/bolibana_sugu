@@ -34,10 +34,12 @@ const isWeightedCartItem = (item: CartItem): boolean => {
   const unit = item.weight_unit ? String(item.weight_unit).toLowerCase() : '';
   if (['weight', 'kg', 'kilogram', 'g', 'gram', 'gramme'].includes(unit)) return true;
   const specs = item?.product?.specifications || {};
+  const unitDisplay = specs.unit_display ? String(specs.unit_display).toLowerCase() : '';
   return specs.sold_by_weight === true ||
     specs.unit_type === 'weight' ||
     specs.unit_type === 'kg' ||
     specs.unit_type === 'kilogram' ||
+    ['g', 'gram', 'gramme', 'kg', 'kilogram'].includes(unitDisplay) ||
     specs.price_per_kg !== undefined ||
     specs.discount_price_per_kg !== undefined ||
     specs.available_weight_kg !== undefined;

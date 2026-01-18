@@ -48,21 +48,24 @@ class CartItemSerializer(serializers.ModelSerializer):
         )
         unit_type = str(specs.get('unit_type') or '').lower()
         weight_unit = str(specs.get('weight_unit') or '').lower()
+        unit_display = str(specs.get('unit_display') or '').lower()
         has_weight_pricing = (
             specs.get('price_per_kg') is not None
             or specs.get('discount_price_per_kg') is not None
             or specs.get('available_weight_kg') is not None
+            or specs.get('available_weight_g') is not None
         )
         return bool(
             is_sold_by_weight
             or unit_type in ['weight', 'kg', 'kilogram']
             or weight_unit in ['g', 'gram', 'gramme']
+            or unit_display in ['g', 'gram', 'gramme', 'kg', 'kilogram']
             or has_weight_pricing
         )
 
     def get_weight_unit(self, obj):
         specs = self._get_specs(obj)
-        unit = specs.get('weight_unit') or specs.get('unit_type')
+        unit = specs.get('weight_unit') or specs.get('unit_display') or specs.get('unit_type')
         if unit is None:
             return 'unité'
         unit_normalized = str(unit).lower()

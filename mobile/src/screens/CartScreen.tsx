@@ -57,7 +57,10 @@ const CartScreen: React.FC = () => {
   };
 
   const getWeightUnit = (item: CartItem): string => {
-    const unitRaw = item.weight_unit || item.product?.specifications?.weight_unit || item.product?.specifications?.unit_type;
+    const unitRaw = item.weight_unit
+      || item.product?.specifications?.weight_unit
+      || item.product?.specifications?.unit_display
+      || item.product?.specifications?.unit_type;
     if (!unitRaw) return 'kg';
     const unit = String(unitRaw).toLowerCase();
     if (['weight', 'kg', 'kilogram'].includes(unit)) return 'kg';
