@@ -40,6 +40,28 @@ const CartScreen: React.FC = () => {
     dispatch(fetchCategories({ forceRefresh: true }));
   }, [dispatch]);
 
+  useEffect(() => {
+    if (!__DEV__) return;
+    const unitInfo = (items || []).map((item) => {
+      const specs = item?.product?.specifications || {};
+      const unitType = specs.unit_type || specs.unit || null;
+      const soldByWeight = specs.sold_by_weight;
+      const isWeighted = soldByWeight === true ||
+        (typeof soldByWeight === 'string' && ['true', '1', 'yes'].includes(soldByWeight.toLowerCase())) ||
+        (typeof unitType === 'string' && ['weight', 'kg', 'kilogram', 'g', 'gram', 'grams'].includes(unitType.toLowerCase()));
+      return {
+        itemId: item?.id,
+        productId: item?.product?.id,
+        productTitle: item?.product?.title,
+        quantity: item?.quantity,
+        unitType,
+        sold_by_weight: soldByWeight,
+        isWeighted,
+      };
+    });
+    console.log('[CartScreen] 🛒 Panier - unités et quantités:', unitInfo);
+  }, [items]);
+
   const onRefresh = async () => {
     setRefreshing(true);
     await dispatch(fetchCart());

@@ -1,10 +1,10 @@
 from rest_framework import serializers
 from cart.models import Cart, CartItem
-from product.api.serializers import ProductListSerializer, PhoneSerializer
+from product.api.serializers import ProductDetailSerializer, PhoneSerializer
 
 
 class CartItemSerializer(serializers.ModelSerializer):
-    product = ProductListSerializer(read_only=True)
+    product = ProductDetailSerializer(read_only=True)
     variant = PhoneSerializer(read_only=True)
     colors = serializers.SerializerMethodField()
     sizes = serializers.SerializerMethodField()

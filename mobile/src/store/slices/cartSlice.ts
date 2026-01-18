@@ -131,10 +131,29 @@ export const addToCart = createAsyncThunk(
         const response = await apiClient.post(API_ENDPOINTS.CART, payload);
         
         if (__DEV__) {
+          const rawItems = response.data?.items || response.data?.cart_items || [];
+          const unitInfo = rawItems.map((item: any) => {
+            const specs = item?.product?.specifications || {};
+            const unitType = specs.unit_type || specs.unit || null;
+            const soldByWeight = specs.sold_by_weight;
+            const isWeighted = soldByWeight === true ||
+              (typeof soldByWeight === 'string' && ['true', '1', 'yes'].includes(soldByWeight.toLowerCase())) ||
+              (typeof unitType === 'string' && ['weight', 'kg', 'kilogram', 'g', 'gram', 'grams'].includes(unitType.toLowerCase()));
+            return {
+              itemId: item?.id,
+              productId: item?.product?.id,
+              productTitle: item?.product?.title,
+              quantity: item?.quantity,
+              unitType: unitType,
+              sold_by_weight: soldByWeight,
+              isWeighted,
+            };
+          });
           console.log('[cartSlice] ⚖️ Réponse backend après ajout:', {
             responseData: response.data,
-            items: response.data?.items || response.data?.cart_items || [],
+            items: rawItems,
             sentQuantity: quantity,
+            unitInfo,
           });
         }
         
