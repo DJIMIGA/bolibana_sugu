@@ -136,17 +136,18 @@ const ProductDetailScreen: React.FC = () => {
     if (!selectedProduct.is_salam) {
       if (isWeightedProduct) {
         // Pour les produits au poids, vérifier le poids disponible
-        const availableWeight = specs.available_weight_kg || 0;
+        const availableWeight = getAvailableWeight(specs);
+        const weightUnit = getWeightUnit(specs);
         if (availableWeight > 0 && quantity > availableWeight) {
           Alert.alert(
             'Stock insuffisant',
-            `Poids disponible: ${formatAvailableWeight(availableWeight)} kg. Veuillez réduire la quantité.`
+            `Poids disponible: ${formatAvailableWeight(availableWeight)} ${weightUnit}. Veuillez réduire la quantité.`
           );
           return;
         }
         // Vérifier le minimum (0.5 kg)
         if (quantity < 0.5) {
-          Alert.alert('Quantité minimale', 'La quantité minimale est de 0.5 kg');
+          Alert.alert('Quantité minimale', `La quantité minimale est de 0.5 ${weightUnit}`);
           return;
         }
       } else {
@@ -189,30 +190,57 @@ const ProductDetailScreen: React.FC = () => {
     return <LoadingScreen />;
   }
 
+  const getWeightUnit = (specsData: any): string => {
+    const unitRaw = specsData?.weight_unit || specsData?.unit_display || specsData?.unit_type;
+    if (!unitRaw) return 'kg';
+    const unit = String(unitRaw).toLowerCase();
+    if (['weight', 'kg', 'kilogram'].includes(unit)) return 'kg';
+    if (['g', 'gram', 'gramme'].includes(unit)) return 'g';
+    return unit;
+  };
+
+  const getAvailableWeight = (specsData: any): number => {
+    const unit = getWeightUnit(specsData);
+    if (unit === 'g') {
+      const availableG = specsData?.available_weight_g;
+      if (availableG !== undefined && availableG !== null) return Number(availableG) || 0;
+    }
+    return Number(specsData?.available_weight_kg) || 0;
+  };
+
   // Vérifier si c'est un produit au poids
   const specs = selectedProduct.specifications || {};
   const isWeighted = specs.sold_by_weight === true || 
                      specs.unit_type === 'weight' || 
                      specs.unit_type === 'kg' ||
                      specs.unit_type === 'kilogram';
+  const weightUnit = getWeightUnit(specs);
 
   // Vérifier la disponibilité du stock (poids pour les produits au poids, unités pour les autres)
   const hasStock = isWeighted 
-    ? (specs.available_weight_kg !== undefined && specs.available_weight_kg > 0)
+    ? (getAvailableWeight(specs) > 0)
     : (selectedProduct.stock !== undefined && selectedProduct.stock > 0);
   
   const availableStock = isWeighted
-    ? specs.available_weight_kg
+    ? getAvailableWeight(specs)
     : selectedProduct.stock;
 
 
   // Obtenir le prix unitaire (au kg pour les produits au poids, unitaire pour les autres)
   const getUnitPrice = (): number => {
     if (isWeighted) {
-      // Pour les produits au poids, utiliser price_per_kg depuis les spécifications
-      const pricePerKg = specs.price_per_kg;
-      if (pricePerKg) {
-        return pricePerKg;
+      const unit = getWeightUnit(specs);
+      if (unit === 'g') {
+        const pricePerG = specs.price_per_g;
+        if (pricePerG) {
+          return pricePerG;
+        }
+      } else {
+        // Pour les produits au poids, utiliser price_per_kg depuis les spécifications
+        const pricePerKg = specs.price_per_kg;
+        if (pricePerKg) {
+          return pricePerKg;
+        }
       }
     }
     return selectedProduct.price;
@@ -220,10 +248,18 @@ const ProductDetailScreen: React.FC = () => {
 
   const getDiscountPrice = (): number | undefined => {
     if (isWeighted) {
-      // Pour les produits au poids, vérifier s'il y a un discount_price_per_kg
-      const discountPricePerKg = specs.discount_price_per_kg;
-      if (discountPricePerKg) {
-        return discountPricePerKg;
+      const unit = getWeightUnit(specs);
+      if (unit === 'g') {
+        const discountPricePerG = specs.discount_price_per_g;
+        if (discountPricePerG) {
+          return discountPricePerG;
+        }
+      } else {
+        // Pour les produits au poids, vérifier s'il y a un discount_price_per_kg
+        const discountPricePerKg = specs.discount_price_per_kg;
+        if (discountPricePerKg) {
+          return discountPricePerKg;
+        }
       }
     }
     return selectedProduct.discount_price;
@@ -423,7 +459,7 @@ const ProductDetailScreen: React.FC = () => {
                 <Text style={styles.oldPrice}>
                   {formatPrice(unitPrice)}
                 </Text>
-                <Text style={styles.priceUnit}> / {isWeighted ? 'kg' : 'unité'}</Text>
+                <Text style={styles.priceUnit}> / {isWeighted ? weightUnit : 'unité'}</Text>
                 <View style={styles.discountTag}>
                   <Text style={styles.discountTagText}>PROMO</Text>
                 </View>
@@ -432,13 +468,13 @@ const ProductDetailScreen: React.FC = () => {
           ) : (
             <View style={styles.priceRow}>
               <Text style={styles.price}>{formatPrice(unitPrice)}</Text>
-              <Text style={styles.priceUnit}> / {isWeighted ? 'kg' : 'unité'}</Text>
+              <Text style={styles.priceUnit}> / {isWeighted ? weightUnit : 'unité'}</Text>
             </View>
           )}
         </View>
 
         {/* Indicateur de stock */}
-        {(selectedProduct.stock !== undefined || (isWeighted && specs.available_weight_kg !== undefined)) && (
+        {(selectedProduct.stock !== undefined || (isWeighted && getAvailableWeight(specs) !== undefined)) && (
           <View style={styles.stockContainer}>
             {hasStock ? (
               <View style={styles.stockAvailable}>
@@ -446,7 +482,7 @@ const ProductDetailScreen: React.FC = () => {
                 <Text style={styles.stockText}>
                   {isWeighted ? (
                     availableStock && availableStock > 0
-                      ? `${formatAvailableWeight(availableStock)} kg disponible${availableStock > 1 ? 's' : ''}`
+                      ? `${formatAvailableWeight(availableStock)} ${weightUnit} disponible${availableStock > 1 ? 's' : ''}`
                       : 'En stock'
                   ) : (
                     availableStock && availableStock > 10
@@ -487,7 +523,7 @@ const ProductDetailScreen: React.FC = () => {
                 </TouchableOpacity>
                 <View style={styles.quantityValueContainer}>
                   <Text style={styles.quantityValue}>{formatQuantity(quantity)}</Text>
-                  <Text style={styles.quantityUnit}>kg</Text>
+                  <Text style={styles.quantityUnit}>{weightUnit}</Text>
                 </View>
                 <TouchableOpacity
                   style={[

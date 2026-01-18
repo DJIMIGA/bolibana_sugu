@@ -33,6 +33,27 @@ class CartViewSet(viewsets.ModelViewSet):
         unit_type = str(unit_type_raw).lower() if unit_type_raw is not None else ''
         return is_sold_by_weight or unit_type in ['weight', 'kg', 'kilogram']
 
+    def _get_weight_unit(self, product):
+        specs = product.specifications or {}
+        unit_raw = specs.get('weight_unit') or specs.get('unit_display') or specs.get('unit_type')
+        if not unit_raw:
+            return 'kg'
+        unit = str(unit_raw).lower()
+        if unit in ['weight', 'kg', 'kilogram']:
+            return 'kg'
+        if unit in ['g', 'gram', 'gramme']:
+            return 'g'
+        return unit
+
+    def _get_available_weight(self, product):
+        specs = product.specifications or {}
+        unit = self._get_weight_unit(product)
+        if unit == 'g':
+            available_g = specs.get('available_weight_g')
+            return Decimal(str(available_g)) if available_g is not None else Decimal('0')
+        available_kg = specs.get('available_weight_kg')
+        return Decimal(str(available_kg)) if available_kg is not None else Decimal('0')
+
     def get_queryset(self):
         """Retourne le panier de l'utilisateur connecté ou anonyme"""
         if self.request.user.is_authenticated:
@@ -110,18 +131,18 @@ class CartViewSet(viewsets.ModelViewSet):
 
         # Vérifier le stock si ce n'est pas un produit Salam
         if not product.is_salam:
-            specs = product.specifications or {}
             is_weighted = self._is_weighted_product(product)
             if is_weighted:
-                available_weight = specs.get('available_weight_kg', 0)
-                if Decimal(str(available_weight)) < quantity:
+                unit = self._get_weight_unit(product)
+                available_weight = self._get_available_weight(product)
+                if available_weight < quantity:
                     return Response(
-                        {'error': f'Stock insuffisant. Disponible: {available_weight} kg'},
+                        {'error': f'Stock insuffisant. Disponible: {available_weight} {unit}'},
                         status=status.HTTP_400_BAD_REQUEST
                     )
                 if quantity < Decimal('0.5'):
                     return Response(
-                        {'error': 'La quantité minimale est de 0.5 kg'},
+                        {'error': f'La quantité minimale est de 0.5 {unit}'},
                         status=status.HTTP_400_BAD_REQUEST
                     )
             elif product.stock < float(quantity):
@@ -158,18 +179,18 @@ class CartViewSet(viewsets.ModelViewSet):
             new_quantity = cart_item.quantity + quantity
             # Revalider le stock pour les produits au poids
             if not product.is_salam:
-                specs = product.specifications or {}
                 is_weighted = self._is_weighted_product(product)
                 if is_weighted:
-                    available_weight = specs.get('available_weight_kg', 0)
-                    if Decimal(str(available_weight)) < new_quantity:
+                    unit = self._get_weight_unit(product)
+                    available_weight = self._get_available_weight(product)
+                    if available_weight < new_quantity:
                         return Response(
-                            {'error': f'Stock insuffisant. Disponible: {available_weight} kg'},
+                            {'error': f'Stock insuffisant. Disponible: {available_weight} {unit}'},
                             status=status.HTTP_400_BAD_REQUEST
                         )
                     if new_quantity < Decimal('0.5'):
                         return Response(
-                            {'error': 'La quantité minimale est de 0.5 kg'},
+                            {'error': f'La quantité minimale est de 0.5 {unit}'},
                             status=status.HTTP_400_BAD_REQUEST
                         )
             cart_item.quantity = new_quantity
@@ -253,7 +274,6 @@ class CartViewSet(viewsets.ModelViewSet):
                         # Vérifier le stock
                         product = cart_item.product
                         variant = cart_item.variant
-                        specs = product.specifications or {}
                         is_weighted = self._is_weighted_product(product)
 
                         if variant:
@@ -266,15 +286,16 @@ class CartViewSet(viewsets.ModelViewSet):
                             quantity = Decimal(int(quantity))
                         elif not product.is_salam:
                             if is_weighted:
-                                available_weight = specs.get('available_weight_kg', 0)
-                                if Decimal(str(available_weight)) < quantity:
+                                unit = self._get_weight_unit(product)
+                                available_weight = self._get_available_weight(product)
+                                if available_weight < quantity:
                                     return Response(
-                                        {'error': f'Stock insuffisant. Disponible: {available_weight} kg'},
+                                        {'error': f'Stock insuffisant. Disponible: {available_weight} {unit}'},
                                         status=status.HTTP_400_BAD_REQUEST
                                     )
                                 if quantity < Decimal('0.5'):
                                     return Response(
-                                        {'error': 'La quantité minimale est de 0.5 kg'},
+                                        {'error': f'La quantité minimale est de 0.5 {unit}'},
                                         status=status.HTTP_400_BAD_REQUEST
                                     )
                             elif product.stock < float(quantity):

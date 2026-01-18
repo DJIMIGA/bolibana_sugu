@@ -62,6 +62,15 @@ const CartScreen: React.FC = () => {
     console.log('[CartScreen] 🛒 Panier - unités et quantités:', unitInfo);
   }, [items]);
 
+  useEffect(() => {
+    const hasMissingSpecs = (items || []).some(
+      (item) => !item.product?.specifications || Object.keys(item.product.specifications).length === 0
+    );
+    if (hasMissingSpecs) {
+      dispatch(enrichCartProducts());
+    }
+  }, [dispatch, items]);
+
   const onRefresh = async () => {
     setRefreshing(true);
     await dispatch(fetchCart());
@@ -88,6 +97,16 @@ const CartScreen: React.FC = () => {
     if (['weight', 'kg', 'kilogram'].includes(unit)) return 'kg';
     if (['g', 'gram', 'gramme'].includes(unit)) return 'g';
     return unit;
+  };
+
+  const getAvailableWeightForItem = (item: CartItem): number => {
+    const specs = item.product?.specifications || {};
+    const unit = getWeightUnit(item);
+    if (unit === 'g') {
+      const availableG = specs.available_weight_g;
+      if (availableG !== undefined && availableG !== null) return Number(availableG) || 0;
+    }
+    return Number(specs.available_weight_kg) || 0;
   };
 
   // Fonction helper pour formater la quantité (évite d'arrondir 0.999 à 1.0)
@@ -119,17 +138,18 @@ const CartScreen: React.FC = () => {
     if (!item.product.is_salam) {
       if (isWeighted) {
         // Pour les produits au poids, vérifier le poids disponible
-        const availableWeight = specs.available_weight_kg || 0;
+        const weightUnit = getWeightUnit(item);
+        const availableWeight = getAvailableWeightForItem(item);
         if (availableWeight > 0 && newQuantity > availableWeight) {
           Alert.alert(
             'Stock insuffisant',
-            `Poids disponible: ${formatAvailableWeight(availableWeight)} kg. Veuillez réduire la quantité.`
+            `Poids disponible: ${formatAvailableWeight(availableWeight)} ${weightUnit}. Veuillez réduire la quantité.`
           );
           return;
         }
         // Vérifier le minimum (0.5 kg)
         if (newQuantity < 0.5) {
-          Alert.alert('Quantité minimale', 'La quantité minimale est de 0.5 kg');
+          Alert.alert('Quantité minimale', `La quantité minimale est de 0.5 ${weightUnit}`);
           return;
         }
       } else {
@@ -176,7 +196,8 @@ const CartScreen: React.FC = () => {
       ? item.quantity
       : parseFloat(String(item.quantity)) || 0;
     const specs = item.product.specifications || {};
-    const availableWeight = specs.available_weight_kg;
+    const weightUnit = getWeightUnit(item);
+    const availableWeight = getAvailableWeightForItem(item);
     
     // Calculer le nouveau poids
     let newWeight = currentWeight + increment;
@@ -196,7 +217,7 @@ const CartScreen: React.FC = () => {
         // Pas assez de poids disponible pour ajouter 0.5 kg
         Alert.alert(
           'Stock insuffisant',
-          `Poids disponible: ${formatAvailableWeight(availableWeight)} kg. Impossible d'ajouter 0.5 kg.`
+          `Poids disponible: ${formatAvailableWeight(availableWeight)} ${weightUnit}. Impossible d'ajouter 0.5 ${weightUnit}.`
         );
         return;
       }
@@ -304,20 +325,32 @@ const CartScreen: React.FC = () => {
     if (item.unit_price !== undefined && item.unit_price !== null && item.unit_price > 0) {
       return item.unit_price;
     }
-    // Pour les produits au poids, utiliser le prix au kg depuis les spécifications
+    // Pour les produits au poids, utiliser le prix au kg/g depuis les spécifications
     if (isWeightedItem(item)) {
       const specs = item.product.specifications || {};
-      // Vérifier d'abord s'il y a un prix promotionnel au kg
-      const discountPricePerKg = specs.discount_price_per_kg;
-      if (discountPricePerKg && discountPricePerKg > 0) {
-        return discountPricePerKg;
+      const weightUnit = getWeightUnit(item);
+      if (weightUnit === 'g') {
+        const discountPricePerG = specs.discount_price_per_g;
+        if (discountPricePerG && discountPricePerG > 0) {
+          return discountPricePerG;
+        }
+        const pricePerG = specs.price_per_g;
+        if (pricePerG) {
+          return pricePerG;
+        }
+      } else {
+        // Vérifier d'abord s'il y a un prix promotionnel au kg
+        const discountPricePerKg = specs.discount_price_per_kg;
+        if (discountPricePerKg && discountPricePerKg > 0) {
+          return discountPricePerKg;
+        }
+        // Sinon, utiliser le prix normal au kg
+        const pricePerKg = specs.price_per_kg;
+        if (pricePerKg) {
+          return pricePerKg;
+        }
       }
-      // Sinon, utiliser le prix normal au kg
-      const pricePerKg = specs.price_per_kg;
-      if (pricePerKg) {
-        return pricePerKg;
-      }
-      // Fallback sur le prix du produit si price_per_kg n'est pas défini
+      // Fallback sur le prix du produit si price_per_kg/g n'est pas défini
       return item.product.discount_price || item.product.price;
     }
     // Pour les produits normaux, utiliser discount_price ou price
