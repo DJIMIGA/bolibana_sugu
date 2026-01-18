@@ -29,14 +29,18 @@ class CartViewSet(viewsets.ModelViewSet):
         is_sold_by_weight = sold_by_weight is True or (
             isinstance(sold_by_weight, str) and sold_by_weight.lower() in ['true', '1', 'yes']
         )
-        unit_type_raw = specs.get('unit_type')
-        unit_type = str(unit_type_raw).lower() if unit_type_raw is not None else ''
-        return is_sold_by_weight or unit_type in ['weight', 'kg', 'kilogram']
+        unit_raw = specs.get('weight_unit') or specs.get('unit_display') or specs.get('unit_type')
+        unit = str(unit_raw).lower() if unit_raw is not None else ''
+        has_gram_fields = specs.get('available_weight_g') is not None or specs.get('price_per_g') is not None or specs.get('discount_price_per_g') is not None
+        return is_sold_by_weight or unit in ['weight', 'kg', 'kilogram', 'g', 'gram', 'gramme'] or has_gram_fields
 
     def _get_weight_unit(self, product):
         specs = product.specifications or {}
         unit_raw = specs.get('weight_unit') or specs.get('unit_display') or specs.get('unit_type')
         if not unit_raw:
+            # Heuristique: si des champs grammes existent, utiliser g
+            if specs.get('available_weight_g') is not None or specs.get('price_per_g') is not None or specs.get('discount_price_per_g') is not None:
+                return 'g'
             return 'kg'
         unit = str(unit_raw).lower()
         if unit in ['weight', 'kg', 'kilogram']:
