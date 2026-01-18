@@ -87,6 +87,10 @@ export interface CartItem {
   colors?: number[];
   sizes?: number[];
   variant?: number;
+  is_weighted?: boolean;
+  weight_unit?: string;
+  unit_price?: number;
+  total_price?: number;
 }
 
 export interface Cart {

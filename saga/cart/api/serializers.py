@@ -10,12 +10,15 @@ class CartItemSerializer(serializers.ModelSerializer):
     sizes = serializers.SerializerMethodField()
     unit_price = serializers.SerializerMethodField()
     total_price = serializers.SerializerMethodField()
+    is_weighted = serializers.SerializerMethodField()
+    weight_unit = serializers.SerializerMethodField()
 
     class Meta:
         model = CartItem
         fields = [
             'id', 'product', 'variant', 'quantity',
-            'colors', 'sizes', 'unit_price', 'total_price'
+            'colors', 'sizes', 'unit_price', 'total_price',
+            'is_weighted', 'weight_unit'
         ]
 
     def get_colors(self, obj):
@@ -29,6 +32,45 @@ class CartItemSerializer(serializers.ModelSerializer):
 
     def get_total_price(self, obj):
         return float(obj.get_total_price())
+
+    def _get_specs(self, obj):
+        if not obj.product or not getattr(obj.product, 'specifications', None):
+            return {}
+        if not isinstance(obj.product.specifications, dict):
+            return {}
+        return obj.product.specifications
+
+    def get_is_weighted(self, obj):
+        specs = self._get_specs(obj)
+        sold_by_weight = specs.get('sold_by_weight')
+        is_sold_by_weight = sold_by_weight is True or (
+            isinstance(sold_by_weight, str) and sold_by_weight.lower() in ['true', '1', 'yes']
+        )
+        unit_type = str(specs.get('unit_type') or '').lower()
+        weight_unit = str(specs.get('weight_unit') or '').lower()
+        has_weight_pricing = (
+            specs.get('price_per_kg') is not None
+            or specs.get('discount_price_per_kg') is not None
+            or specs.get('available_weight_kg') is not None
+        )
+        return bool(
+            is_sold_by_weight
+            or unit_type in ['weight', 'kg', 'kilogram']
+            or weight_unit in ['g', 'gram', 'gramme']
+            or has_weight_pricing
+        )
+
+    def get_weight_unit(self, obj):
+        specs = self._get_specs(obj)
+        unit = specs.get('weight_unit') or specs.get('unit_type')
+        if unit is None:
+            return 'unité'
+        unit_normalized = str(unit).lower()
+        if unit_normalized in ['weight', 'kg', 'kilogram']:
+            return 'kg'
+        if unit_normalized in ['g', 'gram', 'gramme']:
+            return 'g'
+        return unit_normalized
 
 
 class CartSerializer(serializers.ModelSerializer):

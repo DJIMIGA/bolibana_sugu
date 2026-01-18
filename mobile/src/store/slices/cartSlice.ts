@@ -29,15 +29,25 @@ const initialState: CartState = {
 
 // Déterminer si un item est vendu au poids
 const isWeightedCartItem = (item: CartItem): boolean => {
+  if (!item) return false;
+  if (item.is_weighted === true) return true;
+  const unit = item.weight_unit ? String(item.weight_unit).toLowerCase() : '';
+  if (['weight', 'kg', 'kilogram', 'g', 'gram', 'gramme'].includes(unit)) return true;
   const specs = item?.product?.specifications || {};
   return specs.sold_by_weight === true ||
     specs.unit_type === 'weight' ||
     specs.unit_type === 'kg' ||
-    specs.unit_type === 'kilogram';
+    specs.unit_type === 'kilogram' ||
+    specs.price_per_kg !== undefined ||
+    specs.discount_price_per_kg !== undefined ||
+    specs.available_weight_kg !== undefined;
 };
 
 const getCartItemUnitPrice = (item: CartItem): number => {
   if (!item || !item.product) return 0;
+  if (item.unit_price !== undefined && item.unit_price !== null && item.unit_price > 0) {
+    return item.unit_price;
+  }
   if (isWeightedCartItem(item)) {
     const specs = item.product.specifications || {};
     const discountPricePerKg = specs.discount_price_per_kg;

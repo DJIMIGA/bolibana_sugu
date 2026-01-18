@@ -47,9 +47,22 @@ const CartScreen: React.FC = () => {
     setRefreshing(false);
   };
 
-  // Vérifier si un produit est vendu au poids
-  const isWeightedProduct = (product: any): boolean => {
-    return isWeightedProductHelper(product);
+  // Vérifier si un item est vendu au poids
+  const isWeightedItem = (item: CartItem): boolean => {
+    if (!item) return false;
+    if (item.is_weighted === true) return true;
+    const unit = item.weight_unit ? String(item.weight_unit).toLowerCase() : '';
+    if (['weight', 'kg', 'kilogram', 'g', 'gram', 'gramme'].includes(unit)) return true;
+    return isWeightedProductHelper(item.product);
+  };
+
+  const getWeightUnit = (item: CartItem): string => {
+    const unitRaw = item.weight_unit || item.product?.specifications?.weight_unit || item.product?.specifications?.unit_type;
+    if (!unitRaw) return 'kg';
+    const unit = String(unitRaw).toLowerCase();
+    if (['weight', 'kg', 'kilogram'].includes(unit)) return 'kg';
+    if (['g', 'gram', 'gramme'].includes(unit)) return 'g';
+    return unit;
   };
 
   // Fonction helper pour formater la quantité (évite d'arrondir 0.999 à 1.0)
@@ -74,7 +87,7 @@ const CartScreen: React.FC = () => {
     const item = items.find(i => i.id === itemId);
     if (!item) return;
 
-    const isWeighted = isWeightedProduct(item.product);
+    const isWeighted = isWeightedItem(item);
     const specs = item.product.specifications || {};
 
     // Vérifier les limites de stock
@@ -263,8 +276,11 @@ const CartScreen: React.FC = () => {
   };
 
   const getUnitPrice = (item: CartItem): number => {
+    if (item.unit_price !== undefined && item.unit_price !== null && item.unit_price > 0) {
+      return item.unit_price;
+    }
     // Pour les produits au poids, utiliser le prix au kg depuis les spécifications
-    if (isWeightedProduct(item.product)) {
+    if (isWeightedItem(item)) {
       const specs = item.product.specifications || {};
       // Vérifier d'abord s'il y a un prix promotionnel au kg
       const discountPricePerKg = specs.discount_price_per_kg;
@@ -294,10 +310,11 @@ const CartScreen: React.FC = () => {
       return null;
     }
 
-    const isWeighted = isWeightedProduct(item.product);
+    const isWeighted = isWeightedItem(item);
     const unitPrice = getUnitPrice(item);
     const totalItemPrice = getTotalItemPrice(item);
     const variantInfo = getVariantInfo(item);
+    const weightUnit = getWeightUnit(item);
     
     // Déterminer s'il y a une réduction (pour les produits au poids, vérifier discount_price_per_kg)
     const hasDiscount = isWeighted
@@ -348,7 +365,7 @@ const CartScreen: React.FC = () => {
                   {formatPrice(totalItemPrice)}
                 </Text>
                 <Text style={styles.unitPrice}>
-                  {formatPrice(unitPrice)} / {isWeightedProduct(item.product) ? 'kg' : 'unité'}
+                  {formatPrice(unitPrice)} / {isWeightedItem(item) ? weightUnit : 'unité'}
                 </Text>
               </View>
             ) : (
@@ -357,14 +374,14 @@ const CartScreen: React.FC = () => {
                   {formatPrice(totalItemPrice)}
                 </Text>
                 <Text style={styles.unitPrice}>
-                  {formatPrice(unitPrice)} / {isWeightedProduct(item.product) ? 'kg' : 'unité'}
+                  {formatPrice(unitPrice)} / {isWeightedItem(item) ? weightUnit : 'unité'}
                 </Text>
               </View>
             )}
           </View>
 
           {/* Contrôle de quantité/poids */}
-          {isWeightedProduct(item.product) ? (() => {
+          {isWeightedItem(item) ? (() => {
             const specs = item.product.specifications || {};
             const availableWeight = specs.available_weight_kg;
             const canIncrease = !availableWeight || availableWeight === 0 || (item.quantity + 0.5) <= availableWeight;
@@ -380,7 +397,7 @@ const CartScreen: React.FC = () => {
                   <Text style={styles.quantityButtonText}>-</Text>
                 </TouchableOpacity>
                 <Text style={styles.quantityValue}>
-                  {formatQuantity(item.quantity)} kg
+                  {formatQuantity(item.quantity)} {weightUnit}
                 </Text>
                 <TouchableOpacity
                   style={[styles.quantityButton, !canIncrease && styles.quantityButtonDisabled]}

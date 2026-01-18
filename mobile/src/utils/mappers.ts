@@ -407,6 +407,10 @@ export const mapCartFromBackend = (backendCart: any): Cart => {
             ? item.sizes.map((s: any) => typeof s === 'object' && s ? s.id : s).filter((id: any) => id !== null && id !== undefined)
             : item.sizes || [],
           variant: item.variant ? (typeof item.variant === 'object' && item.variant ? item.variant.id : item.variant) : undefined,
+          is_weighted: item.is_weighted === true ? true : undefined,
+          weight_unit: item.weight_unit ? String(item.weight_unit) : undefined,
+          unit_price: item.unit_price !== undefined && item.unit_price !== null ? parseFloat(item.unit_price) : undefined,
+          total_price: item.total_price !== undefined && item.total_price !== null ? parseFloat(item.total_price) : undefined,
         };
       } catch (error) {
         console.error('mapCartFromBackend: erreur lors du mapping d\'un item', error, item);

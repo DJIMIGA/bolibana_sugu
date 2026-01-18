@@ -176,11 +176,16 @@ export const isWeightedProduct = (product?: Product | null): boolean => {
   );
   const unitTypeRaw = specs.unit_type;
   const unitType = unitTypeRaw ? String(unitTypeRaw).toLowerCase() : '';
+  const weightUnitRaw = specs.weight_unit;
+  const weightUnit = weightUnitRaw ? String(weightUnitRaw).toLowerCase() : '';
   const hasWeightPricing =
     specs.price_per_kg !== undefined ||
     specs.discount_price_per_kg !== undefined ||
     specs.available_weight_kg !== undefined;
-  return isSoldByWeight || ['weight', 'kg', 'kilogram'].includes(unitType) || hasWeightPricing;
+  return isSoldByWeight ||
+    ['weight', 'kg', 'kilogram'].includes(unitType) ||
+    ['g', 'gram', 'gramme'].includes(weightUnit) ||
+    hasWeightPricing;
 };
 
 export const formatWeightQuantity = (qty: number): string => {
@@ -191,7 +196,12 @@ export const formatWeightQuantity = (qty: number): string => {
 export const getCartQuantityLabel = (product: Product, quantity: number): string => {
   if (!quantity || Number.isNaN(quantity)) return '0';
   if (isWeightedProduct(product)) {
-    return `${formatWeightQuantity(quantity)} kg`;
+    const unitRaw = product?.specifications?.weight_unit || product?.specifications?.unit_type;
+    const unit = unitRaw ? String(unitRaw).toLowerCase() : 'kg';
+    const normalized = ['weight', 'kg', 'kilogram'].includes(unit) ? 'kg'
+      : ['g', 'gram', 'gramme'].includes(unit) ? 'g'
+      : unit;
+    return `${formatWeightQuantity(quantity)} ${normalized}`;
   }
   return `${Math.round(quantity)}`;
 };
