@@ -147,6 +147,8 @@ class CartItem(models.Model):
         specs = self.product.specifications
         unit_raw = specs.get('weight_unit') or specs.get('unit_display') or specs.get('unit_type')
         if not unit_raw:
+            if specs.get('available_weight_g') is not None or specs.get('price_per_g') is not None or specs.get('discount_price_per_g') is not None:
+                return 'g'
             return 'kg'
         unit = str(unit_raw).lower()
         if unit in ['weight', 'kg', 'kilogram']:
