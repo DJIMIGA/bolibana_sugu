@@ -7,7 +7,7 @@ from django.shortcuts import get_object_or_404
 from django.contrib.auth import get_user_model
 from ..models import Shopper, ShippingAddress
 from .serializers import UserSerializer, AddressSerializer, OrderSerializer
-from cart.models import Order
+from cart.models import Order, Cart, CartItem
 
 User = get_user_model()
 
@@ -36,6 +36,50 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
 # Vue personnalisée pour obtenir le token avec email
 class CustomTokenObtainPairView(TokenObtainPairView):
     serializer_class = CustomTokenObtainPairSerializer
+
+    def _merge_anonymous_cart(self, request, user):
+        try:
+            session_key = request.session.session_key
+            if not session_key:
+                return
+            anon_cart = Cart.objects.filter(session_key=session_key, user__isnull=True).first()
+            if not anon_cart or not anon_cart.cart_items.exists():
+                return
+
+            user_cart, _ = Cart.objects.get_or_create(user=user)
+
+            for item in anon_cart.cart_items.all():
+                existing = CartItem.objects.filter(
+                    cart=user_cart,
+                    product=item.product,
+                    variant=item.variant
+                ).first()
+
+                if existing:
+                    existing.quantity = existing.quantity + item.quantity
+                    existing.save()
+                    if item.colors.exists():
+                        existing.colors.add(*item.colors.all())
+                    if item.sizes.exists():
+                        existing.sizes.add(*item.sizes.all())
+                    item.delete()
+                else:
+                    item.cart = user_cart
+                    item.save()
+
+            anon_cart.delete()
+        except Exception:
+            # Ne pas bloquer l'auth si la fusion échoue
+            return
+
+    def post(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        data = serializer.validated_data
+        user = getattr(serializer, 'user', None)
+        if user:
+            self._merge_anonymous_cart(request, user)
+        return Response(data, status=status.HTTP_200_OK)
 
 class ProfileView(generics.RetrieveUpdateAPIView):
     permission_classes = [permissions.IsAuthenticated]

@@ -197,11 +197,11 @@ export const updateCartItem = createAsyncThunk(
       if (connectivityService.getIsOnline()) {
         // S'assurer que la quantité est bien un nombre (préserver les décimales pour les produits au poids)
         const quantity = typeof data.quantity === 'number' ? data.quantity : parseFloat(String(data.quantity));
-        
+
         const response = await apiClient.patch(`${API_ENDPOINTS.CART}${data.itemId}/`, {
           quantity: quantity,
         });
-
+        
         return mapCartFromBackend(response.data);
       }
       return null;
@@ -290,7 +290,7 @@ export const enrichCartProducts = createAsyncThunk(
             // Récupérer les détails complets du produit via son slug
             const productResponse = await apiClient.get(`${API_ENDPOINTS.PRODUCTS}${productSlug}/`);
             const enrichedProduct = mapProductFromBackend(productResponse.data);
-            
+
             // Mettre à jour le produit avec les spécifications enrichies
             return {
               ...item,

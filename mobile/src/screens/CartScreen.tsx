@@ -109,6 +109,10 @@ const CartScreen: React.FC = () => {
     return Number(specs.available_weight_kg) || 0;
   };
 
+  const getWeightStep = (item: CartItem): number => {
+    return getWeightUnit(item) === 'g' ? 1 : 0.5;
+  };
+
   // Fonction helper pour formater la quantité (évite d'arrondir 0.999 à 1.0)
   const formatQuantity = (qty: number): string => {
     return formatWeightQuantity(qty);
@@ -140,6 +144,7 @@ const CartScreen: React.FC = () => {
         // Pour les produits au poids, vérifier le poids disponible
         const weightUnit = getWeightUnit(item);
         const availableWeight = getAvailableWeightForItem(item);
+        const step = getWeightStep(item);
         if (availableWeight > 0 && newQuantity > availableWeight) {
           Alert.alert(
             'Stock insuffisant',
@@ -147,9 +152,9 @@ const CartScreen: React.FC = () => {
           );
           return;
         }
-        // Vérifier le minimum (0.5 kg)
-        if (newQuantity < 0.5) {
-          Alert.alert('Quantité minimale', `La quantité minimale est de 0.5 ${weightUnit}`);
+        // Vérifier le minimum
+        if (newQuantity < step) {
+          Alert.alert('Quantité minimale', `La quantité minimale est de ${step} ${weightUnit}`);
           return;
         }
       } else {
@@ -198,26 +203,27 @@ const CartScreen: React.FC = () => {
     const specs = item.product.specifications || {};
     const weightUnit = getWeightUnit(item);
     const availableWeight = getAvailableWeightForItem(item);
+    const step = getWeightStep(item);
     
     // Calculer le nouveau poids
     let newWeight = currentWeight + increment;
     
-    // Normaliser au pas de 0.5 kg pour éviter les accumulations flottantes
-    newWeight = Math.round(newWeight * 2) / 2;
+    // Normaliser au pas (0.5 kg ou 1 g) pour éviter les accumulations flottantes
+    newWeight = Math.round(newWeight / step) * step;
     
-    // Appliquer le minimum de 0.5 kg
-    if (newWeight < 0.5) {
-      newWeight = 0.5;
+    // Appliquer le minimum
+    if (newWeight < step) {
+      newWeight = step;
     }
     
     // Si on augmente et qu'il y a un poids disponible, vérifier qu'il reste assez
     if (increment > 0 && availableWeight !== undefined && availableWeight > 0) {
-      // Vérifier qu'on peut ajouter au moins 0.5 kg
-      if ((currentWeight + 0.5) > availableWeight) {
-        // Pas assez de poids disponible pour ajouter 0.5 kg
+      // Vérifier qu'on peut ajouter au moins le pas
+      if ((currentWeight + step) > availableWeight) {
+        // Pas assez de poids disponible pour ajouter le pas
         Alert.alert(
           'Stock insuffisant',
-          `Poids disponible: ${formatAvailableWeight(availableWeight)} ${weightUnit}. Impossible d'ajouter 0.5 ${weightUnit}.`
+          `Poids disponible: ${formatAvailableWeight(availableWeight)} ${weightUnit}. Impossible d'ajouter ${step} ${weightUnit}.`
         );
         return;
       }
@@ -440,16 +446,16 @@ const CartScreen: React.FC = () => {
 
           {/* Contrôle de quantité/poids */}
           {isWeightedItem(item) ? (() => {
-            const specs = item.product.specifications || {};
-            const availableWeight = specs.available_weight_kg;
-            const canIncrease = !availableWeight || availableWeight === 0 || (item.quantity + 0.5) <= availableWeight;
+            const availableWeight = getAvailableWeightForItem(item);
+            const step = getWeightStep(item);
+            const canIncrease = !availableWeight || availableWeight === 0 || (item.quantity + step) <= availableWeight;
             
             return (
               <View style={styles.quantityContainer}>
                 <TouchableOpacity
-                  style={[styles.quantityButton, item.quantity <= 0.5 && styles.quantityButtonDisabled]}
-                  onPress={() => handleUpdateWeight(item.id, -0.5)}
-                  disabled={item.quantity <= 0.5}
+                  style={[styles.quantityButton, item.quantity <= step && styles.quantityButtonDisabled]}
+                  onPress={() => handleUpdateWeight(item.id, -step)}
+                  disabled={item.quantity <= step}
                   hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
                 >
                   <Text style={styles.quantityButtonText}>-</Text>
@@ -459,7 +465,7 @@ const CartScreen: React.FC = () => {
                 </Text>
                 <TouchableOpacity
                   style={[styles.quantityButton, !canIncrease && styles.quantityButtonDisabled]}
-                  onPress={() => handleUpdateWeight(item.id, 0.5)}
+                  onPress={() => handleUpdateWeight(item.id, step)}
                   disabled={!canIncrease}
                   hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
                 >
@@ -500,12 +506,26 @@ const CartScreen: React.FC = () => {
           )}
 
           {/* Avertissement stock */}
-          {item.product.stock !== undefined && 
-           item.product.stock > 0 && 
-           item.quantity >= item.product.stock && (
-            <Text style={styles.stockWarning}>
-              Stock limité: {item.product.stock} disponible{item.product.stock > 1 ? 's' : ''}
-            </Text>
+          {isWeightedItem(item) ? (() => {
+            const availableWeight = getAvailableWeightForItem(item);
+            const weightUnit = getWeightUnit(item);
+            const step = getWeightStep(item);
+            if (availableWeight > 0 && (item.quantity + step) >= availableWeight) {
+              return (
+                <Text style={styles.stockWarning}>
+                  Stock limité: {formatAvailableWeight(availableWeight)} {weightUnit}
+                </Text>
+              );
+            }
+            return null;
+          })() : (
+            item.product.stock !== undefined && 
+            item.product.stock > 0 && 
+            item.quantity >= item.product.stock && (
+              <Text style={styles.stockWarning}>
+                Stock limité: {item.product.stock} disponible{item.product.stock > 1 ? 's' : ''}
+              </Text>
+            )
           )}
         </View>
         <TouchableOpacity

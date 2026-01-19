@@ -46,9 +46,12 @@ const ProductDetailScreen: React.FC = () => {
                          specs.unit_type === 'weight' || 
                          specs.unit_type === 'kg' ||
                          specs.unit_type === 'kilogram';
-      // Pour les produits au poids, initialiser à 0.5 kg (minimum)
+      const unitRaw = specs.weight_unit || specs.unit_display || specs.unit_type;
+      const unit = unitRaw ? String(unitRaw).toLowerCase() : '';
+      const isGram = ['g', 'gram', 'gramme'].includes(unit);
+      // Pour les produits au poids, initialiser au minimum selon l'unité
       if (isWeighted) {
-        setQuantity(0.5);
+        setQuantity(isGram ? 1 : 0.5);
       } else {
         setQuantity(1);
       }
@@ -138,7 +141,9 @@ const ProductDetailScreen: React.FC = () => {
         // Pour les produits au poids, vérifier le poids disponible
         const availableWeight = getAvailableWeight(specs);
         const weightUnit = getWeightUnit(specs);
-        if (availableWeight > 0 && quantity > availableWeight) {
+        const existingQuantity = itemInCart ? (Number(itemInCart.quantity) || 0) : 0;
+        const desiredTotal = existingQuantity + quantity;
+        if (availableWeight > 0 && desiredTotal > availableWeight) {
           Alert.alert(
             'Stock insuffisant',
             `Poids disponible: ${formatAvailableWeight(availableWeight)} ${weightUnit}. Veuillez réduire la quantité.`
@@ -507,18 +512,18 @@ const ProductDetailScreen: React.FC = () => {
             {isWeighted ? (
               <>
                 <TouchableOpacity
-                  style={[styles.quantityButton, quantity <= 0.5 && styles.quantityButtonDisabled]}
+                  style={[styles.quantityButton, quantity <= (weightUnit === 'g' ? 1 : 0.5) && styles.quantityButtonDisabled]}
                   onPress={() => {
-                    const decrement = 0.5;
-                    const newWeight = Math.max(0.5, quantity - decrement);
+                    const step = weightUnit === 'g' ? 1 : 0.5;
+                    const newWeight = Math.max(step, quantity - step);
                     setQuantity(newWeight);
                   }}
-                  disabled={quantity <= 0.5}
+                  disabled={quantity <= (weightUnit === 'g' ? 1 : 0.5)}
                 >
                   <Ionicons 
                     name="remove" 
                     size={20} 
-                    color={quantity <= 0.5 ? COLORS.TEXT_SECONDARY : COLORS.TEXT} 
+                    color={quantity <= (weightUnit === 'g' ? 1 : 0.5) ? COLORS.TEXT_SECONDARY : COLORS.TEXT} 
                   />
                 </TouchableOpacity>
                 <View style={styles.quantityValueContainer}>
@@ -528,23 +533,23 @@ const ProductDetailScreen: React.FC = () => {
                 <TouchableOpacity
                   style={[
                     styles.quantityButton,
-                    (availableStock && (quantity >= availableStock || (quantity + 0.5) > availableStock)) && styles.quantityButtonDisabled
+                    (availableStock && (quantity >= availableStock || (quantity + (weightUnit === 'g' ? 1 : 0.5)) > availableStock)) && styles.quantityButtonDisabled
                   ]}
                   onPress={() => {
-                    const increment = 0.5;
-                    // Vérifier qu'il y a assez de poids disponible pour ajouter 0.5 kg
+                    const increment = weightUnit === 'g' ? 1 : 0.5;
+                    // Vérifier qu'il y a assez de poids disponible pour ajouter le pas
                     if (availableStock && (quantity + increment) > availableStock) {
                       return; // Ne pas ajouter si pas assez de poids disponible
                     }
                     const newWeight = quantity + increment;
                     setQuantity(newWeight);
                   }}
-                  disabled={availableStock ? (quantity >= availableStock || (quantity + 0.5) > availableStock) : false}
+                  disabled={availableStock ? (quantity >= availableStock || (quantity + (weightUnit === 'g' ? 1 : 0.5)) > availableStock) : false}
                 >
                   <Ionicons 
                     name="add" 
                     size={20} 
-                    color={(availableStock && (quantity >= availableStock || (quantity + 0.5) > availableStock)) ? COLORS.TEXT_SECONDARY : COLORS.TEXT} 
+                    color={(availableStock && (quantity >= availableStock || (quantity + (weightUnit === 'g' ? 1 : 0.5)) > availableStock)) ? COLORS.TEXT_SECONDARY : COLORS.TEXT} 
                   />
                 </TouchableOpacity>
               </>

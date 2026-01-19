@@ -92,7 +92,7 @@ const LoginScreen: React.FC = () => {
     >
       <View style={styles.content}>
         <View style={styles.logoContainer}>
-          <Logo size="large" showText={false} />
+          <Logo size="medium" dimension={110} showText={false} />
           <Text style={styles.appTitle}>Sugu</Text>
         </View>
         <Text style={styles.subtitle}>Connectez-vous à votre compte</Text>
@@ -223,15 +223,17 @@ const styles = StyleSheet.create({
     padding: 16,
   },
   logoContainer: {
+    flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 12,
+    alignSelf: 'center',
+    gap: 8,
+    marginBottom: 8,
   },
   appTitle: {
-    fontSize: 32,
-    fontWeight: 'bold',
+    fontSize: 24,
+    fontWeight: '700',
     color: COLORS.PRIMARY,
-    marginTop: -2,
-    letterSpacing: 1,
+    letterSpacing: 0.5,
   },
   title: {
     fontSize: 32,
@@ -241,10 +243,10 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   subtitle: {
-    fontSize: 16,
+    fontSize: 15,
     color: COLORS.TEXT_SECONDARY,
     textAlign: 'center',
-    marginBottom: 32,
+    marginBottom: 24,
   },
   form: {
     width: '100%',

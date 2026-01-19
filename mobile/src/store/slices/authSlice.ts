@@ -73,6 +73,7 @@ export const loginAsync = createAsyncThunk(
           // Détecter les erreurs de mot de passe/email incorrect
           if (
             detail.toLowerCase().includes('no active account') ||
+            detail.toLowerCase().includes('aucun compte actif') ||
             detail.toLowerCase().includes('unable to log in') ||
             detail.toLowerCase().includes('invalid credentials') ||
             detail.toLowerCase().includes('incorrect') ||
@@ -89,6 +90,7 @@ export const loginAsync = createAsyncThunk(
           
           if (
             errors.toLowerCase().includes('no active account') ||
+            errors.toLowerCase().includes('aucun compte actif') ||
             errors.toLowerCase().includes('unable to log in') ||
             errors.toLowerCase().includes('invalid credentials') ||
             errors.toLowerCase().includes('incorrect')

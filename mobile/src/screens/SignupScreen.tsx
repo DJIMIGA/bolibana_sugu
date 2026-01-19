@@ -193,7 +193,7 @@ const SignupScreen: React.FC = () => {
       >
         <View style={styles.content}>
           <View style={styles.logoContainer}>
-            <Logo size="large" showText={false} />
+            <Logo size="medium" dimension={110} showText={false} />
             <Text style={styles.appTitle}>Sugu</Text>
           </View>
           <Text style={styles.subtitle}>Créez votre compte</Text>
@@ -416,22 +416,23 @@ const styles = StyleSheet.create({
     padding: 16,
   },
   logoContainer: {
+    flexDirection: 'row',
     alignItems: 'center',
+    alignSelf: 'center',
+    gap: 8,
     marginBottom: 4,
   },
   appTitle: {
-    fontSize: 32,
-    fontWeight: 'bold',
+    fontSize: 24,
+    fontWeight: '700',
     color: COLORS.PRIMARY,
-    marginTop: -2,
-    letterSpacing: 1,
-    textAlign: 'center',
+    letterSpacing: 0.5,
   },
   subtitle: {
-    fontSize: 16,
+    fontSize: 15,
     color: COLORS.TEXT_SECONDARY,
     textAlign: 'center',
-    marginBottom: 16,
+    marginBottom: 8,
   },
   form: {
     width: '100%',
@@ -500,7 +501,7 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   linkButton: {
-    marginTop: 16,
+    marginTop: 8,
     alignItems: 'center',
   },
   linkText: {
@@ -518,7 +519,7 @@ const styles = StyleSheet.create({
   },
   cgvContainer: {
     marginTop: 8,
-    marginBottom: 16,
+    marginBottom: 8,
   },
   checkboxContainer: {
     flexDirection: 'row',
