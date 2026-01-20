@@ -172,6 +172,9 @@ export const loadUserAsync = createAsyncThunk(
       } catch (error) {
           return { token, user, isReadOnly: true, expired: true };
       }
+      } else {
+        // Si hors ligne, retourner les données en cache
+        return { token, user, isReadOnly: true, expired: false };
       }
     } catch (error: any) {
       return rejectWithValue(error.message || 'Erreur de chargement');
@@ -296,6 +299,7 @@ const authSlice = createSlice({
         state.error = null;
       })
       .addCase(loginAsync.fulfilled, (state, action) => {
+        console.log('[authSlice] loginAsync.fulfilled - user:', !!action.payload.user, 'token:', !!action.payload.access);
         state.isLoggingIn = false;
         state.isAuthenticated = true;
         state.isReadOnly = false; // Reset read-only on login
@@ -304,6 +308,13 @@ const authSlice = createSlice({
         state.user = action.payload.user;
         state.error = null;
         state.sessionExpired = false;
+        state.isLoading = false; // S'assurer que isLoading est false après connexion
+        console.log('[authSlice] loginAsync.fulfilled - État mis à jour:', {
+          isAuthenticated: state.isAuthenticated,
+          hasToken: !!state.token,
+          hasUser: !!state.user,
+          isLoading: state.isLoading
+        });
       })
       .addCase(loginAsync.rejected, (state, action) => {
         state.isLoggingIn = false;
@@ -327,23 +338,35 @@ const authSlice = createSlice({
       .addCase(loadUserAsync.fulfilled, (state, action) => {
         state.isLoading = false;
         if (action.payload) {
-          state.isAuthenticated = !action.payload.expired;
+          // Ne pas écraser isAuthenticated si l'utilisateur est déjà authentifié
+          // (par exemple, après une connexion réussie)
+          if (!state.isAuthenticated || !action.payload.expired) {
+            state.isAuthenticated = !action.payload.expired;
+          }
           state.token = action.payload.token;
           state.user = action.payload.user;
           state.isReadOnly = action.payload.isReadOnly;
           state.sessionExpired = !!action.payload.expired;
         } else {
-          state.isAuthenticated = false;
-          state.user = null;
-          state.token = null;
-          state.isReadOnly = false;
+          // Ne réinitialiser isAuthenticated que si l'utilisateur n'était pas déjà authentifié
+          // Cela évite d'écraser l'état après une connexion réussie
+          if (!state.isAuthenticated) {
+            state.isAuthenticated = false;
+            state.user = null;
+            state.token = null;
+            state.isReadOnly = false;
+          }
         }
       })
       .addCase(loadUserAsync.rejected, (state) => {
         state.isLoading = false;
-        state.isAuthenticated = false;
-        state.user = null;
-        state.token = null;
+        // Ne pas réinitialiser l'état si l'utilisateur est déjà authentifié
+        // (par exemple, après une connexion réussie)
+        if (!state.isAuthenticated) {
+          state.isAuthenticated = false;
+          state.user = null;
+          state.token = null;
+        }
       })
       // Update profile
       .addCase(updateProfileAsync.pending, (state) => {
@@ -358,9 +381,11 @@ const authSlice = createSlice({
       })
       // Fetch profile
       .addCase(fetchProfileAsync.pending, (state) => {
+        console.log('[authSlice] fetchProfileAsync.pending');
         state.error = null;
       })
       .addCase(fetchProfileAsync.fulfilled, (state, action) => {
+        console.log('[authSlice] fetchProfileAsync.fulfilled - user:', !!action.payload, 'email:', action.payload?.email);
         state.user = action.payload;
         state.error = null;
       })

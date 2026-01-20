@@ -1,6 +1,6 @@
-import React, { useEffect } from 'react';
-import { View, Text, StyleSheet, Platform } from 'react-native';
-import { NavigationContainer } from '@react-navigation/native';
+import React, { useEffect, useRef, useState } from 'react';
+import { View, Text, StyleSheet, Platform, Modal, TouchableOpacity } from 'react-native';
+import { NavigationContainer, useNavigationContainerRef } from '@react-navigation/native';
 import { createStackNavigator } from '@react-navigation/stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { Ionicons } from '@expo/vector-icons';
@@ -8,6 +8,8 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useAppSelector, useAppDispatch } from '../store/hooks';
 import { loadUserAsync } from '../store/slices/authSlice';
 import { LoadingScreen } from '../components/LoadingScreen';
+import { COLORS } from '../utils/constants';
+import Logo from '../components/Logo';
 
 // Screens
 import LoginScreen from '../screens/LoginScreen';
@@ -235,11 +237,55 @@ const AppNavigator: React.FC = () => {
   const dispatch = useAppDispatch();
   const auth = useAppSelector((state) => state.auth);
   const isLoading = auth?.isLoading;
+  const isAuthenticated = auth?.isAuthenticated;
+  const isLoggingIn = auth?.isLoggingIn;
+  const navigationRef = useNavigationContainerRef();
+  const [currentRouteName, setCurrentRouteName] = useState<string | undefined>(undefined);
+  const [isAuthModalVisible, setIsAuthModalVisible] = useState(false);
+  const [hasDismissedAuthModal, setHasDismissedAuthModal] = useState(false);
+  const authModalTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const excludedRoutes = ['Profile', 'ProfileMain', 'Login', 'Signup'];
 
   useEffect(() => {
     // Charger l'utilisateur au démarrage
     dispatch(loadUserAsync());
   }, [dispatch]);
+
+  useEffect(() => {
+    if (isAuthenticated) {
+      setHasDismissedAuthModal(false);
+    }
+  }, [isAuthenticated]);
+
+  useEffect(() => {
+    if (authModalTimerRef.current) {
+      clearTimeout(authModalTimerRef.current);
+      authModalTimerRef.current = null;
+    }
+
+    const shouldShowModal =
+      !isLoading &&
+      !isLoggingIn &&
+      !isAuthenticated &&
+      !hasDismissedAuthModal &&
+      currentRouteName &&
+      !excludedRoutes.includes(currentRouteName);
+
+    if (shouldShowModal) {
+      authModalTimerRef.current = setTimeout(() => {
+        setIsAuthModalVisible(true);
+      }, 800);
+    } else {
+      setIsAuthModalVisible(false);
+    }
+
+    return () => {
+      if (authModalTimerRef.current) {
+        clearTimeout(authModalTimerRef.current);
+        authModalTimerRef.current = null;
+      }
+    };
+  }, [isLoading, isLoggingIn, isAuthenticated, hasDismissedAuthModal, currentRouteName]);
 
   // N'afficher l'écran de chargement QUE lors du chargement initial de l'application
   // pour éviter de démonter toute la navigation lors d'un login ou d'une mise à jour de profil
@@ -248,9 +294,76 @@ const AppNavigator: React.FC = () => {
   }
 
   return (
-    <NavigationContainer fallback={<LoadingScreen />}>
+    <>
+      <NavigationContainer
+        ref={navigationRef}
+        fallback={<LoadingScreen />}
+        onReady={() => {
+          const route = navigationRef.getCurrentRoute();
+          setCurrentRouteName(route?.name);
+        }}
+        onStateChange={() => {
+          const route = navigationRef.getCurrentRoute();
+          setCurrentRouteName(route?.name);
+        }}
+      >
         <RootStack />
-    </NavigationContainer>
+      </NavigationContainer>
+      <Modal
+        visible={isAuthModalVisible}
+        animationType="fade"
+        transparent={true}
+        onRequestClose={() => setIsAuthModalVisible(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.authModalContent}>
+            <Text style={styles.authModalTitle}>Rejoignez</Text>
+            <View style={styles.authLogoContainer}>
+              <Logo size="medium" dimension={120} showText={false} />
+              <Text style={styles.authAppTitle}>Sugu</Text>
+            </View>
+            <Text style={styles.authModalSubtitle}>
+              Connectez-vous ou créez un compte pour profiter de toutes les fonctionnalités.
+            </Text>
+            <View style={styles.authModalButtons}>
+              <TouchableOpacity
+                style={[styles.authModalButton, styles.authSecondaryButton]}
+                onPress={() => {
+                  setIsAuthModalVisible(false);
+                  setHasDismissedAuthModal(true);
+                  if (navigationRef.isReady()) {
+                    navigationRef.navigate('Profile' as never, { screen: 'Signup' } as never);
+                  }
+                }}
+              >
+                <Text style={styles.authSecondaryText}>Créer un compte</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.authModalButton, styles.authPrimaryButton]}
+                onPress={() => {
+                  setIsAuthModalVisible(false);
+                  setHasDismissedAuthModal(true);
+                  if (navigationRef.isReady()) {
+                    navigationRef.navigate('Profile' as never, { screen: 'Login' } as never);
+                  }
+                }}
+              >
+                <Text style={styles.authPrimaryText}>Se connecter</Text>
+              </TouchableOpacity>
+            </View>
+            <TouchableOpacity
+              style={styles.authCloseButton}
+              onPress={() => {
+                setIsAuthModalVisible(false);
+                setHasDismissedAuthModal(true);
+              }}
+            >
+              <Text style={styles.authCloseText}>Plus tard</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
+    </>
   );
 };
 
@@ -281,6 +394,88 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
     fontSize: 10,
     fontWeight: '700',
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  authModalContent: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 12,
+    paddingHorizontal: 20,
+    paddingTop: 8,
+    paddingBottom: 28,
+    width: '90%',
+    maxWidth: 400,
+    alignItems: 'center',
+  },
+  authLogoContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    alignSelf: 'center',
+    gap: 8,
+    marginBottom: 4,
+  },
+  authAppTitle: {
+    fontSize: 26,
+    fontWeight: '700',
+    color: COLORS.PRIMARY,
+    letterSpacing: 0.5,
+  },
+  authModalTitle: {
+    fontSize: 20,
+    fontWeight: '700',
+    color: COLORS.TEXT,
+    marginTop: 0,
+    marginBottom: 6,
+    textAlign: 'center',
+  },
+  authModalSubtitle: {
+    fontSize: 14,
+    color: COLORS.TEXT_SECONDARY,
+    textAlign: 'center',
+    marginBottom: 24,
+    lineHeight: 20,
+  },
+  authModalButtons: {
+    flexDirection: 'row',
+    gap: 8,
+    width: '100%',
+    marginBottom: 12,
+  },
+  authModalButton: {
+    flex: 1,
+    paddingVertical: 12,
+    borderRadius: 8,
+    alignItems: 'center',
+  },
+  authPrimaryButton: {
+    backgroundColor: COLORS.PRIMARY,
+  },
+  authSecondaryButton: {
+    backgroundColor: 'transparent',
+    borderWidth: 2,
+    borderColor: COLORS.PRIMARY,
+  },
+  authPrimaryText: {
+    color: '#FFFFFF',
+    fontSize: 15,
+    fontWeight: '600',
+  },
+  authSecondaryText: {
+    color: COLORS.PRIMARY,
+    fontSize: 15,
+    fontWeight: '600',
+  },
+  authCloseButton: {
+    marginTop: 4,
+  },
+  authCloseText: {
+    color: COLORS.TEXT_SECONDARY,
+    fontSize: 14,
+    fontWeight: '500',
   },
 });
 

@@ -6,6 +6,7 @@ import { offlineCacheService } from '../../services/offlineCacheService';
 import { connectivityService } from '../../services/connectivityService';
 import { syncService } from '../../services/syncService';
 import { mapCartFromBackend, mapProductFromBackend } from '../../utils/mappers';
+import { logoutAsync } from './authSlice';
 
 interface CartState {
   cart: Cart | null;
@@ -473,6 +474,16 @@ const cartSlice = createSlice({
       .addCase(clearCart.rejected, (state, action) => {
         state.isLoading = false;
         state.error = action.payload as string;
+      })
+      // Logout
+      .addCase(logoutAsync.fulfilled, (state) => {
+        state.cart = null;
+        state.items = [];
+        state.total = 0;
+        state.itemsCount = 0;
+        state.isLoading = false;
+        state.error = null;
+        state.lastUpdateTimestamp = 0;
       });
   },
 });

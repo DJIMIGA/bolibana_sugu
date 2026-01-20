@@ -42,16 +42,11 @@ const ProductDetailScreen: React.FC = () => {
   useEffect(() => {
     if (selectedProduct) {
       const specs = selectedProduct.specifications || {};
-      const isWeighted = specs.sold_by_weight === true || 
-                         specs.unit_type === 'weight' || 
-                         specs.unit_type === 'kg' ||
-                         specs.unit_type === 'kilogram';
-      const unitRaw = specs.weight_unit || specs.unit_display || specs.unit_type;
-      const unit = unitRaw ? String(unitRaw).toLowerCase() : '';
-      const isGram = ['g', 'gram', 'gramme'].includes(unit);
+      const isWeighted = isWeightedProduct(specs);
+      const weightUnit = getWeightUnit(specs);
       // Pour les produits au poids, initialiser au minimum selon l'unité
       if (isWeighted) {
-        setQuantity(isGram ? 1 : 0.5);
+        setQuantity(weightUnit === 'g' ? 1 : 0.5);
       } else {
         setQuantity(1);
       }
@@ -130,14 +125,11 @@ const ProductDetailScreen: React.FC = () => {
 
     // Détecter si c'est un produit au poids (utiliser la même logique que dans le JSX)
     const specs = selectedProduct.specifications || {};
-    const isWeightedProduct = specs.sold_by_weight === true || 
-                              specs.unit_type === 'weight' || 
-                              specs.unit_type === 'kg' ||
-                              specs.unit_type === 'kilogram';
+    const isWeighted = isWeightedProduct(specs);
 
     // Vérifier le stock (sauf pour les produits Salam)
     if (!selectedProduct.is_salam) {
-      if (isWeightedProduct) {
+      if (isWeighted) {
         // Pour les produits au poids, vérifier le poids disponible
         const availableWeight = getAvailableWeight(specs);
         const weightUnit = getWeightUnit(specs);
@@ -150,9 +142,10 @@ const ProductDetailScreen: React.FC = () => {
           );
           return;
         }
-        // Vérifier le minimum (0.5 kg)
-        if (quantity < 0.5) {
-          Alert.alert('Quantité minimale', `La quantité minimale est de 0.5 ${weightUnit}`);
+        const minQuantity = weightUnit === 'g' ? 1 : 0.5;
+        // Vérifier le minimum (0.5 kg ou 1 g)
+        if (quantity < minQuantity) {
+          Alert.alert('Quantité minimale', `La quantité minimale est de ${minQuantity} ${weightUnit}`);
           return;
         }
       } else {
@@ -204,6 +197,25 @@ const ProductDetailScreen: React.FC = () => {
     return unit;
   };
 
+  const isWeightedProduct = (specsData: any): boolean => {
+    const specs = specsData || {};
+    const soldByWeight = specs.sold_by_weight;
+    const isSoldByWeight = soldByWeight === true || (
+      typeof soldByWeight === 'string' && ['true', '1', 'yes'].includes(soldByWeight.toLowerCase())
+    );
+    const unitRaw = specs.weight_unit || specs.unit_display || specs.unit_type;
+    const unit = unitRaw ? String(unitRaw).toLowerCase() : '';
+    const hasWeightFields = specs.available_weight_kg !== undefined ||
+      specs.available_weight_g !== undefined ||
+      specs.price_per_kg !== undefined ||
+      specs.price_per_g !== undefined ||
+      specs.discount_price_per_kg !== undefined ||
+      specs.discount_price_per_g !== undefined;
+    return isSoldByWeight ||
+      ['weight', 'kg', 'kilogram', 'g', 'gram', 'gramme'].includes(unit) ||
+      hasWeightFields;
+  };
+
   const getAvailableWeight = (specsData: any): number => {
     const unit = getWeightUnit(specsData);
     if (unit === 'g') {
@@ -215,10 +227,7 @@ const ProductDetailScreen: React.FC = () => {
 
   // Vérifier si c'est un produit au poids
   const specs = selectedProduct.specifications || {};
-  const isWeighted = specs.sold_by_weight === true || 
-                     specs.unit_type === 'weight' || 
-                     specs.unit_type === 'kg' ||
-                     specs.unit_type === 'kilogram';
+  const isWeighted = isWeightedProduct(specs);
   const weightUnit = getWeightUnit(specs);
 
   // Vérifier la disponibilité du stock (poids pour les produits au poids, unités pour les autres)

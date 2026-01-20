@@ -10,6 +10,7 @@ import {
   Platform,
   ScrollView,
   Linking,
+  Keyboard,
 } from 'react-native';
 import { useAppDispatch, useAppSelector } from '../store/hooks';
 import { useNavigation } from '@react-navigation/native';
@@ -185,7 +186,8 @@ const SignupScreen: React.FC = () => {
   return (
     <KeyboardAvoidingView
       style={styles.container}
-      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+      enabled={Platform.OS === 'ios'}
     >
       <ScrollView
         contentContainerStyle={styles.scrollContent}
@@ -229,6 +231,7 @@ const SignupScreen: React.FC = () => {
                     if (errors.last_name) setErrors({ ...errors, last_name: '' });
                   }}
                   autoCapitalize="words"
+                  returnKeyType="next"
                 />
                 {errors.last_name && (
                   <Text style={styles.errorText}>{errors.last_name}</Text>
@@ -250,6 +253,7 @@ const SignupScreen: React.FC = () => {
                 keyboardType="email-address"
                 autoCapitalize="none"
                 autoCorrect={false}
+                returnKeyType="next"
               />
               {errors.email && (
                 <Text style={styles.errorText}>{errors.email}</Text>
@@ -268,6 +272,7 @@ const SignupScreen: React.FC = () => {
                   if (errors.phone) setErrors({ ...errors, phone: '' });
                 }}
                 keyboardType="phone-pad"
+                returnKeyType="next"
               />
               {errors.phone && (
                 <Text style={styles.errorText}>{errors.phone}</Text>
@@ -288,6 +293,7 @@ const SignupScreen: React.FC = () => {
                   }}
                   secureTextEntry={!showPassword}
                   autoCapitalize="none"
+                  returnKeyType="next"
                 />
                 <TouchableOpacity
                   style={styles.passwordToggle}
@@ -319,6 +325,9 @@ const SignupScreen: React.FC = () => {
                   }}
                   secureTextEntry={!showPasswordConfirm}
                   autoCapitalize="none"
+                  returnKeyType="done"
+                  blurOnSubmit={true}
+                  onSubmitEditing={Keyboard.dismiss}
                 />
                 <TouchableOpacity
                   style={styles.passwordToggle}

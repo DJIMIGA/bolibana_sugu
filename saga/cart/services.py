@@ -9,6 +9,53 @@ from django.utils import timezone
 
 class CartService:
     """Service pour gérer la logique métier du panier"""
+
+    @staticmethod
+    def _is_weighted_product(product):
+        specs = product.specifications or {}
+        sold_by_weight = specs.get('sold_by_weight')
+        is_sold_by_weight = sold_by_weight is True or (
+            isinstance(sold_by_weight, str) and sold_by_weight.lower() in ['true', '1', 'yes']
+        )
+        unit_raw = specs.get('weight_unit') or specs.get('unit_display') or specs.get('unit_type')
+        unit = str(unit_raw).lower() if unit_raw is not None else ''
+        has_gram_fields = specs.get('available_weight_g') is not None or specs.get('price_per_g') is not None or specs.get('discount_price_per_g') is not None
+        return is_sold_by_weight or unit in ['weight', 'kg', 'kilogram', 'g', 'gram', 'gramme'] or has_gram_fields
+
+    @staticmethod
+    def _get_weight_unit(product):
+        specs = product.specifications or {}
+        unit_raw = specs.get('weight_unit') or specs.get('unit_display') or specs.get('unit_type')
+        if not unit_raw:
+            if specs.get('available_weight_g') is not None or specs.get('price_per_g') is not None or specs.get('discount_price_per_g') is not None:
+                return 'g'
+            return 'kg'
+        unit = str(unit_raw).lower()
+        if unit in ['weight', 'kg', 'kilogram']:
+            return 'kg'
+        if unit in ['g', 'gram', 'gramme']:
+            return 'g'
+        return unit
+
+    @staticmethod
+    def _get_available_weight(product):
+        specs = product.specifications or {}
+        unit = CartService._get_weight_unit(product)
+        if unit == 'g':
+            available_g = specs.get('available_weight_g')
+            if available_g is not None:
+                return Decimal(str(available_g))
+            available_kg = specs.get('available_weight_kg')
+            if available_kg is not None:
+                return Decimal(str(available_kg)) * Decimal('1000')
+            return Decimal('0')
+        available_kg = specs.get('available_weight_kg')
+        if available_kg is not None:
+            return Decimal(str(available_kg))
+        available_g = specs.get('available_weight_g')
+        if available_g is not None:
+            return Decimal(str(available_g)) / Decimal('1000')
+        return Decimal('0')
     
     @staticmethod
     def add_to_cart(cart, product, quantity=1):
@@ -31,7 +78,12 @@ class CartService:
                 
                 # Pour les produits classiques, vérifier le stock
                 if not product.is_salam:
-                    if not product.can_order(quantity):
+                    if CartService._is_weighted_product(product):
+                        unit = CartService._get_weight_unit(product)
+                        available_weight = CartService._get_available_weight(product)
+                        if Decimal(str(quantity)) > available_weight:
+                            return False, f"Stock insuffisant. Disponible: {available_weight} {unit}"
+                    elif not product.can_order(quantity):
                         return False, f"Stock insuffisant. Il ne reste que {product.stock} unité(s) disponible(s)"
                 
                 # Chercher un item existant avec le même produit
@@ -96,7 +148,12 @@ class CartService:
                 
                 # Pour les produits classiques, vérifier le stock
                 if not product.is_salam:
-                    if not product.can_order(new_quantity):
+                    if CartService._is_weighted_product(product):
+                        unit = CartService._get_weight_unit(product)
+                        available_weight = CartService._get_available_weight(product)
+                        if Decimal(str(new_quantity)) > available_weight:
+                            return False, f"Stock insuffisant. Disponible: {available_weight} {unit}"
+                    elif not product.can_order(new_quantity):
                         return False, f"Stock insuffisant. Il ne reste que {product.stock} unité(s) disponible(s)"
                 
                 cart_item.quantity = new_quantity
@@ -155,8 +212,17 @@ class CartService:
             
             # Pour les produits classiques, vérifier le stock
             if not product.is_salam:
-                if not product.can_order(item.quantity):
-                    errors.append(f"Stock insuffisant pour '{product.title}'. Il ne reste que {product.stock} unité(s) disponible(s)")
+                if CartService._is_weighted_product(product):
+                    unit = CartService._get_weight_unit(product)
+                    available_weight = CartService._get_available_weight(product)
+                    if Decimal(str(item.quantity)) > available_weight:
+                        errors.append(
+                            f"Stock insuffisant pour '{product.title}'. "
+                            f"Disponible: {available_weight} {unit}"
+                        )
+                else:
+                    if not product.can_order(item.quantity):
+                        errors.append(f"Stock insuffisant pour '{product.title}'. Il ne reste que {product.stock} unité(s) disponible(s)")
         
         return len(errors) == 0, errors
     
@@ -235,8 +301,17 @@ class CartService:
                 
                 # Vérifier le stock uniquement pour les produits classiques
                 if not product.is_salam:
-                    if not product.can_order(item.quantity):
-                        errors.append(f"Stock insuffisant pour '{product.title}' (demandé: {item.quantity}, disponible: {product.stock})")
+                    if CartService._is_weighted_product(product):
+                        unit = CartService._get_weight_unit(product)
+                        available_weight = CartService._get_available_weight(product)
+                        if Decimal(str(item.quantity)) > available_weight:
+                            errors.append(
+                                f"Stock insuffisant pour '{product.title}' "
+                                f"(demandé: {item.quantity} {unit}, disponible: {available_weight} {unit})"
+                            )
+                    else:
+                        if not product.can_order(item.quantity):
+                            errors.append(f"Stock insuffisant pour '{product.title}' (demandé: {item.quantity}, disponible: {product.stock})")
             
             return len(errors) == 0, errors
                 

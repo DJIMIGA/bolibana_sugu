@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   View,
   Text,
@@ -8,11 +8,13 @@ import {
   Alert,
   KeyboardAvoidingView,
   Platform,
+  ScrollView,
+  Keyboard,
 } from 'react-native';
 import { useAppDispatch, useAppSelector } from '../store/hooks';
 import { loginAsync } from '../store/slices/authSlice';
 import { useErrorHandler } from '../hooks/useErrorHandler';
-import { useNavigation } from '@react-navigation/native';
+import { CommonActions, useNavigation, useRoute } from '@react-navigation/native';
 import { COLORS } from '../utils/constants';
 import Logo from '../components/Logo';
 import { Ionicons } from '@expo/vector-icons';
@@ -21,12 +23,55 @@ import { LoadingScreen } from '../components/LoadingScreen';
 const LoginScreen: React.FC = () => {
   const dispatch = useAppDispatch();
   const navigation = useNavigation();
-  const { isLoggingIn, error, sessionExpired, isAuthenticated } = useAppSelector((state) => state.auth);
+  const route = useRoute<any>();
+  const { isLoggingIn, error, sessionExpired, isAuthenticated, user, token } = useAppSelector((state) => state.auth);
   const { handleError, getUserMessage } = useErrorHandler();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [loginError, setLoginError] = useState<string | null>(null);
+  const [isHandlingLogin, setIsHandlingLogin] = useState(false); // Flag pour indiquer qu'on est en train de gérer la connexion
+  const passwordInputRef = useRef<TextInput>(null);
+  const redirectTo = route?.params?.redirectTo;
+
+  const redirectAfterLogin = () => {
+    const nav = navigation as any;
+    const parentNav = nav.getParent?.();
+
+    if (redirectTo === 'Checkout') {
+      if (parentNav?.navigate) {
+        parentNav.navigate('CartTab', { screen: 'Checkout' });
+      }
+    } else if (parentNav?.navigate) {
+      parentNav.navigate('Home');
+    }
+
+    // Nettoyer la stack du profil pour éviter de revenir sur Login
+    if (nav.popToTop) {
+      nav.popToTop();
+    } else if (nav.dispatch) {
+      nav.dispatch(
+        CommonActions.reset({
+          index: 0,
+          routes: [{ name: 'ProfileMain' }],
+        })
+      );
+    } else if (nav.goBack) {
+      nav.goBack();
+    }
+  };
+
+  // Log à l'affichage de l'écran de connexion
+  useEffect(() => {
+    console.log('[LoginScreen] 🟢 ECRAN DE CONNEXION AFFICHE - État:', {
+      isLoggingIn,
+      isAuthenticated,
+      hasUser: !!user,
+      hasToken: !!token,
+      sessionExpired,
+      hasError: !!error
+    });
+  }, []);
 
   useEffect(() => {
     if (sessionExpired) {
@@ -38,37 +83,63 @@ const LoginScreen: React.FC = () => {
     }
   }, [sessionExpired]);
 
-  // SUPPRIMÉ : Plus de useEffect qui écoute isAuthenticated ou loginSuccess
-  // Cela évite toute redirection automatique non désirée
-  // La navigation se fera UNIQUEMENT dans handleLogin en cas de succès explicite
+  // Rediriger automatiquement si l'utilisateur est déjà connecté
+  // Mais seulement si on n'est pas en train de gérer la connexion manuellement
+  // Cela évite la double navigation pendant handleLogin
+  useEffect(() => {
+    // Ne pas naviguer si on est en train de se connecter ou si handleLogin gère la navigation
+    if (isLoggingIn || isHandlingLogin) {
+      return;
+    }
+    
+    if (isAuthenticated && user && token) {
+      console.log('[LoginScreen] Utilisateur déjà connecté (useEffect), redirection après login...');
+      redirectAfterLogin();
+    }
+  }, [isAuthenticated, user, token, navigation, isHandlingLogin, isLoggingIn, redirectTo]);
 
   const handleLogin = async () => {
+    console.log('[LoginScreen] handleLogin appelé');
     setLoginError(null);
+    setIsHandlingLogin(true); // Marquer qu'on gère la connexion manuellement
     
     if (!email || !password) {
       setLoginError('Veuillez remplir tous les champs');
+      setIsHandlingLogin(false);
       return;
     }
 
     try {
+      console.log('[LoginScreen] Début de la connexion...');
       setLoginError(null);
       
       const result = await dispatch(loginAsync({ email, password })).unwrap();
+      console.log('[LoginScreen] Connexion réussie, result:', {
+        hasUser: !!result?.user,
+        hasAccess: !!result?.access,
+        userEmail: result?.user?.email
+      });
       
       // Vérifier explicitement que la connexion a réussi avec tous les éléments nécessaires
       if (result && result.user && result.access) {
+        console.log('[LoginScreen] Tous les éléments présents, navigation immédiate...');
         setLoginError(null);
         
-        // Attendre un peu pour s'assurer que le state Redux est complètement mis à jour
-        await new Promise(resolve => setTimeout(resolve, 300));
-        
-        // Navigation EXPLICITE uniquement en cas de succès
-        const nav = navigation as any;
-        if (nav.goBack) {
-          nav.goBack();
-        }
+        // Navigation immédiate sans délai pour éviter l'affichage du profil
+        // Le state Redux est déjà mis à jour par loginAsync.fulfilled
+        redirectAfterLogin();
+        console.log('[LoginScreen] Navigation effectuée');
+        // Ne pas réinitialiser ici : l'écran va se démonter après la navigation
+      } else {
+        console.warn('[LoginScreen] Connexion réussie mais éléments manquants:', {
+          hasResult: !!result,
+          hasUser: !!result?.user,
+          hasAccess: !!result?.access
+        });
       }
     } catch (err: any) {
+      console.error('[LoginScreen] Erreur de connexion:', err);
+      setIsHandlingLogin(false); // Réinitialiser le flag en cas d'erreur
       // En cas d'erreur avec unwrap(), err est directement le message d'erreur (string)
       // renvoyé par rejectWithValue dans authSlice.ts
       const errorMessage = typeof err === 'string' ? err : getUserMessage(err);
@@ -81,16 +152,32 @@ const LoginScreen: React.FC = () => {
     }
   };
 
-  if (isLoggingIn) {
+  // Log à chaque render
+  console.log('[LoginScreen] RENDER - isLoggingIn:', isLoggingIn, 'isAuthenticated:', isAuthenticated, 'hasUser:', !!user, 'hasToken:', !!token);
+
+  // Si l'utilisateur est déjà connecté, ne pas afficher le formulaire
+  // (la redirection sera gérée par le useEffect ci-dessus)
+  if (isAuthenticated && user && token) {
+    console.log('[LoginScreen] Utilisateur connecté, affichage LoadingScreen en attendant redirection');
     return <LoadingScreen />;
   }
 
+  if (isLoggingIn) {
+    console.log('[LoginScreen] Affichage LoadingScreen (isLoggingIn)');
+    return <LoadingScreen />;
+  }
+
+  console.log('[LoginScreen] Affichage formulaire de connexion');
   return (
     <KeyboardAvoidingView
       style={styles.container}
-      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+      enabled={Platform.OS === 'ios'}
     >
-      <View style={styles.content}>
+      <ScrollView
+        contentContainerStyle={styles.content}
+        keyboardShouldPersistTaps="handled"
+      >
         <View style={styles.logoContainer}>
           <Logo size="medium" dimension={110} showText={false} />
           <Text style={styles.appTitle}>Sugu</Text>
@@ -113,6 +200,8 @@ const LoginScreen: React.FC = () => {
             keyboardType="email-address"
             autoCapitalize="none"
             autoCorrect={false}
+            returnKeyType="next"
+            onSubmitEditing={() => passwordInputRef.current?.focus()}
           />
 
           <View style={[
@@ -120,6 +209,7 @@ const LoginScreen: React.FC = () => {
             (loginError || error) && styles.passwordContainerError
           ]}>
             <TextInput
+              ref={passwordInputRef}
               style={styles.passwordInput}
               placeholder="Mot de passe"
               placeholderTextColor={COLORS.TEXT_SECONDARY}
@@ -130,6 +220,9 @@ const LoginScreen: React.FC = () => {
               }}
               secureTextEntry={!showPassword}
               autoCapitalize="none"
+              returnKeyType="done"
+              blurOnSubmit={true}
+              onSubmitEditing={Keyboard.dismiss}
             />
             <TouchableOpacity
               style={styles.passwordToggle}
@@ -207,7 +300,7 @@ const LoginScreen: React.FC = () => {
             </Text>
           </TouchableOpacity>
         </View>
-      </View>
+      </ScrollView>
     </KeyboardAvoidingView>
   );
 };

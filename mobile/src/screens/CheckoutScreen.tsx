@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import {
   View,
   Text,
+  Image,
   StyleSheet,
   ScrollView,
   TouchableOpacity,
@@ -102,17 +103,74 @@ const CheckoutScreen: React.FC = () => {
   const isWeightedProduct = (product: Product | null | undefined): boolean => {
     if (!product) return false;
     const specs = product.specifications || {};
-    return specs.sold_by_weight === true || 
-           specs.unit_type === 'weight' || 
-           specs.unit_type === 'kg' ||
-           specs.unit_type === 'kilogram';
+    const soldByWeight = specs.sold_by_weight;
+    const isSoldByWeight = soldByWeight === true || (
+      typeof soldByWeight === 'string' && ['true', '1', 'yes'].includes(soldByWeight.toLowerCase())
+    );
+    const unitRaw = specs.weight_unit || specs.unit_display || specs.unit_type;
+    const unit = unitRaw ? String(unitRaw).toLowerCase() : '';
+    const hasWeightFields = specs.available_weight_kg !== undefined ||
+      specs.available_weight_g !== undefined ||
+      specs.price_per_kg !== undefined ||
+      specs.price_per_g !== undefined ||
+      specs.discount_price_per_kg !== undefined ||
+      specs.discount_price_per_g !== undefined;
+    return isSoldByWeight ||
+      ['weight', 'kg', 'kilogram', 'g', 'gram', 'gramme'].includes(unit) ||
+      hasWeightFields;
   };
 
-  // Obtenir le prix unitaire (au kg pour les produits au poids, unitaire pour les autres)
+  const getWeightUnit = (product: Product | null | undefined): 'kg' | 'g' => {
+    const specs = product?.specifications || {};
+    const unitRaw = specs.weight_unit || specs.unit_display || specs.unit_type;
+    if (!unitRaw) {
+      return (specs.available_weight_g !== undefined || specs.price_per_g !== undefined || specs.discount_price_per_g !== undefined) ? 'g' : 'kg';
+    }
+    const unit = String(unitRaw).toLowerCase();
+    if (['g', 'gram', 'gramme'].includes(unit)) return 'g';
+    return 'kg';
+  };
+
+  const formatWeightQuantity = (quantity: number, unit: 'kg' | 'g'): string => {
+    if (unit === 'g') {
+      return Number.isFinite(quantity) ? String(Math.round(quantity)) : '0';
+    }
+    if (quantity % 1 === 0) return quantity.toString();
+    return quantity.toFixed(3).replace(/\.?0+$/, '');
+  };
+
+  // Obtenir le prix unitaire (au kg/g pour les produits au poids, unitaire pour les autres)
   const getUnitPrice = (item: CartItem): number => {
     const product = item.product;
     if (isWeightedProduct(product)) {
       const specs = product.specifications || {};
+      const unit = getWeightUnit(product);
+      if (unit === 'g') {
+        const discountPricePerG = specs.discount_price_per_g;
+        if (discountPricePerG && discountPricePerG > 0) {
+          if (__DEV__) {
+            console.log('[CheckoutScreen] ⚖️ Prix unitaire (promo au g):', {
+              productId: product.id,
+              productTitle: product.title,
+              discountPricePerG,
+              quantity: item.quantity,
+            });
+          }
+          return discountPricePerG;
+        }
+        const pricePerG = specs.price_per_g;
+        if (pricePerG) {
+          if (__DEV__) {
+            console.log('[CheckoutScreen] ⚖️ Prix unitaire (normal au g):', {
+              productId: product.id,
+              productTitle: product.title,
+              pricePerG,
+              quantity: item.quantity,
+            });
+          }
+          return pricePerG;
+        }
+      }
       // Vérifier d'abord s'il y a un prix promotionnel au kg
       const discountPricePerKg = specs.discount_price_per_kg;
       if (discountPricePerKg && discountPricePerKg > 0) {
@@ -139,7 +197,7 @@ const CheckoutScreen: React.FC = () => {
         }
         return pricePerKg;
       }
-      // Fallback sur le prix du produit si price_per_kg n'est pas défini
+      // Fallback sur le prix du produit si price_per_kg/g n'est pas défini
       if (__DEV__) {
         console.log('[CheckoutScreen] ⚖️ Prix unitaire (fallback):', {
           productId: product.id,
@@ -286,15 +344,28 @@ const CheckoutScreen: React.FC = () => {
               const unitPrice = getUnitPrice(item);
               const variantInfo = getVariantInfo(product);
               const isWeighted = isWeightedProduct(product);
+              const weightUnit = isWeighted ? getWeightUnit(product) : 'kg';
+              const imageUrl = product?.image || product?.image_urls?.main;
               return (
               <View key={item.id} style={styles.itemRow}>
+                {imageUrl ? (
+                  <Image
+                    source={{ uri: imageUrl }}
+                    style={styles.itemImage}
+                    resizeMode="cover"
+                  />
+                ) : (
+                  <View style={styles.itemImagePlaceholder}>
+                    <Ionicons name="image-outline" size={20} color={COLORS.TEXT_SECONDARY} />
+                  </View>
+                )}
                 <View style={styles.itemInfo}>
                   <Text style={styles.itemName} numberOfLines={1}>
                     {getProductTitle(product)}
                   </Text>
                   {variantInfo ? <Text style={styles.itemVariant}>{variantInfo}</Text> : null}
                   <Text style={styles.itemQuantity}>
-                    {isWeighted ? 'Poids' : 'Quantité'}: {isWeighted ? `${item.quantity.toFixed(1)} kg` : item.quantity} × {formatPrice(unitPrice)} / {isWeighted ? 'kg' : 'unité'}
+                    {isWeighted ? 'Poids' : 'Quantité'}: {isWeighted ? `${formatWeightQuantity(item.quantity, weightUnit)} ${weightUnit}` : item.quantity} × {formatPrice(unitPrice)} / {isWeighted ? weightUnit : 'unité'}
                   </Text>
                 </View>
                 <Text style={styles.itemSubtotal}>
@@ -319,6 +390,7 @@ const CheckoutScreen: React.FC = () => {
                           productId: item.product.id,
                           productTitle: item.product.title,
                           isWeighted: isWeightedProduct(item.product),
+                          weightUnit: isWeightedProduct(item.product) ? getWeightUnit(item.product) : 'unité',
                           quantity: item.quantity,
                           unitPrice: getUnitPrice(item),
                           itemTotal: getUnitPrice(item) * item.quantity,
@@ -472,6 +544,22 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     marginBottom: 12,
+  },
+  itemImage: {
+    width: 44,
+    height: 44,
+    borderRadius: 8,
+    marginRight: 12,
+    backgroundColor: '#F3F4F6',
+  },
+  itemImagePlaceholder: {
+    width: 44,
+    height: 44,
+    borderRadius: 8,
+    marginRight: 12,
+    backgroundColor: '#F3F4F6',
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   itemInfo: {
     flex: 1,

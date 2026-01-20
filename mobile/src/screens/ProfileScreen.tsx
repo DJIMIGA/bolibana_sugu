@@ -14,19 +14,23 @@ import {
 import { useAppDispatch, useAppSelector } from '../store/hooks';
 import { logoutAsync, updateProfileAsync, fetchProfileAsync, fetchLoyaltyInfoAsync } from '../store/slices/authSlice';
 import { useNavigation } from '@react-navigation/native';
-import { COLORS } from '../utils/constants';
-import { formatDate, formatPrice } from '../utils/helpers';
+import { COLORS, STORAGE_KEYS } from '../utils/constants';
+import { cleanErrorForLog, formatDate, formatPrice } from '../utils/helpers';
 import { Ionicons } from '@expo/vector-icons';
 import Logo from '../components/Logo';
 import { LoadingScreen } from '../components/LoadingScreen';
+import * as SecureStore from 'expo-secure-store';
 
 const ProfileScreen: React.FC = () => {
   const dispatch = useAppDispatch();
   const navigation = useNavigation();
-  const { user, isLoading, error, loyaltyInfo, isLoadingLoyalty } = useAppSelector((state) => state.auth);
+  const { user, isLoading, error, loyaltyInfo, isLoadingLoyalty, isAuthenticated, isLoggingIn, token } = useAppSelector((state) => state.auth);
   const [refreshing, setRefreshing] = useState(false);
   const [isEditModalVisible, setIsEditModalVisible] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  const [checkingToken, setCheckingToken] = useState(true); // État pour vérifier le token dans le storage
+  const [hasTokenInStorage, setHasTokenInStorage] = useState(false); // Mémoriser si on a trouvé un token dans le storage
+  const [isTransitioning, setIsTransitioning] = useState(false); // État pour éviter l'affichage pendant la transition
   const [editForm, setEditForm] = useState({
     full_name: '',
     phone: '',
@@ -34,12 +38,99 @@ const ProfileScreen: React.FC = () => {
     password: '',
   });
 
+  // Vérifier directement dans le storage si un token existe
+  // Cela évite d'afficher l'écran de login pendant le chargement après une connexion
+  useEffect(() => {
+    // Ne vérifier qu'une seule fois au montage si on n'a pas de token dans le state
+    if (token || isAuthenticated || user) {
+      // Si on a déjà un token/user, pas besoin de vérifier le storage
+      if (!hasTokenInStorage && (token || isAuthenticated)) {
+        setHasTokenInStorage(true);
+      }
+      if (checkingToken) {
+        setCheckingToken(false);
+      }
+      return;
+    }
+
+    // Vérifier le storage seulement si on n'a vraiment rien
+    let isMounted = true;
+    const checkTokenInStorage = async () => {
+      try {
+        const storedToken = await SecureStore.getItemAsync(STORAGE_KEYS.AUTH_TOKEN);
+        const hasToken = !!storedToken;
+        if (isMounted) {
+          setHasTokenInStorage(hasToken);
+          setCheckingToken(false);
+          
+          // Si on a un token dans le storage mais pas dans le state Redux, charger le profil
+          if (hasToken && !token && !user) {
+            dispatch(fetchProfileAsync());
+          }
+        }
+      } catch (error) {
+        if (isMounted) {
+          setHasTokenInStorage(false);
+          setCheckingToken(false);
+        }
+      }
+    };
+    
+    checkTokenInStorage();
+    
+    return () => {
+      isMounted = false;
+    };
+  }, []); // Exécuter seulement au montage
+
+  // Réinitialiser l'état local quand l'utilisateur se déconnecte
+  useEffect(() => {
+    if (checkingToken) {
+      return;
+    }
+    if (!token && !isAuthenticated && !user) {
+      setHasTokenInStorage(false);
+      setIsTransitioning(false);
+    }
+  }, [checkingToken, token, isAuthenticated, user]);
+
   useEffect(() => {
     if (user) {
       // Charger les informations de fidélité
       dispatch(fetchLoyaltyInfoAsync());
     }
   }, [dispatch, user]);
+
+
+  // Détecter quand on vient de se connecter pour éviter l'affichage pendant la transition
+  useEffect(() => {
+    // Si on vient juste de se connecter (isLoggingIn passe de true à false)
+    if (!isLoggingIn && isAuthenticated && user && token) {
+      // Afficher le loading pendant un court instant pour la transition
+      setIsTransitioning(true);
+      const timer = setTimeout(() => {
+        setIsTransitioning(false);
+      }, 300); // 300ms pour permettre à la navigation de se terminer
+      return () => clearTimeout(timer);
+    }
+  }, [isLoggingIn, isAuthenticated, user, token]);
+
+  // Charger le profil si on est authentifié mais qu'on n'a pas encore de user
+  // Cela se produit après une connexion réussie ou lors du chargement initial
+  useEffect(() => {
+    // Si on a un token OU qu'on est authentifié, mais pas encore de user, charger le profil
+    if ((token || isAuthenticated) && !user) {
+      dispatch(fetchProfileAsync());
+    }
+  }, [dispatch, token, isAuthenticated, user]);
+
+  // Détecter quand on affiche l'écran d'invitation (non connecté) - seulement pour le debug
+  // useEffect(() => {
+  //   const shouldShowInvitation = !isLoading && !isLoggingIn && !checkingToken && !token && !isAuthenticated && !hasTokenInStorage && !user;
+  //   if (shouldShowInvitation) {
+  //     console.log('[ProfileScreen] 🟡 ECRAN D\'INVITATION AFFICHE (useEffect)');
+  //   }
+  // }, [isLoading, isLoggingIn, checkingToken, token, isAuthenticated, hasTokenInStorage, user]);
 
   const handleLogout = () => {
     Alert.alert(
@@ -164,17 +255,33 @@ const ProfileScreen: React.FC = () => {
     }
   };
 
-  if (isLoading) {
+  // Logs pour le débogage (réduits pour éviter les re-renders)
+  // console.log('[ProfileScreen] RENDER - isLoading:', isLoading, 'isLoggingIn:', isLoggingIn, 'checkingToken:', checkingToken);
+  // console.log('[ProfileScreen] RENDER - token:', !!token, 'isAuthenticated:', isAuthenticated, 'hasTokenInStorage:', hasTokenInStorage);
+  // console.log('[ProfileScreen] RENDER - user:', !!user, 'user email:', user?.email);
+
+  // Afficher le loading pendant le chargement initial, la connexion, la vérification du token, ou la transition
+  if (isLoading || isLoggingIn || checkingToken || isTransitioning) {
     return <LoadingScreen />;
   }
 
-  if (!user) {
+  // PRIORITÉ 1: Si on a un token (dans le state ou dans le storage) ou qu'on est authentifié
+  // On affiche le loading si on n'a pas encore de user, sinon on affiche le profil
+  if (token || isAuthenticated || hasTokenInStorage) {
+    if (!user) {
+      // On a un token/isAuthenticated mais pas encore de user : on charge le profil
+      // Le useEffect va charger le profil, on affiche le loading
+      return <LoadingScreen />;
+    }
+    // On a un user : on affiche le profil (continuera plus bas)
+  } else {
+    // Pas de token, pas authentifié, pas de token dans le storage, et vérification terminée : afficher l'écran de login
     return (
       <View style={styles.container}>
         <View style={styles.notLoggedInContainer}>
           <View style={styles.notLoggedInContent}>
             <View style={styles.logoContainer}>
-              <Logo size="large" showText={false} />
+              <Logo size="medium" dimension={110} showText={false} />
               <Text style={styles.appTitle}>Sugu</Text>
             </View>
             <Text style={styles.notLoggedInTitle}>Votre Compte</Text>
@@ -204,7 +311,6 @@ const ProfileScreen: React.FC = () => {
             <TouchableOpacity
               style={styles.loginButton}
               onPress={() => {
-                // Naviguer vers l'écran de connexion
                 (navigation as any).navigate('Login');
               }}
             >
@@ -880,16 +986,17 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   logoContainer: {
+    flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 20,
+    alignSelf: 'center',
+    gap: 8,
+    marginBottom: 8,
   },
   appTitle: {
-    fontSize: 32,
-    fontWeight: 'bold',
+    fontSize: 24,
+    fontWeight: '700',
     color: COLORS.PRIMARY,
-    marginTop: -4,
-    letterSpacing: 1,
-    textAlign: 'center',
+    letterSpacing: 0.5,
   },
   iconContainer: {
     marginBottom: 24,

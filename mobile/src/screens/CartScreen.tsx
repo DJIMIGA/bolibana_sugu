@@ -293,7 +293,7 @@ const CartScreen: React.FC = () => {
             text: 'Se connecter',
             onPress: () => {
               try {
-                (navigation as any).navigate('Profile', { screen: 'Login' });
+                (navigation as any).navigate('Profile', { screen: 'Login', params: { redirectTo: 'Checkout' } });
               } catch {
                 // no-op
               }
