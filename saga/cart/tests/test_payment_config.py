@@ -18,7 +18,7 @@ from cart.payment_config import (
     get_available_payment_methods, 
     get_payment_method_display_name,
     is_payment_method_available,
-    get_disabled_method_message
+    get_disabled_payment_method_message
 )
 
 def test_payment_config():
@@ -42,7 +42,7 @@ def test_payment_config():
     print("\n⚠️ Messages pour méthodes désactivées :")
     for method in ['mobile_money', 'online_payment']:
         if not is_payment_method_available(method):
-            message = get_disabled_method_message(method)
+            message = get_disabled_payment_method_message(method)
             print(f"  - {method} : {message['title']}")
             print(f"    {message['message']}")
     
