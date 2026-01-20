@@ -19,8 +19,19 @@ class CartService:
         )
         unit_raw = specs.get('weight_unit') or specs.get('unit_display') or specs.get('unit_type')
         unit = str(unit_raw).lower() if unit_raw is not None else ''
-        has_gram_fields = specs.get('available_weight_g') is not None or specs.get('price_per_g') is not None or specs.get('discount_price_per_g') is not None
-        return is_sold_by_weight or unit in ['weight', 'kg', 'kilogram', 'g', 'gram', 'gramme'] or has_gram_fields
+        has_weight_fields = (
+            specs.get('available_weight_g') is not None
+            or specs.get('available_weight_kg') is not None
+            or specs.get('price_per_g') is not None
+            or specs.get('price_per_kg') is not None
+            or specs.get('discount_price_per_g') is not None
+            or specs.get('discount_price_per_kg') is not None
+        )
+        return (
+            is_sold_by_weight
+            or unit in ['weight', 'kg', 'kilogram', 'g', 'gram', 'gramme', 'grams', 'grammes', 'gr', 'gms', 'gm']
+            or has_weight_fields
+        )
 
     @staticmethod
     def _get_weight_unit(product):
@@ -33,7 +44,7 @@ class CartService:
         unit = str(unit_raw).lower()
         if unit in ['weight', 'kg', 'kilogram']:
             return 'kg'
-        if unit in ['g', 'gram', 'gramme']:
+        if unit in ['g', 'gram', 'gramme', 'grams', 'grammes', 'gr', 'gms', 'gm']:
             return 'g'
         return unit
 
