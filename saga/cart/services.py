@@ -232,8 +232,28 @@ class CartService:
                             f"Disponible: {available_weight} {unit}"
                         )
                 else:
-                    if not product.can_order(item.quantity):
-                        errors.append(f"Stock insuffisant pour '{product.title}'. Il ne reste que {product.stock} unité(s) disponible(s)")
+                    # Vérifier d'abord si c'est peut-être un produit au poids mal détecté
+                    # (double vérification pour éviter les faux négatifs)
+                    specs = product.specifications or {}
+                    has_weight_fields = (
+                        specs.get('available_weight_g') is not None
+                        or specs.get('available_weight_kg') is not None
+                        or specs.get('price_per_g') is not None
+                        or specs.get('price_per_kg') is not None
+                    )
+                    if has_weight_fields:
+                        # C'est probablement un produit au poids, vérifier le poids disponible
+                        unit = CartService._get_weight_unit(product)
+                        available_weight = CartService._get_available_weight(product)
+                        if Decimal(str(item.quantity)) > available_weight:
+                            errors.append(
+                                f"Stock insuffisant pour '{product.title}'. "
+                                f"Disponible: {available_weight} {unit}"
+                            )
+                    else:
+                        # Produit normal, vérifier le stock en unités
+                        if not product.can_order(item.quantity):
+                            errors.append(f"Stock insuffisant pour '{product.title}'. Il ne reste que {product.stock} unité(s) disponible(s)")
         
         return len(errors) == 0, errors
     

@@ -32,6 +32,16 @@ Ce dossier contient tous les tests pour le système de commandes mixtes de SagaK
 - **Validation** : Tests des contraintes de données
 - **Statuts** : Gestion des statuts de commande
 
+### 5. Tests Produits au Poids (`test_weighted_products_validation.py`)
+- **Validation de stock** : Tests de validation pour produits au poids (g/kg)
+- **Messages d'erreur** : Vérification des messages avec unités correctes
+- **Double vérification** : Détection des produits au poids même mal identifiés
+- **Conversion Stripe** : Tests de conversion pour paiement Stripe
+  - Produits en grammes (quantité >= 1)
+  - Produits en kg < 1 kg (prix total avec quantité = 1)
+  - Produits en kg >= 1 kg (quantité utilisée telle quelle)
+  - Produits normaux (quantité en unités)
+
 ## Exécution des Tests
 
 ### Tous les tests
@@ -49,6 +59,9 @@ python manage.py test cart.tests.test_mixed_orders_functional.MixedOrderFunction
 
 # Tests de modèles uniquement
 python manage.py test cart.tests.test_mixed_orders_models.MixedOrderModelsTestCase
+
+# Tests produits au poids
+python manage.py test cart.tests.test_weighted_products_validation
 ```
 
 ### Script personnalisé
@@ -70,6 +83,9 @@ Les tests couvrent les aspects suivants :
 - [x] Flux utilisateur complet
 - [x] Gestion des erreurs
 - [x] Authentification et autorisations
+- [x] Validation des produits au poids (grammes/kg)
+- [x] Messages d'erreur avec unités correctes
+- [x] Conversion Stripe pour produits au poids
 
 ### 🔄 Scénarios Testés
 - **Panier vide** : Redirection appropriée

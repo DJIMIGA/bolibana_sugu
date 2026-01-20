@@ -435,13 +435,40 @@ class CartViewSet(viewsets.ModelViewSet):
                     
                     line_items = []
                     for item in order.items.all():
+                        # Pour Stripe, la quantité doit être >= 1
+                        # Calculer le prix total de l'item
+                        total_price = Decimal(str(item.price)) * Decimal(str(item.quantity))
+                        quantity_decimal = Decimal(str(item.quantity))
+                        is_weighted = self._is_weighted_product(item.product)
+                        
+                        if is_weighted:
+                            unit = self._get_weight_unit(item.product)
+                            
+                            if unit == 'kg' and quantity_decimal < Decimal('1'):
+                                # Pour les quantités < 1 kg, utiliser le prix total et quantité = 1
+                                # Cela évite les problèmes de conversion et garantit le bon total
+                                stripe_quantity = 1
+                                stripe_unit_amount = int(float(total_price))
+                            elif unit == 'g':
+                                # Pour les grammes, la quantité est déjà >= 1 normalement
+                                stripe_quantity = max(1, int(float(quantity_decimal)))
+                                stripe_unit_amount = int(float(item.price))
+                            else:
+                                # Pour les kg >= 1, utiliser la quantité telle quelle
+                                stripe_quantity = max(1, int(float(quantity_decimal)))
+                                stripe_unit_amount = int(float(item.price))
+                        else:
+                            # Produit normal, utiliser la quantité telle quelle (arrondie à l'entier supérieur)
+                            stripe_quantity = max(1, int(float(quantity_decimal)))
+                            stripe_unit_amount = int(float(item.price))
+                        
                         line_items.append({
                             'price_data': {
                                 'currency': 'xof',
                                 'product_data': {'name': item.product.title},
-                                'unit_amount': int(item.price),
+                                'unit_amount': stripe_unit_amount,
                             },
-                            'quantity': int(float(item.quantity)),  # Stripe nécessite un entier pour quantity
+                            'quantity': stripe_quantity,  # Stripe nécessite un entier >= 1 pour quantity
                         })
                     
                     # Ajouter les frais de livraison
