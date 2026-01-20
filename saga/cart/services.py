@@ -19,6 +19,7 @@ class CartService:
         )
         unit_raw = specs.get('weight_unit') or specs.get('unit_display') or specs.get('unit_type')
         unit = str(unit_raw).lower() if unit_raw is not None else ''
+        normalized_unit = unit.replace(' ', '')
         has_weight_fields = (
             specs.get('available_weight_g') is not None
             or specs.get('available_weight_kg') is not None
@@ -30,6 +31,8 @@ class CartService:
         return (
             is_sold_by_weight
             or unit in ['weight', 'kg', 'kilogram', 'g', 'gram', 'gramme', 'grams', 'grammes', 'gr', 'gms', 'gm']
+            or ('kg' in normalized_unit)
+            or (normalized_unit.endswith('g') and normalized_unit != 'kg')
             or has_weight_fields
         )
 
@@ -42,9 +45,14 @@ class CartService:
                 return 'g'
             return 'kg'
         unit = str(unit_raw).lower()
+        normalized_unit = unit.replace(' ', '')
         if unit in ['weight', 'kg', 'kilogram']:
             return 'kg'
         if unit in ['g', 'gram', 'gramme', 'grams', 'grammes', 'gr', 'gms', 'gm']:
+            return 'g'
+        if 'kg' in normalized_unit:
+            return 'kg'
+        if normalized_unit.endswith('g'):
             return 'g'
         return unit
 
@@ -106,7 +114,12 @@ class CartService:
                     
                     # Vérifier le stock pour les produits classiques
                     if not product.is_salam:
-                        if not product.can_order(new_quantity):
+                        if CartService._is_weighted_product(product):
+                            unit = CartService._get_weight_unit(product)
+                            available_weight = CartService._get_available_weight(product)
+                            if Decimal(str(new_quantity)) > available_weight:
+                                return False, f"Stock insuffisant. Disponible: {available_weight} {unit}"
+                        elif not product.can_order(new_quantity):
                             return False, f"Quantité totale ({new_quantity}) dépasse le stock disponible ({product.stock})"
                     
                     existing_item.quantity = new_quantity

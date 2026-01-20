@@ -18,6 +18,7 @@ import apiClient from '../services/api';
 import type { ShippingAddress, CartItem, Product } from '../types';
 import * as WebBrowser from 'expo-web-browser';
 import { LoadingScreen } from '../components/LoadingScreen';
+import { fetchCart } from '../store/slices/cartSlice';
 
 const CheckoutScreen: React.FC = () => {
   const navigation = useNavigation();
@@ -74,6 +75,11 @@ const CheckoutScreen: React.FC = () => {
     const status = error?.response?.status;
     const msg = (error?.message || '').toString().toLowerCase();
     return status === 401 || msg.includes('session expirée') || msg.includes('session expiree');
+  };
+
+  const isStockInsufficientError = (message: string): boolean => {
+    const msg = (message || '').toLowerCase();
+    return msg.includes('stock insuffisant');
   };
 
   const getProductTitle = (product?: Product | null): string => {
@@ -307,7 +313,19 @@ const CheckoutScreen: React.FC = () => {
       }
     } catch (error: any) {
       const msg = error?.response?.data?.error || 'Une erreur est survenue lors de la commande';
-      Alert.alert('Erreur', msg);
+      if (isStockInsufficientError(msg)) {
+        // Re-synchroniser le panier et revenir à l'écran panier
+        dispatch(fetchCart());
+        Alert.alert('Stock insuffisant', msg, [
+          {
+            text: 'Voir le panier',
+            onPress: () => navigation.goBack(),
+          },
+          { text: 'OK' },
+        ]);
+      } else {
+        Alert.alert('Erreur', msg);
+      }
     } finally {
       setIsProcessing(false);
     }

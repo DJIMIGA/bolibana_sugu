@@ -31,8 +31,17 @@ class CartViewSet(viewsets.ModelViewSet):
         )
         unit_raw = specs.get('weight_unit') or specs.get('unit_display') or specs.get('unit_type')
         unit = str(unit_raw).lower() if unit_raw is not None else ''
+        normalized_unit = unit.replace(' ', '')
         has_gram_fields = specs.get('available_weight_g') is not None or specs.get('price_per_g') is not None or specs.get('discount_price_per_g') is not None
-        return is_sold_by_weight or unit in ['weight', 'kg', 'kilogram', 'g', 'gram', 'gramme'] or has_gram_fields
+        has_kg_fields = specs.get('available_weight_kg') is not None or specs.get('price_per_kg') is not None or specs.get('discount_price_per_kg') is not None
+        return (
+            is_sold_by_weight
+            or unit in ['weight', 'kg', 'kilogram', 'g', 'gram', 'gramme']
+            or ('kg' in normalized_unit)
+            or (normalized_unit.endswith('g') and normalized_unit != 'kg')
+            or has_gram_fields
+            or has_kg_fields
+        )
 
     def _get_weight_unit(self, product):
         specs = product.specifications or {}
@@ -43,9 +52,14 @@ class CartViewSet(viewsets.ModelViewSet):
                 return 'g'
             return 'kg'
         unit = str(unit_raw).lower()
+        normalized_unit = unit.replace(' ', '')
         if unit in ['weight', 'kg', 'kilogram']:
             return 'kg'
         if unit in ['g', 'gram', 'gramme']:
+            return 'g'
+        if 'kg' in normalized_unit:
+            return 'kg'
+        if normalized_unit.endswith('g'):
             return 'g'
         return unit
 
@@ -69,6 +83,13 @@ class CartViewSet(viewsets.ModelViewSet):
         if available_g is not None:
             return Decimal(str(available_g)) / Decimal('1000')
         return Decimal('0')
+
+    def _clear_user_cart(self, user):
+        if not user:
+            return
+        cart = Cart.objects.filter(user=user).first()
+        if cart:
+            cart.cart_items.all().delete()
 
     def get_queryset(self):
         """Retourne le panier de l'utilisateur connecté ou anonyme"""
@@ -461,29 +482,37 @@ class CartViewSet(viewsets.ModelViewSet):
                             'quantity': stripe_quantity,  # Stripe nécessite un entier >= 1 pour quantity
                         })
                     
-                    # Ajouter les frais de livraison
-                    line_items.append({
-                        'price_data': {
-                            'currency': 'xof',
-                            'product_data': {'name': 'Frais de livraison'},
-                            'unit_amount': int(order.shipping_cost),
-                        },
-                        'quantity': 1,
-                    })
+                    # Ajouter les frais de livraison uniquement si > 0
+                    shipping_cost = int(order.shipping_cost)
+                    if shipping_cost > 0:
+                        line_items.append({
+                            'price_data': {
+                                'currency': 'xof',
+                                'product_data': {'name': 'Frais de livraison'},
+                                'unit_amount': shipping_cost,
+                            },
+                            'quantity': 1,
+                        })
 
                     checkout_session = stripe.checkout.Session.create(
                         customer_email=user.email,
                         payment_method_types=['card'],
                         line_items=line_items,
                         mode='payment',
-                        success_url=f"{domain_url}/cart/success/?session_id={{CHECKOUT_SESSION_ID}}&order_id={order.id}",
-                        cancel_url=f"{domain_url}/cart/cancel/?order_id={order.id}",
-                        metadata={'order_id': order.id, 'mobile': 'true'}
+                        success_url=f"{domain_url}/api/cart/payment-success/?session_id={{CHECKOUT_SESSION_ID}}&order_id={order.id}",
+                        cancel_url=f"{domain_url}/api/cart/payment-cancel/?order_id={order.id}",
+                        metadata={
+                            'order_id': str(order.id),
+                            'cart_id': str(cart.id),
+                            'user_id': str(user.id),
+                            'payment_method': payment_method,
+                            'mobile': 'true'
+                        }
                     )
                     
                     order.stripe_session_id = checkout_session.id
                     order.save()
-                    
+
                     return Response({
                         'order_id': order.id,
                         'checkout_url': checkout_session.url,
@@ -496,8 +525,8 @@ class CartViewSet(viewsets.ModelViewSet):
                         'amount': int(order.total * 100),  # Orange Money veut des centimes? Non, FCFA? 
                         # Selon orange_money_service.py: format_amount multiplie par 100
                         'amount': orange_money_service.format_amount(float(order.total)),
-                        'return_url': f"{domain_url}/cart/success/?order_id={order.id}",
-                        'cancel_url': f"{domain_url}/cart/cancel/?order_id={order.id}",
+                        'return_url': f"{domain_url}/api/cart/orange-money-return/?order_id={order.id}",
+                        'cancel_url': f"{domain_url}/api/cart/orange-money-cancel/?order_id={order.id}",
                         'notif_url': f"{domain_url}/api/cart/orange-money-webhook/",
                         'reference': f"CMD-{order.id}"
                     }
@@ -508,6 +537,14 @@ class CartViewSet(viewsets.ModelViewSet):
                             response_data.get('pay_token'), 
                             response_data.get('payment_url')
                         )
+                        metadata = order.metadata or {}
+                        metadata.update({
+                            'orange_money_pay_token': response_data.get('pay_token'),
+                            'orange_money_notif_token': response_data.get('notif_token'),
+                            'orange_money_order_number': order.order_number
+                        })
+                        order.metadata = metadata
+                        order.save(update_fields=['metadata'])
                         return Response({
                             'order_id': order.id,
                             'checkout_url': payment_url,
@@ -532,3 +569,113 @@ class CartViewSet(viewsets.ModelViewSet):
         except Exception as e:
             logger.error(f"Checkout Error: {str(e)}")
             return Response({'error': f"Erreur lors de la commande: {str(e)}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR) 
+
+    @action(detail=False, methods=['get'], url_path='payment-success', permission_classes=[AllowAny])
+    def payment_success(self, request):
+        session_id = request.GET.get('session_id')
+        order_id = request.GET.get('order_id')
+        if not session_id:
+            return Response({'error': 'session_id manquant'}, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            stripe.api_key = settings.STRIPE_SECRET_KEY
+            session = stripe.checkout.Session.retrieve(session_id)
+
+            if session.payment_status != 'paid':
+                return Response({'status': 'pending', 'message': 'Paiement non confirmé'}, status=status.HTTP_200_OK)
+
+            order = None
+            metadata_order_id = session.metadata.get('order_id') if session.metadata else None
+            if metadata_order_id:
+                order = Order.objects.filter(id=metadata_order_id).first()
+            if not order and order_id:
+                order = Order.objects.filter(id=order_id).first()
+            if not order:
+                order = Order.objects.filter(stripe_session_id=session_id).first()
+            if not order:
+                return Response({'error': 'Commande introuvable'}, status=status.HTTP_404_NOT_FOUND)
+
+            order.stripe_session_id = session.id
+            order.stripe_payment_status = session.payment_status
+            if not order.is_paid:
+                order.mark_as_paid()
+            else:
+                order.save(update_fields=['stripe_session_id', 'stripe_payment_status'])
+
+            self._clear_user_cart(order.user)
+
+            return Response({
+                'status': 'success',
+                'message': 'Paiement confirmé, panier vidé',
+                'order_id': order.id
+            })
+        except Exception as e:
+            logger.error(f"Payment success error: {str(e)}")
+            return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+    @action(detail=False, methods=['get'], url_path='payment-cancel', permission_classes=[AllowAny])
+    def payment_cancel(self, request):
+        return Response({'status': 'cancelled', 'message': 'Paiement annulé'})
+
+    @action(detail=False, methods=['get'], url_path='orange-money-return', permission_classes=[AllowAny])
+    def orange_money_return(self, request):
+        order_id = request.GET.get('order_id')
+        if not order_id:
+            return Response({'error': 'order_id manquant'}, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            order = Order.objects.filter(id=order_id).first()
+            if not order:
+                return Response({'error': 'Commande introuvable'}, status=status.HTTP_404_NOT_FOUND)
+
+            metadata = order.metadata or {}
+            pay_token = metadata.get('orange_money_pay_token')
+            if not pay_token:
+                return Response({'error': 'pay_token manquant'}, status=status.HTTP_400_BAD_REQUEST)
+
+            amount_cents = orange_money_service.format_amount(float(order.total))
+            success, status_data = orange_money_service.check_transaction_status(
+                order.order_number,
+                amount_cents,
+                pay_token
+            )
+
+            if not success:
+                return Response({'status': 'pending', 'message': status_data.get('error', 'Paiement non confirmé')}, status=status.HTTP_200_OK)
+
+            if status_data.get('status') == 'SUCCESS' or status_data.get('handled_status') is True:
+                if not order.is_paid:
+                    order.mark_as_paid()
+                self._clear_user_cart(order.user)
+                return Response({
+                    'status': 'success',
+                    'message': 'Paiement Orange Money confirmé, panier vidé',
+                    'order_id': order.id
+                })
+
+            return Response({'status': 'pending', 'message': status_data.get('status_message', 'Paiement en attente')}, status=status.HTTP_200_OK)
+        except Exception as e:
+            logger.error(f"Orange Money return error: {str(e)}")
+            return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+    @action(detail=False, methods=['get'], url_path='orange-money-cancel', permission_classes=[AllowAny])
+    def orange_money_cancel(self, request):
+        return Response({'status': 'cancelled', 'message': 'Paiement Orange Money annulé'})
+
+    @action(detail=False, methods=['post'], url_path='orange-money-webhook', permission_classes=[AllowAny])
+    def orange_money_webhook(self, request):
+        try:
+            notification_data = request.data or {}
+            status_value = notification_data.get('status')
+            notif_token = notification_data.get('notif_token')
+
+            if not status_value or not notif_token:
+                return Response({'error': 'Notification invalide'}, status=status.HTTP_400_BAD_REQUEST)
+
+            if status_value not in ['SUCCESS', 'FAILED', 'PENDING', 'EXPIRED', 'INITIATED']:
+                return Response({'error': 'Statut invalide'}, status=status.HTTP_400_BAD_REQUEST)
+
+            return Response({'status': 'ok'})
+        except Exception as e:
+            logger.error(f"Orange Money webhook error: {str(e)}")
+            return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
