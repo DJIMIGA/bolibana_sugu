@@ -386,8 +386,8 @@ class StripeWeightedProductsConversionTestCase(TestCase):
         
         # Vérifications
         self.assertEqual(len(line_items), 1)
-        self.assertEqual(line_items[0]['quantity'], 1)  # 1g = 1
-        self.assertEqual(line_items[0]['price_data']['unit_amount'], 25)  # Prix par gramme
+        self.assertEqual(line_items[0]['quantity'], 1)  # Toujours 1 pour produits au poids
+        self.assertEqual(line_items[0]['price_data']['unit_amount'], 25)  # Prix total (1g * 25)
     
     @patch('cart.api.views.stripe.checkout.Session.create')
     def test_stripe_conversion_kg_small(self, mock_stripe_create):
@@ -429,20 +429,12 @@ class StripeWeightedProductsConversionTestCase(TestCase):
             is_weighted = view._is_weighted_product(item.product)
             
             if is_weighted:
-                unit = view._get_weight_unit(item.product)
-                
-                if unit == 'kg' and quantity_decimal < Decimal('1'):
-                    stripe_quantity = 1
-                    stripe_unit_amount = int(float(total_price))
-                elif unit == 'g':
-                    stripe_quantity = max(1, int(float(quantity_decimal)))
-                    stripe_unit_amount = int(float(item.price))
-                else:
-                    stripe_quantity = max(1, int(float(quantity_decimal)))
-                    stripe_unit_amount = int(float(item.price))
+                # Pour tous les produits au poids, utiliser le prix total avec quantité = 1
+                stripe_quantity = 1
+                stripe_unit_amount = max(1, int(float(total_price)))
             else:
                 stripe_quantity = max(1, int(float(quantity_decimal)))
-                stripe_unit_amount = int(float(item.price))
+                stripe_unit_amount = max(1, int(float(item.price)))
             
             line_items.append({
                 'price_data': {
@@ -498,20 +490,12 @@ class StripeWeightedProductsConversionTestCase(TestCase):
             is_weighted = view._is_weighted_product(item.product)
             
             if is_weighted:
-                unit = view._get_weight_unit(item.product)
-                
-                if unit == 'kg' and quantity_decimal < Decimal('1'):
-                    stripe_quantity = 1
-                    stripe_unit_amount = int(float(total_price))
-                elif unit == 'g':
-                    stripe_quantity = max(1, int(float(quantity_decimal)))
-                    stripe_unit_amount = int(float(item.price))
-                else:
-                    stripe_quantity = max(1, int(float(quantity_decimal)))
-                    stripe_unit_amount = int(float(item.price))
+                # Pour tous les produits au poids, utiliser le prix total avec quantité = 1
+                stripe_quantity = 1
+                stripe_unit_amount = max(1, int(float(total_price)))
             else:
                 stripe_quantity = max(1, int(float(quantity_decimal)))
-                stripe_unit_amount = int(float(item.price))
+                stripe_unit_amount = max(1, int(float(item.price)))
             
             line_items.append({
                 'price_data': {
@@ -524,8 +508,8 @@ class StripeWeightedProductsConversionTestCase(TestCase):
         
         # Vérifications
         self.assertEqual(len(line_items), 1)
-        self.assertEqual(line_items[0]['quantity'], 2)  # 2.5 arrondi à 2 (max(1, int(2.5)))
-        self.assertEqual(line_items[0]['price_data']['unit_amount'], 200)  # Prix par kg
+        self.assertEqual(line_items[0]['quantity'], 1)  # Toujours 1 pour produits au poids
+        self.assertEqual(line_items[0]['price_data']['unit_amount'], 500)  # Prix total (2.5 * 200)
     
     @patch('cart.api.views.stripe.checkout.Session.create')
     def test_stripe_conversion_normal_product(self, mock_stripe_create):
@@ -567,20 +551,12 @@ class StripeWeightedProductsConversionTestCase(TestCase):
             is_weighted = view._is_weighted_product(item.product)
             
             if is_weighted:
-                unit = view._get_weight_unit(item.product)
-                
-                if unit == 'kg' and quantity_decimal < Decimal('1'):
-                    stripe_quantity = 1
-                    stripe_unit_amount = int(float(total_price))
-                elif unit == 'g':
-                    stripe_quantity = max(1, int(float(quantity_decimal)))
-                    stripe_unit_amount = int(float(item.price))
-                else:
-                    stripe_quantity = max(1, int(float(quantity_decimal)))
-                    stripe_unit_amount = int(float(item.price))
+                # Pour tous les produits au poids, utiliser le prix total avec quantité = 1
+                stripe_quantity = 1
+                stripe_unit_amount = max(1, int(float(total_price)))
             else:
                 stripe_quantity = max(1, int(float(quantity_decimal)))
-                stripe_unit_amount = int(float(item.price))
+                stripe_unit_amount = max(1, int(float(item.price)))
             
             line_items.append({
                 'price_data': {
