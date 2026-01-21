@@ -411,8 +411,21 @@ class CartViewSet(viewsets.ModelViewSet):
         address = get_object_or_404(ShippingAddress, id=address_id, user=user)
         
         # Valider le panier
+        logger.warning(
+            "Checkout start - user=%s cart=%s items=%s product_type=%s payment=%s",
+            user.id,
+            cart.id,
+            cart.cart_items.count(),
+            product_type,
+            payment_method,
+        )
         is_valid, errors = CartService.validate_cart_for_checkout(cart, product_type)
         if not is_valid:
+            logger.warning(
+                "Checkout validation failed - cart=%s errors=%s",
+                cart.id,
+                errors,
+            )
             return Response({'error': errors[0] if errors else 'Panier invalide'}, status=status.HTTP_400_BAD_REQUEST)
             
         # Déterminer la méthode de livraison par défaut (la première disponible)
