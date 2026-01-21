@@ -253,6 +253,8 @@ class CartService:
                         or specs.get('available_weight_kg') is not None
                         or specs.get('price_per_g') is not None
                         or specs.get('price_per_kg') is not None
+                        or specs.get('discount_price_per_g') is not None
+                        or specs.get('discount_price_per_kg') is not None
                     )
                     if has_weight_fields:
                         # C'est probablement un produit au poids, vérifier le poids disponible

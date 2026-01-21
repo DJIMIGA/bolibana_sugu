@@ -454,6 +454,14 @@ class CartViewSet(viewsets.ModelViewSet):
                 if payment_method == 'stripe' or payment_method == 'online_payment':
                     stripe.api_key = settings.STRIPE_SECRET_KEY
                     
+                    logger.info(
+                        "Checkout Stripe - order=%s cart=%s items=%s total=%s shipping=%s",
+                        order.id,
+                        cart.id,
+                        cart.cart_items.count(),
+                        order.total,
+                        order.shipping_cost,
+                    )
                     line_items = []
                     for item in order.items.all():
                         # Pour Stripe, la quantité doit être >= 1 et unit_amount >= 1
@@ -461,6 +469,8 @@ class CartViewSet(viewsets.ModelViewSet):
                         total_price = Decimal(str(item.price)) * Decimal(str(item.quantity))
                         quantity_decimal = Decimal(str(item.quantity))
                         is_weighted = self._is_weighted_product(item.product)
+                        weight_unit = self._get_weight_unit(item.product) if is_weighted else 'unité'
+                        specs = item.product.specifications or {}
                         
                         if is_weighted:
                             # Pour tous les produits au poids, utiliser le prix total avec quantité = 1
@@ -472,6 +482,21 @@ class CartViewSet(viewsets.ModelViewSet):
                             # Produit normal, utiliser la quantité telle quelle (arrondie à l'entier supérieur)
                             stripe_quantity = max(1, int(float(quantity_decimal)))
                             stripe_unit_amount = max(1, int(float(item.price)))  # S'assurer que >= 1 XOF
+
+                        logger.info(
+                            "Checkout Stripe item - product=%s title=%s qty=%s is_weighted=%s unit=%s "
+                            "price=%s total=%s stripe_qty=%s stripe_amount=%s specs_keys=%s",
+                            item.product.id,
+                            item.product.title,
+                            item.quantity,
+                            is_weighted,
+                            weight_unit,
+                            item.price,
+                            total_price,
+                            stripe_quantity,
+                            stripe_unit_amount,
+                            list(specs.keys()),
+                        )
                         
                         line_items.append({
                             'price_data': {
