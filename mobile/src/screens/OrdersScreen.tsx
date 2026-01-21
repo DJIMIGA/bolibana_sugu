@@ -18,6 +18,8 @@ type OrderItemLite = {
   product_title: string;
   quantity: number;
   price: string;
+  weight_unit?: string | null;
+  is_weighted?: boolean;
 };
 
 type OrderLite = {
@@ -110,7 +112,11 @@ const OrdersScreen: React.FC = () => {
                   {order.items.map((item) => (
                     <View key={item.id} style={styles.itemRow}>
                       <Text style={styles.itemTitle}>{item.product_title}</Text>
-                      <Text style={styles.itemQty}>x{item.quantity}</Text>
+                      <Text style={styles.itemQty}>
+                        {item.is_weighted && item.weight_unit
+                          ? `${item.quantity} ${item.weight_unit}`
+                          : `x${item.quantity}`}
+                      </Text>
                     </View>
                   ))}
                 </View>

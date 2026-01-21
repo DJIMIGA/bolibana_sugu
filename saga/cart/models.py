@@ -356,12 +356,35 @@ class OrderItem(models.Model):
 
     def __str__(self):
         return f"{self.quantity} of {self.product.title} in Order {self.order.id}"
+
+    def get_weight_unit(self):
+        if not self.product or not self.product.specifications:
+            return 'kg'
+        specs = self.product.specifications
+        unit_raw = specs.get('weight_unit') or specs.get('unit_display') or specs.get('unit_type')
+        if not unit_raw:
+            if specs.get('available_weight_g') is not None or specs.get('price_per_g') is not None or specs.get('discount_price_per_g') is not None:
+                return 'g'
+            return 'kg'
+        unit = str(unit_raw).lower()
+        if unit in ['weight', 'kg', 'kilogram']:
+            return 'kg'
+        if unit in ['g', 'gram', 'gramme']:
+            return 'g'
+        return unit
     
     def get_total_price(self):
-        # Pour les produits au poids, utiliser le prix au kg depuis les spécifications
+        # Pour les produits au poids, utiliser le prix au kg/g depuis les spécifications
         if self.product and hasattr(self.product, 'specifications') and self.product.specifications:
             specs = self.product.specifications
-            if specs.get('sold_by_weight') or specs.get('unit_type') in ['weight', 'kg', 'kilogram']:
+            unit = self.get_weight_unit()
+            sold_by_weight = specs.get('sold_by_weight') is True or unit in ['kg', 'g']
+            if sold_by_weight:
+                if unit == 'g':
+                    price_per_g = specs.get('discount_price_per_g') or specs.get('price_per_g')
+                    if price_per_g:
+                        from decimal import Decimal
+                        return Decimal(str(price_per_g)) * Decimal(str(self.quantity))
                 # Produit au poids : utiliser price_per_kg
                 price_per_kg = specs.get('discount_price_per_kg') or specs.get('price_per_kg')
                 if price_per_kg:

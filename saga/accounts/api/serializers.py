@@ -5,13 +5,28 @@ from cart.models import Order, OrderItem
 
 class OrderItemSerializer(serializers.ModelSerializer):
     product_title = serializers.SerializerMethodField()
+    weight_unit = serializers.SerializerMethodField()
+    is_weighted = serializers.SerializerMethodField()
 
     class Meta:
         model = OrderItem
-        fields = ['id', 'product_title', 'quantity', 'price']
+        fields = ['id', 'product_title', 'quantity', 'price', 'weight_unit', 'is_weighted']
 
     def get_product_title(self, obj):
         return obj.product.title if obj.product else ''
+
+    def get_weight_unit(self, obj):
+        try:
+            unit = obj.get_weight_unit()
+            return unit if unit else None
+        except Exception:
+            return None
+
+    def get_is_weighted(self, obj):
+        try:
+            return obj.get_weight_unit() in ['kg', 'g']
+        except Exception:
+            return False
 
 
 class OrderSerializer(serializers.ModelSerializer):
