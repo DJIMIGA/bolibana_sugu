@@ -16,7 +16,7 @@ from cart.orange_money_service import orange_money_service
 import stripe
 import logging
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger("cart.checkout")
 
 
 class CartViewSet(viewsets.ModelViewSet):

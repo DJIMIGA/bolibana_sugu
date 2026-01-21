@@ -758,6 +758,10 @@ LOGGING = {
             'format': '{levelname} {asctime} {module} {process:d} {thread:d} {message}',
             'style': '{',
         },
+        'heroku_verbose': {
+            'format': '{asctime} - {name} - {levelname} - {message}',
+            'style': '{',
+        },
         'simple': {
             'format': '{levelname} {message}',
             'style': '{',
@@ -790,17 +794,36 @@ LOGGING = {
             'class': 'logging.StreamHandler',
             'formatter': 'json',
         },
+        'heroku_verbose': {
+            'level': 'INFO',
+            'class': 'logging.StreamHandler',
+            'formatter': 'heroku_verbose',
+        },
         'security_alert': {
             'level': 'ERROR',
             'class': 'logging.StreamHandler',
             'formatter': 'json',
         },
     },
+    'root': {
+        'handlers': ['console', 'heroku_console'],
+        'level': 'INFO',
+    },
     'loggers': {
         'django': {
             'handlers': ['file', 'console', 'heroku_console'],
             'level': 'INFO',
             'propagate': True,
+        },
+        'saga.cart': {
+            'handlers': ['file', 'console', 'heroku_console'],
+            'level': 'INFO',
+            'propagate': False,
+        },
+        'cart.checkout': {
+            'handlers': ['heroku_verbose'],
+            'level': 'INFO',
+            'propagate': False,
         },
         'inventory': {
             'handlers': ['file', 'console', 'heroku_console'],
