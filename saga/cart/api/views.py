@@ -454,7 +454,7 @@ class CartViewSet(viewsets.ModelViewSet):
                 if payment_method == 'stripe' or payment_method == 'online_payment':
                     stripe.api_key = settings.STRIPE_SECRET_KEY
                     
-                    logger.info(
+                    logger.warning(
                         "Checkout Stripe - order=%s cart=%s items=%s total=%s shipping=%s",
                         order.id,
                         cart.id,
@@ -483,7 +483,7 @@ class CartViewSet(viewsets.ModelViewSet):
                             stripe_quantity = max(1, int(float(quantity_decimal)))
                             stripe_unit_amount = max(1, int(float(item.price)))  # S'assurer que >= 1 XOF
 
-                        logger.info(
+                        logger.warning(
                             "Checkout Stripe item - product=%s title=%s qty=%s is_weighted=%s unit=%s "
                             "price=%s total=%s stripe_qty=%s stripe_amount=%s specs_keys=%s",
                             item.product.id,
