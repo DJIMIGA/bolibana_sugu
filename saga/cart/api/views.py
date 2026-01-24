@@ -84,6 +84,78 @@ class CartViewSet(viewsets.ModelViewSet):
             return Decimal(str(available_g)) / Decimal('1000')
         return Decimal('0')
 
+    def _to_decimal(self, value, default=None):
+        if value is None:
+            return default
+        try:
+            return Decimal(str(value))
+        except Exception:
+            return default
+
+    def _normalize_method_id(self, value):
+        if value is None:
+            return None
+        try:
+            return int(value)
+        except (TypeError, ValueError):
+            return str(value)
+
+    def _get_delivery_methods_for_product(self, product):
+        methods = []
+        specs = product.specifications or {}
+        raw_methods = specs.get('delivery_methods')
+        if isinstance(raw_methods, list):
+            for raw in raw_methods:
+                if not isinstance(raw, dict):
+                    continue
+                method_id = raw.get('id')
+                name = raw.get('name')
+                if method_id is None or not name:
+                    continue
+                methods.append({
+                    'id': self._normalize_method_id(method_id),
+                    'name': str(name),
+                    'slug': raw.get('slug'),
+                    'description': raw.get('description'),
+                    'base_price': self._to_decimal(raw.get('base_price')),
+                    'effective_price': self._to_decimal(raw.get('effective_price')),
+                    'override_price': self._to_decimal(raw.get('override_price')),
+                    'order': raw.get('order'),
+                    'site_configuration': raw.get('site_configuration'),
+                    'source': 'specs',
+                    'shipping_method_obj': None,
+                })
+
+        if not methods:
+            for method in product.shipping_methods.all():
+                methods.append({
+                    'id': self._normalize_method_id(method.id),
+                    'name': method.name,
+                    'slug': None,
+                    'description': None,
+                    'base_price': method.price,
+                    'effective_price': method.price,
+                    'override_price': None,
+                    'order': None,
+                    'site_configuration': None,
+                    'source': 'model',
+                    'shipping_method_obj': method,
+                })
+
+        return methods
+
+    def _get_delivery_method_price(self, method):
+        if not method:
+            return Decimal('0')
+        for key in ['effective_price', 'override_price', 'base_price']:
+            value = method.get(key)
+            if value is not None:
+                return self._to_decimal(value, Decimal('0')) or Decimal('0')
+        shipping_method_obj = method.get('shipping_method_obj')
+        if shipping_method_obj:
+            return self._to_decimal(shipping_method_obj.price, Decimal('0')) or Decimal('0')
+        return Decimal('0')
+
     def _clear_user_cart(self, user):
         if not user:
             return
@@ -400,6 +472,7 @@ class CartViewSet(viewsets.ModelViewSet):
         
         payment_method = request.data.get('payment_method')  # 'stripe', 'orange_money', 'cash_on_delivery'
         address_id = request.data.get('shipping_address_id')
+        shipping_method_id = request.data.get('shipping_method_id')
         product_type = request.data.get('product_type', 'all')  # 'classic', 'salam', 'all'
         
         if not payment_method:
@@ -428,151 +501,278 @@ class CartViewSet(viewsets.ModelViewSet):
             )
             return Response({'error': errors[0] if errors else 'Panier invalide'}, status=status.HTTP_400_BAD_REQUEST)
             
-        # Déterminer la méthode de livraison par défaut (la première disponible)
-        shipping_method = ShippingMethod.objects.first()
-        if not shipping_method:
-            return Response({'error': 'Aucune méthode de livraison configurée'}, status=status.HTTP_400_BAD_REQUEST)
+        cart_items = cart.cart_items.select_related(
+            'product',
+            'variant'
+        ).prefetch_related(
+            'colors',
+            'sizes',
+            'product__shipping_methods'
+        )
+
+        default_shipping_method = ShippingMethod.objects.first()
+        default_method_option = None
+        if default_shipping_method:
+            default_method_option = {
+                'id': self._normalize_method_id(default_shipping_method.id),
+                'name': default_shipping_method.name,
+                'slug': None,
+                'description': None,
+                'base_price': default_shipping_method.price,
+                'effective_price': default_shipping_method.price,
+                'override_price': None,
+                'order': None,
+                'site_configuration': None,
+                'source': 'model',
+                'shipping_method_obj': default_shipping_method,
+            }
+
+        warnings = []
+        shipping_method_id_normalized = (
+            self._normalize_method_id(shipping_method_id) if shipping_method_id else None
+        )
+        item_methods = {}
+        method_keys_by_item = []
+        method_by_key = {}
+
+        for item in cart_items:
+            methods = self._get_delivery_methods_for_product(item.product)
+            if not methods and default_method_option:
+                methods = [default_method_option]
+            item_methods[item.id] = methods
+            keys = set()
+            for method in methods:
+                method_id = self._normalize_method_id(method.get('id'))
+                site_id = method.get('site_configuration')
+                key = (site_id, method_id)
+                keys.add(key)
+                if key not in method_by_key:
+                    method_by_key[key] = method
+            method_keys_by_item.append(keys)
+
+        common_keys = set.intersection(*method_keys_by_item) if method_keys_by_item else set()
+        selected_common_key = None
+        if shipping_method_id_normalized is not None and common_keys:
+            for key in common_keys:
+                if key[1] == shipping_method_id_normalized:
+                    selected_common_key = key
+                    break
+        if selected_common_key is None and common_keys:
+            selected_common_key = next(iter(common_keys))
+
+        groups = {}
+        missing_selected = []
+        for item in cart_items:
+            methods = item_methods.get(item.id, [])
+            selected_method = None
+            if selected_common_key:
+                selected_method = method_by_key.get(selected_common_key)
+            else:
+                if shipping_method_id_normalized is not None:
+                    for method in methods:
+                        if self._normalize_method_id(method.get('id')) == shipping_method_id_normalized:
+                            selected_method = method
+                            break
+                    if not selected_method:
+                        missing_selected.append(item.id)
+                if not selected_method:
+                    selected_method = methods[0] if methods else None
+
+            if not selected_method:
+                selected_method = default_method_option or {
+                    'id': None,
+                    'name': 'Livraison',
+                    'slug': None,
+                    'description': None,
+                    'base_price': Decimal('0'),
+                    'effective_price': Decimal('0'),
+                    'override_price': None,
+                    'order': None,
+                    'site_configuration': None,
+                    'source': 'fallback',
+                    'shipping_method_obj': None,
+                }
+
+            method_id = self._normalize_method_id(selected_method.get('id'))
+            site_id = selected_method.get('site_configuration')
+            group_key = (site_id, method_id)
+            group = groups.setdefault(group_key, {'method': selected_method, 'items': []})
+            group['items'].append(item)
+
+        if missing_selected:
+            warnings.append('La méthode de livraison choisie n’est pas disponible pour tous les produits.')
+
+        def serialize_method(method):
+            return {
+                'id': method.get('id'),
+                'name': method.get('name'),
+                'slug': method.get('slug'),
+                'description': method.get('description'),
+                'base_price': str(method.get('base_price')) if method.get('base_price') is not None else None,
+                'effective_price': str(method.get('effective_price')) if method.get('effective_price') is not None else None,
+                'override_price': str(method.get('override_price')) if method.get('override_price') is not None else None,
+                'order': method.get('order'),
+                'site_configuration': method.get('site_configuration'),
+            }
 
         try:
             with transaction.atomic():
-                # 1. Créer la commande
-                total_price = cart.get_total_price()
-                order = Order.objects.create(
-                    user=user,
-                    shipping_address=address,
-                    shipping_method=shipping_method,
-                    payment_method=payment_method,
-                    subtotal=total_price,
-                    shipping_cost=shipping_method.price,
-                    total=total_price + shipping_method.price,
-                    status=Order.PENDING
-                )
-                
-                # 2. Créer les items de commande
-                for item in cart.cart_items.all():
-                    order_item = OrderItem.objects.create(
-                        order=order,
-                        product=item.product,
-                        quantity=item.quantity,
-                        price=item.get_unit_price()
+                group_orders = []
+                for group_key, group in groups.items():
+                    method = group['method']
+                    shipping_cost = self._get_delivery_method_price(method)
+                    subtotal = sum(item.get_total_price() for item in group['items'])
+                    method_payload = serialize_method(method)
+                    metadata = {
+                        'delivery_method': method_payload,
+                        'delivery_site_configuration': method.get('site_configuration'),
+                        'delivery_group_key': f"{group_key[0]}:{group_key[1]}",
+                        'split_order': len(groups) > 1,
+                    }
+                    order = Order.objects.create(
+                        user=user,
+                        shipping_address=address,
+                        shipping_method=method.get('shipping_method_obj'),
+                        payment_method=payment_method,
+                        subtotal=subtotal,
+                        shipping_cost=shipping_cost,
+                        total=subtotal + shipping_cost,
+                        status=Order.PENDING,
+                        metadata=metadata
                     )
-                    if item.colors.exists():
-                        order_item.colors.set(item.colors.all())
-                    if item.sizes.exists():
-                        order_item.sizes.set(item.sizes.all())
 
-                # 3. Gérer le paiement
-                domain_url = request.build_absolute_uri('/')[:-1]
-                
-                if payment_method == 'stripe' or payment_method == 'online_payment':
-                    stripe.api_key = settings.STRIPE_SECRET_KEY
-                    
-                    logger.warning(
-                        "Checkout Stripe - order=%s cart=%s items=%s total=%s shipping=%s",
-                        order.id,
-                        cart.id,
-                        cart.cart_items.count(),
-                        order.total,
-                        order.shipping_cost,
-                    )
-                    line_items = []
-                    for item in order.items.all():
-                        # Pour Stripe, la quantité doit être >= 1 et unit_amount >= 1
-                        # Calculer le prix total de l'item
-                        total_price = Decimal(str(item.price)) * Decimal(str(item.quantity))
-                        quantity_decimal = Decimal(str(item.quantity))
-                        is_weighted = self._is_weighted_product(item.product)
-                        weight_unit = self._get_weight_unit(item.product) if is_weighted else 'unité'
-                        specs = item.product.specifications or {}
-                        
-                        if is_weighted:
-                            # Pour tous les produits au poids, utiliser le prix total avec quantité = 1
-                            # Cela garantit que le total est correct et évite les problèmes de conversion
-                            # (Stripe ne supporte pas les décimales pour quantity)
-                            stripe_quantity = 1
-                            stripe_unit_amount = max(1, int(float(total_price)))  # S'assurer que >= 1 XOF
-                        else:
-                            # Produit normal, utiliser la quantité telle quelle (arrondie à l'entier supérieur)
-                            stripe_quantity = max(1, int(float(quantity_decimal)))
-                            stripe_unit_amount = max(1, int(float(item.price)))  # S'assurer que >= 1 XOF
-
-                        logger.warning(
-                            "Checkout Stripe item - product=%s title=%s qty=%s is_weighted=%s unit=%s "
-                            "price=%s total=%s stripe_qty=%s stripe_amount=%s specs_keys=%s",
-                            item.product.id,
-                            item.product.title,
-                            item.quantity,
-                            is_weighted,
-                            weight_unit,
-                            item.price,
-                            total_price,
-                            stripe_quantity,
-                            stripe_unit_amount,
-                            list(specs.keys()),
+                    for item in group['items']:
+                        order_item = OrderItem.objects.create(
+                            order=order,
+                            product=item.product,
+                            quantity=item.quantity,
+                            price=item.get_unit_price()
                         )
-                        
-                        line_items.append({
-                            'price_data': {
-                                'currency': 'xof',
-                                'product_data': {'name': item.product.title},
-                                'unit_amount': stripe_unit_amount,
-                            },
-                            'quantity': stripe_quantity,  # Stripe nécessite un entier >= 1 pour quantity
-                        })
-                    
-                    # Ajouter les frais de livraison uniquement si > 0
-                    shipping_cost = int(order.shipping_cost)
-                    if shipping_cost > 0:
-                        line_items.append({
-                            'price_data': {
-                                'currency': 'xof',
-                                'product_data': {'name': 'Frais de livraison'},
-                                'unit_amount': shipping_cost,
-                            },
-                            'quantity': 1,
-                        })
+                        if item.colors.exists():
+                            order_item.colors.set(item.colors.all())
+                        if item.sizes.exists():
+                            order_item.sizes.set(item.sizes.all())
 
-                    checkout_session = stripe.checkout.Session.create(
-                        customer_email=user.email,
-                        payment_method_types=['card'],
-                        line_items=line_items,
-                        mode='payment',
-                        success_url=f"{domain_url}/api/cart/payment-success/?session_id={{CHECKOUT_SESSION_ID}}&order_id={order.id}",
-                        cancel_url=f"{domain_url}/api/cart/payment-cancel/?order_id={order.id}",
-                        metadata={
-                            'order_id': str(order.id),
-                            'cart_id': str(cart.id),
-                            'user_id': str(user.id),
-                            'payment_method': payment_method,
-                            'mobile': 'true'
-                        }
-                    )
-                    
-                    order.stripe_session_id = checkout_session.id
-                    order.save()
-
-                    return Response({
-                        'order_id': order.id,
-                        'checkout_url': checkout_session.url,
-                        'payment_method': 'stripe'
+                    group_orders.append({
+                        'order': order,
+                        'method': method_payload,
+                        'site_configuration': method.get('site_configuration'),
                     })
 
+                domain_url = request.build_absolute_uri('/')[:-1]
+                payment_results = []
+
+                if payment_method == 'stripe' or payment_method == 'online_payment':
+                    stripe.api_key = settings.STRIPE_SECRET_KEY
+                    for entry in group_orders:
+                        order = entry['order']
+                        logger.warning(
+                            "Checkout Stripe - order=%s cart=%s items=%s total=%s shipping=%s",
+                            order.id,
+                            cart.id,
+                            order.items.count(),
+                            order.total,
+                            order.shipping_cost,
+                        )
+                        line_items = []
+                        for item in order.items.all():
+                            total_price = Decimal(str(item.price)) * Decimal(str(item.quantity))
+                            quantity_decimal = Decimal(str(item.quantity))
+                            is_weighted = self._is_weighted_product(item.product)
+                            weight_unit = self._get_weight_unit(item.product) if is_weighted else 'unité'
+                            specs = item.product.specifications or {}
+
+                            if is_weighted:
+                                stripe_quantity = 1
+                                stripe_unit_amount = max(1, int(float(total_price)))
+                            else:
+                                stripe_quantity = max(1, int(float(quantity_decimal)))
+                                stripe_unit_amount = max(1, int(float(item.price)))
+
+                            logger.warning(
+                                "Checkout Stripe item - product=%s title=%s qty=%s is_weighted=%s unit=%s "
+                                "price=%s total=%s stripe_qty=%s stripe_amount=%s specs_keys=%s",
+                                item.product.id,
+                                item.product.title,
+                                item.quantity,
+                                is_weighted,
+                                weight_unit,
+                                item.price,
+                                total_price,
+                                stripe_quantity,
+                                stripe_unit_amount,
+                                list(specs.keys()),
+                            )
+
+                            line_items.append({
+                                'price_data': {
+                                    'currency': 'xof',
+                                    'product_data': {'name': item.product.title},
+                                    'unit_amount': stripe_unit_amount,
+                                },
+                                'quantity': stripe_quantity,
+                            })
+
+                        shipping_cost_int = int(order.shipping_cost)
+                        if shipping_cost_int > 0:
+                            line_items.append({
+                                'price_data': {
+                                    'currency': 'xof',
+                                    'product_data': {'name': 'Frais de livraison'},
+                                    'unit_amount': shipping_cost_int,
+                                },
+                                'quantity': 1,
+                            })
+
+                        checkout_session = stripe.checkout.Session.create(
+                            customer_email=user.email,
+                            payment_method_types=['card'],
+                            line_items=line_items,
+                            mode='payment',
+                            success_url=f"{domain_url}/api/cart/payment-success/?session_id={{CHECKOUT_SESSION_ID}}&order_id={order.id}",
+                            cancel_url=f"{domain_url}/api/cart/payment-cancel/?order_id={order.id}",
+                            metadata={
+                                'order_id': str(order.id),
+                                'cart_id': str(cart.id),
+                                'user_id': str(user.id),
+                                'payment_method': payment_method,
+                                'mobile': 'true'
+                            }
+                        )
+
+                        order.stripe_session_id = checkout_session.id
+                        order.save(update_fields=['stripe_session_id'])
+
+                        payment_results.append({
+                            'order_id': order.id,
+                            'checkout_url': checkout_session.url,
+                            'payment_method': 'stripe',
+                            'shipping_method': entry['method'],
+                            'site_configuration': entry['site_configuration'],
+                            'subtotal': str(order.subtotal),
+                            'shipping_cost': str(order.shipping_cost),
+                            'total': str(order.total),
+                        })
+
                 elif payment_method == 'orange_money' or payment_method == 'mobile_money':
-                    order_data = {
-                        'order_id': order.order_number,
-                        'amount': int(order.total * 100),  # Orange Money veut des centimes? Non, FCFA? 
-                        # Selon orange_money_service.py: format_amount multiplie par 100
-                        'amount': orange_money_service.format_amount(float(order.total)),
-                        'return_url': f"{domain_url}/api/cart/orange-money-return/?order_id={order.id}",
-                        'cancel_url': f"{domain_url}/api/cart/orange-money-cancel/?order_id={order.id}",
-                        'notif_url': f"{domain_url}/api/cart/orange-money-webhook/",
-                        'reference': f"CMD-{order.id}"
-                    }
-                    
-                    success, response_data = orange_money_service.create_payment_session(order_data)
-                    if success:
+                    for entry in group_orders:
+                        order = entry['order']
+                        order_data = {
+                            'order_id': order.order_number,
+                            'amount': int(order.total * 100),
+                            'amount': orange_money_service.format_amount(float(order.total)),
+                            'return_url': f"{domain_url}/api/cart/orange-money-return/?order_id={order.id}",
+                            'cancel_url': f"{domain_url}/api/cart/orange-money-cancel/?order_id={order.id}",
+                            'notif_url': f"{domain_url}/api/cart/orange-money-webhook/",
+                            'reference': f"CMD-{order.id}"
+                        }
+
+                        success, response_data = orange_money_service.create_payment_session(order_data)
+                        if not success:
+                            raise ValueError(response_data.get('error', 'Erreur Orange Money'))
+
                         payment_url = orange_money_service.get_payment_url(
-                            response_data.get('pay_token'), 
+                            response_data.get('pay_token'),
                             response_data.get('payment_url')
                         )
                         metadata = order.metadata or {}
@@ -583,26 +783,51 @@ class CartViewSet(viewsets.ModelViewSet):
                         })
                         order.metadata = metadata
                         order.save(update_fields=['metadata'])
-                        return Response({
+
+                        payment_results.append({
                             'order_id': order.id,
                             'checkout_url': payment_url,
-                            'payment_method': 'orange_money'
+                            'payment_method': 'orange_money',
+                            'shipping_method': entry['method'],
+                            'site_configuration': entry['site_configuration'],
+                            'subtotal': str(order.subtotal),
+                            'shipping_cost': str(order.shipping_cost),
+                            'total': str(order.total),
                         })
-                    else:
-                        return Response({'error': response_data.get('error', 'Erreur Orange Money')}, status=status.HTTP_400_BAD_REQUEST)
 
                 elif payment_method == 'cash_on_delivery':
-                    # Pour le paiement à la livraison, pas d'URL de redirection
-                    # On vide le panier car la commande est validée
-                    cart.cart_items.all().delete()
-                    return Response({
-                        'order_id': order.id,
-                        'status': 'confirmed',
-                        'message': 'Commande enregistrée avec succès (Paiement à la livraison)',
-                        'payment_method': 'cash_on_delivery'
+                    transaction.on_commit(lambda: cart.cart_items.all().delete())
+                    for entry in group_orders:
+                        order = entry['order']
+                        payment_results.append({
+                            'order_id': order.id,
+                            'status': 'confirmed',
+                            'payment_method': 'cash_on_delivery',
+                            'shipping_method': entry['method'],
+                            'site_configuration': entry['site_configuration'],
+                            'subtotal': str(order.subtotal),
+                            'shipping_cost': str(order.shipping_cost),
+                            'total': str(order.total),
+                        })
+                else:
+                    return Response({'error': 'Méthode de paiement non supportée'}, status=status.HTTP_400_BAD_REQUEST)
+
+                response_payload = {
+                    'orders': payment_results,
+                    'payment_method': payment_method,
+                    'split': len(payment_results) > 1,
+                }
+                if warnings:
+                    response_payload['warnings'] = warnings
+                if len(payment_results) == 1:
+                    single = payment_results[0]
+                    response_payload.update({
+                        'order_id': single.get('order_id'),
+                        'checkout_url': single.get('checkout_url'),
+                        'status': single.get('status'),
                     })
 
-                return Response({'error': 'Méthode de paiement non supportée'}, status=status.HTTP_400_BAD_REQUEST)
+                return Response(response_payload)
 
         except Exception as e:
             logger.error(f"Checkout Error: {str(e)}")

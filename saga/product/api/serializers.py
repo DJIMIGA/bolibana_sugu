@@ -132,6 +132,7 @@ class ProductListSerializer(serializers.ModelSerializer):
     fabric_product = serializers.SerializerMethodField()
     cultural_product = serializers.SerializerMethodField()
     specifications = serializers.SerializerMethodField()
+    delivery_methods = serializers.SerializerMethodField()
 
     class Meta:
         model = Product
@@ -141,7 +142,7 @@ class ProductListSerializer(serializers.ModelSerializer):
             'image_url', 'images', 'image_urls', 'gallery',
             'promo_price', 'has_promotion', 'discount_percent', 'promotion_start_date', 'promotion_end_date',
             'is_available', 'is_trending', 'is_salam', 'stock', 'specifications',
-            'phone', 'clothing_product', 'fabric_product', 'cultural_product', 'created_at'
+            'phone', 'clothing_product', 'fabric_product', 'cultural_product', 'delivery_methods', 'created_at'
         ]
 
     def get_feature_image(self, obj):
@@ -224,6 +225,28 @@ class ProductListSerializer(serializers.ModelSerializer):
             return {key: specs.get(key) for key in allowed_keys if key in specs}
         except Exception:
             return {}
+
+    def get_delivery_methods(self, obj):
+        """Expose les méthodes de livraison B2B si présentes."""
+        try:
+            specs = obj.specifications or {}
+            delivery_methods = specs.get('delivery_methods')
+            if isinstance(delivery_methods, list) and len(delivery_methods) > 0:
+                return delivery_methods
+        except Exception:
+            pass
+        try:
+            return [
+                {
+                    'id': method.id,
+                    'name': method.name,
+                    'base_price': method.price,
+                    'effective_price': method.price,
+                }
+                for method in obj.shipping_methods.all()
+            ]
+        except Exception:
+            return []
 
     def get_has_promotion(self, obj):
         try:
@@ -327,6 +350,7 @@ class ProductDetailSerializer(serializers.ModelSerializer):
     clothing_product = serializers.SerializerMethodField()
     fabric_product = serializers.SerializerMethodField()
     cultural_product = serializers.SerializerMethodField()
+    delivery_methods = serializers.SerializerMethodField()
     
     class Meta:
         model = Product
@@ -337,7 +361,7 @@ class ProductDetailSerializer(serializers.ModelSerializer):
             'is_available', 'created_at', 'updated_at',
             'image_url', 'image_urls', 'gallery',
             'promo_price', 'has_promotion', 'discount_percent', 'promotion_start_date', 'promotion_end_date',
-            'specifications', 'weight', 'dimensions', 'phone',
+            'specifications', 'weight', 'dimensions', 'phone', 'delivery_methods',
             'clothing_product', 'fabric_product', 'cultural_product'
         ]
     
@@ -446,6 +470,28 @@ class ProductDetailSerializer(serializers.ModelSerializer):
         except Exception:
             pass
         return None
+
+    def get_delivery_methods(self, obj):
+        """Expose les méthodes de livraison B2B si présentes."""
+        try:
+            specs = obj.specifications or {}
+            delivery_methods = specs.get('delivery_methods')
+            if isinstance(delivery_methods, list) and len(delivery_methods) > 0:
+                return delivery_methods
+        except Exception:
+            pass
+        try:
+            return [
+                {
+                    'id': method.id,
+                    'name': method.name,
+                    'base_price': method.price,
+                    'effective_price': method.price,
+                }
+                for method in obj.shipping_methods.all()
+            ]
+        except Exception:
+            return []
     
     def get_phone(self, obj):
         if hasattr(obj, 'phone') and obj.phone:

@@ -787,6 +787,12 @@ class ProductSyncService:
                 except (ValueError, AttributeError):
                     return default
             return default
+
+        def to_number_or_none(value, is_integer=False):
+            """Convertit une valeur en nombre ou None si vide."""
+            if value is None or value == '':
+                return None
+            return to_number(value, default=None, is_integer=is_integer)
         
         # Détecter si le produit est vendu au poids
         # L'API B2B utilise 'sale_unit_type' avec la valeur 'weight'
@@ -888,6 +894,31 @@ class ProductSyncService:
                 specifications['available_weight_kg'] = weight_available
                 if weight_unit and weight_unit.lower() == 'g':
                     specifications['available_weight_g'] = weight_available * 1000
+
+        # Méthodes de livraison (B2B)
+        delivery_methods_raw = external_data.get('delivery_methods') or external_data.get('shipping_methods')
+        if isinstance(delivery_methods_raw, list):
+            normalized_methods = []
+            for method in delivery_methods_raw:
+                if not isinstance(method, dict):
+                    continue
+                method_id = method.get('id')
+                method_name = method.get('name')
+                if method_id is None or method_name is None:
+                    continue
+                normalized_methods.append({
+                    'id': method_id,
+                    'name': method_name,
+                    'slug': method.get('slug'),
+                    'description': method.get('description'),
+                    'base_price': to_number_or_none(method.get('base_price')),
+                    'effective_price': to_number_or_none(method.get('effective_price')),
+                    'override_price': to_number_or_none(method.get('override_price')),
+                    'order': to_number_or_none(method.get('order'), is_integer=True),
+                    'site_configuration': to_number_or_none(method.get('site_configuration'), is_integer=True),
+                })
+            if normalized_methods:
+                specifications['delivery_methods'] = normalized_methods
         
         # Utiliser le slug B2B si disponible (pour cohérence avec l'API B2B)
         slug = None

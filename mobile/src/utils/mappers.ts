@@ -191,6 +191,33 @@ export const mapProductFromBackend = (backendProduct: any): Product => {
     : backendProduct.stock;
   const stock = stockValue ? parseFloat(stockValue) : 0;
 
+  const deliveryMethods = Array.isArray(backendProduct.delivery_methods)
+    ? backendProduct.delivery_methods
+        .map((method: any) => {
+          if (!method) return undefined;
+          return {
+            id: Number(method.id),
+            name: String(method.name || ''),
+            slug: method.slug !== undefined ? String(method.slug) : undefined,
+            description: method.description !== undefined ? method.description : undefined,
+            base_price: method.base_price !== undefined && method.base_price !== null
+              ? parseFloat(method.base_price)
+              : undefined,
+            effective_price: method.effective_price !== undefined && method.effective_price !== null
+              ? parseFloat(method.effective_price)
+              : undefined,
+            override_price: method.override_price !== undefined
+              ? (method.override_price !== null ? parseFloat(method.override_price) : null)
+              : undefined,
+            order: method.order !== undefined && method.order !== null ? Number(method.order) : undefined,
+            site_configuration: method.site_configuration !== undefined && method.site_configuration !== null
+              ? Number(method.site_configuration)
+              : undefined,
+          };
+        })
+        .filter((method: any) => method && !Number.isNaN(method.id) && method.name)
+    : undefined;
+
   return {
     id: backendProduct.id,
     title: backendProduct.name || backendProduct.title, // Backend retourne "name"
@@ -232,6 +259,7 @@ export const mapProductFromBackend = (backendProduct: any): Product => {
     review_count: backendProduct.review_count || 0,
     created_at: backendProduct.created_at || new Date().toISOString(),
     updated_at: backendProduct.updated_at || new Date().toISOString(),
+    delivery_methods: deliveryMethods && deliveryMethods.length > 0 ? deliveryMethods : undefined,
   };
 };
 

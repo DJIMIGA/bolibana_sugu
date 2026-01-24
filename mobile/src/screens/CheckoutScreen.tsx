@@ -22,12 +22,13 @@ import { fetchCart } from '../store/slices/cartSlice';
 
 const CheckoutScreen: React.FC = () => {
   const navigation = useNavigation();
-  const { items, total, itemsCount } = useAppSelector((state) => state.cart);
+  const { items, itemsCount } = useAppSelector((state) => state.cart);
   const { sessionExpired, isAuthenticated } = useAppSelector((state) => state.auth);
   
   const [addresses, setAddresses] = useState<ShippingAddress[]>([]);
   const [selectedAddress, setSelectedAddress] = useState<ShippingAddress | null>(null);
   const [paymentMethod, setPaymentMethod] = useState<'stripe' | 'orange_money' | 'cash_on_delivery'>('stripe');
+  const [selectedDeliveryMethodId, setSelectedDeliveryMethodId] = useState<number | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [isProcessing, setIsProcessing] = useState<boolean>(false);
 
@@ -223,6 +224,132 @@ const CheckoutScreen: React.FC = () => {
     [items]
   );
 
+  const deliveryMethodsInfo = useMemo(() => {
+    const lists = cartItemsSafe
+      .map((item) => (Array.isArray(item.product?.delivery_methods) ? item.product.delivery_methods : []))
+      .filter((list) => list.length > 0);
+
+    if (lists.length === 0) {
+      return { common: [] as Product['delivery_methods'], all: [] as Product['delivery_methods'], isIntersection: false };
+    }
+
+    const allMethodsMap = new Map<string, any>();
+    lists.flat().forEach((method: any) => {
+      if (!method || method.id === undefined || method.id === null) return;
+      const id = Number(method.id);
+      if (Number.isNaN(id)) return;
+      const siteId = method.site_configuration ?? 'default';
+      const key = `${siteId}:${id}`;
+      if (!allMethodsMap.has(key)) {
+        allMethodsMap.set(key, method);
+      }
+    });
+
+    const intersectionKeys = lists.reduce((acc, list) => {
+      const keys = new Set(
+        list
+          .map((m: any) => {
+            const id = Number(m?.id);
+            if (Number.isNaN(id)) return null;
+            const siteId = m?.site_configuration ?? 'default';
+            return `${siteId}:${id}`;
+          })
+          .filter(Boolean) as string[]
+      );
+      if (acc === null) return keys;
+      return new Set([...acc].filter((key) => keys.has(key)));
+    }, null as Set<string> | null);
+
+    const commonMethods = intersectionKeys
+      ? Array.from(intersectionKeys)
+          .map((key) => allMethodsMap.get(key))
+          .filter(Boolean)
+      : [];
+
+    return {
+      common: commonMethods,
+      all: Array.from(allMethodsMap.values()),
+      isIntersection: commonMethods.length > 0,
+    };
+  }, [cartItemsSafe]);
+
+  const getDeliveryPrice = (method: any): number => {
+    if (!method) return 0;
+    if (method.effective_price !== undefined && method.effective_price !== null) {
+      return Number(method.effective_price) || 0;
+    }
+    if (method.override_price !== undefined) {
+      return method.override_price !== null ? Number(method.override_price) || 0 : 0;
+    }
+    if (method.base_price !== undefined && method.base_price !== null) {
+      return Number(method.base_price) || 0;
+    }
+    return 0;
+  };
+
+  const selectedDeliveryMethod = useMemo(() => {
+    if (!deliveryMethodsInfo.common || deliveryMethodsInfo.common.length === 0) {
+      return null;
+    }
+    return deliveryMethodsInfo.common.find((m: any) => Number(m?.id) === selectedDeliveryMethodId) || null;
+  }, [deliveryMethodsInfo.common, selectedDeliveryMethodId]);
+
+  const calculatedItemsTotal = useMemo(() => (
+    cartItemsSafe.reduce((sum, item) => sum + (getUnitPrice(item) * item.quantity), 0)
+  ), [cartItemsSafe]);
+
+  const deliveryGroups = useMemo(() => {
+    const groups = new Map<string, { method: any | null; items: CartItem[]; shipping_cost: number; siteId: any }>();
+
+    cartItemsSafe.forEach((item) => {
+      const methods = Array.isArray(item.product?.delivery_methods) ? item.product.delivery_methods : [];
+      let selected = null;
+
+      if (deliveryMethodsInfo.isIntersection && selectedDeliveryMethodId !== null) {
+        selected = methods.find((m: any) => Number(m?.id) === selectedDeliveryMethodId) || null;
+      }
+      if (!selected) {
+        selected = methods.length > 0 ? methods[0] : null;
+      }
+
+      const siteId = selected?.site_configuration ?? 'default';
+      const methodId = selected?.id ?? 'unknown';
+      const key = `${siteId}:${methodId}`;
+
+      if (!groups.has(key)) {
+        groups.set(key, {
+          method: selected,
+          items: [],
+          shipping_cost: selected ? getDeliveryPrice(selected) : 0,
+          siteId,
+        });
+      }
+
+      const group = groups.get(key);
+      if (group) {
+        group.items.push(item);
+      }
+    });
+
+    return Array.from(groups.values());
+  }, [cartItemsSafe, deliveryMethodsInfo.isIntersection, selectedDeliveryMethodId]);
+
+  const estimatedShippingCost = deliveryGroups.reduce((sum, group) => sum + (group.shipping_cost || 0), 0);
+  const estimatedTotal = calculatedItemsTotal + estimatedShippingCost;
+
+  useEffect(() => {
+    if (!deliveryMethodsInfo.isIntersection || !deliveryMethodsInfo.common || deliveryMethodsInfo.common.length === 0) {
+      if (selectedDeliveryMethodId !== null) {
+        setSelectedDeliveryMethodId(null);
+      }
+      return;
+    }
+    const exists = deliveryMethodsInfo.common.some((m: any) => Number(m?.id) === selectedDeliveryMethodId);
+    if (!exists) {
+      setSelectedDeliveryMethodId(Number(deliveryMethodsInfo.common[0]?.id));
+    }
+  }, [deliveryMethodsInfo.common, deliveryMethodsInfo.isIntersection, selectedDeliveryMethodId]);
+
   const loadAddresses = async () => {
     try {
       setIsLoading(true);
@@ -280,20 +407,72 @@ const CheckoutScreen: React.FC = () => {
 
     try {
       setIsProcessing(true);
+
+      // Re-synchroniser le panier avant de passer la commande
+      const refreshedCart = await dispatch(fetchCart()).unwrap();
+      const refreshedItems = refreshedCart?.items || [];
+      if (!refreshedItems.length) {
+        Alert.alert('Panier vide', 'Votre panier est vide. Veuillez ajouter des articles avant de commander.', [
+          { text: 'OK', onPress: () => navigation.goBack() },
+        ]);
+        return;
+      }
+
       const response = await apiClient.post(`${API_ENDPOINTS.CART}checkout/`, {
         payment_method: paymentMethod,
         shipping_address_id: selectedAddress.id,
         product_type: 'all',
+        shipping_method_id: deliveryMethodsInfo.isIntersection && selectedDeliveryMethod
+          ? selectedDeliveryMethod.id
+          : undefined,
       });
 
-      const { checkout_url, payment_method, status } = response.data;
+      const data = response.data || {};
+      const orders = Array.isArray(data.orders) ? data.orders : [];
+      const warnings = Array.isArray(data.warnings) ? data.warnings : [];
+
+      if (warnings.length > 0) {
+        Alert.alert('Info livraison', warnings.join('\n'));
+      }
+
+      if (orders.length > 0) {
+        const cashOnly = orders.every((order: any) => order.payment_method === 'cash_on_delivery' || order.status === 'confirmed');
+        if (cashOnly) {
+          await dispatch(fetchCart());
+          Alert.alert('Succès', 'Votre commande a été enregistrée avec succès !', [
+            {
+              text: 'OK',
+              onPress: () => {
+                (navigation as any).navigate('Profile', { screen: 'Orders' });
+              }
+            }
+          ]);
+          return;
+        }
+
+        const checkoutUrls = orders
+          .map((order: any) => order.checkout_url)
+          .filter((url: string | undefined) => !!url);
+
+        for (const url of checkoutUrls) {
+          await WebBrowser.openBrowserAsync(url, {
+            presentationStyle: WebBrowser.WebBrowserPresentationStyle.FULL_SCREEN,
+            controlsColor: COLORS.PRIMARY,
+          });
+        }
+
+        (navigation as any).navigate('Profile', { screen: 'Orders' });
+        return;
+      }
+
+      const { checkout_url, payment_method, status } = data;
 
       if (payment_method === 'cash_on_delivery' || status === 'confirmed') {
+        await dispatch(fetchCart());
         Alert.alert('Succès', 'Votre commande a été enregistrée avec succès !', [
           { 
             text: 'OK', 
             onPress: () => {
-              // Naviguer vers l'onglet Profil puis vers l'écran Commandes
               (navigation as any).navigate('Profile', { screen: 'Orders' });
             } 
           }
@@ -302,13 +481,11 @@ const CheckoutScreen: React.FC = () => {
       }
 
       if (checkout_url) {
-        // Ouvrir l'URL de paiement
         await WebBrowser.openBrowserAsync(checkout_url, {
           presentationStyle: WebBrowser.WebBrowserPresentationStyle.FULL_SCREEN,
           controlsColor: COLORS.PRIMARY,
         });
-        
-        // Au retour du navigateur, on redirige vers les commandes
+
         (navigation as any).navigate('Profile', { screen: 'Orders' });
       }
     } catch (error: any) {
@@ -396,28 +573,7 @@ const CheckoutScreen: React.FC = () => {
             <View style={styles.summaryFooter}>
               <Text style={styles.summaryText}>{itemsCount} article(s)</Text>
               <Text style={styles.summaryTotal}>
-                {formatPrice(
-                  (() => {
-                    const calculatedTotal = cartItemsSafe.reduce((sum, item) => sum + (getUnitPrice(item) * item.quantity), 0);
-                    if (__DEV__) {
-                      console.log('[CheckoutScreen] ⚖️ Calcul total commande:', {
-                        itemsCount: cartItemsSafe.length,
-                        calculatedTotal,
-                        backendTotal: total,
-                        items: cartItemsSafe.map(item => ({
-                          productId: item.product.id,
-                          productTitle: item.product.title,
-                          isWeighted: isWeightedProduct(item.product),
-                          weightUnit: isWeightedProduct(item.product) ? getWeightUnit(item.product) : 'unité',
-                          quantity: item.quantity,
-                          unitPrice: getUnitPrice(item),
-                          itemTotal: getUnitPrice(item) * item.quantity,
-                        })),
-                      });
-                    }
-                    return calculatedTotal;
-                  })()
-                )}
+                {formatPrice(calculatedItemsTotal)}
               </Text>
             </View>
           </View>
@@ -446,6 +602,78 @@ const CheckoutScreen: React.FC = () => {
               <Ionicons name="add-circle-outline" size={24} color={COLORS.PRIMARY} />
               <Text style={styles.addAddressText}>Ajouter une adresse</Text>
             </TouchableOpacity>
+          )}
+        </View>
+
+        {/* Méthode de livraison */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Méthode de livraison</Text>
+          {deliveryMethodsInfo.isIntersection && deliveryMethodsInfo.common.length > 0 ? (
+            <>
+              {deliveryMethodsInfo.common.map((method: any) => {
+                const isSelected = Number(method?.id) === selectedDeliveryMethodId;
+                const price = getDeliveryPrice(method);
+                return (
+                  <TouchableOpacity
+                    key={`${method.site_configuration ?? 'default'}-${method.id}`}
+                    style={[styles.deliveryCard, isSelected && styles.deliveryCardSelected]}
+                    onPress={() => setSelectedDeliveryMethodId(Number(method.id))}
+                  >
+                    <Ionicons
+                      name="cube-outline"
+                      size={22}
+                      color={isSelected ? COLORS.PRIMARY : COLORS.TEXT}
+                    />
+                    <View style={styles.deliveryInfo}>
+                      <Text style={[styles.deliveryTitle, isSelected && styles.deliveryTitleSelected]}>
+                        {method.name}
+                      </Text>
+                      <Text style={styles.deliverySubtitle}>
+                        {price > 0 ? `Frais: ${formatPrice(price)}` : 'Livraison gratuite'}
+                      </Text>
+                    </View>
+                    {isSelected ? (
+                      <Ionicons name="checkmark-circle" size={20} color={COLORS.PRIMARY} />
+                    ) : null}
+                  </TouchableOpacity>
+                );
+              })}
+            </>
+          ) : deliveryGroups.length > 0 ? (
+            <>
+              <View style={styles.deliveryNotice}>
+                <Ionicons name="alert-circle-outline" size={18} color={COLORS.TEXT_SECONDARY} />
+                <Text style={styles.deliveryNoticeText}>
+                  La commande sera divisée par méthode ou site de livraison.
+                </Text>
+              </View>
+              {deliveryGroups.map((group, index) => {
+                const method = group.method;
+                const price = group.shipping_cost || 0;
+                const siteLabel = group.siteId && group.siteId !== 'default'
+                  ? `Site ${group.siteId}`
+                  : 'Site principal';
+                const title = method?.name || `Livraison ${index + 1}`;
+                return (
+                  <View key={`${group.siteId}-${index}`} style={styles.deliveryCard}>
+                    <Ionicons name="cube-outline" size={22} color={COLORS.TEXT} />
+                    <View style={styles.deliveryInfo}>
+                      <Text style={styles.deliveryTitle}>{title}</Text>
+                      <Text style={styles.deliverySubtitle}>
+                        {siteLabel} • {price > 0 ? `Frais: ${formatPrice(price)}` : 'Frais à confirmer'}
+                      </Text>
+                    </View>
+                  </View>
+                );
+              })}
+            </>
+          ) : (
+            <View style={styles.deliveryEmpty}>
+              <Ionicons name="information-circle-outline" size={18} color={COLORS.TEXT_SECONDARY} />
+              <Text style={styles.deliveryEmptyText}>
+                Aucune méthode de livraison disponible pour ces produits.
+              </Text>
+            </View>
           )}
         </View>
 
@@ -487,8 +715,16 @@ const CheckoutScreen: React.FC = () => {
       {/* Footer avec bouton de confirmation */}
       <View style={styles.footer}>
         <View style={styles.totalRow}>
-          <Text style={styles.totalLabel}>Total à payer:</Text>
-          <Text style={styles.totalValue}>{formatPrice(total)}</Text>
+          <Text style={styles.totalLabel}>Sous-total:</Text>
+          <Text style={styles.totalValue}>{formatPrice(calculatedItemsTotal)}</Text>
+        </View>
+        <View style={styles.totalRow}>
+          <Text style={styles.totalLabel}>Livraison:</Text>
+          <Text style={styles.totalValue}>{formatPrice(estimatedShippingCost)}</Text>
+        </View>
+        <View style={styles.totalRow}>
+          <Text style={styles.totalLabel}>Total estimé:</Text>
+          <Text style={styles.totalValue}>{formatPrice(estimatedTotal)}</Text>
         </View>
         <TouchableOpacity 
           style={[styles.confirmButton, isProcessing && styles.confirmButtonDisabled]}
@@ -621,6 +857,66 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: 'bold',
     color: COLORS.TEXT,
+  },
+  deliveryNotice: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#F9FAFB',
+    borderRadius: 10,
+    padding: 10,
+    marginBottom: 12,
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
+  },
+  deliveryNoticeText: {
+    marginLeft: 8,
+    color: COLORS.TEXT_SECONDARY,
+    fontSize: 13,
+  },
+  deliveryCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#FFFFFF',
+    borderRadius: 12,
+    padding: 16,
+    marginBottom: 12,
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
+  },
+  deliveryCardSelected: {
+    borderColor: COLORS.PRIMARY,
+    backgroundColor: '#F0FDF4',
+  },
+  deliveryInfo: {
+    flex: 1,
+    marginLeft: 12,
+  },
+  deliveryTitle: {
+    fontSize: 16,
+    color: COLORS.TEXT,
+    fontWeight: '600',
+    marginBottom: 4,
+  },
+  deliveryTitleSelected: {
+    color: COLORS.PRIMARY,
+  },
+  deliverySubtitle: {
+    fontSize: 13,
+    color: COLORS.TEXT_SECONDARY,
+  },
+  deliveryEmpty: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#F9FAFB',
+    borderRadius: 10,
+    padding: 12,
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
+  },
+  deliveryEmptyText: {
+    marginLeft: 8,
+    color: COLORS.TEXT_SECONDARY,
+    fontSize: 13,
   },
   addressCard: {
     backgroundColor: '#FFFFFF',

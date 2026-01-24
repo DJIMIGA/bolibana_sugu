@@ -61,6 +61,19 @@ export interface Product {
   review_count?: number;
   created_at: string;
   updated_at: string;
+  delivery_methods?: DeliveryMethod[];
+}
+
+export interface DeliveryMethod {
+  id: number;
+  name: string;
+  slug?: string;
+  description?: string | null;
+  base_price?: number;
+  effective_price?: number;
+  override_price?: number | null;
+  order?: number;
+  site_configuration?: number;
 }
 
 export interface Category {
