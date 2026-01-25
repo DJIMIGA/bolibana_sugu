@@ -35,19 +35,21 @@ class InventoryAPIClient:
     Client pour appeler les API de l'app de gestion de stock (B2B)
     """
     
-    def __init__(self):
+    def __init__(self, token: Optional[str] = None, api_key_id: Optional[int] = None, api_key_name: Optional[str] = None):
         """
         Initialise le client API
         
         Note: Le token API est récupéré depuis ApiKey.get_active_key()
-        ou depuis settings.B2B_API_KEY en fallback.
+        ou depuis settings.B2B_API_KEY en fallback si aucun token n'est fourni.
         """
         # Utiliser l'URL par défaut depuis settings
         self.base_url = getattr(settings, 'B2B_API_URL', 'https://www.bolibanastock.com/api/v1').rstrip('/')
         logger.info(f"URL API configurée: {self.base_url}")
         
-        # Récupérer le token : depuis ApiKey active ou depuis settings
-        self.token = ApiKey.get_active_key()
+        # Récupérer le token : depuis ApiKey active ou depuis settings, sauf si fourni
+        self.token = token or ApiKey.get_active_key()
+        self.api_key_id = api_key_id
+        self.api_key_name = api_key_name
         
         if not self.token:
             # Vérifier si une clé existe en BDD mais n'est pas active
@@ -67,10 +69,19 @@ class InventoryAPIClient:
         
         # Log de la clé utilisée (masquée)
         masked_token = f"{self.token[:6]}...{self.token[-4:]}" if len(self.token) > 10 else "***"
-        logger.info(f"Clé API utilisée: {masked_token}")
+        if self.api_key_name or self.api_key_id:
+            logger.info(
+                f"Clé API utilisée: {masked_token} (id={self.api_key_id}, name='{self.api_key_name}')"
+            )
+        else:
+            logger.info(f"Clé API utilisée: {masked_token}")
         
         # Enregistrer l'utilisation de la clé si elle existe
-        api_key_obj = ApiKey.objects.filter(is_active=True).first()
+        api_key_obj = None
+        if self.api_key_id:
+            api_key_obj = ApiKey.objects.filter(id=self.api_key_id).first()
+        else:
+            api_key_obj = ApiKey.objects.filter(is_active=True).first()
         if api_key_obj:
             api_key_obj.record_usage()
             logger.debug(f"Utilisation enregistrée pour la clé: {api_key_obj.name}")
@@ -391,99 +402,136 @@ class ProductSyncService:
         logger.info("[SYNC B2B] 🚀 Démarrage synchronisation produits B2B")
         logger.info("=" * 80)
         
-        page = 1
-        has_next = True
-        all_b2b_product_ids = []
-        
-        while has_next:
-            try:
-                response = self.api_client.get_products_list(site_id=site_id, page=page)
-                
-                # Gérer différents formats de réponse
-                if isinstance(response, dict):
-                    products = response.get('results', response.get('products', []))
-                    has_next = response.get('next') is not None
-                else:
-                    products = response if isinstance(response, list) else []
+        keys = ApiKey.get_active_keys()
+        if not keys:
+            logger.error("[SYNC B2B] Aucune clé API disponible pour la synchronisation")
+            return stats
+
+        processed_external_ids = set()
+        all_b2b_product_ids = set()
+
+        for key_info in keys:
+            key_label = f"id={key_info.get('id')}, name='{key_info.get('name')}'"
+            logger.info(f"[SYNC B2B] 🔑 Synchronisation via clé: {key_label}")
+
+            api_client = InventoryAPIClient(
+                token=key_info.get('key'),
+                api_key_id=key_info.get('id'),
+                api_key_name=key_info.get('name')
+            )
+
+            page = 1
+            has_next = True
+
+            while has_next:
+                try:
+                    response = api_client.get_products_list(site_id=site_id, page=page)
+
+                    # Gérer différents formats de réponse
+                    if isinstance(response, dict):
+                        products = response.get('results', response.get('products', []))
+                        has_next = response.get('next') is not None
+                    else:
+                        products = response if isinstance(response, list) else []
+                        has_next = False
+
+                    logger.info(f"[SYNC B2B] 📄 Page {page}: {len(products)} produits récupérés")
+
+                    for product_data in products:
+                        try:
+                            # Récupérer les détails complets du produit pour avoir toutes les informations
+                            external_id = product_data.get('id')
+                            if external_id:
+                                if external_id in processed_external_ids:
+                                    stats['skipped'] += 1
+                                    stats['skipped_reasons']['duplicate_external_id'] = (
+                                        stats['skipped_reasons'].get('duplicate_external_id', 0) + 1
+                                    )
+                                    logger.debug(
+                                        f"[SYNC B2B] 🔁 Produit déjà traité (id={external_id}), clé={key_label}"
+                                    )
+                                    continue
+
+                                processed_external_ids.add(external_id)
+                                all_b2b_product_ids.add(external_id)
+                                try:
+                                    # Récupérer les détails complets depuis l'API
+                                    detailed_product_data = api_client.get_product_detail(external_id)
+
+                                    # Log des images avant fusion pour debug
+                                    list_images = product_data.get('images') or product_data.get('image_urls') or product_data.get('gallery') or product_data.get('image_url') or product_data.get('image')
+                                    detail_images = detailed_product_data.get('images') or detailed_product_data.get('image_urls') or detailed_product_data.get('gallery') or detailed_product_data.get('image_url') or detailed_product_data.get('image')
+
+                                    logger.info(f"[SYNC IMAGES] 📋 Avant fusion - Produit {external_id}:")
+                                    logger.info(f"  - Images LISTE: {list_images}")
+                                    logger.info(f"  - Images DÉTAIL: {detail_images}")
+
+                                    # Fusionner les données de la liste avec les détails complets
+                                    # Les détails complets ont priorité
+                                    product_data = {**product_data, **detailed_product_data}
+
+                                    # Log après fusion
+                                    merged_images = product_data.get('images') or product_data.get('image_urls') or product_data.get('gallery') or product_data.get('image_url') or product_data.get('image')
+                                    logger.info(f"  - Images APRÈS FUSION: {merged_images}")
+
+                                    # Si le détail n'a pas d'images mais que la liste en a, les restaurer
+                                    if not detail_images and list_images:
+                                        if isinstance(list_images, list):
+                                            product_data['images'] = list_images
+                                        else:
+                                            product_data['image_url'] = list_images
+                                        logger.info(f"[SYNC IMAGES] 🔄 Images de la liste restaurées (détail sans images) pour produit {external_id}")
+                                except InventoryAPIError as e:
+                                    logger.warning(
+                                        f"Impossible de récupérer les détails du produit {external_id}: {str(e)}. "
+                                        f"Utilisation des données de base. clé={key_label}"
+                                    )
+                                    # Continuer avec les données de base si les détails ne sont pas disponibles
+
+                            result = self.create_or_update_product(
+                                product_data,
+                                api_key_id=key_info.get('id'),
+                                api_key_name=key_info.get('name')
+                            )
+                            stats['total'] += 1
+                            if result['created']:
+                                stats['created'] += 1
+                                logger.info(f"[SYNC B2B] ✅ Produit {external_id} créé: {product_data.get('name', 'N/A')}")
+                            else:
+                                stats['updated'] += 1
+                                logger.debug(f"[SYNC B2B] 🔄 Produit {external_id} mis à jour: {product_data.get('name', 'N/A')}")
+                        except Exception as e:
+                            external_id = product_data.get('id', 'N/A')
+                            error_msg = str(e)
+                            stats['errors'] += 1
+                            stats['errors_list'].append({
+                                'product_id': external_id,
+                                'error': error_msg,
+                                'api_key_id': key_info.get('id'),
+                                'api_key_name': key_info.get('name')
+                            })
+
+                            # Catégoriser les erreurs pour statistiques
+                            if 'catégorie' in error_msg.lower() or 'category' in error_msg.lower():
+                                reason = 'category_missing'
+                            elif 'validation' in error_msg.lower():
+                                reason = 'validation_error'
+                            else:
+                                reason = 'other_error'
+
+                            if reason not in stats['skipped_reasons']:
+                                stats['skipped_reasons'][reason] = 0
+                            stats['skipped_reasons'][reason] += 1
+                            stats['skipped'] += 1
+
+                            logger.error(f"[SYNC B2B] ❌ Erreur produit {external_id}: {error_msg} (clé={key_label})")
+
+                    page += 1
+
+                except InventoryAPIError as e:
+                    logger.error(f"[SYNC B2B] ❌ Erreur API page {page} (clé={key_label}): {str(e)}")
                     has_next = False
-                
-                logger.info(f"[SYNC B2B] 📄 Page {page}: {len(products)} produits récupérés")
-                
-                for product_data in products:
-                    try:
-                        # Récupérer les détails complets du produit pour avoir toutes les informations
-                        external_id = product_data.get('id')
-                        if external_id:
-                            all_b2b_product_ids.append(external_id)
-                            try:
-                                # Récupérer les détails complets depuis l'API
-                                detailed_product_data = self.api_client.get_product_detail(external_id)
-                                
-                                # Log des images avant fusion pour debug
-                                list_images = product_data.get('images') or product_data.get('image_urls') or product_data.get('gallery') or product_data.get('image_url') or product_data.get('image')
-                                detail_images = detailed_product_data.get('images') or detailed_product_data.get('image_urls') or detailed_product_data.get('gallery') or detailed_product_data.get('image_url') or detailed_product_data.get('image')
-                                
-                                logger.info(f"[SYNC IMAGES] 📋 Avant fusion - Produit {external_id}:")
-                                logger.info(f"  - Images LISTE: {list_images}")
-                                logger.info(f"  - Images DÉTAIL: {detail_images}")
-                                
-                                # Fusionner les données de la liste avec les détails complets
-                                # Les détails complets ont priorité
-                                product_data = {**product_data, **detailed_product_data}
-                                
-                                # Log après fusion
-                                merged_images = product_data.get('images') or product_data.get('image_urls') or product_data.get('gallery') or product_data.get('image_url') or product_data.get('image')
-                                logger.info(f"  - Images APRÈS FUSION: {merged_images}")
-                                
-                                # Si le détail n'a pas d'images mais que la liste en a, les restaurer
-                                if not detail_images and list_images:
-                                    if isinstance(list_images, list):
-                                        product_data['images'] = list_images
-                                    else:
-                                        product_data['image_url'] = list_images
-                                    logger.info(f"[SYNC IMAGES] 🔄 Images de la liste restaurées (détail sans images) pour produit {external_id}")
-                            except InventoryAPIError as e:
-                                logger.warning(f"Impossible de récupérer les détails du produit {external_id}: {str(e)}. Utilisation des données de base.")
-                                # Continuer avec les données de base si les détails ne sont pas disponibles
-                        
-                        result = self.create_or_update_product(product_data)
-                        stats['total'] += 1
-                        if result['created']:
-                            stats['created'] += 1
-                            logger.info(f"[SYNC B2B] ✅ Produit {external_id} créé: {product_data.get('name', 'N/A')}")
-                        else:
-                            stats['updated'] += 1
-                            logger.debug(f"[SYNC B2B] 🔄 Produit {external_id} mis à jour: {product_data.get('name', 'N/A')}")
-                    except Exception as e:
-                        external_id = product_data.get('id', 'N/A')
-                        error_msg = str(e)
-                        stats['errors'] += 1
-                        stats['errors_list'].append({
-                            'product_id': external_id,
-                            'error': error_msg
-                        })
-                        
-                        # Catégoriser les erreurs pour statistiques
-                        if 'catégorie' in error_msg.lower() or 'category' in error_msg.lower():
-                            reason = 'category_missing'
-                        elif 'validation' in error_msg.lower():
-                            reason = 'validation_error'
-                        else:
-                            reason = 'other_error'
-                        
-                        if reason not in stats['skipped_reasons']:
-                            stats['skipped_reasons'][reason] = 0
-                        stats['skipped_reasons'][reason] += 1
-                        stats['skipped'] += 1
-                        
-                        logger.error(f"[SYNC B2B] ❌ Erreur produit {external_id}: {error_msg}")
-                
-                page += 1
-                
-            except InventoryAPIError as e:
-                logger.error(f"[SYNC B2B] ❌ Erreur API page {page}: {str(e)}")
-                has_next = False
-                stats['errors'] += 1
+                    stats['errors'] += 1
         
         # Résumé final de la synchronisation
         logger.info("=" * 80)
@@ -550,7 +598,11 @@ class ProductSyncService:
         """
         try:
             product_data = self.api_client.get_product_detail(external_id)
-            return self.create_or_update_product(product_data)
+            return self.create_or_update_product(
+                product_data,
+                api_key_id=getattr(self.api_client, 'api_key_id', None),
+                api_key_name=getattr(self.api_client, 'api_key_name', None)
+            )
         except InventoryAPIError as e:
             logger.error(f"Erreur lors de la synchronisation du produit {external_id}: {str(e)}")
             raise
@@ -568,13 +620,42 @@ class ProductSyncService:
             'updated': 0,
             'deleted': 0,
             'errors': 0,
+            'duplicates': 0,
             'errors_list': []
         }
         
         try:
-            logger.info("[SYNC CAT] Récupération des catégories depuis l'API B2B")
-            categories_data = self.api_client.get_categories_list()
-            logger.info(f"[SYNC CAT] Catégories reçues: {len(categories_data)}")
+            keys = ApiKey.get_active_keys()
+            if not keys:
+                logger.error("[SYNC CAT] Aucune clé API disponible pour la synchronisation")
+                return stats
+
+            logger.info("[SYNC CAT] Récupération des catégories depuis l'API B2B (multi clés)")
+            categories_data = []
+            external_ids_seen = set()
+
+            for key_info in keys:
+                key_label = f"id={key_info.get('id')}, name='{key_info.get('name')}'"
+                api_client = InventoryAPIClient(
+                    token=key_info.get('key'),
+                    api_key_id=key_info.get('id'),
+                    api_key_name=key_info.get('name')
+                )
+                key_categories = api_client.get_categories_list()
+                logger.info(f"[SYNC CAT] Catégories reçues (clé {key_label}): {len(key_categories)}")
+
+                for category_data in key_categories:
+                    external_id = category_data.get('id')
+                    if external_id in external_ids_seen:
+                        stats['duplicates'] += 1
+                        logger.debug(
+                            f"[SYNC CAT] Catégorie déjà vue (id={external_id}), clé={key_label}"
+                        )
+                        continue
+                    external_ids_seen.add(external_id)
+                    categories_data.append(category_data)
+
+            logger.info(f"[SYNC CAT] Catégories uniques retenues: {len(categories_data)}")
             external_ids = {
                 int(cat_id) for cat_id in (
                     category_data.get('id') for category_data in categories_data
@@ -656,13 +737,18 @@ class ProductSyncService:
             "[SYNC CAT] Résumé: "
             f"total={stats['total']} created={stats['created']} "
             f"updated={stats['updated']} deleted={stats.get('deleted', 0)} "
-            f"errors={stats.get('errors', 0)}"
+            f"errors={stats.get('errors', 0)} duplicates={stats.get('duplicates', 0)}"
         )
 
         return stats
     
     @transaction.atomic
-    def create_or_update_product(self, external_data: Dict[str, Any]) -> Dict[str, Any]:
+    def create_or_update_product(
+        self,
+        external_data: Dict[str, Any],
+        api_key_id: Optional[int] = None,
+        api_key_name: Optional[str] = None
+    ) -> Dict[str, Any]:
         """
         Crée ou met à jour un produit dans SagaKore à partir des données de l'app de gestion
         
@@ -1146,6 +1232,8 @@ class ProductSyncService:
                 external_id=external_id,
                 external_sku=external_data.get('sku', ''),
                 external_category_id=external_category_id,
+                api_key_id=api_key_id,
+                api_key_name=api_key_name,
                 is_b2b=True,
                 sync_status='synced',
                 last_synced_at=timezone.now()
@@ -1157,6 +1245,10 @@ class ProductSyncService:
         external_product.sync_error = None
         # IMPORTANT: ces produits proviennent de la synchro B2B → marquer is_b2b=True
         external_product.is_b2b = True
+        if api_key_id is not None:
+            external_product.api_key_id = api_key_id
+        if api_key_name:
+            external_product.api_key_name = api_key_name
         external_product.save()
         
         # Logger le statut is_available pour diagnostic

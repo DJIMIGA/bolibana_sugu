@@ -195,6 +195,49 @@ class ApiKey(models.Model):
         else:
             logger.warning("[ApiKey] Aucune clé disponible (ni ApiKey active, ni B2B_API_KEY)")
         return fallback
+
+    @classmethod
+    def get_active_keys(cls):
+        """
+        Récupère toutes les clés API actives (déchiffrées).
+        Retourne une liste d'objets {id, name, key}.
+        """
+        keys = []
+        active_qs = cls.objects.filter(is_active=True)
+        active_count = active_qs.count()
+        active_ids = list(active_qs.values_list('id', flat=True)[:10])
+        logger.info(f"[ApiKey] Clés actives en BDD (multi): count={active_count}, ids={active_ids}")
+
+        for api_key in active_qs:
+            try:
+                key = api_key.get_key()
+                logger.info(
+                    f"[ApiKey] Clé API active (multi) récupérée: "
+                    f"id={api_key.id}, name='{api_key.name}', masked='{_mask_secret(key)}', len={len(key)}"
+                )
+                keys.append({
+                    'id': api_key.id,
+                    'name': api_key.name,
+                    'key': key
+                })
+            except Exception as e:
+                logger.error(
+                    f"[ApiKey] Clé active illisible (multi) id={api_key.id}, name='{api_key.name}': {e}"
+                )
+
+        if keys:
+            return keys
+
+        # Fallback vers la clé globale depuis settings si aucune clé active utilisable
+        fallback = getattr(settings, 'B2B_API_KEY', '') or ''
+        if fallback:
+            logger.info(
+                f"[ApiKey] Fallback B2B_API_KEY utilisé (multi): masked='{_mask_secret(fallback)}', len={len(fallback)}"
+            )
+            return [{'id': None, 'name': 'fallback', 'key': fallback}]
+
+        logger.warning("[ApiKey] Aucune clé disponible (multi) - ni ApiKey active, ni B2B_API_KEY")
+        return []
     
     def __str__(self):
         status = "Active" if self.is_active else "Inactive"
@@ -223,6 +266,8 @@ class ExternalProduct(models.Model):
     external_id = models.IntegerField(verbose_name='ID externe (B2B)')
     external_sku = models.CharField(max_length=100, verbose_name='SKU externe')
     external_category_id = models.IntegerField(null=True, blank=True, verbose_name='ID catégorie externe')
+    api_key_id = models.IntegerField(null=True, blank=True, verbose_name='ID clé API')
+    api_key_name = models.CharField(max_length=255, null=True, blank=True, verbose_name='Nom clé API')
     is_b2b = models.BooleanField(
         default=False,
         verbose_name='Produit B2B',

@@ -43,3 +43,23 @@ class ApiKeyTestCase(TestCase):
             api_key.save(update_fields=['key_encrypted'])
 
             self.assertEqual(ApiKey.get_active_key(), original_key)
+
+    def test_get_active_keys_returns_multiple(self):
+        encryption_key = Fernet.generate_key()
+        key_1 = 'key-001'
+        key_2 = 'key-002'
+
+        with override_settings(INVENTORY_ENCRYPTION_KEY=encryption_key):
+            api_key_1 = ApiKey.objects.create(name='Key 1', is_active=True)
+            api_key_1.set_key(key_1)
+            api_key_1.save()
+
+            api_key_2 = ApiKey.objects.create(name='Key 2', is_active=True)
+            api_key_2.set_key(key_2)
+            api_key_2.save()
+
+            keys = ApiKey.get_active_keys()
+            self.assertEqual(len(keys), 2)
+            keys_values = {item['key'] for item in keys}
+            self.assertIn(key_1, keys_values)
+            self.assertIn(key_2, keys_values)
