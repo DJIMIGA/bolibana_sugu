@@ -224,9 +224,31 @@ const CheckoutScreen: React.FC = () => {
     [items]
   );
 
+  const normalizeDeliveryMethods = (methods: any[]): any[] => {
+    if (!Array.isArray(methods)) return [];
+    return methods
+      .filter((method) => method && method.id !== undefined && method.id !== null)
+      .map((method) => {
+        const id = Number(method.id);
+        const order = method.order !== undefined && method.order !== null ? Number(method.order) : undefined;
+        return {
+          ...method,
+          id,
+          order: Number.isNaN(order) ? undefined : order,
+        };
+      })
+      .filter((method) => !Number.isNaN(method.id))
+      .sort((a, b) => {
+        const orderA = a.order ?? Number.POSITIVE_INFINITY;
+        const orderB = b.order ?? Number.POSITIVE_INFINITY;
+        if (orderA !== orderB) return orderA - orderB;
+        return a.id - b.id;
+      });
+  };
+
   const deliveryMethodsInfo = useMemo(() => {
     const lists = cartItemsSafe
-      .map((item) => (Array.isArray(item.product?.delivery_methods) ? item.product.delivery_methods : []))
+      .map((item) => normalizeDeliveryMethods(item.product?.delivery_methods || []))
       .filter((list) => list.length > 0);
 
     if (lists.length === 0) {
@@ -302,7 +324,7 @@ const CheckoutScreen: React.FC = () => {
     const groups = new Map<string, { method: any | null; items: CartItem[]; shipping_cost: number; siteId: any }>();
 
     cartItemsSafe.forEach((item) => {
-      const methods = Array.isArray(item.product?.delivery_methods) ? item.product.delivery_methods : [];
+      const methods = normalizeDeliveryMethods(item.product?.delivery_methods || []);
       let selected = null;
 
       if (deliveryMethodsInfo.isIntersection && selectedDeliveryMethodId !== null) {
@@ -534,41 +556,64 @@ const CheckoutScreen: React.FC = () => {
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Résumé de la commande</Text>
           <View style={styles.summaryCard}>
-            {cartItemsSafe.map((item) => {
-              const product = item.product;
-              const unitPrice = getUnitPrice(item);
-              const variantInfo = getVariantInfo(product);
-              const isWeighted = isWeightedProduct(product);
-              const weightUnit = isWeighted ? getWeightUnit(product) : 'kg';
-              const imageUrl = product?.image || product?.image_urls?.main;
-              return (
-              <View key={item.id} style={styles.itemRow}>
-                {imageUrl ? (
-                  <Image
-                    source={{ uri: imageUrl }}
-                    style={styles.itemImage}
-                    resizeMode="cover"
-                  />
-                ) : (
-                  <View style={styles.itemImagePlaceholder}>
-                    <Ionicons name="image-outline" size={20} color={COLORS.TEXT_SECONDARY} />
+            {(deliveryGroups.length > 0 ? deliveryGroups : [{ items: cartItemsSafe, method: null, siteId: 'default', shipping_cost: 0 }])
+              .map((group, groupIndex) => {
+                const siteLabel = group.siteId && group.siteId !== 'default'
+                  ? `Site ${group.siteId}`
+                  : 'Site principal';
+                const methodName = group.method?.name || 'Livraison';
+                const groupCost = group.shipping_cost || 0;
+                return (
+                  <View key={`${group.siteId}-${group.method?.id ?? 'unknown'}-${groupIndex}`} style={styles.summaryGroup}>
+                    <View style={styles.summaryGroupHeader}>
+                      <View>
+                        <Text style={styles.summaryGroupTitle}>{methodName}</Text>
+                        <Text style={styles.summaryGroupSubtitle}>{siteLabel}</Text>
+                      </View>
+                      <Text style={styles.summaryGroupCost}>
+                        {groupCost > 0 ? formatPrice(groupCost) : 'Gratuit'}
+                      </Text>
+                    </View>
+                    <View style={styles.summaryGroupItems}>
+                      {group.items.map((item: CartItem) => {
+                        const product = item.product;
+                        const unitPrice = getUnitPrice(item);
+                        const variantInfo = getVariantInfo(product);
+                        const isWeighted = isWeightedProduct(product);
+                        const weightUnit = isWeighted ? getWeightUnit(product) : 'kg';
+                        const imageUrl = product?.image || product?.image_urls?.main;
+                        return (
+                          <View key={item.id} style={styles.itemRow}>
+                            {imageUrl ? (
+                              <Image
+                                source={{ uri: imageUrl }}
+                                style={styles.itemImage}
+                                resizeMode="cover"
+                              />
+                            ) : (
+                              <View style={styles.itemImagePlaceholder}>
+                                <Ionicons name="image-outline" size={20} color={COLORS.TEXT_SECONDARY} />
+                              </View>
+                            )}
+                            <View style={styles.itemInfo}>
+                              <Text style={styles.itemName} numberOfLines={1}>
+                                {getProductTitle(product)}
+                              </Text>
+                              {variantInfo ? <Text style={styles.itemVariant}>{variantInfo}</Text> : null}
+                              <Text style={styles.itemQuantity}>
+                                {isWeighted ? 'Poids' : 'Quantité'}: {isWeighted ? `${formatWeightQuantity(item.quantity, weightUnit)} ${weightUnit}` : item.quantity} × {formatPrice(unitPrice)} / {isWeighted ? weightUnit : 'unité'}
+                              </Text>
+                            </View>
+                            <Text style={styles.itemSubtotal}>
+                              {formatPrice(unitPrice * item.quantity)}
+                            </Text>
+                          </View>
+                        );
+                      })}
+                    </View>
                   </View>
-                )}
-                <View style={styles.itemInfo}>
-                  <Text style={styles.itemName} numberOfLines={1}>
-                    {getProductTitle(product)}
-                  </Text>
-                  {variantInfo ? <Text style={styles.itemVariant}>{variantInfo}</Text> : null}
-                  <Text style={styles.itemQuantity}>
-                    {isWeighted ? 'Poids' : 'Quantité'}: {isWeighted ? `${formatWeightQuantity(item.quantity, weightUnit)} ${weightUnit}` : item.quantity} × {formatPrice(unitPrice)} / {isWeighted ? weightUnit : 'unité'}
-                  </Text>
-                </View>
-                <Text style={styles.itemSubtotal}>
-                  {formatPrice(unitPrice * item.quantity)}
-                </Text>
-              </View>
-              );
-            })}
+                );
+              })}
             <View style={styles.summaryDivider} />
             <View style={styles.summaryFooter}>
               <Text style={styles.summaryText}>{itemsCount} article(s)</Text>
@@ -602,78 +647,6 @@ const CheckoutScreen: React.FC = () => {
               <Ionicons name="add-circle-outline" size={24} color={COLORS.PRIMARY} />
               <Text style={styles.addAddressText}>Ajouter une adresse</Text>
             </TouchableOpacity>
-          )}
-        </View>
-
-        {/* Méthode de livraison */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Méthode de livraison</Text>
-          {deliveryMethodsInfo.isIntersection && deliveryMethodsInfo.common.length > 0 ? (
-            <>
-              {deliveryMethodsInfo.common.map((method: any) => {
-                const isSelected = Number(method?.id) === selectedDeliveryMethodId;
-                const price = getDeliveryPrice(method);
-                return (
-                  <TouchableOpacity
-                    key={`${method.site_configuration ?? 'default'}-${method.id}`}
-                    style={[styles.deliveryCard, isSelected && styles.deliveryCardSelected]}
-                    onPress={() => setSelectedDeliveryMethodId(Number(method.id))}
-                  >
-                    <Ionicons
-                      name="cube-outline"
-                      size={22}
-                      color={isSelected ? COLORS.PRIMARY : COLORS.TEXT}
-                    />
-                    <View style={styles.deliveryInfo}>
-                      <Text style={[styles.deliveryTitle, isSelected && styles.deliveryTitleSelected]}>
-                        {method.name}
-                      </Text>
-                      <Text style={styles.deliverySubtitle}>
-                        {price > 0 ? `Frais: ${formatPrice(price)}` : 'Livraison gratuite'}
-                      </Text>
-                    </View>
-                    {isSelected ? (
-                      <Ionicons name="checkmark-circle" size={20} color={COLORS.PRIMARY} />
-                    ) : null}
-                  </TouchableOpacity>
-                );
-              })}
-            </>
-          ) : deliveryGroups.length > 0 ? (
-            <>
-              <View style={styles.deliveryNotice}>
-                <Ionicons name="alert-circle-outline" size={18} color={COLORS.TEXT_SECONDARY} />
-                <Text style={styles.deliveryNoticeText}>
-                  La commande sera divisée par méthode ou site de livraison.
-                </Text>
-              </View>
-              {deliveryGroups.map((group, index) => {
-                const method = group.method;
-                const price = group.shipping_cost || 0;
-                const siteLabel = group.siteId && group.siteId !== 'default'
-                  ? `Site ${group.siteId}`
-                  : 'Site principal';
-                const title = method?.name || `Livraison ${index + 1}`;
-                return (
-                  <View key={`${group.siteId}-${index}`} style={styles.deliveryCard}>
-                    <Ionicons name="cube-outline" size={22} color={COLORS.TEXT} />
-                    <View style={styles.deliveryInfo}>
-                      <Text style={styles.deliveryTitle}>{title}</Text>
-                      <Text style={styles.deliverySubtitle}>
-                        {siteLabel} • {price > 0 ? `Frais: ${formatPrice(price)}` : 'Frais à confirmer'}
-                      </Text>
-                    </View>
-                  </View>
-                );
-              })}
-            </>
-          ) : (
-            <View style={styles.deliveryEmpty}>
-              <Ionicons name="information-circle-outline" size={18} color={COLORS.TEXT_SECONDARY} />
-              <Text style={styles.deliveryEmptyText}>
-                Aucune méthode de livraison disponible pour ces produits.
-              </Text>
-            </View>
           )}
         </View>
 
@@ -793,11 +766,43 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#E5E7EB',
   },
+  summaryGroup: {
+    marginBottom: 12,
+  },
+  summaryGroupHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingVertical: 6,
+    paddingHorizontal: 8,
+    borderRadius: 8,
+    backgroundColor: '#ECFDF3',
+    borderWidth: 1,
+    borderColor: '#D1FAE5',
+    marginBottom: 8,
+  },
+  summaryGroupTitle: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: COLORS.TEXT,
+  },
+  summaryGroupSubtitle: {
+    fontSize: 12,
+    color: COLORS.TEXT_SECONDARY,
+  },
+  summaryGroupCost: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: COLORS.PRIMARY,
+  },
+  summaryGroupItems: {
+    gap: 8,
+  },
   itemRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 12,
+    marginBottom: 8,
   },
   itemImage: {
     width: 44,
@@ -833,6 +838,11 @@ const styles = StyleSheet.create({
   itemQuantity: {
     fontSize: 13,
     color: COLORS.TEXT_SECONDARY,
+  },
+  itemDelivery: {
+    fontSize: 12,
+    color: COLORS.TEXT_SECONDARY,
+    marginTop: 2,
   },
   itemSubtotal: {
     fontSize: 15,

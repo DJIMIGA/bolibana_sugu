@@ -74,15 +74,28 @@ class ApiKey(models.Model):
         try:
             encryption_key = self._get_encryption_key()
             f = Fernet(encryption_key)
-            encrypted = base64.b64decode(self.key_encrypted.encode())
-            decrypted = f.decrypt(encrypted)
+            encrypted = None
+            try:
+                encrypted = base64.b64decode(self.key_encrypted.encode())
+            except Exception:
+                # Si la valeur est déjà un token Fernet (non base64-encodé au stockage)
+                encrypted = self.key_encrypted.encode()
+            try:
+                decrypted = f.decrypt(encrypted)
+            except Exception:
+                # Dernier essai: token encodé comme bytes repr() ou avec espaces parasites
+                cleaned = str(self.key_encrypted).strip().strip('"').strip("'")
+                decrypted = f.decrypt(cleaned.encode())
             return decrypted.decode()
         except Exception as e:
-            logger.error(f"Erreur lors du déchiffrement de la clé API {self.id}: {str(e)}")
+            logger.error(
+                f"Erreur lors du déchiffrement de la clé API {self.id}: {str(e)} "
+                f"(len={len(self.key_encrypted) if self.key_encrypted else 0})"
+            )
             raise ValueError(f"Impossible de déchiffrer la clé API: {str(e)}")
     
     def _get_encryption_key(self):
-        """Récupère la clé de chiffrement depuis settings"""
+        """Récupère et normalise la clé de chiffrement depuis settings"""
         encryption_key = getattr(settings, 'INVENTORY_ENCRYPTION_KEY', None)
 
         # Normaliser au maximum (espaces, guillemets, copie "b'...'" depuis Python)
@@ -109,6 +122,20 @@ class ApiKey(models.Model):
         if isinstance(encryption_key, str):
             encryption_key = encryption_key.encode()
 
+        # Tentative de normalisation si la clé n'est pas valide
+        try:
+            if not _is_valid_fernet_key(encryption_key):
+                # Essai si la clé est base64 d'une clé Fernet string
+                try:
+                    decoded = base64.b64decode(encryption_key)
+                    if _is_valid_fernet_key(decoded):
+                        logger.warning("[ApiKey] INVENTORY_ENCRYPTION_KEY normalisée (base64 décodée)")
+                        encryption_key = decoded
+                except Exception:
+                    pass
+        except Exception:
+            pass
+
         # Log de diagnostic (sans exposer la clé)
         try:
             is_valid = _is_valid_fernet_key(encryption_key)
@@ -131,6 +158,8 @@ class ApiKey(models.Model):
     def get_active_key(cls):
         """Récupère la clé API active"""
         api_key = cls.objects.filter(is_active=True).first()
+        if not api_key:
+            logger.warning("[ApiKey] Aucune clé active trouvée en BDD, tentative de fallback settings.B2B_API_KEY")
         if api_key:
             try:
                 key = api_key.get_key()
@@ -147,6 +176,8 @@ class ApiKey(models.Model):
                     "Fallback vers settings.B2B_API_KEY si disponible. "
                     f"Erreur: {e}"
                 )
+        else:
+            logger.info("[ApiKey] Aucune clé BDD active à déchiffrer")
         # Fallback vers la clé globale depuis settings
         fallback = getattr(settings, 'B2B_API_KEY', '') or ''
         if fallback:
