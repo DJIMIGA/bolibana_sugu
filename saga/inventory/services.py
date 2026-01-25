@@ -1570,6 +1570,13 @@ class OrderSyncService:
             metadata['b2b_synced_at'] = timezone.now().isoformat()
             order.metadata = metadata
             order.save(update_fields=['metadata'])
+
+            logger.info(
+                "Commande %s envoyée avec succès vers B2B (external_sale_id=%s, total=%s)",
+                order.order_number,
+                external_sale_id,
+                order.total
+            )
             
             logger.info(
                 f"Commande {order.order_number} synchronisée avec succès "

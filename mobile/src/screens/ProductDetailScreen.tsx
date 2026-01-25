@@ -292,6 +292,7 @@ const ProductDetailScreen: React.FC = () => {
 
   const hasImages = images.length > 0;
   const screenWidth = Dimensions.get('window').width;
+  const cardWidth = Math.max(screenWidth - 32, 0);
 
   return (
     <View style={styles.container}>
@@ -310,7 +311,8 @@ const ProductDetailScreen: React.FC = () => {
 
       <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
       {/* Image du produit avec carrousel si plusieurs images */}
-      <View style={styles.imageContainer}>
+      <View style={[styles.imageCard, { width: cardWidth }]}>
+      <View style={[styles.imageContainer, { width: cardWidth, height: cardWidth }]}>
         {hasImages ? (
           <>
             <FlatList
@@ -319,15 +321,18 @@ const ProductDetailScreen: React.FC = () => {
               pagingEnabled
               showsHorizontalScrollIndicator={false}
               onMomentumScrollEnd={(e) => {
-                const index = Math.round(e.nativeEvent.contentOffset.x / screenWidth);
+                const index = Math.round(e.nativeEvent.contentOffset.x / cardWidth);
                 setActiveImageIndex(index);
               }}
+              contentContainerStyle={styles.carouselContent}
+              snapToInterval={cardWidth}
+              decelerationRate="fast"
               keyExtractor={(_, index) => `image-${index}`}
               renderItem={({ item }) => (
                 <ProductImage
                   uri={item}
-                  style={styles.carouselImage}
-                  resizeMode="contain"
+                  style={[styles.carouselImage, { width: cardWidth, height: cardWidth }]}
+                  resizeMode="cover"
                   fallback={
                     <View style={styles.imagePlaceholder}>
                       <MaterialIcons name="image-not-supported" size={64} color={COLORS.TEXT_SECONDARY} />
@@ -372,6 +377,7 @@ const ProductDetailScreen: React.FC = () => {
             <Text style={styles.salamBadgeText}>SALAM</Text>
           </View>
         )}
+      </View>
       </View>
 
       {/* Contenu principal */}
@@ -740,15 +746,28 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     backgroundColor: COLORS.BACKGROUND,
   },
+  imageCard: {
+    borderRadius: 24,
+    backgroundColor: '#FFFFFF',
+    marginHorizontal: 16,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.12,
+    shadowRadius: 12,
+    elevation: 8,
+  },
   imageContainer: {
     width: '100%',
     height: Dimensions.get('window').width, // Image carrée basée sur la largeur
     position: 'relative',
     backgroundColor: '#FFFFFF',
+    borderRadius: 24,
+    overflow: 'hidden',
   },
   carouselImage: {
     width: Dimensions.get('window').width,
     height: Dimensions.get('window').width,
+    borderRadius: 24,
   },
   paginationContainer: {
     position: 'absolute',
@@ -771,12 +790,16 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.PRIMARY,
     width: 16,
   },
+  carouselContent: {
+    alignItems: 'center',
+  },
   imagePlaceholder: {
     width: '100%',
     height: '100%',
     justifyContent: 'center',
     alignItems: 'center',
     backgroundColor: '#F3F4F6',
+    borderRadius: 24,
   },
   discountBadge: {
     position: 'absolute',

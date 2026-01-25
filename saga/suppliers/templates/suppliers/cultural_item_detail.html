@@ -130,16 +130,16 @@
     <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
         <!-- Galerie d'images -->
         <div class="space-y-4">
-            <div class="bg-white rounded-lg shadow-md overflow-hidden">
+            <div class="bg-white rounded-2xl sm:rounded-lg shadow-md overflow-hidden">
                 {% with display_image_url=product.get_display_image_url %}
                 {% if display_image_url %}
-                    <img id="main-image" src="{{ display_image_url }}" alt="{{ product.title }}" class="w-full h-auto object-cover">
+                    <img id="main-image" src="{{ display_image_url }}" alt="{{ product.title }}" class="w-full h-auto object-cover rounded-2xl sm:rounded-lg">
                 {% elif images %}
-                    <img id="main-image" src="{{ images.0.image.url }}" alt="{{ product.title }}" class="w-full h-auto object-cover">
+                    <img id="main-image" src="{{ images.0.image.url }}" alt="{{ product.title }}" class="w-full h-auto object-cover rounded-2xl sm:rounded-lg">
                 {% elif b2b_image_urls %}
-                    <img id="main-image" src="{{ b2b_image_urls.0 }}" alt="{{ product.title }}" class="w-full h-auto object-cover">
+                    <img id="main-image" src="{{ b2b_image_urls.0 }}" alt="{{ product.title }}" class="w-full h-auto object-cover rounded-2xl sm:rounded-lg">
                 {% else %}
-                    <img id="main-image" src="{% static 'images/no-image.png' %}" alt="Image non disponible" class="w-full h-auto object-cover">
+                    <img id="main-image" src="{% static 'images/no-image.png' %}" alt="Image non disponible" class="w-full h-auto object-cover rounded-2xl sm:rounded-lg">
                 {% endif %}
                 {% endwith %}
             </div>
