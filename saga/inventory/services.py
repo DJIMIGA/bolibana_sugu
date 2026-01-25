@@ -1550,6 +1550,24 @@ class OrderSyncService:
         try:
             # Préparer le payload
             payload = self.prepare_order_payload(order)
+
+            # Log du payload envoyé (anonymisé)
+            items_preview = [
+                {
+                    'product_id': item.get('product_id'),
+                    'quantity': item.get('quantity'),
+                    'price': item.get('price'),
+                    'site_id': item.get('site_id'),
+                    'sale_unit_type': item.get('sale_unit_type'),
+                }
+                for item in payload.get('items', [])
+            ]
+            logger.info(
+                "Payload B2B prêt - order=%s total=%s items=%s",
+                payload.get('order_number'),
+                payload.get('total'),
+                items_preview
+            )
             
             # Envoyer vers B2B
             logger.info(f"Synchronisation commande {order.order_number} vers B2B...")
