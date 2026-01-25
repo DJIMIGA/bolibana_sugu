@@ -160,18 +160,18 @@ class ApiKey(models.Model):
         active_qs = cls.objects.filter(is_active=True)
         active_count = active_qs.count()
         active_ids = list(active_qs.values_list('id', flat=True)[:5])
-        logger.info(f"[ApiKey] Clés actives en BDD: count={active_count}, ids={active_ids}")
+        logger.debug(f"[ApiKey] Clés actives en BDD: count={active_count}, ids={active_ids}")
         api_key = active_qs.first()
         if not api_key:
             logger.warning("[ApiKey] Aucune clé active trouvée en BDD, tentative de fallback settings.B2B_API_KEY")
         if api_key:
-            logger.info(
+            logger.debug(
                 f"[ApiKey] Clé active sélectionnée: id={api_key.id}, name='{api_key.name}', "
                 f"key_encrypted_len={len(api_key.key_encrypted) if api_key.key_encrypted else 0}"
             )
             try:
                 key = api_key.get_key()
-                logger.info(
+                logger.debug(
                     f"[ApiKey] Clé API active récupérée depuis BDD: "
                     f"name='{api_key.name}', masked='{_mask_secret(key)}', len={len(key)}"
                 )
@@ -206,12 +206,12 @@ class ApiKey(models.Model):
         active_qs = cls.objects.filter(is_active=True)
         active_count = active_qs.count()
         active_ids = list(active_qs.values_list('id', flat=True)[:10])
-        logger.info(f"[ApiKey] Clés actives en BDD (multi): count={active_count}, ids={active_ids}")
+        logger.debug(f"[ApiKey] Clés actives en BDD (multi): count={active_count}, ids={active_ids}")
 
         for api_key in active_qs:
             try:
                 key = api_key.get_key()
-                logger.info(
+                logger.debug(
                     f"[ApiKey] Clé API active (multi) récupérée: "
                     f"id={api_key.id}, name='{api_key.name}', masked='{_mask_secret(key)}', len={len(key)}"
                 )

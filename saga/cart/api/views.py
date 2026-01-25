@@ -3,7 +3,7 @@ from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from django.db import transaction
-from django.shortcuts import get_object_or_404
+from django.shortcuts import get_object_or_404, render
 from django.conf import settings
 from django.urls import reverse
 from decimal import Decimal
@@ -749,7 +749,7 @@ class CartViewSet(viewsets.ModelViewSet):
                             line_items=line_items,
                             mode='payment',
                             success_url=f"{domain_url}/api/cart/payment-success/?session_id={{CHECKOUT_SESSION_ID}}&order_id={order.id}",
-                            cancel_url=f"{domain_url}/api/cart/payment-cancel/?order_id={order.id}",
+                            cancel_url=f"{domain_url}/api/cart/payment-cancel/?order_id={order.id}&mobile=1",
                             metadata={
                                 'order_id': str(order.id),
                                 'cart_id': str(cart.id),
@@ -781,7 +781,7 @@ class CartViewSet(viewsets.ModelViewSet):
                             'amount': int(order.total * 100),
                             'amount': orange_money_service.format_amount(float(order.total)),
                             'return_url': f"{domain_url}/api/cart/orange-money-return/?order_id={order.id}",
-                            'cancel_url': f"{domain_url}/api/cart/orange-money-cancel/?order_id={order.id}",
+                            'cancel_url': f"{domain_url}/api/cart/orange-money-cancel/?order_id={order.id}&mobile=1",
                             'notif_url': f"{domain_url}/api/cart/orange-money-webhook/",
                             'reference': f"CMD-{order.id}"
                         }
@@ -818,6 +818,10 @@ class CartViewSet(viewsets.ModelViewSet):
                     transaction.on_commit(lambda: cart.cart_items.all().delete())
                     for entry in group_orders:
                         order = entry['order']
+                        if order.status != Order.CONFIRMED:
+                            order.status = Order.CONFIRMED
+                            order.save(update_fields=['status'])
+                        transaction.on_commit(lambda o=order: self._sync_order_to_b2b(o))
                         payment_results.append({
                             'order_id': order.id,
                             'status': 'confirmed',
@@ -897,6 +901,9 @@ class CartViewSet(viewsets.ModelViewSet):
 
     @action(detail=False, methods=['get'], url_path='payment-cancel', permission_classes=[AllowAny])
     def payment_cancel(self, request):
+        accept = (request.META.get('HTTP_ACCEPT') or '').lower()
+        if request.GET.get('mobile') == '1' or 'text/html' in accept:
+            return render(request, 'payment_cancel.html', status=200)
         return Response({'status': 'cancelled', 'message': 'Paiement annulé'})
 
     @action(detail=False, methods=['get'], url_path='orange-money-return', permission_classes=[AllowAny])
@@ -944,6 +951,9 @@ class CartViewSet(viewsets.ModelViewSet):
 
     @action(detail=False, methods=['get'], url_path='orange-money-cancel', permission_classes=[AllowAny])
     def orange_money_cancel(self, request):
+        accept = (request.META.get('HTTP_ACCEPT') or '').lower()
+        if request.GET.get('mobile') == '1' or 'text/html' in accept:
+            return render(request, 'payment_cancel.html', status=200)
         return Response({'status': 'cancelled', 'message': 'Paiement Orange Money annulé'})
 
     @action(detail=False, methods=['post'], url_path='orange-money-webhook', permission_classes=[AllowAny])

@@ -462,9 +462,9 @@ class ProductSyncService:
                                     list_images = product_data.get('images') or product_data.get('image_urls') or product_data.get('gallery') or product_data.get('image_url') or product_data.get('image')
                                     detail_images = detailed_product_data.get('images') or detailed_product_data.get('image_urls') or detailed_product_data.get('gallery') or detailed_product_data.get('image_url') or detailed_product_data.get('image')
 
-                                    logger.info(f"[SYNC IMAGES] 📋 Avant fusion - Produit {external_id}:")
-                                    logger.info(f"  - Images LISTE: {list_images}")
-                                    logger.info(f"  - Images DÉTAIL: {detail_images}")
+                                    logger.debug(f"[SYNC IMAGES] 📋 Avant fusion - Produit {external_id}:")
+                                    logger.debug(f"  - Images LISTE: {list_images}")
+                                    logger.debug(f"  - Images DÉTAIL: {detail_images}")
 
                                     # Fusionner les données de la liste avec les détails complets
                                     # Les détails complets ont priorité
@@ -472,7 +472,7 @@ class ProductSyncService:
 
                                     # Log après fusion
                                     merged_images = product_data.get('images') or product_data.get('image_urls') or product_data.get('gallery') or product_data.get('image_url') or product_data.get('image')
-                                    logger.info(f"  - Images APRÈS FUSION: {merged_images}")
+                                    logger.debug(f"  - Images APRÈS FUSION: {merged_images}")
 
                                     # Si le détail n'a pas d'images mais que la liste en a, les restaurer
                                     if not detail_images and list_images:
@@ -480,7 +480,7 @@ class ProductSyncService:
                                             product_data['images'] = list_images
                                         else:
                                             product_data['image_url'] = list_images
-                                        logger.info(f"[SYNC IMAGES] 🔄 Images de la liste restaurées (détail sans images) pour produit {external_id}")
+                                        logger.debug(f"[SYNC IMAGES] 🔄 Images de la liste restaurées (détail sans images) pour produit {external_id}")
                                 except InventoryAPIError as e:
                                     logger.warning(
                                         f"Impossible de récupérer les détails du produit {external_id}: {str(e)}. "
@@ -1097,7 +1097,7 @@ class ProductSyncService:
         image_urls = []
         
         # Log détaillé des images reçues depuis l'API B2B (pour debug)
-        logger.info(f"[SYNC IMAGES] Produit ID externe {external_id} - Images reçues depuis API B2B:")
+        logger.debug(f"[SYNC IMAGES] Produit ID externe {external_id} - Images reçues depuis API B2B:")
         logger.info(f"  - 'images': {external_data.get('images')}")
         logger.info(f"  - 'image_urls': {external_data.get('image_urls')}")
         logger.info(f"  - 'gallery': {external_data.get('gallery')}")
@@ -1109,13 +1109,13 @@ class ProductSyncService:
         # Vérifier si c'est une liste d'images
         if 'images' in external_data and isinstance(external_data['images'], list):
             image_urls = [img for img in external_data['images'] if img]
-            logger.info(f"[SYNC IMAGES] Utilisation de 'images' (liste): {len(image_urls)} images")
+            logger.debug(f"[SYNC IMAGES] Utilisation de 'images' (liste): {len(image_urls)} images")
         elif 'image_urls' in external_data and isinstance(external_data['image_urls'], list):
             image_urls = [img for img in external_data['image_urls'] if img]
-            logger.info(f"[SYNC IMAGES] Utilisation de 'image_urls' (liste): {len(image_urls)} images")
+            logger.debug(f"[SYNC IMAGES] Utilisation de 'image_urls' (liste): {len(image_urls)} images")
         elif 'gallery' in external_data and isinstance(external_data['gallery'], list):
             image_urls = [img for img in external_data['gallery'] if img]
-            logger.info(f"[SYNC IMAGES] Utilisation de 'gallery' (liste): {len(image_urls)} images")
+            logger.debug(f"[SYNC IMAGES] Utilisation de 'gallery' (liste): {len(image_urls)} images")
         
         # Si on a une liste d'images, prioriser les images "processed" (traitées/optimisées)
         if image_urls:
@@ -1125,29 +1125,29 @@ class ProductSyncService:
                 # Réorganiser : images processed en premier
                 other_images = [img for img in image_urls if 'processed' not in img.lower()]
                 image_urls = processed_images + other_images
-                logger.info(f"[SYNC IMAGES] 🔄 Réorganisation: {len(processed_images)} images 'processed' priorisées sur {len(image_urls)} total")
+                logger.debug(f"[SYNC IMAGES] 🔄 Réorganisation: {len(processed_images)} images 'processed' priorisées sur {len(image_urls)} total")
         else:
             # Image unique - priorité selon l'ordre de vérification
             image_url = None
             if 'image_url' in external_data and external_data['image_url']:
                 image_url = external_data['image_url']
-                logger.info(f"[SYNC IMAGES] Utilisation de 'image_url': {image_url}")
+                logger.debug(f"[SYNC IMAGES] Utilisation de 'image_url': {image_url}")
             elif 'image' in external_data and external_data['image']:
                 image_url = external_data['image']
-                logger.info(f"[SYNC IMAGES] Utilisation de 'image': {image_url}")
+                logger.debug(f"[SYNC IMAGES] Utilisation de 'image': {image_url}")
             elif 'main_image' in external_data and external_data['main_image']:
                 image_url = external_data['main_image']
-                logger.info(f"[SYNC IMAGES] Utilisation de 'main_image': {image_url}")
+                logger.debug(f"[SYNC IMAGES] Utilisation de 'main_image': {image_url}")
             elif 'photo' in external_data and external_data['photo']:
                 image_url = external_data['photo']
-                logger.info(f"[SYNC IMAGES] Utilisation de 'photo': {image_url}")
+                logger.debug(f"[SYNC IMAGES] Utilisation de 'photo': {image_url}")
             
             if image_url:
                 image_urls = [image_url]
         
         # Log final des URLs stockées
         if image_urls:
-            logger.info(f"[SYNC IMAGES] ✅ URLs finales stockées dans specifications['b2b_image_urls']: {image_urls}")
+            logger.debug(f"[SYNC IMAGES] ✅ URLs finales stockées dans specifications['b2b_image_urls']: {image_urls}")
             specifications['b2b_image_urls'] = image_urls
             if len(image_urls) == 1:
                 specifications['b2b_image_url'] = image_urls[0]  # Pour compatibilité
@@ -1174,7 +1174,7 @@ class ProductSyncService:
         # Restaurer les b2b_image_urls après la fusion (elles ont priorité)
         if saved_b2b_image_urls:
             product_data['specifications']['b2b_image_urls'] = saved_b2b_image_urls
-            logger.info(f"[SYNC IMAGES] 🔒 URLs restaurées après fusion specifications: {saved_b2b_image_urls}")
+            logger.debug(f"[SYNC IMAGES] 🔒 URLs restaurées après fusion specifications: {saved_b2b_image_urls}")
         if saved_b2b_image_url:
             product_data['specifications']['b2b_image_url'] = saved_b2b_image_url
         elif 'attributes' in external_data:

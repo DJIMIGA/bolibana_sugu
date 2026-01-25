@@ -22,6 +22,7 @@ import { fetchCart } from '../store/slices/cartSlice';
 
 const CheckoutScreen: React.FC = () => {
   const navigation = useNavigation();
+  const dispatch = useAppDispatch();
   const { items, itemsCount } = useAppSelector((state) => state.cart);
   const { sessionExpired, isAuthenticated } = useAppSelector((state) => state.auth);
   
@@ -400,6 +401,15 @@ const CheckoutScreen: React.FC = () => {
   };
 
   const handlePlaceOrder = async () => {
+    console.log('[CheckoutScreen] 🧾 Finalisation: début', {
+      isAuthenticated,
+      sessionExpired,
+      paymentMethod,
+      selectedAddressId: selectedAddress?.id,
+      selectedDeliveryMethodId,
+      deliveryGroupsCount: deliveryGroups.length,
+      itemsCount: cartItemsSafe.length,
+    });
     // Vérifier l'authentification avant de procéder
     if (!isAuthenticated) {
       Alert.alert(
@@ -433,6 +443,9 @@ const CheckoutScreen: React.FC = () => {
       // Re-synchroniser le panier avant de passer la commande
       const refreshedCart = await dispatch(fetchCart()).unwrap();
       const refreshedItems = refreshedCart?.items || [];
+      console.log('[CheckoutScreen] 🛒 Panier re-synchronisé', {
+        refreshedItemsCount: refreshedItems.length,
+      });
       if (!refreshedItems.length) {
         Alert.alert('Panier vide', 'Votre panier est vide. Veuillez ajouter des articles avant de commander.', [
           { text: 'OK', onPress: () => navigation.goBack() },
@@ -440,18 +453,37 @@ const CheckoutScreen: React.FC = () => {
         return;
       }
 
-      const response = await apiClient.post(`${API_ENDPOINTS.CART}checkout/`, {
+      const shippingMethodId = deliveryMethodsInfo.isIntersection && selectedDeliveryMethod
+        ? selectedDeliveryMethod.id
+        : undefined;
+      const payload = {
         payment_method: paymentMethod,
         shipping_address_id: selectedAddress.id,
         product_type: 'all',
-        shipping_method_id: deliveryMethodsInfo.isIntersection && selectedDeliveryMethod
-          ? selectedDeliveryMethod.id
-          : undefined,
+        shipping_method_id: shippingMethodId,
+      };
+      console.log('[CheckoutScreen] 📦 Payload checkout', {
+        paymentMethod,
+        shippingAddressId: selectedAddress.id,
+        shippingMethodId,
+        deliveryIntersection: deliveryMethodsInfo.isIntersection,
+      });
+
+      const response = await apiClient.post(`${API_ENDPOINTS.CART}checkout/`, {
+        ...payload,
       });
 
       const data = response.data || {};
       const orders = Array.isArray(data.orders) ? data.orders : [];
       const warnings = Array.isArray(data.warnings) ? data.warnings : [];
+      console.log('[CheckoutScreen] ✅ Réponse checkout', {
+        hasOrdersArray: Array.isArray(data.orders),
+        ordersCount: orders.length,
+        warningsCount: warnings.length,
+        paymentMethod: data.payment_method,
+        status: data.status,
+        checkoutUrl: !!data.checkout_url,
+      });
 
       if (warnings.length > 0) {
         Alert.alert('Info livraison', warnings.join('\n'));
@@ -511,7 +543,14 @@ const CheckoutScreen: React.FC = () => {
         (navigation as any).navigate('Profile', { screen: 'Orders' });
       }
     } catch (error: any) {
-      const msg = error?.response?.data?.error || 'Une erreur est survenue lors de la commande';
+      const status = error?.response?.status;
+      const responseData = error?.response?.data;
+      const msg = responseData?.error || responseData?.detail || 'Une erreur est survenue lors de la commande';
+      console.log('[CheckoutScreen] ❌ Erreur checkout', {
+        status,
+        message: error?.message,
+        responseData,
+      });
       if (isStockInsufficientError(msg)) {
         // Re-synchroniser le panier et revenir à l'écran panier
         dispatch(fetchCart());
