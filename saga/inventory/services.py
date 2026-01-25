@@ -133,6 +133,12 @@ class InventoryAPIClient:
         else:
             logger.error("AUCUN TOKEN CONFIGURE - La requête va échouer")
         
+        # Log du payload pour les requêtes POST/PUT avec JSON
+        if method in ['POST', 'PUT'] and 'json' in kwargs:
+            import json
+            payload = kwargs.get('json', {})
+            logger.info(f"Payload {method} vers {url}: {json.dumps(payload, indent=2, ensure_ascii=False)}")
+        
         try:
             response = requests.request(
                 method=method,
