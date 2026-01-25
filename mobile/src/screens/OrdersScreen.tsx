@@ -10,6 +10,7 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import { COLORS, API_ENDPOINTS } from '../utils/constants';
+import { formatWeightQuantity } from '../utils/helpers';
 import apiClient from '../services/api';
 import { LoadingScreen } from '../components/LoadingScreen';
 
@@ -114,8 +115,8 @@ const OrdersScreen: React.FC = () => {
                       <Text style={styles.itemTitle}>{item.product_title}</Text>
                       <Text style={styles.itemQty}>
                         {item.is_weighted && item.weight_unit
-                          ? `${item.quantity} ${item.weight_unit}`
-                          : `x${item.quantity}`}
+                          ? `${formatWeightQuantity(Number(item.quantity))} ${item.weight_unit}`
+                          : `x${Math.round(Number(item.quantity))}`}
                       </Text>
                     </View>
                   ))}

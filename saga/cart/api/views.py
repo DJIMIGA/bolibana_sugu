@@ -13,6 +13,7 @@ from product.models import Product, Phone, ShippingMethod
 from accounts.models import ShippingAddress
 from cart.services import CartService
 from cart.orange_money_service import orange_money_service
+from inventory.services import OrderSyncService
 import stripe
 import logging
 
@@ -156,6 +157,24 @@ class CartViewSet(viewsets.ModelViewSet):
             return self._to_decimal(shipping_method_obj.price, Decimal('0')) or Decimal('0')
         return Decimal('0')
 
+    def _sync_order_to_b2b(self, order):
+        """
+        Synchronise une commande vers B2B de manière asynchrone (non bloquante)
+        """
+        try:
+            sync_service = OrderSyncService()
+            result = sync_service.sync_order_to_b2b(order)
+            logger.info(
+                f"Commande {order.order_number} synchronisée vers B2B "
+                f"(external_sale_id: {result.get('external_sale_id')})"
+            )
+        except Exception as e:
+            # Ne pas bloquer le flux de paiement en cas d'erreur de sync
+            logger.error(
+                f"Erreur synchronisation commande {order.order_number} vers B2B: {str(e)}",
+                exc_info=True
+            )
+    
     def _clear_user_cart(self, user):
         if not user:
             return
@@ -909,6 +928,8 @@ class CartViewSet(viewsets.ModelViewSet):
             if status_data.get('status') == 'SUCCESS' or status_data.get('handled_status') is True:
                 if not order.is_paid:
                     order.mark_as_paid()
+                    # Synchroniser vers B2B après paiement réussi
+                    self._sync_order_to_b2b(order)
                 self._clear_user_cart(order.user)
                 return Response({
                     'status': 'success',

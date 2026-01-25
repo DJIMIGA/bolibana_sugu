@@ -191,8 +191,14 @@ export const mapProductFromBackend = (backendProduct: any): Product => {
     : backendProduct.stock;
   const stock = stockValue ? parseFloat(stockValue) : 0;
 
-  const deliveryMethods = Array.isArray(backendProduct.delivery_methods)
+  const rawDeliveryMethods = Array.isArray(backendProduct.delivery_methods)
     ? backendProduct.delivery_methods
+    : (Array.isArray(backendProduct.specifications?.delivery_methods)
+        ? backendProduct.specifications.delivery_methods
+        : undefined);
+
+  const deliveryMethods = Array.isArray(rawDeliveryMethods)
+    ? rawDeliveryMethods
         .map((method: any) => {
           if (!method) return undefined;
           return {

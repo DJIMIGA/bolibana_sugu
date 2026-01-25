@@ -2,11 +2,14 @@
 API REST pour l'intégration avec l'app de gestion de stock
 """
 from rest_framework import viewsets, status
-from rest_framework.decorators import action, api_view
+from rest_framework.decorators import action, api_view, authentication_classes, permission_classes
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
 from django.db.models import Count, Q
-from inventory.models import ExternalProduct, ExternalCategory
+from django.utils import timezone
+from django.views.decorators.csrf import csrf_exempt
+from django.utils.decorators import method_decorator
+from inventory.models import ExternalProduct, ExternalCategory, ApiKey
 from inventory.services import InventoryAPIClient, ProductSyncService
 from inventory.utils import (
     get_synced_categories,
@@ -15,6 +18,7 @@ from inventory.utils import (
 )
 from inventory.category_utils import build_category_hierarchy, get_b2b_categories_hierarchy
 from product.models import Category, Product
+from cart.models import Order
 import logging
 
 logger = logging.getLogger(__name__)
@@ -537,6 +541,191 @@ class InventoryAPIViewSet(viewsets.ViewSet):
     ViewSet pour les actions API d'inventaire (test connexion, synchronisation)
     """
     permission_classes = [IsAuthenticated]
+
+
+@api_view(['POST'])
+@authentication_classes([])
+@permission_classes([])
+@csrf_exempt
+def b2b_order_status_webhook(request):
+    """
+    Webhook pour recevoir les mises à jour de statut de commande depuis B2B
+    
+    Authentification: X-API-Key header (même mécanisme que pour les produits)
+    Payload attendu:
+    {
+        "external_sale_id": int,
+        "status": str,  # 'confirmed', 'processing', 'shipped', 'delivered', 'cancelled', 'refunded'
+        "order_number": str,  # Numéro de commande SagaKore
+        "tracking_number": str (optionnel),
+        "shipped_at": str (optionnel, ISO format),
+        "delivered_at": str (optionnel, ISO format)
+    }
+    """
+    # Vérifier la méthode HTTP
+    if request.method != 'POST':
+        logger.warning(
+            f"[B2B Webhook] Tentative d'accès avec méthode {request.method} depuis {request.META.get('REMOTE_ADDR')}"
+        )
+        return Response(
+            {'error': 'Method not allowed'},
+            status=status.HTTP_405_METHOD_NOT_ALLOWED
+        )
+    
+    # Authentification via X-API-Key
+    api_key_header = request.META.get('HTTP_X_API_KEY') or request.META.get('HTTP_X-API-KEY')
+    if not api_key_header:
+        logger.warning(
+            f"[B2B Webhook] Tentative d'accès sans clé API depuis {request.META.get('REMOTE_ADDR')}"
+        )
+        return Response(
+            {'error': 'Missing X-API-Key header'},
+            status=status.HTTP_401_UNAUTHORIZED
+        )
+    
+    # Vérifier que la clé API est valide
+    active_api_key = ApiKey.get_active_key()
+    if not active_api_key or api_key_header != active_api_key:
+        logger.warning(
+            f"[B2B Webhook] Tentative d'accès avec clé API invalide depuis {request.META.get('REMOTE_ADDR')}"
+        )
+        return Response(
+            {'error': 'Invalid API key'},
+            status=status.HTTP_401_UNAUTHORIZED
+        )
+    
+    # Parser les données JSON
+    try:
+        data = request.data if hasattr(request, 'data') else {}
+        if not data:
+            import json
+            data = json.loads(request.body)
+    except Exception as e:
+        logger.error(f"[B2B Webhook] Erreur parsing JSON: {str(e)}")
+        return Response(
+            {'error': 'Invalid JSON payload'},
+            status=status.HTTP_400_BAD_REQUEST
+        )
+    
+    # Valider les champs requis
+    external_sale_id = data.get('external_sale_id')
+    status_value = data.get('status')
+    order_number = data.get('order_number')
+    
+    if not external_sale_id or not status_value or not order_number:
+        logger.warning(
+            f"[B2B Webhook] Payload incomplet: external_sale_id={external_sale_id}, "
+            f"status={status_value}, order_number={order_number}"
+        )
+        return Response(
+            {'error': 'Missing required fields: external_sale_id, status, order_number'},
+            status=status.HTTP_400_BAD_REQUEST
+        )
+    
+    # Valider le statut
+    valid_statuses = [
+        Order.CONFIRMED,
+        Order.PROCESSING,
+        Order.SHIPPED,
+        Order.DELIVERED,
+        Order.CANCELLED,
+        Order.REFUNDED
+    ]
+    
+    if status_value not in valid_statuses:
+        logger.warning(
+            f"[B2B Webhook] Statut invalide: {status_value} pour commande {order_number}"
+        )
+        return Response(
+            {'error': f'Invalid status. Must be one of: {", ".join(valid_statuses)}'},
+            status=status.HTTP_400_BAD_REQUEST
+        )
+    
+    # Trouver la commande
+    try:
+        order = Order.objects.get(order_number=order_number)
+    except Order.DoesNotExist:
+        logger.warning(
+            f"[B2B Webhook] Commande introuvable: {order_number}"
+        )
+        return Response(
+            {'error': f'Order not found: {order_number}'},
+            status=status.HTTP_404_NOT_FOUND
+        )
+    
+    # Vérifier que l'external_sale_id correspond
+    metadata = order.metadata or {}
+    stored_external_id = metadata.get('b2b_sale_id')
+    
+    if stored_external_id and str(stored_external_id) != str(external_sale_id):
+        logger.warning(
+            f"[B2B Webhook] external_sale_id mismatch pour commande {order_number}: "
+            f"stored={stored_external_id}, received={external_sale_id}"
+        )
+        return Response(
+            {'error': 'external_sale_id mismatch'},
+            status=status.HTTP_400_BAD_REQUEST
+        )
+    
+    # Mettre à jour la commande
+    try:
+        old_status = order.status
+        
+        # Mettre à jour le statut
+        order.status = status_value
+        
+        # Mettre à jour les champs optionnels
+        if 'tracking_number' in data and data['tracking_number']:
+            order.tracking_number = data['tracking_number']
+        
+        if 'shipped_at' in data and data['shipped_at']:
+            try:
+                from django.utils.dateparse import parse_datetime
+                shipped_at = parse_datetime(data['shipped_at'])
+                if shipped_at:
+                    order.shipped_at = shipped_at
+            except Exception as e:
+                logger.warning(f"[B2B Webhook] Erreur parsing shipped_at: {str(e)}")
+        
+        if 'delivered_at' in data and data['delivered_at']:
+            try:
+                from django.utils.dateparse import parse_datetime
+                delivered_at = parse_datetime(data['delivered_at'])
+                if delivered_at:
+                    order.delivered_at = delivered_at
+            except Exception as e:
+                logger.warning(f"[B2B Webhook] Erreur parsing delivered_at: {str(e)}")
+        
+        # Mettre à jour les métadonnées
+        metadata['b2b_last_status_update'] = timezone.now().isoformat()
+        metadata['b2b_status_update_source'] = 'webhook'
+        order.metadata = metadata
+        
+        order.save()
+        
+        logger.info(
+            f"[B2B Webhook] Statut commande {order_number} mis à jour: "
+            f"{old_status} → {status_value} (external_sale_id: {external_sale_id})"
+        )
+        
+        return Response({
+            'success': True,
+            'message': f'Order status updated: {old_status} → {status_value}',
+            'order_number': order_number,
+            'external_sale_id': external_sale_id,
+            'old_status': old_status,
+            'new_status': status_value
+        })
+        
+    except Exception as e:
+        logger.error(
+            f"[B2B Webhook] ❌ Erreur mise à jour commande {order_number}: {str(e)}",
+            exc_info=True
+        )
+        return Response(
+            {'error': f'Error updating order: {str(e)}'},
+            status=status.HTTP_500_INTERNAL_SERVER_ERROR
+        )
     
     @action(detail=False, methods=['post'])
     def test_connection(self, request):

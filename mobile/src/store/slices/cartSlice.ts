@@ -298,6 +298,7 @@ export const enrichCartProducts = createAsyncThunk(
               product: {
                 ...item.product,
                 specifications: enrichedProduct.specifications || item.product.specifications,
+                delivery_methods: enrichedProduct.delivery_methods || item.product.delivery_methods,
               },
             };
           } catch (error: any) {

@@ -13,4 +13,6 @@ urlpatterns = [
     path('products/synced/', views.synced_products_view, name='inventory-product-synced-alt'),
     path('categories/synced/', views.synced_categories_view, name='inventory-category-synced-alt'),
     path('sync/status/', views.sync_status_view, name='inventory-sync-status'),
+    # Webhook pour recevoir les mises à jour de statut de commande depuis B2B
+    path('webhooks/order-status/', views.b2b_order_status_webhook, name='b2b-order-status-webhook'),
 ]

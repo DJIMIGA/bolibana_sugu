@@ -44,7 +44,28 @@ from django.utils import timezone
 from core.utils import track_purchase, track_add_to_cart, track_view_cart, track_initiate_checkout
 from core.facebook_conversions import facebook_conversions
 from .orange_money_service import orange_money_service
+from inventory.services import OrderSyncService
 
+
+def sync_order_to_b2b(order):
+    """
+    Synchronise une commande vers B2B de manière asynchrone (non bloquante)
+    """
+    try:
+        sync_service = OrderSyncService()
+        result = sync_service.sync_order_to_b2b(order)
+        logger = logging.getLogger(__name__)
+        logger.info(
+            f"Commande {order.order_number} synchronisée vers B2B "
+            f"(external_sale_id: {result.get('external_sale_id')})"
+        )
+    except Exception as e:
+        # Ne pas bloquer le flux de paiement en cas d'erreur de sync
+        logger = logging.getLogger(__name__)
+        logger.error(
+            f"Erreur synchronisation commande {order.order_number} vers B2B: {str(e)}",
+            exc_info=True
+        )
 
 
 def add_to_cart(request, product_id):
@@ -1144,6 +1165,9 @@ def payment_delivery(request):
                 )
                 print(f"Commande créée avec ID: {order.id}")
                 
+                # Note: Pour le paiement à la livraison, la commande n'est pas payée immédiatement
+                # La synchronisation vers B2B se fera après paiement effectif
+                
                 # Créer les éléments de la commande
                 print("\nCréation des éléments de la commande:")
                 for item in cart_items:
@@ -1507,6 +1531,8 @@ def stripe_webhook(request):
                     }
                 )
                 debug_log(f"✅ Commande Salam créée: {order.id}")
+                # Synchroniser vers B2B après création de commande payée
+                sync_order_to_b2b(order)
             elif product_type == 'classic':
                 subtotal = sum(item.get_total_price() for item in cart.cart_items.filter(product__is_salam=False))
                 # Créer la commande classique avec métadonnées pour le processus en 2 étapes
@@ -1530,6 +1556,8 @@ def stripe_webhook(request):
                     }
                 )
                 debug_log(f"✅ Commande classique créée: {order.id}")
+                # Synchroniser vers B2B après création de commande payée
+                sync_order_to_b2b(order)
             else:
                 # Créer la commande normale
                 order = Order.objects.create(
@@ -2502,6 +2530,9 @@ def orange_money_return(request):
                     order.paid_at = timezone.now()
                     order.status = Order.CONFIRMED
                     order.save()
+                    
+                    # Synchroniser vers B2B après paiement réussi
+                    sync_order_to_b2b(order)
                     
                     # Vider le panier
                     Cart.objects.filter(user=request.user).delete()

@@ -1327,3 +1327,193 @@ class ProductSyncService:
 # Note: SaleSyncService a été supprimé car il dépendait de InventoryConnection et SaleSync
 # La synchronisation des ventes doit être gérée manuellement ou via des commandes de management
 
+
+class OrderSyncService:
+    """
+    Service pour synchroniser les commandes SagaKore vers l'app de gestion B2B
+    """
+    
+    def __init__(self):
+        self.api_client = InventoryAPIClient()
+    
+    def prepare_order_payload(self, order: Order) -> Dict[str, Any]:
+        """
+        Prépare le payload B2B à partir d'une commande SagaKore
+        
+        Args:
+            order: Instance de Order
+            
+        Returns:
+            Dict contenant les données formatées pour l'API B2B
+        """
+        items = []
+        site_id = None
+        
+        # Récupérer le site_id depuis les métadonnées de la commande
+        if order.metadata and 'delivery_site_configuration' in order.metadata:
+            site_id = order.metadata.get('delivery_site_configuration')
+        
+        # Si pas de site_id dans metadata, essayer de le récupérer depuis le shipping_method
+        if not site_id and order.shipping_method:
+            # Le site_id peut être stocké dans les spécifications du shipping_method
+            # ou dans les métadonnées de la commande
+            pass
+        
+        # Par défaut, utiliser le premier site disponible si aucun n'est spécifié
+        if not site_id:
+            try:
+                sites = self.api_client.get_sites_list()
+                if sites and len(sites) > 0:
+                    site_id = sites[0].get('id') if isinstance(sites[0], dict) else sites[0]
+            except Exception as e:
+                logger.warning(f"Impossible de récupérer les sites B2B: {str(e)}")
+        
+        # Construire les items de la commande
+        for order_item in order.items.select_related('product').all():
+            # Récupérer l'ID externe du produit
+            try:
+                external_product = ExternalProduct.objects.get(product=order_item.product)
+                external_id = external_product.external_id
+            except ExternalProduct.DoesNotExist:
+                logger.warning(
+                    f"Produit {order_item.product.id} ({order_item.product.title}) "
+                    f"n'a pas de mapping B2B - ignoré dans la synchronisation"
+                )
+                continue
+            
+            # Déterminer l'unité de vente pour les produits au poids
+            specs = order_item.product.specifications or {}
+            unit = order_item.get_weight_unit() if hasattr(order_item, 'get_weight_unit') else 'unit'
+            sold_by_weight = specs.get('sold_by_weight') is True or unit in ['kg', 'g']
+            sale_unit_type = 'weight' if sold_by_weight else 'unit'
+            weight_unit = unit if sold_by_weight else None
+
+            # Convertir la quantité en float/int selon le besoin
+            quantity = float(order_item.quantity)
+            price = float(order_item.price)
+            
+            item_payload = {
+                'product_id': external_id,
+                'quantity': quantity,
+                'price': price,
+                'site_id': site_id,
+                'sale_unit_type': sale_unit_type,
+            }
+            if weight_unit:
+                item_payload['weight_unit'] = weight_unit
+
+            items.append(item_payload)
+        
+        if not items:
+            raise ValueError(
+                f"Aucun produit avec mapping B2B trouvé pour la commande {order.order_number}"
+            )
+        
+        # Préparer le payload
+        customer_email = order.user.email if order.user else ''
+        
+        payload = {
+            'order_number': order.order_number,
+            'items': items,
+            'total': float(order.total),
+            'customer_email': customer_email,
+            'created_at': order.created_at.isoformat(),
+        }
+        
+        return payload
+    
+    def sync_order_to_b2b(self, order: Order) -> Dict[str, Any]:
+        """
+        Synchronise une commande vers B2B
+        
+        Args:
+            order: Instance de Order
+            
+        Returns:
+            Dict contenant la réponse de l'API B2B avec l'external_sale_id
+            
+        Raises:
+            InventoryAPIError: Si la synchronisation échoue
+        """
+        # Vérifier si la commande a déjà été synchronisée
+        metadata = order.metadata or {}
+        if metadata.get('b2b_sync_status') == 'synced' and metadata.get('b2b_sale_id'):
+            logger.info(
+                f"Commande {order.order_number} déjà synchronisée (b2b_sale_id: {metadata.get('b2b_sale_id')})"
+            )
+            return {
+                'external_sale_id': metadata.get('b2b_sale_id'),
+                'status': 'already_synced'
+            }
+        
+        # Vérifier que la commande est payée ou confirmée
+        if not order.is_paid and order.status != Order.CONFIRMED:
+            logger.warning(
+                f"Commande {order.order_number} non payée - synchronisation ignorée"
+            )
+            raise ValueError(
+                f"La commande {order.order_number} doit être payée avant synchronisation"
+            )
+        
+        try:
+            # Préparer le payload
+            payload = self.prepare_order_payload(order)
+            
+            # Envoyer vers B2B
+            logger.info(f"Synchronisation commande {order.order_number} vers B2B...")
+            response = self.api_client.create_sale(payload)
+            
+            # Extraire l'ID externe de la réponse
+            external_sale_id = response.get('id') or response.get('sale_id')
+            
+            if not external_sale_id:
+                logger.error(
+                    f"Réponse B2B ne contient pas d'ID de vente: {response}"
+                )
+                raise InventoryAPIError("Réponse B2B invalide: ID de vente manquant")
+            
+            # Mettre à jour les métadonnées de la commande
+            metadata['b2b_sync_status'] = 'synced'
+            metadata['b2b_sale_id'] = external_sale_id
+            metadata['b2b_synced_at'] = timezone.now().isoformat()
+            order.metadata = metadata
+            order.save(update_fields=['metadata'])
+            
+            logger.info(
+                f"Commande {order.order_number} synchronisée avec succès "
+                f"(b2b_sale_id: {external_sale_id})"
+            )
+            
+            return {
+                'external_sale_id': external_sale_id,
+                'status': 'synced',
+                'response': response
+            }
+            
+        except InventoryAPIError as e:
+            # Mettre à jour le statut d'erreur
+            metadata['b2b_sync_status'] = 'error'
+            metadata['b2b_sync_error'] = str(e)
+            metadata['b2b_sync_attempted_at'] = timezone.now().isoformat()
+            order.metadata = metadata
+            order.save(update_fields=['metadata'])
+            
+            logger.error(
+                f"Erreur synchronisation commande {order.order_number}: {str(e)}"
+            )
+            raise
+            
+        except Exception as e:
+            # Erreur inattendue
+            metadata['b2b_sync_status'] = 'error'
+            metadata['b2b_sync_error'] = str(e)
+            metadata['b2b_sync_attempted_at'] = timezone.now().isoformat()
+            order.metadata = metadata
+            order.save(update_fields=['metadata'])
+            
+            logger.error(
+                f"Erreur inattendue synchronisation commande {order.order_number}: {str(e)}",
+                exc_info=True
+            )
+            raise InventoryAPIError(f"Erreur synchronisation: {str(e)}")
+
