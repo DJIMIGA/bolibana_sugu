@@ -978,26 +978,30 @@ class CartViewSet(viewsets.ModelViewSet):
             else:
                 logger.info("Checkout Stripe - D'autres commandes DRAFT existent (%d), panier conservé", user_orders_draft.count())
 
-            # Détection mobile améliorée : vérifier plusieurs indicateurs
-            user_agent = (request.META.get('HTTP_USER_AGENT', '') or '').lower()
-            referer = (request.META.get('HTTP_REFERER', '') or '').lower()
-            accept = (request.META.get('HTTP_ACCEPT') or '').lower()
+            # Détection mobile : priorité au paramètre mobile=1 dans l'URL
+            is_mobile_param = request.GET.get('mobile') == '1' or request.GET.get('mobile') == 'true'
             
-            # Indicateurs mobiles
-            is_mobile_param = request.GET.get('mobile') == '1'
-            is_mobile_ua = any(marker in user_agent for marker in ['mobile', 'android', 'iphone', 'ipad', 'okhttp'])
-            is_mobile_referer = 'bolibana' in referer or 'mobile' in referer
-            wants_html = 'text/html' in accept or request.GET.get('format') == 'html'
+            # Vérifications supplémentaires si pas de paramètre
+            if not is_mobile_param:
+                user_agent = (request.META.get('HTTP_USER_AGENT', '') or '').lower()
+                referer = (request.META.get('HTTP_REFERER', '') or '').lower()
+                accept = (request.META.get('HTTP_ACCEPT') or '').lower()
+                
+                is_mobile_ua = any(marker in user_agent for marker in ['mobile', 'android', 'iphone', 'ipad', 'okhttp'])
+                is_mobile_referer = 'bolibana' in referer or 'mobile' in referer
+                wants_html = 'text/html' in accept or request.GET.get('format') == 'html'
+                
+                is_mobile_param = is_mobile_ua or is_mobile_referer or wants_html
+                
+                logger.info(
+                    "Payment success - Détection mobile (sans param): ua=%s, referer=%s, accept=%s, final=%s",
+                    is_mobile_ua, is_mobile_referer, wants_html, is_mobile_param
+                )
+            else:
+                logger.info("Payment success - Détection mobile: paramètre mobile=1 détecté dans l'URL")
             
-            is_mobile = is_mobile_param or is_mobile_ua or is_mobile_referer or wants_html
-            
-            logger.info(
-                "Payment success - Détection mobile: param=%s, ua=%s, referer=%s, accept=%s, final=%s",
-                is_mobile_param, is_mobile_ua, is_mobile_referer, wants_html, is_mobile
-            )
-            
-            # Si c'est mobile ou demande HTML, retourner une page HTML qui redirige vers l'app
-            if is_mobile:
+            # Si c'est mobile, retourner une page HTML qui redirige vers l'app
+            if is_mobile_param:
                 from django.shortcuts import render
                 context = {
                     'order_id': order.id,
