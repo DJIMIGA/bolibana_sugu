@@ -288,12 +288,6 @@ const AppNavigator: React.FC = () => {
     };
   }, [isLoading, isLoggingIn, isAuthenticated, hasDismissedAuthModal, currentRouteName]);
 
-  // N'afficher l'écran de chargement QUE lors du chargement initial de l'application
-  // pour éviter de démonter toute la navigation lors d'un login ou d'une mise à jour de profil
-  if (isLoading !== false) {
-    return <LoadingScreen />;
-  }
-
   // Configuration des deep links
   const linking = {
     prefixes: ['bolibana://', 'https://www.bolibana.com', 'https://bolibana.com'],
@@ -346,6 +340,12 @@ const AppNavigator: React.FC = () => {
       subscription.remove();
     };
   }, []);
+
+  // N'afficher l'écran de chargement QUE lors du chargement initial de l'application
+  // pour éviter de démonter toute la navigation lors d'un login ou d'une mise à jour de profil
+  if (isLoading !== false) {
+    return <LoadingScreen />;
+  }
 
   return (
     <>
