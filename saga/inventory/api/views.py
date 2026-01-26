@@ -595,14 +595,27 @@ def b2b_order_status_webhook(request):
             status=status.HTTP_401_UNAUTHORIZED
         )
     
+    # Log de réception du webhook avec authentification réussie
+    logger.info(
+        f"[B2B Webhook] ✅ Webhook reçu depuis {request.META.get('REMOTE_ADDR')} - Authentification réussie"
+    )
+    
     # Parser les données JSON
     try:
         data = request.data if hasattr(request, 'data') else {}
         if not data:
             import json
             data = json.loads(request.body)
+        
+        # Log de réception du payload
+        logger.info(
+            f"[B2B Webhook] ✅ Payload JSON reçu et parsé avec succès: "
+            f"external_sale_id={data.get('external_sale_id')}, "
+            f"status={data.get('status')}, "
+            f"order_number={data.get('order_number')}"
+        )
     except Exception as e:
-        logger.error(f"[B2B Webhook] Erreur parsing JSON: {str(e)}")
+        logger.error(f"[B2B Webhook] ❌ Erreur parsing JSON: {str(e)}")
         return Response(
             {'error': 'Invalid JSON payload'},
             status=status.HTTP_400_BAD_REQUEST
@@ -645,9 +658,12 @@ def b2b_order_status_webhook(request):
     # Trouver la commande
     try:
         order = Order.objects.get(order_number=order_number)
+        logger.info(
+            f"[B2B Webhook] ✅ Commande trouvée: {order_number} (ID: {order.id}, statut actuel: {order.status})"
+        )
     except Order.DoesNotExist:
         logger.warning(
-            f"[B2B Webhook] Commande introuvable: {order_number}"
+            f"[B2B Webhook] ❌ Commande introuvable: {order_number}"
         )
         return Response(
             {'error': f'Order not found: {order_number}'},
@@ -660,12 +676,18 @@ def b2b_order_status_webhook(request):
     
     if stored_external_id and str(stored_external_id) != str(external_sale_id):
         logger.warning(
-            f"[B2B Webhook] external_sale_id mismatch pour commande {order_number}: "
+            f"[B2B Webhook] ❌ external_sale_id mismatch pour commande {order_number}: "
             f"stored={stored_external_id}, received={external_sale_id}"
         )
         return Response(
             {'error': 'external_sale_id mismatch'},
             status=status.HTTP_400_BAD_REQUEST
+        )
+    
+    # Log de validation réussie
+    if stored_external_id:
+        logger.info(
+            f"[B2B Webhook] ✅ external_sale_id validé: {external_sale_id} pour commande {order_number}"
         )
     
     # Mettre à jour la commande
@@ -704,9 +726,25 @@ def b2b_order_status_webhook(request):
         
         order.save()
         
+        # Log de succès détaillé
         logger.info(
-            f"[B2B Webhook] Statut commande {order_number} mis à jour: "
+            f"[B2B Webhook] ✅ Statut commande {order_number} mis à jour avec succès: "
             f"{old_status} → {status_value} (external_sale_id: {external_sale_id})"
+        )
+        
+        # Log supplémentaire avec tous les détails de la mise à jour
+        update_details = {
+            'order_number': order_number,
+            'order_id': order.id,
+            'external_sale_id': external_sale_id,
+            'old_status': old_status,
+            'new_status': status_value,
+            'tracking_number': order.tracking_number if order.tracking_number else None,
+            'shipped_at': order.shipped_at.isoformat() if order.shipped_at else None,
+            'delivered_at': order.delivered_at.isoformat() if order.delivered_at else None,
+        }
+        logger.info(
+            f"[B2B Webhook] ✅ Détails mise à jour commande: {update_details}"
         )
         
         return Response({
