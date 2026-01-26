@@ -1413,15 +1413,15 @@ def my_orders(request):
     status_filter = request.GET.get('status', 'all')
     
     # Définir l'ordre de priorité des statuts
+    # Note: 'processing' n'est pas utilisé dans les statuts réels
     status_priority = Case(
         When(status=Order.PENDING, then=1),
         When(status=Order.CONFIRMED, then=2),
-        When(status=Order.PROCESSING, then=3),
-        When(status=Order.SHIPPED, then=4),
-        When(status=Order.DELIVERED, then=5),
-        When(status=Order.CANCELLED, then=6),
-        When(status=Order.REFUNDED, then=7),
-        default=8,
+        When(status=Order.SHIPPED, then=3),
+        When(status=Order.DELIVERED, then=4),
+        When(status=Order.CANCELLED, then=5),
+        When(status=Order.REFUNDED, then=6),
+        default=7,
         output_field=IntegerField()
     )
     
@@ -1442,10 +1442,17 @@ def my_orders(request):
     for order in orders:
         print(f"Commande {order.id}: metadata = {order.metadata}")
     
+    # Filtrer les statuts pour exclure 'processing' qui n'est pas utilisé
+    available_status_choices = [
+        (status_value, status_label) 
+        for status_value, status_label in Order.STATUS_CHOICES 
+        if status_value != Order.PROCESSING
+    ]
+    
     context = {
         'orders': orders,
         'status_filter': status_filter,
-        'status_choices': Order.STATUS_CHOICES,
+        'status_choices': available_status_choices,
     }
     return render(request, 'cart/my_orders.html', context)
 
