@@ -358,11 +358,34 @@ class OrdersListView(generics.ListAPIView):
     serializer_class = OrderSerializer
 
     def get_queryset(self):
+        """
+        Retourne les commandes triées par statut (actives en premier) puis par date de création.
+        Ordre de priorité des statuts:
+        1. pending, confirmed, processing, shipped (commandes actives)
+        2. delivered (livrées)
+        3. cancelled, refunded (annulées/remboursées)
+        """
+        from django.db.models import Case, When, IntegerField
+        
+        # Définir l'ordre de priorité des statuts
+        status_priority = Case(
+            When(status=Order.PENDING, then=1),
+            When(status=Order.CONFIRMED, then=2),
+            When(status=Order.PROCESSING, then=3),
+            When(status=Order.SHIPPED, then=4),
+            When(status=Order.DELIVERED, then=5),
+            When(status=Order.CANCELLED, then=6),
+            When(status=Order.REFUNDED, then=7),
+            default=8,
+            output_field=IntegerField()
+        )
+        
         return (
             Order.objects.filter(user=self.request.user)
             .select_related('shipping_address')
             .prefetch_related('items__product')
-            .order_by('-created_at')
+            .annotate(status_order=status_priority)
+            .order_by('status_order', '-created_at')
         )
 
 

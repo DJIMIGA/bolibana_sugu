@@ -1402,8 +1402,30 @@ def order_confirmation(request, order_id):
 
 @login_required
 def my_orders(request):
-    # Récupérer toutes les commandes de l'utilisateur, triées par date de création (la plus récente en premier)
-    orders = Order.objects.filter(user=request.user).order_by('-created_at')
+    """
+    Récupère toutes les commandes de l'utilisateur, triées par statut (actives en premier) 
+    puis par date de création (la plus récente en premier).
+    """
+    from django.db.models import Case, When, IntegerField
+    
+    # Définir l'ordre de priorité des statuts
+    status_priority = Case(
+        When(status=Order.PENDING, then=1),
+        When(status=Order.CONFIRMED, then=2),
+        When(status=Order.PROCESSING, then=3),
+        When(status=Order.SHIPPED, then=4),
+        When(status=Order.DELIVERED, then=5),
+        When(status=Order.CANCELLED, then=6),
+        When(status=Order.REFUNDED, then=7),
+        default=8,
+        output_field=IntegerField()
+    )
+    
+    orders = (
+        Order.objects.filter(user=request.user)
+        .annotate(status_order=status_priority)
+        .order_by('status_order', '-created_at')
+    )
     
     # Debug: afficher les métadonnées pour vérification
     for order in orders:
