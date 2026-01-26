@@ -706,6 +706,11 @@ class CartViewSet(viewsets.ModelViewSet):
 
                 domain_url = request.build_absolute_uri('/')[:-1]
                 payment_results = []
+                
+                # Détecter si la requête vient d'un mobile
+                user_agent = (request.META.get('HTTP_USER_AGENT', '') or '').lower()
+                is_mobile_request = any(marker in user_agent for marker in ['mobile', 'android', 'iphone', 'ipad', 'okhttp'])
+                mobile_param = '&mobile=1' if is_mobile_request else ''
 
                 if payment_method == 'stripe' or payment_method == 'online_payment':
                     stripe.api_key = settings.STRIPE_SECRET_KEY
@@ -774,7 +779,7 @@ class CartViewSet(viewsets.ModelViewSet):
                             payment_method_types=['card'],
                             line_items=line_items,
                             mode='payment',
-                            success_url=f"{domain_url}/api/cart/payment-success/?session_id={{CHECKOUT_SESSION_ID}}&order_id={order.id}",
+                            success_url=f"{domain_url}/api/cart/payment-success/?session_id={{CHECKOUT_SESSION_ID}}&order_id={order.id}{mobile_param}",
                             cancel_url=f"{domain_url}/api/cart/payment-cancel/?order_id={order.id}&mobile=1",
                             metadata={
                                 'order_id': str(order.id),
@@ -960,26 +965,39 @@ class CartViewSet(viewsets.ModelViewSet):
             self._sync_order_to_b2b(order)
             
             # Vérifier si toutes les commandes du panier sont payées avant de vider
-            # Récupérer toutes les commandes en attente de ce panier
-            user_orders_pending = Order.objects.filter(
+            # Récupérer toutes les commandes DRAFT de ce panier (même si payées)
+            user_orders_draft = Order.objects.filter(
                 user=order.user,
-                status=Order.DRAFT,
-                is_paid=False
+                status=Order.DRAFT
             ).exclude(id=order.id)
             
-            # Si c'est la dernière commande en attente, vider le panier
-            if not user_orders_pending.exists():
+            # Si c'est la dernière commande DRAFT, vider le panier
+            if not user_orders_draft.exists():
                 self._clear_user_cart(order.user)
-                logger.info("Checkout Stripe - Toutes les commandes payées, panier vidé")
+                logger.info("Checkout Stripe - Toutes les commandes payées, panier vidé pour utilisateur %s", order.user.id)
             else:
-                logger.info("Checkout Stripe - D'autres commandes en attente, panier conservé")
+                logger.info("Checkout Stripe - D'autres commandes DRAFT existent (%d), panier conservé", user_orders_draft.count())
 
-            # Vérifier si c'est une requête mobile (via paramètre ou User-Agent)
-            is_mobile = request.GET.get('mobile') == '1' or 'mobile' in (request.META.get('HTTP_USER_AGENT', '') or '').lower()
+            # Détection mobile améliorée : vérifier plusieurs indicateurs
+            user_agent = (request.META.get('HTTP_USER_AGENT', '') or '').lower()
+            referer = (request.META.get('HTTP_REFERER', '') or '').lower()
             accept = (request.META.get('HTTP_ACCEPT') or '').lower()
             
+            # Indicateurs mobiles
+            is_mobile_param = request.GET.get('mobile') == '1'
+            is_mobile_ua = any(marker in user_agent for marker in ['mobile', 'android', 'iphone', 'ipad', 'okhttp'])
+            is_mobile_referer = 'bolibana' in referer or 'mobile' in referer
+            wants_html = 'text/html' in accept or request.GET.get('format') == 'html'
+            
+            is_mobile = is_mobile_param or is_mobile_ua or is_mobile_referer or wants_html
+            
+            logger.info(
+                "Payment success - Détection mobile: param=%s, ua=%s, referer=%s, accept=%s, final=%s",
+                is_mobile_param, is_mobile_ua, is_mobile_referer, wants_html, is_mobile
+            )
+            
             # Si c'est mobile ou demande HTML, retourner une page HTML qui redirige vers l'app
-            if is_mobile or 'text/html' in accept:
+            if is_mobile:
                 from django.shortcuts import render
                 context = {
                     'order_id': order.id,

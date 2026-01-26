@@ -118,32 +118,68 @@
     </div>
 
     <script>
+        let redirectAttempted = false;
+        
         // Fonction pour rediriger vers l'app mobile via deep link
         function redirectToApp() {
+            if (redirectAttempted) return;
+            redirectAttempted = true;
+            
             const orderId = '{{ order_id }}';
             const orderNumber = '{{ order_number }}';
             
             // Deep link vers l'app mobile
             const deepLink = `bolibana://payment-success?order_id=${orderId}&order_number=${orderNumber}`;
             
-            // Essayer d'ouvrir le deep link
-            window.location.href = deepLink;
+            console.log('[Payment Success] Tentative de redirection vers:', deepLink);
             
-            // Fallback: essayer de fermer la fenêtre après un court délai
+            // Méthode 1: Essayer le deep link directement
+            try {
+                window.location.href = deepLink;
+            } catch (e) {
+                console.error('[Payment Success] Erreur redirection:', e);
+            }
+            
+            // Méthode 2: Essayer de fermer la fenêtre après un court délai
             setTimeout(function() {
-                // Pour iOS
+                console.log('[Payment Success] Tentative de fermeture de la fenêtre');
+                
+                // Pour iOS (Expo WebBrowser)
                 if (window.webkit && window.webkit.messageHandlers && window.webkit.messageHandlers.close) {
-                    window.webkit.messageHandlers.close.postMessage({});
+                    try {
+                        window.webkit.messageHandlers.close.postMessage({});
+                        console.log('[Payment Success] Fermeture iOS via webkit');
+                        return;
+                    } catch (e) {
+                        console.error('[Payment Success] Erreur fermeture iOS:', e);
+                    }
                 }
-                // Pour Android
-                else if (window.Android && window.Android.close) {
-                    window.Android.close();
+                
+                // Pour Android (Expo WebBrowser)
+                if (window.Android && typeof window.Android.close === 'function') {
+                    try {
+                        window.Android.close();
+                        console.log('[Payment Success] Fermeture Android via Android.close');
+                        return;
+                    } catch (e) {
+                        console.error('[Payment Success] Erreur fermeture Android:', e);
+                    }
                 }
-                // Fallback: essayer de fermer la fenêtre
-                else {
-                    window.close();
+                
+                // Méthode 3: Essayer window.close() (peut ne pas fonctionner selon le navigateur)
+                try {
+                    if (window.close) {
+                        window.close();
+                        console.log('[Payment Success] Tentative window.close()');
+                    }
+                } catch (e) {
+                    console.error('[Payment Success] window.close() non disponible:', e);
                 }
-            }, 1000);
+                
+                // Méthode 4: Redirection vers une URL de fallback si on ne peut pas fermer
+                // L'app mobile devrait intercepter le deep link même si la fenêtre reste ouverte
+                console.log('[Payment Success] Si la fenêtre ne se ferme pas, l\'app devrait intercepter le deep link');
+            }, 500);
         }
 
         // Rediriger automatiquement vers l'app après 1 seconde
@@ -151,10 +187,17 @@
             redirectToApp();
         }, 1000);
 
-        // Fonction pour fermer manuellement
+        // Fonction pour fermer manuellement (bouton)
         function closeWindow() {
             redirectToApp();
         }
+        
+        // Écouter les événements de visibilité pour détecter si l'app a été ouverte
+        document.addEventListener('visibilitychange', function() {
+            if (document.hidden) {
+                console.log('[Payment Success] Page cachée - l\'app a probablement été ouverte');
+            }
+        });
     </script>
 </body>
 </html>
