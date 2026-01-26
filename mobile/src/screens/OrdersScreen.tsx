@@ -11,7 +11,7 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { COLORS, API_ENDPOINTS } from '../utils/constants';
-import { formatWeightQuantity } from '../utils/helpers';
+import { formatWeightQuantity, formatPrice } from '../utils/helpers';
 import apiClient from '../services/api';
 import { LoadingScreen } from '../components/LoadingScreen';
 
@@ -204,7 +204,7 @@ const OrdersScreen: React.FC = () => {
                 </View>
                 <View style={styles.totalRow}>
                   <Text style={styles.totalLabel}>Total</Text>
-                  <Text style={styles.totalValue}>{order.total} FCFA</Text>
+                  <Text style={styles.totalValue}>{formatPrice(parseFloat(order.total))}</Text>
                 </View>
               </View>
             ))}

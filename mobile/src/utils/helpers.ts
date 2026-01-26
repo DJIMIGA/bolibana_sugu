@@ -3,7 +3,9 @@ import { MAX_RETRY_ATTEMPTS, RETRY_BACKOFF_BASE } from './constants';
 import { Product } from '../types';
 
 export const formatPrice = (price: number): string => {
-  return `${price.toLocaleString('fr-FR')} FCFA`;
+  // Formater sans décimales (arrondir à l'entier)
+  const roundedPrice = Math.round(price);
+  return `${roundedPrice.toLocaleString('fr-FR')} FCFA`;
 };
 
 export const formatDate = (dateString: string): string => {
