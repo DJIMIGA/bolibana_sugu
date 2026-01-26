@@ -1003,6 +1003,7 @@ class CartViewSet(viewsets.ModelViewSet):
             # Si c'est mobile, retourner une page HTML qui redirige vers l'app
             if is_mobile_param:
                 from django.shortcuts import render
+                logger.info("Payment success - Retour page HTML mobile pour commande %s", order.id)
                 context = {
                     'order_id': order.id,
                     'order_number': order.order_number,
