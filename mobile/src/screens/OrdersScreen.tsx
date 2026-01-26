@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useMemo } from 'react';
 import {
   View,
   Text,
@@ -33,10 +33,24 @@ type OrderLite = {
   items: OrderItemLite[];
 };
 
+type FilterStatus = 'all' | 'pending' | 'confirmed' | 'processing' | 'shipped' | 'delivered' | 'cancelled' | 'refunded';
+
+const FILTER_OPTIONS: { value: FilterStatus; label: string }[] = [
+  { value: 'all', label: 'Toutes' },
+  { value: 'pending', label: 'En attente' },
+  { value: 'confirmed', label: 'Confirmées' },
+  { value: 'processing', label: 'En préparation' },
+  { value: 'shipped', label: 'Expédiées' },
+  { value: 'delivered', label: 'Livrées' },
+  { value: 'cancelled', label: 'Annulées' },
+  { value: 'refunded', label: 'Remboursées' },
+];
+
 const OrdersScreen: React.FC = () => {
   const navigation = useNavigation();
   const [orders, setOrders] = useState<OrderLite[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [selectedFilter, setSelectedFilter] = useState<FilterStatus>('all');
 
   const loadOrders = async () => {
     try {
@@ -75,16 +89,53 @@ const OrdersScreen: React.FC = () => {
     return d.toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit', year: 'numeric' });
   };
 
+  // Filtrer les commandes selon le filtre sélectionné
+  const filteredOrders = useMemo(() => {
+    if (selectedFilter === 'all') {
+      return orders;
+    }
+    return orders.filter(order => order.status === selectedFilter);
+  }, [orders, selectedFilter]);
+
   return (
     <ScrollView style={styles.container}>
       <View style={styles.header}>
         <Text style={styles.title}>Mes commandes</Text>
       </View>
       
+      {/* Filtres horizontaux */}
+      <View style={styles.filtersContainer}>
+        <ScrollView 
+          horizontal 
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={styles.filtersScroll}
+        >
+          {FILTER_OPTIONS.map((filter) => (
+            <TouchableOpacity
+              key={filter.value}
+              style={[
+                styles.filterChip,
+                selectedFilter === filter.value && styles.filterChipActive
+              ]}
+              onPress={() => setSelectedFilter(filter.value)}
+            >
+              <Text
+                style={[
+                  styles.filterChipText,
+                  selectedFilter === filter.value && styles.filterChipTextActive
+                ]}
+              >
+                {filter.label}
+              </Text>
+            </TouchableOpacity>
+          ))}
+        </ScrollView>
+      </View>
+      
       <View style={styles.content}>
         {isLoading ? (
           <LoadingScreen />
-        ) : orders.length === 0 ? (
+        ) : filteredOrders.length === 0 ? (
           <View style={styles.emptyContainer}>
             <Ionicons
               name="receipt-outline"
@@ -92,15 +143,15 @@ const OrdersScreen: React.FC = () => {
               color={COLORS.TEXT_SECONDARY}
             />
             <Text style={styles.emptyText}>
-              Aucune commande
+              {selectedFilter === 'all' ? 'Aucune commande' : `Aucune commande ${FILTER_OPTIONS.find(f => f.value === selectedFilter)?.label.toLowerCase()}`}
             </Text>
             <Text style={styles.emptySubtext}>
-              Vos commandes apparaîtront ici
+              {selectedFilter === 'all' ? 'Vos commandes apparaîtront ici' : 'Essayez un autre filtre'}
             </Text>
           </View>
         ) : (
           <View style={{ gap: 12 }}>
-            {orders.map((order) => (
+            {filteredOrders.map((order) => (
               <View key={order.id} style={styles.orderCard}>
                 <View style={styles.orderHeader}>
                   <Text style={styles.orderNumber}>#{order.order_number}</Text>
@@ -148,6 +199,35 @@ const styles = StyleSheet.create({
     fontSize: 24,
     fontWeight: 'bold',
     color: '#FFFFFF',
+  },
+  filtersContainer: {
+    backgroundColor: '#FFFFFF',
+    paddingVertical: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: '#E5E7EB',
+  },
+  filtersScroll: {
+    paddingHorizontal: 16,
+    gap: 8,
+  },
+  filterChip: {
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 20,
+    backgroundColor: '#F3F4F6',
+    marginRight: 8,
+  },
+  filterChipActive: {
+    backgroundColor: COLORS.PRIMARY,
+  },
+  filterChipText: {
+    fontSize: 14,
+    fontWeight: '500',
+    color: COLORS.TEXT,
+  },
+  filterChipTextActive: {
+    color: '#FFFFFF',
+    fontWeight: '600',
   },
   content: {
     padding: 16,

@@ -1405,8 +1405,12 @@ def my_orders(request):
     """
     Récupère toutes les commandes de l'utilisateur, triées par statut (actives en premier) 
     puis par date de création (la plus récente en premier).
+    Supporte un filtre par statut via le paramètre GET 'status'.
     """
     from django.db.models import Case, When, IntegerField
+    
+    # Récupérer le filtre de statut depuis les paramètres GET
+    status_filter = request.GET.get('status', 'all')
     
     # Définir l'ordre de priorité des statuts
     status_priority = Case(
@@ -1421,11 +1425,18 @@ def my_orders(request):
         output_field=IntegerField()
     )
     
+    # Base queryset
     orders = (
         Order.objects.filter(user=request.user)
         .annotate(status_order=status_priority)
-        .order_by('status_order', '-created_at')
     )
+    
+    # Appliquer le filtre de statut si spécifié
+    if status_filter != 'all' and status_filter in dict(Order.STATUS_CHOICES):
+        orders = orders.filter(status=status_filter)
+    
+    # Trier par statut puis par date
+    orders = orders.order_by('status_order', '-created_at')
     
     # Debug: afficher les métadonnées pour vérification
     for order in orders:
@@ -1433,6 +1444,8 @@ def my_orders(request):
     
     context = {
         'orders': orders,
+        'status_filter': status_filter,
+        'status_choices': Order.STATUS_CHOICES,
     }
     return render(request, 'cart/my_orders.html', context)
 

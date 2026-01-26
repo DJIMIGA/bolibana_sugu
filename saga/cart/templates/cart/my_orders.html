@@ -3,7 +3,25 @@
 {% block content %}
 <div class="bg-gray-50 min-h-screen py-12">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <h1 class="text-3xl font-bold text-gray-900 mb-8">Mes commandes</h1>
+        <h1 class="text-3xl font-bold text-gray-900 mb-6">Mes commandes</h1>
+
+        <!-- Filtres horizontaux -->
+        <div class="mb-6 overflow-x-auto">
+            <div class="flex space-x-2 pb-2">
+                <a href="?status=all" 
+                   class="px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-colors
+                   {% if status_filter == 'all' %}bg-green-600 text-white{% else %}bg-white text-gray-700 hover:bg-gray-100 border border-gray-300{% endif %}">
+                    Toutes
+                </a>
+                {% for status_value, status_label in status_choices %}
+                <a href="?status={{ status_value }}" 
+                   class="px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-colors
+                   {% if status_filter == status_value %}bg-green-600 text-white{% else %}bg-white text-gray-700 hover:bg-gray-100 border border-gray-300{% endif %}">
+                    {{ status_label }}
+                </a>
+                {% endfor %}
+            </div>
+        </div>
 
         {% if orders %}
         <div class="space-y-6">
