@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useMemo } from 'react';
+import React, { useEffect, useState, useMemo, useRef } from 'react';
 import {
   View,
   Text,
@@ -6,9 +6,10 @@ import {
   ScrollView,
   TouchableOpacity,
   ActivityIndicator,
+  RefreshControl,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { COLORS, API_ENDPOINTS } from '../utils/constants';
 import { formatWeightQuantity } from '../utils/helpers';
 import apiClient from '../services/api';
@@ -50,11 +51,16 @@ const OrdersScreen: React.FC = () => {
   const navigation = useNavigation();
   const [orders, setOrders] = useState<OrderLite[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
   const [selectedFilter, setSelectedFilter] = useState<FilterStatus>('all');
+  const pollingIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  const isScreenFocusedRef = useRef(false);
 
-  const loadOrders = async () => {
+  const loadOrders = async (silent = false) => {
     try {
-      setIsLoading(true);
+      if (!silent) {
+        setIsLoading(true);
+      }
       const response = await apiClient.get(API_ENDPOINTS.ORDERS);
       const raw = response.data;
       const list: OrderLite[] = Array.isArray(raw)
@@ -73,16 +79,37 @@ const OrdersScreen: React.FC = () => {
       console.error('[OrdersScreen] Error loading orders:', error);
     } finally {
       setIsLoading(false);
+      setRefreshing(false);
     }
   };
 
-  useEffect(() => {
-    const unsubscribe = (navigation as any).addListener('focus', () => {
+  const onRefresh = async () => {
+    setRefreshing(true);
+    await loadOrders(true);
+  };
+
+  // Rafraîchir quand l'écran est focus
+  useFocusEffect(
+    React.useCallback(() => {
+      isScreenFocusedRef.current = true;
       loadOrders();
-    });
-    loadOrders();
-    return unsubscribe;
-  }, [navigation]);
+      
+      // Démarrer le polling automatique toutes les 30 secondes
+      pollingIntervalRef.current = setInterval(() => {
+        if (isScreenFocusedRef.current) {
+          loadOrders(true); // Rafraîchir silencieusement
+        }
+      }, 30000); // 30 secondes
+
+      return () => {
+        isScreenFocusedRef.current = false;
+        if (pollingIntervalRef.current) {
+          clearInterval(pollingIntervalRef.current);
+          pollingIntervalRef.current = null;
+        }
+      };
+    }, [])
+  );
 
   const formatDate = (iso: string) => {
     const d = new Date(iso);
@@ -98,7 +125,12 @@ const OrdersScreen: React.FC = () => {
   }, [orders, selectedFilter]);
 
   return (
-    <ScrollView style={styles.container}>
+    <ScrollView 
+      style={styles.container}
+      refreshControl={
+        <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+      }
+    >
       <View style={styles.header}>
         <Text style={styles.title}>Mes commandes</Text>
       </View>
