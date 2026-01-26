@@ -637,16 +637,34 @@ class CartViewSet(viewsets.ModelViewSet):
         try:
             with transaction.atomic():
                 group_orders = []
+                logger.info(
+                    "Checkout - Groupement par site/méthode: %s groupes créés",
+                    len(groups)
+                )
+                
                 for group_key, group in groups.items():
                     method = group['method']
                     shipping_cost = self._get_delivery_method_price(method)
                     subtotal = sum(item.get_total_price() for item in group['items'])
                     method_payload = serialize_method(method)
+                    site_id = method.get('site_configuration')
+                    method_id = method.get('id')
+                    
+                    logger.info(
+                        "Checkout - Création commande groupe: site=%s method=%s items=%s subtotal=%s shipping=%s",
+                        site_id,
+                        method_id,
+                        len(group['items']),
+                        subtotal,
+                        shipping_cost
+                    )
+                    
                     metadata = {
                         'delivery_method': method_payload,
-                        'delivery_site_configuration': method.get('site_configuration'),
+                        'delivery_site_configuration': site_id,
                         'delivery_group_key': f"{group_key[0]}:{group_key[1]}",
                         'split_order': len(groups) > 1,
+                        'group_items_count': len(group['items']),
                     }
                     order = Order.objects.create(
                         user=user,
@@ -675,8 +693,16 @@ class CartViewSet(viewsets.ModelViewSet):
                     group_orders.append({
                         'order': order,
                         'method': method_payload,
-                        'site_configuration': method.get('site_configuration'),
+                        'site_configuration': site_id,
                     })
+                    
+                    logger.info(
+                        "Checkout - Commande créée: order=%s site=%s method=%s total=%s",
+                        order.id,
+                        site_id,
+                        method_id,
+                        order.total
+                    )
 
                 domain_url = request.build_absolute_uri('/')[:-1]
                 payment_results = []
@@ -776,6 +802,14 @@ class CartViewSet(viewsets.ModelViewSet):
                 elif payment_method == 'orange_money' or payment_method == 'mobile_money':
                     for entry in group_orders:
                         order = entry['order']
+                        logger.info(
+                            "Checkout Orange Money - order=%s site=%s method=%s items=%s total=%s",
+                            order.id,
+                            entry['site_configuration'],
+                            entry['method'].get('id'),
+                            order.items.count(),
+                            order.total,
+                        )
                         order_data = {
                             'order_id': order.order_number,
                             'amount': int(order.total * 100),
@@ -815,13 +849,25 @@ class CartViewSet(viewsets.ModelViewSet):
                         })
 
                 elif payment_method == 'cash_on_delivery':
+                    # Vider le panier après création de toutes les commandes
                     transaction.on_commit(lambda: cart.cart_items.all().delete())
+                    
                     for entry in group_orders:
                         order = entry['order']
                         if order.status != Order.CONFIRMED:
                             order.status = Order.CONFIRMED
                             order.save(update_fields=['status'])
+                        
+                        # Synchroniser chaque commande vers B2B
                         transaction.on_commit(lambda o=order: self._sync_order_to_b2b(o))
+                        
+                        logger.info(
+                            "Checkout cash_on_delivery - Commande confirmée: order=%s site=%s total=%s",
+                            order.id,
+                            entry['site_configuration'],
+                            order.total
+                        )
+                        
                         payment_results.append({
                             'order_id': order.id,
                             'status': 'confirmed',
@@ -888,7 +934,23 @@ class CartViewSet(viewsets.ModelViewSet):
             else:
                 order.save(update_fields=['stripe_session_id', 'stripe_payment_status'])
 
-            self._clear_user_cart(order.user)
+            # Synchroniser vers B2B après paiement réussi
+            self._sync_order_to_b2b(order)
+            
+            # Vérifier si toutes les commandes du panier sont payées avant de vider
+            # Récupérer toutes les commandes en attente de ce panier
+            user_orders_pending = Order.objects.filter(
+                user=order.user,
+                status=Order.PENDING,
+                is_paid=False
+            ).exclude(id=order.id)
+            
+            # Si c'est la dernière commande en attente, vider le panier
+            if not user_orders_pending.exists():
+                self._clear_user_cart(order.user)
+                logger.info("Checkout Stripe - Toutes les commandes payées, panier vidé")
+            else:
+                logger.info("Checkout Stripe - D'autres commandes en attente, panier conservé")
 
             return Response({
                 'status': 'success',
@@ -937,7 +999,21 @@ class CartViewSet(viewsets.ModelViewSet):
                     order.mark_as_paid()
                     # Synchroniser vers B2B après paiement réussi
                     self._sync_order_to_b2b(order)
-                self._clear_user_cart(order.user)
+                
+                # Vérifier si toutes les commandes du panier sont payées avant de vider
+                user_orders_pending = Order.objects.filter(
+                    user=order.user,
+                    status=Order.PENDING,
+                    is_paid=False
+                ).exclude(id=order.id)
+                
+                # Si c'est la dernière commande en attente, vider le panier
+                if not user_orders_pending.exists():
+                    self._clear_user_cart(order.user)
+                    logger.info("Checkout Orange Money - Toutes les commandes payées, panier vidé")
+                else:
+                    logger.info("Checkout Orange Money - D'autres commandes en attente, panier conservé")
+                
                 return Response({
                     'status': 'success',
                     'message': 'Paiement Orange Money confirmé, panier vidé',
