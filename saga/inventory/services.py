@@ -1508,13 +1508,37 @@ class OrderSyncService:
             )
         
         # Préparer le payload
-        customer_email = order.user.email if order.user else ''
-        
+        user = order.user
+        shipping_address = order.shipping_address
+        customer_email = user.email if user and getattr(user, 'email', None) else ''
+        customer_phone = str(user.phone) if user and getattr(user, 'phone', None) else ''
+        customer_full_name = shipping_address.full_name if shipping_address and shipping_address.full_name else ''
+
         payload = {
             'order_number': order.order_number,
             'items': items,
             'total': float(order.total),
             'customer_email': customer_email,
+            'customer_phone': customer_phone,
+            'customer_full_name': customer_full_name,
+            'customer': {
+                'email': customer_email,
+                'phone': customer_phone,
+                'full_name': customer_full_name,
+                'address': user.address if user and getattr(user, 'address', None) else '',
+                'city': user.city if user and getattr(user, 'city', None) else '',
+                'country': user.country if user and getattr(user, 'country', None) else '',
+                'postal_code': user.postal_code if user and getattr(user, 'postal_code', None) else '',
+            },
+            'shipping_address': {
+                'full_name': shipping_address.full_name if shipping_address and shipping_address.full_name else '',
+                'address_type': shipping_address.address_type if shipping_address else '',
+                'quarter': shipping_address.quarter if shipping_address else '',
+                'street_address': shipping_address.street_address if shipping_address else '',
+                'city': shipping_address.city if shipping_address else '',
+                'additional_info': shipping_address.additional_info if shipping_address and shipping_address.additional_info else '',
+                'is_default': bool(shipping_address.is_default) if shipping_address else False,
+            },
             'created_at': order.created_at.isoformat(),
         }
         
