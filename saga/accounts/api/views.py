@@ -400,9 +400,13 @@ class OrdersListView(generics.ListAPIView):
         queryset = queryset.order_by('status_order', '-created_at')
         
         # Debug: vérifier les commandes retournées
-        orders_list = list(queryset[:10])  # Limiter pour les logs
-        logger.info(f"[OrdersListView] Commandes retournées: {len(orders_list)}")
-        for order in orders_list[:5]:  # Limiter à 5 pour les logs
+        # Compter toutes les commandes dans le queryset (sans limite)
+        all_orders_count = queryset.count()
+        logger.info(f"[OrdersListView] Commandes dans queryset: {all_orders_count}")
+        
+        # Log les 5 premières pour debug
+        orders_sample = list(queryset[:5])
+        for order in orders_sample:
             logger.info(f"[OrdersListView] Commande {order.id}: statut={order.status}, created_at={order.created_at}")
         
         return queryset
