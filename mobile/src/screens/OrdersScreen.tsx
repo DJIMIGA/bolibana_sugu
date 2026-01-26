@@ -66,6 +66,28 @@ const OrdersScreen: React.FC = () => {
         : Array.isArray(raw?.results)
         ? raw.results
         : [];
+      
+      // Log détaillé des commandes avec leur statut
+      console.log('[OrdersScreen] 📋 Commandes chargées:', {
+        total: list.length,
+        orders: list.map(order => ({
+          id: order.id,
+          order_number: order.order_number,
+          status: order.status,
+          status_label: order.status_label,
+          total: order.total,
+          created_at: order.created_at,
+          items_count: order.items?.length || 0,
+        })),
+      });
+      
+      // Log répartition par statut
+      const statusCounts = list.reduce((acc, order) => {
+        acc[order.status] = (acc[order.status] || 0) + 1;
+        return acc;
+      }, {} as Record<string, number>);
+      console.log('[OrdersScreen] 📊 Répartition par statut:', statusCounts);
+      
       setOrders(list);
     } catch (error: any) {
       // Si c'est une erreur de mode hors ligne, gérer silencieusement
@@ -74,7 +96,7 @@ const OrdersScreen: React.FC = () => {
         // setOrders([]); // Optionnel : vider si on veut forcer l'utilisateur à être en ligne
         return;
       }
-      console.error('[OrdersScreen] Error loading orders:', error);
+      console.error('[OrdersScreen] ❌ Error loading orders:', error);
     } finally {
       setIsLoading(false);
       setRefreshing(false);
@@ -116,10 +138,27 @@ const OrdersScreen: React.FC = () => {
 
   // Filtrer les commandes selon le filtre sélectionné
   const filteredOrders = useMemo(() => {
+    let filtered: OrderLite[];
     if (selectedFilter === 'all') {
-      return orders;
+      filtered = orders;
+    } else {
+      filtered = orders.filter(order => order.status === selectedFilter);
     }
-    return orders.filter(order => order.status === selectedFilter);
+    
+    // Log des commandes filtrées
+    console.log('[OrdersScreen] 🔍 Filtrage commandes:', {
+      filter: selectedFilter,
+      total_orders: orders.length,
+      filtered_count: filtered.length,
+      filtered_orders: filtered.map(order => ({
+        id: order.id,
+        order_number: order.order_number,
+        status: order.status,
+        status_label: order.status_label,
+      })),
+    });
+    
+    return filtered;
   }, [orders, selectedFilter]);
 
   return (
