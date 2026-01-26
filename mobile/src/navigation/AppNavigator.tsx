@@ -309,12 +309,21 @@ const AppNavigator: React.FC = () => {
 
   // Gérer les deep links pour les retours de paiement
   useEffect(() => {
-    const handleDeepLink = (event: { url: string }) => {
+    const handleDeepLink = async (event: { url: string }) => {
       const { url } = event;
       console.log('[AppNavigator] Deep link reçu:', url);
       
-      // Si c'est un retour de paiement, naviguer vers les commandes
+      // Si c'est un retour de paiement, fermer le WebBrowser et naviguer
       if (url.includes('payment-success') || url.includes('payment_success')) {
+        // Fermer le WebBrowser si ouvert
+        try {
+          await WebBrowser.dismissBrowser();
+          console.log('[AppNavigator] WebBrowser fermé après deep link');
+        } catch (e) {
+          console.log('[AppNavigator] WebBrowser déjà fermé ou non ouvert:', e);
+        }
+        
+        // Naviguer vers les commandes
         const nav = navigationRef.current;
         if (nav) {
           nav.navigate('Profile', { screen: 'Orders' });

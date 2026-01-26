@@ -535,11 +535,18 @@ const CheckoutScreen: React.FC = () => {
       }
 
       if (checkout_url) {
-        await WebBrowser.openBrowserAsync(checkout_url, {
+        const result = await WebBrowser.openBrowserAsync(checkout_url, {
           presentationStyle: WebBrowser.WebBrowserPresentationStyle.FULL_SCREEN,
           controlsColor: COLORS.PRIMARY,
         });
+        
+        // Si le navigateur a été fermé (type: 'dismiss'), rafraîchir le panier
+        if (result.type === 'dismiss') {
+          await dispatch(fetchCart());
+        }
 
+        // Rafraîchir le panier et naviguer vers les commandes
+        await dispatch(fetchCart());
         (navigation as any).navigate('Profile', { screen: 'Orders' });
       }
     } catch (error: any) {

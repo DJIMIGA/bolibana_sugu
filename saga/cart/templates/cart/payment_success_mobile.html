@@ -120,114 +120,38 @@
     <script>
         console.log('[Payment Success] Page chargée - Commande #{{ order_number }}');
         
-        let redirectAttempted = false;
+        const orderId = '{{ order_id }}';
+        const orderNumber = '{{ order_number }}';
         
-        // Fonction pour rediriger vers l'app mobile via deep link
-        function redirectToApp() {
-            if (redirectAttempted) {
-                console.log('[Payment Success] Redirection déjà tentée, ignorée');
-                return;
-            }
-            redirectAttempted = true;
-            
-            const orderId = '{{ order_id }}';
-            const orderNumber = '{{ order_number }}';
-            
-            // Deep link vers l'app mobile
-            const deepLink = `bolibana://payment-success?order_id=${orderId}&order_number=${orderNumber}`;
-            
-            console.log('[Payment Success] 🔄 Tentative de redirection vers:', deepLink);
-            
-            // Méthode 1: Essayer le deep link directement (priorité)
+        // Deep link vers l'app mobile - redirection immédiate
+        const deepLink = `bolibana://payment-success?order_id=${orderId}&order_number=${orderNumber}`;
+        
+        console.log('[Payment Success] 🔄 Redirection immédiate vers:', deepLink);
+        
+        // Rediriger immédiatement vers le deep link
+        // L'app React Native interceptera le deep link et fermera le WebBrowser
+        try {
+            window.location.href = deepLink;
+            console.log('[Payment Success] ✅ Deep link déclenché');
+        } catch (e) {
+            console.error('[Payment Success] ❌ Erreur redirection:', e);
+            // Fallback: essayer avec window.location.replace
             try {
-                window.location.href = deepLink;
-                console.log('[Payment Success] ✅ Deep link déclenché');
-            } catch (e) {
-                console.error('[Payment Success] ❌ Erreur redirection:', e);
+                window.location.replace(deepLink);
+            } catch (e2) {
+                console.error('[Payment Success] ❌ Erreur replace:', e2);
             }
-            
-            // Méthode 2: Essayer de fermer la fenêtre après un court délai
-            setTimeout(function() {
-                console.log('[Payment Success] 🔄 Tentative de fermeture de la fenêtre');
-                
-                let closed = false;
-                
-                // Pour iOS (Expo WebBrowser)
-                if (window.webkit && window.webkit.messageHandlers && window.webkit.messageHandlers.close) {
-                    try {
-                        window.webkit.messageHandlers.close.postMessage({});
-                        console.log('[Payment Success] ✅ Fermeture iOS via webkit');
-                        closed = true;
-                    } catch (e) {
-                        console.error('[Payment Success] ❌ Erreur fermeture iOS:', e);
-                    }
-                }
-                
-                // Pour Android (Expo WebBrowser)
-                if (!closed && window.Android && typeof window.Android.close === 'function') {
-                    try {
-                        window.Android.close();
-                        console.log('[Payment Success] ✅ Fermeture Android via Android.close');
-                        closed = true;
-                    } catch (e) {
-                        console.error('[Payment Success] ❌ Erreur fermeture Android:', e);
-                    }
-                }
-                
-                // Méthode 3: Essayer window.close() (peut ne pas fonctionner selon le navigateur)
-                if (!closed) {
-                    try {
-                        if (window.close) {
-                            window.close();
-                            console.log('[Payment Success] ✅ Tentative window.close()');
-                            closed = true;
-                        }
-                    } catch (e) {
-                        console.error('[Payment Success] ❌ window.close() non disponible:', e);
-                    }
-                }
-                
-                // Méthode 4: Essayer history.back() comme dernier recours
-                if (!closed) {
-                    try {
-                        if (window.history && window.history.length > 1) {
-                            window.history.back();
-                            console.log('[Payment Success] ✅ Tentative history.back()');
-                        }
-                    } catch (e) {
-                        console.error('[Payment Success] ❌ history.back() non disponible:', e);
-                    }
-                }
-                
-                if (!closed) {
-                    console.warn('[Payment Success] ⚠️ Aucune méthode de fermeture n\'a fonctionné. L\'app devrait intercepter le deep link.');
-                }
-            }, 800);
         }
-
-        // Rediriger automatiquement vers l'app après 1.5 secondes (donner le temps à la page de charger)
-        setTimeout(function() {
-            console.log('[Payment Success] ⏰ Auto-redirection après délai');
-            redirectToApp();
-        }, 1500);
-
-        // Fonction pour fermer manuellement (bouton)
+        
+        // Fonction pour fermer manuellement (bouton) - redirige aussi vers le deep link
         function closeWindow() {
             console.log('[Payment Success] 👆 Bouton Fermer cliqué');
-            redirectToApp();
-        }
-        
-        // Écouter les événements de visibilité pour détecter si l'app a été ouverte
-        document.addEventListener('visibilitychange', function() {
-            if (document.hidden) {
-                console.log('[Payment Success] 👁️ Page cachée - l\'app a probablement été ouverte');
+            try {
+                window.location.href = deepLink;
+            } catch (e) {
+                console.error('[Payment Success] ❌ Erreur redirection bouton:', e);
             }
-        });
-        
-        // Log au chargement
-        window.addEventListener('load', function() {
-            console.log('[Payment Success] 📄 Page complètement chargée');
-        });
+        }
     </script>
 </body>
 </html>
