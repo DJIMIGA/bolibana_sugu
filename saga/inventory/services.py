@@ -1514,10 +1514,18 @@ class OrderSyncService:
         customer_phone = str(user.phone) if user and getattr(user, 'phone', None) else ''
         customer_full_name = shipping_address.full_name if shipping_address and shipping_address.full_name else ''
 
+        # Récupérer le moyen de paiement avec son libellé
+        payment_method = order.payment_method if order.payment_method else ''
+        payment_method_label = dict(Order.PAYMENT_CHOICES).get(payment_method, payment_method) if payment_method else ''
+        
         payload = {
             'order_number': order.order_number,
             'items': items,
             'total': float(order.total),
+            'payment_method': payment_method,
+            'payment_method_label': payment_method_label,
+            'is_paid': order.is_paid,
+            'paid_at': order.paid_at.isoformat() if order.paid_at else None,
             'customer_email': customer_email,
             'customer_phone': customer_phone,
             'customer_full_name': customer_full_name,
