@@ -1412,16 +1412,14 @@ def my_orders(request):
     # Récupérer le filtre de statut depuis les paramètres GET
     status_filter = request.GET.get('status', 'all')
     
-    # Définir l'ordre de priorité des statuts
-    # Note: 'processing' n'est pas utilisé dans les statuts réels
+    # Définir l'ordre de priorité des statuts (alignés avec B2B)
     status_priority = Case(
-        When(status=Order.PENDING, then=1),
+        When(status=Order.DRAFT, then=1),
         When(status=Order.CONFIRMED, then=2),
         When(status=Order.SHIPPED, then=3),
         When(status=Order.DELIVERED, then=4),
         When(status=Order.CANCELLED, then=5),
-        When(status=Order.REFUNDED, then=6),
-        default=7,
+        default=6,
         output_field=IntegerField()
     )
     
@@ -1442,12 +1440,8 @@ def my_orders(request):
     for order in orders:
         print(f"Commande {order.id}: metadata = {order.metadata}")
     
-    # Filtrer les statuts pour exclure 'processing' qui n'est pas utilisé
-    available_status_choices = [
-        (status_value, status_label) 
-        for status_value, status_label in Order.STATUS_CHOICES 
-        if status_value != Order.PROCESSING
-    ]
+    # Utiliser tous les statuts disponibles (alignés avec B2B)
+    available_status_choices = Order.STATUS_CHOICES
     
     context = {
         'orders': orders,
@@ -2424,7 +2418,7 @@ def orange_money_payment(request):
             shipping_cost=shipping_cost,
             total=total_with_shipping,
             payment_method=Order.MOBILE_MONEY,
-            status=Order.PENDING
+            status=Order.DRAFT
         )
         logger.info(f"DEBUG Orange Money Payment - Commande creee: {order.order_number}")
         

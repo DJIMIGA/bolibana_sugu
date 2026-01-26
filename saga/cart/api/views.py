@@ -674,7 +674,7 @@ class CartViewSet(viewsets.ModelViewSet):
                         subtotal=subtotal,
                         shipping_cost=shipping_cost,
                         total=subtotal + shipping_cost,
-                        status=Order.PENDING,
+                        status=Order.DRAFT,
                         metadata=metadata
                     )
 

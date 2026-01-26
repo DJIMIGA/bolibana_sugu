@@ -206,7 +206,7 @@ class OrangeMoneyViewsTest(TestCase):
         self.assertEqual(Order.objects.count(), 1)
         order = Order.objects.first()
         self.assertEqual(order.payment_method, Order.MOBILE_MONEY)
-        self.assertEqual(order.status, Order.PENDING)
+        self.assertEqual(order.status, Order.DRAFT)
         
         # Vérifier que les tokens sont en session
         session = self.client.session
@@ -221,7 +221,7 @@ class OrangeMoneyViewsTest(TestCase):
             subtotal=1000.00,
             total=1000.00,
             payment_method=Order.MOBILE_MONEY,
-            status=Order.PENDING
+            status=Order.DRAFT
         )
         
         # Simuler une session avec order_id

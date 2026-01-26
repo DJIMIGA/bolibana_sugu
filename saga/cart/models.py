@@ -216,23 +216,19 @@ class CartItem(models.Model):
 
 
 class Order(models.Model):
-    # Statuts de commande
-    PENDING = 'pending'
+    # Statuts de commande (alignés avec B2B)
+    DRAFT = 'draft'
     CONFIRMED = 'confirmed'
-    PROCESSING = 'processing'
     SHIPPED = 'shipped'
     DELIVERED = 'delivered'
     CANCELLED = 'cancelled'
-    REFUNDED = 'refunded'
     
     STATUS_CHOICES = [
-        (PENDING, 'En attente'),
+        (DRAFT, 'Brouillon'),
         (CONFIRMED, 'Confirmée'),
-        (PROCESSING, 'En préparation'),
         (SHIPPED, 'Expédiée'),
         (DELIVERED, 'Livrée'),
         (CANCELLED, 'Annulée'),
-        (REFUNDED, 'Remboursée'),
     ]
 
     # Méthodes de paiement
@@ -253,7 +249,7 @@ class Order(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
     
     # Statut et paiement
-    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default=PENDING)
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default=DRAFT)
     payment_method = models.CharField(max_length=20, choices=PAYMENT_CHOICES, default=CASH_ON_DELIVERY)
     is_paid = models.BooleanField(default=False)
     paid_at = models.DateTimeField(null=True, blank=True)

@@ -477,7 +477,7 @@ class CartService:
                     shipping_cost=shipping_method.price,
                     total=summary['total_salam'] + shipping_method.price,
                     is_paid=False,  # Sera payé via Stripe
-                    status=Order.PENDING
+                    status=Order.DRAFT
                 )
                 
                 # Créer les éléments de la commande Salam
@@ -502,7 +502,7 @@ class CartService:
                     shipping_cost=shipping_method.price,
                     total=summary['total_classic'] + shipping_method.price,
                     is_paid=classic_is_paid,
-                    status=Order.PENDING
+                    status=Order.DRAFT
                 )
                 
                 # Créer les éléments de la commande Classique

@@ -341,7 +341,7 @@ class StripeWeightedProductsConversionTestCase(TestCase):
             subtotal=Decimal('25'),
             shipping_cost=Decimal('1000'),
             total=Decimal('1025'),
-            status=Order.PENDING
+            status=Order.DRAFT
         )
         
         OrderItem.objects.create(
@@ -411,7 +411,7 @@ class StripeWeightedProductsConversionTestCase(TestCase):
             subtotal=Decimal('75'),  # 0.5 * 150
             shipping_cost=Decimal('1000'),
             total=Decimal('1075'),
-            status=Order.PENDING
+            status=Order.DRAFT
         )
         
         OrderItem.objects.create(
@@ -472,7 +472,7 @@ class StripeWeightedProductsConversionTestCase(TestCase):
             subtotal=Decimal('500'),  # 2.5 * 200
             shipping_cost=Decimal('1000'),
             total=Decimal('1500'),
-            status=Order.PENDING
+            status=Order.DRAFT
         )
         
         OrderItem.objects.create(
@@ -533,7 +533,7 @@ class StripeWeightedProductsConversionTestCase(TestCase):
             subtotal=Decimal('6000'),  # 3 * 2000
             shipping_cost=Decimal('1000'),
             total=Decimal('7000'),
-            status=Order.PENDING
+            status=Order.DRAFT
         )
         
         OrderItem.objects.create(

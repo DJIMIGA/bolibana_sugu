@@ -34,16 +34,15 @@ type OrderLite = {
   items: OrderItemLite[];
 };
 
-type FilterStatus = 'all' | 'pending' | 'confirmed' | 'shipped' | 'delivered' | 'cancelled' | 'refunded';
+type FilterStatus = 'all' | 'draft' | 'confirmed' | 'shipped' | 'delivered' | 'cancelled';
 
 const FILTER_OPTIONS: { value: FilterStatus; label: string }[] = [
   { value: 'all', label: 'Toutes' },
-  { value: 'pending', label: 'En attente' },
+  { value: 'draft', label: 'Brouillons' },
   { value: 'confirmed', label: 'Confirmées' },
   { value: 'shipped', label: 'Expédiées' },
   { value: 'delivered', label: 'Livrées' },
   { value: 'cancelled', label: 'Annulées' },
-  { value: 'refunded', label: 'Remboursées' },
 ];
 
 const OrdersScreen: React.FC = () => {

@@ -636,14 +636,13 @@ def b2b_order_status_webhook(request):
             status=status.HTTP_400_BAD_REQUEST
         )
     
-    # Valider le statut
+    # Valider le statut (alignés avec B2B)
     valid_statuses = [
+        Order.DRAFT,
         Order.CONFIRMED,
-        Order.PROCESSING,
         Order.SHIPPED,
         Order.DELIVERED,
         Order.CANCELLED,
-        Order.REFUNDED
     ]
     
     if status_value not in valid_statuses:

@@ -360,23 +360,21 @@ class OrdersListView(generics.ListAPIView):
     def get_queryset(self):
         """
         Retourne les commandes triées par statut (actives en premier) puis par date de création.
-        Ordre de priorité des statuts:
-        1. pending, confirmed, shipped (commandes actives)
+        Ordre de priorité des statuts (alignés avec B2B):
+        1. draft, confirmed, shipped (commandes actives)
         2. delivered (livrées)
-        3. cancelled, refunded (annulées/remboursées)
-        Note: 'processing' n'est pas utilisé dans les statuts réels
+        3. cancelled (annulées)
         """
         from django.db.models import Case, When, IntegerField
         
-        # Définir l'ordre de priorité des statuts
+        # Définir l'ordre de priorité des statuts (alignés avec B2B)
         status_priority = Case(
-            When(status=Order.PENDING, then=1),
+            When(status=Order.DRAFT, then=1),
             When(status=Order.CONFIRMED, then=2),
             When(status=Order.SHIPPED, then=3),
             When(status=Order.DELIVERED, then=4),
             When(status=Order.CANCELLED, then=5),
-            When(status=Order.REFUNDED, then=6),
-            default=7,
+            default=6,
             output_field=IntegerField()
         )
         
@@ -453,7 +451,7 @@ class DeleteAccountView(APIView):
         from cart.models import Order
         active_orders = Order.objects.filter(
             user=user,
-            status__in=['pending', 'confirmed', 'shipped']
+            status__in=['draft', 'confirmed', 'shipped']
         ).exists()
 
         if active_orders:
