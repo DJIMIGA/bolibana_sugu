@@ -941,7 +941,7 @@ class CartViewSet(viewsets.ModelViewSet):
             # Récupérer toutes les commandes en attente de ce panier
             user_orders_pending = Order.objects.filter(
                 user=order.user,
-                status=Order.PENDING,
+                status=Order.DRAFT,
                 is_paid=False
             ).exclude(id=order.id)
             
