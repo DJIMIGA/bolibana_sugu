@@ -353,9 +353,11 @@ class LoyaltyInfoView(APIView):
 class OrdersListView(generics.ListAPIView):
     """
     Liste des commandes de l'utilisateur connecté (pour le mobile).
+    Retourne toutes les commandes sans pagination.
     """
     permission_classes = [permissions.IsAuthenticated]
     serializer_class = OrderSerializer
+    pagination_class = None  # Désactiver la pagination pour retourner toutes les commandes
 
     def get_queryset(self):
         """
