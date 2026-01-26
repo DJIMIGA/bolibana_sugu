@@ -583,9 +583,10 @@ def b2b_order_status_webhook(request):
             status=status.HTTP_401_UNAUTHORIZED
         )
     
-    # Vérifier que la clé API est valide
-    active_api_key = ApiKey.get_active_key()
-    if not active_api_key or api_key_header != active_api_key:
+    # Vérifier que la clé API est valide (accepter toute clé active)
+    active_keys = ApiKey.get_active_keys()
+    active_key_values = {item.get('key') for item in active_keys if item.get('key')}
+    if not active_key_values or api_key_header not in active_key_values:
         logger.warning(
             f"[B2B Webhook] Tentative d'accès avec clé API invalide depuis {request.META.get('REMOTE_ADDR')}"
         )
