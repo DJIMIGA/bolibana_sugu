@@ -123,33 +123,30 @@
         const orderId = '{{ order_id }}';
         const orderNumber = '{{ order_number }}';
         
-        // Deep link vers l'app mobile - redirection immédiate
+        // Deep link vers l'app mobile
         const deepLink = `bolibana://payment-success?order_id=${orderId}&order_number=${orderNumber}`;
         
-        console.log('[Payment Success] 🔄 Redirection immédiate vers:', deepLink);
+        console.log('[Payment Success] Deep link prêt:', deepLink);
         
-        // Rediriger immédiatement vers le deep link
-        // L'app React Native interceptera le deep link et fermera le WebBrowser
-        try {
-            window.location.href = deepLink;
-            console.log('[Payment Success] ✅ Deep link déclenché');
-        } catch (e) {
-            console.error('[Payment Success] ❌ Erreur redirection:', e);
-            // Fallback: essayer avec window.location.replace
-            try {
-                window.location.replace(deepLink);
-            } catch (e2) {
-                console.error('[Payment Success] ❌ Erreur replace:', e2);
-            }
-        }
-        
-        // Fonction pour fermer manuellement (bouton) - redirige aussi vers le deep link
+        // Fonction pour fermer et rediriger vers l'app (bouton uniquement)
         function closeWindow() {
-            console.log('[Payment Success] 👆 Bouton Fermer cliqué');
+            console.log('[Payment Success] 👆 Bouton Fermer cliqué - Redirection vers app');
+            
+            // Rediriger vers le deep link
+            // L'app React Native interceptera le deep link et fermera le WebBrowser
             try {
                 window.location.href = deepLink;
+                console.log('[Payment Success] ✅ Deep link déclenché');
             } catch (e) {
-                console.error('[Payment Success] ❌ Erreur redirection bouton:', e);
+                console.error('[Payment Success] ❌ Erreur redirection:', e);
+                // Fallback: essayer avec window.location.replace
+                try {
+                    window.location.replace(deepLink);
+                    console.log('[Payment Success] ✅ Redirection via replace');
+                } catch (e2) {
+                    console.error('[Payment Success] ❌ Erreur replace:', e2);
+                    alert('Redirection impossible. Veuillez fermer cette fenêtre manuellement.');
+                }
             }
         }
     </script>
