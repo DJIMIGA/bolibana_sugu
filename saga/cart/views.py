@@ -1426,11 +1426,17 @@ def my_orders(request):
     # Base queryset - inclure toutes les commandes de l'utilisateur
     orders = Order.objects.filter(user=request.user)
     
-    # Debug: vérifier le nombre total de commandes
+    # Debug: vérifier le nombre total de commandes et leurs statuts
     total_orders = orders.count()
     print(f"[my_orders] Utilisateur {request.user.id} - Total commandes: {total_orders}")
     
+    # Vérifier les statuts des commandes
+    from django.db.models import Count
+    status_counts = orders.values('status').annotate(count=Count('id'))
+    print(f"[my_orders] Répartition par statut: {list(status_counts)}")
+    
     # Annoter avec l'ordre de priorité des statuts
+    # Les commandes avec des statuts invalides auront default=6
     orders = orders.annotate(status_order=status_priority)
     
     # Appliquer le filtre de statut si spécifié
