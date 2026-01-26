@@ -1,5 +1,4 @@
 import React, { useEffect, useRef, useState } from 'react';
-import React, { useEffect } from 'react';
 import { View, Text, StyleSheet, Platform, Modal, TouchableOpacity } from 'react-native';
 import { NavigationContainer, useNavigationContainerRef, Linking } from '@react-navigation/native';
 import { createStackNavigator } from '@react-navigation/stack';
