@@ -929,10 +929,32 @@ class CartViewSet(viewsets.ModelViewSet):
 
             order.stripe_session_id = session.id
             order.stripe_payment_status = session.payment_status
+            
+            # Mettre à jour le statut et is_paid si nécessaire
+            old_status = order.status
             if not order.is_paid:
                 order.mark_as_paid()
+                logger.info(
+                    "Payment success - Commande %s mise à jour: status=%s→%s is_paid=%s→%s",
+                    order.id,
+                    old_status,
+                    order.status,
+                    False,
+                    order.is_paid
+                )
             else:
-                order.save(update_fields=['stripe_session_id', 'stripe_payment_status'])
+                # Si déjà payé, s'assurer que le statut est CONFIRMED
+                if order.status == Order.DRAFT:
+                    order.status = Order.CONFIRMED
+                    order.save(update_fields=['status', 'stripe_session_id', 'stripe_payment_status'])
+                    logger.info(
+                        "Payment success - Commande %s statut mis à jour: %s→%s",
+                        order.id,
+                        old_status,
+                        order.status
+                    )
+                else:
+                    order.save(update_fields=['stripe_session_id', 'stripe_payment_status'])
 
             # Synchroniser vers B2B après paiement réussi
             self._sync_order_to_b2b(order)
@@ -952,10 +974,28 @@ class CartViewSet(viewsets.ModelViewSet):
             else:
                 logger.info("Checkout Stripe - D'autres commandes en attente, panier conservé")
 
+            # Vérifier si c'est une requête mobile (via paramètre ou User-Agent)
+            is_mobile = request.GET.get('mobile') == '1' or 'mobile' in (request.META.get('HTTP_USER_AGENT', '') or '').lower()
+            accept = (request.META.get('HTTP_ACCEPT') or '').lower()
+            
+            # Si c'est mobile ou demande HTML, retourner une page HTML qui redirige vers l'app
+            if is_mobile or 'text/html' in accept:
+                from django.shortcuts import render
+                context = {
+                    'order_id': order.id,
+                    'order_number': order.order_number,
+                    'status': order.status,
+                    'is_paid': order.is_paid,
+                }
+                return render(request, 'cart/payment_success_mobile.html', context, status=200)
+            
+            # Sinon, retourner JSON pour les appels API
             return Response({
                 'status': 'success',
                 'message': 'Paiement confirmé, panier vidé',
-                'order_id': order.id
+                'order_id': order.id,
+                'order_status': order.status,
+                'is_paid': order.is_paid
             })
         except Exception as e:
             logger.error(f"Payment success error: {str(e)}")

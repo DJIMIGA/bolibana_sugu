@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Paiement réussi - BoliBana</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #10B981 0%, #059669 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        .container {
+            background: white;
+            border-radius: 20px;
+            padding: 40px;
+            max-width: 400px;
+            width: 100%;
+            text-align: center;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+        }
+        .success-icon {
+            width: 80px;
+            height: 80px;
+            background: #10B981;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 20px;
+        }
+        .success-icon svg {
+            width: 50px;
+            height: 50px;
+            color: white;
+        }
+        h1 {
+            color: #1F2937;
+            font-size: 24px;
+            margin-bottom: 10px;
+        }
+        .message {
+            color: #6B7280;
+            font-size: 16px;
+            margin-bottom: 30px;
+            line-height: 1.5;
+        }
+        .order-info {
+            background: #F3F4F6;
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 30px;
+        }
+        .order-number {
+            font-size: 18px;
+            font-weight: 600;
+            color: #1F2937;
+            margin-bottom: 5px;
+        }
+        .order-status {
+            font-size: 14px;
+            color: #10B981;
+            font-weight: 500;
+        }
+        .button {
+            background: #10B981;
+            color: white;
+            border: none;
+            border-radius: 12px;
+            padding: 16px 32px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            width: 100%;
+            transition: background 0.2s;
+        }
+        .button:hover {
+            background: #059669;
+        }
+        .button:active {
+            transform: scale(0.98);
+        }
+        @media (max-width: 480px) {
+            .container {
+                padding: 30px 20px;
+            }
+            h1 {
+                font-size: 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="success-icon">
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+            </svg>
+        </div>
+        <h1>Paiement réussi !</h1>
+        <p class="message">Votre commande a été confirmée avec succès.</p>
+        
+        <div class="order-info">
+            <div class="order-number">Commande #{{ order_number }}</div>
+            <div class="order-status">Statut: Confirmée</div>
+        </div>
+        
+        <button class="button" onclick="closeWindow()">Fermer</button>
+    </div>
+
+    <script>
+        // Fonction pour rediriger vers l'app mobile via deep link
+        function redirectToApp() {
+            const orderId = '{{ order_id }}';
+            const orderNumber = '{{ order_number }}';
+            
+            // Deep link vers l'app mobile
+            const deepLink = `bolibana://payment-success?order_id=${orderId}&order_number=${orderNumber}`;
+            
+            // Essayer d'ouvrir le deep link
+            window.location.href = deepLink;
+            
+            // Fallback: essayer de fermer la fenêtre après un court délai
+            setTimeout(function() {
+                // Pour iOS
+                if (window.webkit && window.webkit.messageHandlers && window.webkit.messageHandlers.close) {
+                    window.webkit.messageHandlers.close.postMessage({});
+                }
+                // Pour Android
+                else if (window.Android && window.Android.close) {
+                    window.Android.close();
+                }
+                // Fallback: essayer de fermer la fenêtre
+                else {
+                    window.close();
+                }
+            }, 1000);
+        }
+
+        // Rediriger automatiquement vers l'app après 1 seconde
+        setTimeout(function() {
+            redirectToApp();
+        }, 1000);
+
+        // Fonction pour fermer manuellement
+        function closeWindow() {
+            redirectToApp();
+        }
+    </script>
+</body>
+</html>

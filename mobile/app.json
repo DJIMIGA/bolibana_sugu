@@ -27,8 +27,22 @@
       "permissions": [
         "android.permission.CAMERA",
         "android.permission.RECORD_AUDIO"
+      ],
+      "intentFilters": [
+        {
+          "action": "VIEW",
+          "autoVerify": true,
+          "data": [
+            {
+              "scheme": "bolibana",
+              "host": "payment-success"
+            }
+          ],
+          "category": ["BROWSABLE", "DEFAULT"]
+        }
       ]
     },
+    "scheme": "bolibana",
     "web": {
       "favicon": "./assets/app-logo.png"
     },

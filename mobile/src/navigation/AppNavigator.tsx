@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect } from 'react';
 import { View, Text, StyleSheet, Platform, Modal, TouchableOpacity } from 'react-native';
-import { NavigationContainer, useNavigationContainerRef } from '@react-navigation/native';
+import { NavigationContainer, useNavigationContainerRef, Linking } from '@react-navigation/native';
 import { createStackNavigator } from '@react-navigation/stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { Ionicons } from '@expo/vector-icons';
@@ -293,10 +294,55 @@ const AppNavigator: React.FC = () => {
     return <LoadingScreen />;
   }
 
+  // Configuration des deep links
+  const linking = {
+    prefixes: ['bolibana://', 'https://www.bolibana.com', 'https://bolibana.com'],
+    config: {
+      screens: {
+        Profile: {
+          screens: {
+            Orders: 'orders',
+          },
+        },
+      },
+    },
+  };
+
+  // Gérer les deep links pour les retours de paiement
+  useEffect(() => {
+    const handleDeepLink = (event: { url: string }) => {
+      const { url } = event;
+      console.log('[AppNavigator] Deep link reçu:', url);
+      
+      // Si c'est un retour de paiement, naviguer vers les commandes
+      if (url.includes('payment-success') || url.includes('payment_success')) {
+        const nav = navigationRef.current;
+        if (nav) {
+          nav.navigate('Profile', { screen: 'Orders' });
+        }
+      }
+    };
+
+    // Écouter les deep links au démarrage
+    Linking.getInitialURL().then((url) => {
+      if (url) {
+        handleDeepLink({ url });
+      }
+    });
+
+    // Écouter les deep links pendant l'exécution
+    const subscription = Linking.addEventListener('url', handleDeepLink);
+
+    return () => {
+      subscription.remove();
+    };
+  }, []);
+
   return (
     <>
       <NavigationContainer
         ref={navigationRef}
+        linking={linking}
         fallback={<LoadingScreen />}
         onReady={() => {
           const route = navigationRef.getCurrentRoute();
