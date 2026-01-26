@@ -1000,13 +1000,17 @@ class CartViewSet(viewsets.ModelViewSet):
             else:
                 logger.info("Payment success - Détection mobile: paramètre mobile=1 détecté dans l'URL")
             
-            # Si c'est mobile, rediriger directement vers le deep link
+            # Si c'est mobile, retourner une page HTML qui redirige vers l'app
             if is_mobile_param:
-                from django.http import HttpResponseRedirect
-                deep_link = f"bolibana://payment-success?order_id={order.id}&order_number={order.order_number}"
-                logger.info("Payment success - Redirection directe vers deep link: %s pour commande %s", deep_link, order.id)
-                # Redirection HTTP directe vers le deep link
-                return HttpResponseRedirect(deep_link)
+                from django.shortcuts import render
+                logger.info("Payment success - Retour page HTML mobile pour commande %s", order.id)
+                context = {
+                    'order_id': order.id,
+                    'order_number': order.order_number,
+                    'status': order.status,
+                    'is_paid': order.is_paid,
+                }
+                return render(request, 'cart/payment_success_mobile.html', context, status=200)
             
             # Sinon, retourner JSON pour les appels API
             return Response({

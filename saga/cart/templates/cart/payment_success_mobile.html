@@ -128,26 +128,45 @@
         
         console.log('[Payment Success] Deep link prêt:', deepLink);
         
-        // Fonction pour fermer et rediriger vers l'app (bouton uniquement)
-        function closeWindow() {
-            console.log('[Payment Success] 👆 Bouton Fermer cliqué - Redirection vers app');
+        // Fonction pour rediriger vers l'app
+        function redirectToApp() {
+            console.log('[Payment Success] 🔄 Tentative de redirection vers app');
             
-            // Rediriger vers le deep link
-            // L'app React Native interceptera le deep link et fermera le WebBrowser
+            // Méthode 1: Essayer window.location.href
             try {
                 window.location.href = deepLink;
-                console.log('[Payment Success] ✅ Deep link déclenché');
+                console.log('[Payment Success] ✅ Redirection via href');
             } catch (e) {
-                console.error('[Payment Success] ❌ Erreur redirection:', e);
-                // Fallback: essayer avec window.location.replace
+                console.error('[Payment Success] ❌ Erreur href:', e);
+                
+                // Méthode 2: Essayer window.location.replace
                 try {
                     window.location.replace(deepLink);
                     console.log('[Payment Success] ✅ Redirection via replace');
                 } catch (e2) {
                     console.error('[Payment Success] ❌ Erreur replace:', e2);
-                    alert('Redirection impossible. Veuillez fermer cette fenêtre manuellement.');
+                    
+                    // Méthode 3: Créer un lien invisible et le cliquer
+                    try {
+                        const link = document.createElement('a');
+                        link.href = deepLink;
+                        link.style.display = 'none';
+                        document.body.appendChild(link);
+                        link.click();
+                        document.body.removeChild(link);
+                        console.log('[Payment Success] ✅ Redirection via lien invisible');
+                    } catch (e3) {
+                        console.error('[Payment Success] ❌ Toutes les méthodes ont échoué:', e3);
+                        alert('Redirection impossible. Veuillez fermer cette fenêtre manuellement.');
+                    }
                 }
             }
+        }
+        
+        // Fonction pour fermer (bouton)
+        function closeWindow() {
+            console.log('[Payment Success] 👆 Bouton Fermer cliqué');
+            redirectToApp();
         }
     </script>
 </body>
