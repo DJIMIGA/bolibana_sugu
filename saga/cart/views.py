@@ -1423,22 +1423,29 @@ def my_orders(request):
         output_field=IntegerField()
     )
     
-    # Base queryset
-    orders = (
-        Order.objects.filter(user=request.user)
-        .annotate(status_order=status_priority)
-    )
+    # Base queryset - inclure toutes les commandes de l'utilisateur
+    orders = Order.objects.filter(user=request.user)
+    
+    # Debug: vérifier le nombre total de commandes
+    total_orders = orders.count()
+    print(f"[my_orders] Utilisateur {request.user.id} - Total commandes: {total_orders}")
+    
+    # Annoter avec l'ordre de priorité des statuts
+    orders = orders.annotate(status_order=status_priority)
     
     # Appliquer le filtre de statut si spécifié
     if status_filter != 'all' and status_filter in dict(Order.STATUS_CHOICES):
         orders = orders.filter(status=status_filter)
+        print(f"[my_orders] Filtre appliqué: {status_filter} - Commandes après filtre: {orders.count()}")
     
     # Trier par statut puis par date
     orders = orders.order_by('status_order', '-created_at')
     
-    # Debug: afficher les métadonnées pour vérification
-    for order in orders:
-        print(f"Commande {order.id}: metadata = {order.metadata}")
+    # Debug: afficher les commandes récupérées
+    orders_list = list(orders)
+    print(f"[my_orders] Commandes finales: {len(orders_list)}")
+    for order in orders_list[:5]:  # Limiter à 5 pour les logs
+        print(f"[my_orders] Commande {order.id}: statut={order.status}, created_at={order.created_at}, user={order.user_id}")
     
     # Utiliser tous les statuts disponibles (alignés avec B2B)
     available_status_choices = Order.STATUS_CHOICES

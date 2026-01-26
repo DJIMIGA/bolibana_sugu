@@ -378,13 +378,32 @@ class OrdersListView(generics.ListAPIView):
             output_field=IntegerField()
         )
         
-        return (
-            Order.objects.filter(user=self.request.user)
-            .select_related('shipping_address')
-            .prefetch_related('items__product')
-            .annotate(status_order=status_priority)
-            .order_by('status_order', '-created_at')
-        )
+        # Récupérer toutes les commandes de l'utilisateur
+        queryset = Order.objects.filter(user=self.request.user)
+        
+        # Debug: vérifier le nombre total de commandes
+        total_orders = queryset.count()
+        import logging
+        logger = logging.getLogger(__name__)
+        logger.info(f"[OrdersListView] Utilisateur {self.request.user.id} - Total commandes: {total_orders}")
+        
+        # Annoter avec l'ordre de priorité des statuts
+        queryset = queryset.annotate(status_order=status_priority)
+        
+        # Sélectionner les relations pour optimiser les requêtes
+        queryset = queryset.select_related('shipping_address')
+        queryset = queryset.prefetch_related('items__product')
+        
+        # Trier par statut puis par date
+        queryset = queryset.order_by('status_order', '-created_at')
+        
+        # Debug: vérifier les commandes retournées
+        orders_list = list(queryset[:10])  # Limiter pour les logs
+        logger.info(f"[OrdersListView] Commandes retournées: {len(orders_list)}")
+        for order in orders_list[:5]:  # Limiter à 5 pour les logs
+            logger.info(f"[OrdersListView] Commande {order.id}: statut={order.status}, created_at={order.created_at}")
+        
+        return queryset
 
 
 class ChangePasswordView(APIView):
