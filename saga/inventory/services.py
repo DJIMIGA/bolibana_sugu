@@ -1518,13 +1518,19 @@ class OrderSyncService:
         payment_method = order.payment_method if order.payment_method else ''
         payment_method_label = dict(Order.PAYMENT_CHOICES).get(payment_method, payment_method) if payment_method else ''
         
+        # Logique de is_paid selon le moyen de paiement :
+        # - Stripe (online_payment) : is_paid=True après confirmation dans payment_success (webhook)
+        # - Orange Money (mobile_money) : is_paid=True après confirmation dans orange_money_return
+        # - Cash on delivery (cash_on_delivery) : is_paid=False (paiement à la livraison)
+        is_paid_value = order.is_paid
+        
         payload = {
             'order_number': order.order_number,
             'items': items,
             'total': float(order.total),
             'payment_method': payment_method,
             'payment_method_label': payment_method_label,
-            'is_paid': order.is_paid,
+            'is_paid': is_paid_value,
             'paid_at': order.paid_at.isoformat() if order.paid_at else None,
             'customer_email': customer_email,
             'customer_phone': customer_phone,
@@ -1601,9 +1607,11 @@ class OrderSyncService:
                 for item in payload.get('items', [])
             ]
             logger.info(
-                "Payload B2B prêt - order=%s total=%s items=%s",
+                "Payload B2B prêt - order=%s total=%s payment=%s is_paid=%s items=%s",
                 payload.get('order_number'),
                 payload.get('total'),
+                payload.get('payment_method'),
+                payload.get('is_paid'),
                 items_preview
             )
             
