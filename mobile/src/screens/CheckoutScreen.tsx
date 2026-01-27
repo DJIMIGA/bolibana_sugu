@@ -509,12 +509,23 @@ const CheckoutScreen: React.FC = () => {
           .filter((url: string | undefined) => !!url);
 
         for (const url of checkoutUrls) {
-          await WebBrowser.openBrowserAsync(url, {
+          const result = await WebBrowser.openBrowserAsync(url, {
             presentationStyle: WebBrowser.WebBrowserPresentationStyle.FULL_SCREEN,
             controlsColor: COLORS.PRIMARY,
           });
+          
+          console.log('[CheckoutScreen] WebBrowser result (multiple):', result.type);
+          
+          // Si le navigateur a été fermé (type: 'dismiss'), rafraîchir le panier et naviguer
+          if (result.type === 'dismiss') {
+            console.log('[CheckoutScreen] WebBrowser fermé (multiple), rafraîchissement du panier');
+            await dispatch(fetchCart());
+            (navigation as any).navigate('Profile', { screen: 'Orders' });
+          }
         }
 
+        // Rafraîchir le panier après paiement dans tous les cas
+        await dispatch(fetchCart());
         (navigation as any).navigate('Profile', { screen: 'Orders' });
         return;
       }
@@ -540,12 +551,15 @@ const CheckoutScreen: React.FC = () => {
           controlsColor: COLORS.PRIMARY,
         });
         
+        console.log('[CheckoutScreen] WebBrowser result:', result.type);
+        
         // Si le navigateur a été fermé (type: 'dismiss'), rafraîchir le panier
         if (result.type === 'dismiss') {
+          console.log('[CheckoutScreen] WebBrowser fermé, rafraîchissement du panier');
           await dispatch(fetchCart());
         }
 
-        // Rafraîchir le panier et naviguer vers les commandes
+        // Rafraîchir le panier et naviguer vers les commandes dans tous les cas
         await dispatch(fetchCart());
         (navigation as any).navigate('Profile', { screen: 'Orders' });
       }

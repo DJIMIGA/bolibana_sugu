@@ -1024,6 +1024,31 @@ class CartViewSet(viewsets.ModelViewSet):
             logger.error(f"Payment success error: {str(e)}")
             return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
+    @action(detail=False, methods=['get'], url_path='payment-callback', permission_classes=[AllowAny])
+    def payment_callback(self, request):
+        """
+        Route de callback pour rediriger vers le deep link de l'app mobile.
+        Cette route est appelée depuis la page HTML de succès et fait une redirection HTTP
+        vers le deep link, ce qui fonctionne mieux avec Expo WebBrowser.
+        """
+        from django.http import HttpResponseRedirect
+        
+        order_id = request.GET.get('order_id')
+        order_number = request.GET.get('order_number')
+        
+        if not order_id:
+            return Response({'error': 'order_id manquant'}, status=status.HTTP_400_BAD_REQUEST)
+        
+        # Construire le deep link
+        deep_link = f"bolibana://payment-success?order_id={order_id}"
+        if order_number:
+            deep_link += f"&order_number={order_number}"
+        
+        logger.info("Payment callback - Redirection vers deep link: %s pour commande %s", deep_link, order_id)
+        
+        # Redirection HTTP vers le deep link
+        return HttpResponseRedirect(deep_link)
+    
     @action(detail=False, methods=['get'], url_path='payment-cancel', permission_classes=[AllowAny])
     def payment_cancel(self, request):
         accept = (request.META.get('HTTP_ACCEPT') or '').lower()
