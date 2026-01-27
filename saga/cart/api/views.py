@@ -1189,17 +1189,65 @@ class CartViewSet(viewsets.ModelViewSet):
             <div class="order-status">Statut: Confirmée</div>
         </div>
         
-        <a href="{callback_url}" class="button" id="openAppButton">Retourner à l'application</a>
-        <p class="info-text">Vous pouvez fermer cette page. L'application se mettra à jour automatiquement.</p>
+        <button class="button" id="closeButton" onclick="closeBrowser()">Fermer et retourner à l'application</button>
+        <p class="info-text">Cliquez sur le bouton ci-dessus pour fermer cette page et retourner à l'application.</p>
+        <p class="info-text" style="margin-top: 10px; font-size: 11px;">L'application détectera la fermeture et vous redirigera vers vos commandes.</p>
     </div>
     <script>
         // Log pour débogage
         console.log('[Payment Callback] Page chargée - Order ID: {order_id}, Order Number: {order_number}');
         console.log('[Payment Callback] URL callback: {callback_url}');
-        console.log('[Payment Callback] Cette URL sera interceptée par l\'app via Linking');
+        console.log('[Payment Callback] User-Agent:', navigator.userAgent);
+        console.log('[Payment Callback] Dans WebBrowser Expo - fermeture manuelle requise');
         
-        // Le bouton redirige vers l'URL HTTPS qui sera interceptée par l'app
-        // Pas besoin de JavaScript complexe - l'app gère la redirection via Linking
+        // Fonction pour fermer le navigateur
+        function closeBrowser() {{
+            console.log('[Payment Callback] Bouton "Fermer" cliqué');
+            
+            // Essayer window.close() - peut fonctionner si la fenêtre a été ouverte par JavaScript
+            try {{
+                window.close();
+                console.log('[Payment Callback] window.close() appelé');
+            }} catch (e) {{
+                console.log('[Payment Callback] window.close() échoué:', e.message);
+            }}
+            
+            // Essayer de fermer via history.back() si possible
+            try {{
+                if (window.history.length > 1) {{
+                    window.history.back();
+                    console.log('[Payment Callback] window.history.back() appelé');
+                }}
+            }} catch (e) {{
+                console.log('[Payment Callback] window.history.back() échoué:', e.message);
+            }}
+            
+            // Afficher un message à l'utilisateur
+            const message = document.createElement('div');
+            message.style.cssText = 'background: #10B981; color: white; padding: 15px; border-radius: 8px; margin-top: 20px; text-align: center;';
+            message.innerHTML = '✅ Veuillez fermer cette page manuellement en utilisant le bouton retour de votre navigateur.';
+            document.querySelector('.container').appendChild(message);
+            
+            console.log('[Payment Callback] Message affiché à l\'utilisateur');
+        }}
+        
+        // Attacher l'événement au bouton
+        document.addEventListener('DOMContentLoaded', function() {{
+            const button = document.getElementById('closeButton');
+            if (button) {{
+                button.addEventListener('click', closeBrowser);
+                console.log('[Payment Callback] Événement click attaché au bouton');
+            }}
+        }});
+        
+        // Afficher un message automatique après 3 secondes
+        setTimeout(function() {{
+            const infoText = document.querySelector('.info-text');
+            if (infoText) {{
+                infoText.style.color = '#10B981';
+                infoText.style.fontWeight = '600';
+            }}
+        }}, 3000);
     </script>
 </body>
 </html>
