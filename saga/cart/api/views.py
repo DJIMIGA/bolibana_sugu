@@ -1077,6 +1077,11 @@ class CartViewSet(viewsets.ModelViewSet):
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Redirection...</title>
     <style>
+        * {{
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }}
         body {{
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
             display: flex;
@@ -1084,53 +1089,150 @@ class CartViewSet(viewsets.ModelViewSet):
             justify-content: center;
             min-height: 100vh;
             margin: 0;
-            background: #f5f5f5;
+            background: linear-gradient(135deg, #10B981 0%, #059669 100%);
+            padding: 20px;
         }}
         .container {{
+            background: white;
+            border-radius: 20px;
+            padding: 40px;
+            max-width: 400px;
+            width: 100%;
             text-align: center;
-            padding: 20px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+        }}
+        .spinner {{
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #10B981;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 20px;
+        }}
+        @keyframes spin {{
+            0% {{ transform: rotate(0deg); }}
+            100% {{ transform: rotate(360deg); }}
+        }}
+        .button {{
+            background: #10B981;
+            color: white;
+            border: none;
+            border-radius: 12px;
+            padding: 16px 32px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            width: 100%;
+            margin-top: 20px;
+            display: none;
+        }}
+        .button:hover {{
+            background: #059669;
+        }}
+        .button.show {{
+            display: block;
         }}
     </style>
 </head>
 <body>
     <div class="container">
-        <p>Redirection vers l'application...</p>
+        <div class="spinner"></div>
+        <p style="margin-bottom: 10px; font-size: 18px; color: #1F2937;">Redirection vers l'application...</p>
+        <p style="font-size: 14px; color: #6B7280;">Si la redirection ne fonctionne pas, cliquez sur le bouton ci-dessous</p>
+        <button class="button" id="redirectButton" onclick="redirectToApp()">Ouvrir l'application</button>
     </div>
     <script>
-        console.log('[Payment Callback] Redirection vers deep link: {deep_link}');
+        const deepLink = '{deep_link}';
+        console.log('[Payment Callback] Deep link:', deepLink);
         
-        // Méthode 1: Essayer immédiatement
-        try {{
-            window.location.href = '{deep_link}';
-            console.log('[Payment Callback] ✅ Redirection via href');
-        }} catch (e) {{
-            console.error('[Payment Callback] ❌ Erreur href:', e);
+        let redirectAttempted = false;
+        
+        function redirectToApp() {{
+            if (redirectAttempted) {{
+                console.log('[Payment Callback] Redirection déjà tentée');
+                return;
+            }}
+            redirectAttempted = true;
+            
+            console.log('[Payment Callback] 🔄 Tentative de redirection');
+            
+            // Méthode 1: window.location.href (immédiat)
+            try {{
+                window.location.href = deepLink;
+                console.log('[Payment Callback] ✅ Redirection via href');
+            }} catch (e) {{
+                console.error('[Payment Callback] ❌ Erreur href:', e);
+            }}
+            
+            // Méthode 2: Créer un lien invisible et le cliquer
+            setTimeout(function() {{
+                try {{
+                    const link = document.createElement('a');
+                    link.href = deepLink;
+                    link.target = '_self';
+                    link.style.position = 'absolute';
+                    link.style.top = '0';
+                    link.style.left = '0';
+                    link.style.width = '100%';
+                    link.style.height = '100%';
+                    link.style.zIndex = '99999';
+                    link.style.opacity = '0';
+                    document.body.appendChild(link);
+                    
+                    const clickEvent = new MouseEvent('click', {{
+                        view: window,
+                        bubbles: true,
+                        cancelable: true
+                    }});
+                    link.dispatchEvent(clickEvent);
+                    
+                    console.log('[Payment Callback] ✅ Redirection via lien invisible');
+                    
+                    setTimeout(function() {{
+                        if (link.parentNode) {{
+                            document.body.removeChild(link);
+                        }}
+                    }}, 500);
+                }} catch (e) {{
+                    console.error('[Payment Callback] ❌ Erreur lien:', e);
+                }}
+            }}, 100);
+            
+            // Méthode 3: window.location.replace
+            setTimeout(function() {{
+                try {{
+                    window.location.replace(deepLink);
+                    console.log('[Payment Callback] ✅ Redirection via replace');
+                }} catch (e) {{
+                    console.error('[Payment Callback] ❌ Erreur replace:', e);
+                }}
+            }}, 200);
+            
+            // Méthode 4: Essayer de fermer la fenêtre (si popup)
+            setTimeout(function() {{
+                try {{
+                    if (window.opener) {{
+                        window.close();
+                        console.log('[Payment Callback] ✅ Fenêtre fermée');
+                    }}
+                }} catch (e) {{
+                    console.log('[Payment Callback] ⚠️ Impossible de fermer:', e);
+                }}
+            }}, 300);
         }}
         
-        // Méthode 2: Créer un lien et le cliquer
-        setTimeout(function() {{
-            try {{
-                const link = document.createElement('a');
-                link.href = '{deep_link}';
-                link.style.display = 'none';
-                document.body.appendChild(link);
-                link.click();
-                document.body.removeChild(link);
-                console.log('[Payment Callback] ✅ Redirection via lien invisible');
-            }} catch (e) {{
-                console.error('[Payment Callback] ❌ Erreur lien:', e);
-            }}
-        }}, 100);
+        // Redirection automatique immédiate
+        redirectToApp();
         
-        // Méthode 3: window.location.replace
+        // Afficher le bouton après 2 secondes si la redirection n'a pas fonctionné
         setTimeout(function() {{
-            try {{
-                window.location.replace('{deep_link}');
-                console.log('[Payment Callback] ✅ Redirection via replace');
-            }} catch (e) {{
-                console.error('[Payment Callback] ❌ Erreur replace:', e);
+            const button = document.getElementById('redirectButton');
+            if (button) {{
+                button.classList.add('show');
+                console.log('[Payment Callback] Bouton de secours affiché');
             }}
-        }}, 200);
+        }}, 2000);
     </script>
 </body>
 </html>
