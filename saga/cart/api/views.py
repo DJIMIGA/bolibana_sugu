@@ -1146,6 +1146,10 @@ class CartViewSet(viewsets.ModelViewSet):
         <p style="margin-bottom: 10px; font-size: 18px; color: #1F2937;">Redirection vers l'application...</p>
         <p style="font-size: 14px; color: #6B7280;">Si la redirection ne fonctionne pas, cliquez sur le bouton ci-dessous</p>
         <button class="button" id="redirectButton" onclick="redirectToApp()">Ouvrir l'application</button>
+        <noscript>
+            <p style="color: red; margin-top: 20px; font-weight: bold;">⚠️ JavaScript est désactivé. Veuillez l'activer pour la redirection automatique.</p>
+        </noscript>
+        <div id="jsCheck" style="display: none; color: red; margin-top: 20px; font-weight: bold;">⚠️ JavaScript ne s'exécute pas correctement</div>
     </div>
     <script>
         // Zone de debug visible sur la page
@@ -1168,10 +1172,19 @@ class CartViewSet(viewsets.ModelViewSet):
             }}
         }}
         
+        // Vérifier que le JavaScript s'exécute
+        const jsCheckDiv = document.getElementById('jsCheck');
+        if (jsCheckDiv) {{
+            jsCheckDiv.style.display = 'none';
+        }}
+        
         logDebug('🚀 Script JavaScript chargé');
         logDebug('📍 URL actuelle: ' + window.location.href);
         logDebug('🌐 User-Agent: ' + navigator.userAgent);
         logDebug('📱 Platform: ' + navigator.platform);
+        logDebug('🔍 Deep link brut: {deep_link}');
+        logDebug('🔍 Order ID brut: {order_id_js}');
+        logDebug('🔍 Order Number brut: {order_number_js}');
         
         const deepLink = '{deep_link}';
         logDebug('🔗 Deep link: ' + deepLink);
