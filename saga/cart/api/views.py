@@ -1066,6 +1066,11 @@ class CartViewSet(viewsets.ModelViewSet):
         
         logger.info("Payment callback - Deep link construit: %s", deep_link)
         logger.info("Payment callback - Retour page HTML avec JavaScript pour redirection vers deep link pour commande %s", order_id)
+        logger.info("Payment callback - Variables pour template: order_id=%s, order_number=%s", order_id, order_number)
+        
+        # Préparer les variables pour le template JavaScript (échapper les caractères spéciaux)
+        order_id_js = str(order_id) if order_id else ''
+        order_number_js = str(order_number) if order_number else ''
         
         # Retourner une page HTML avec JavaScript pour rediriger vers le deep link
         # Django bloque les redirections HTTP vers des protocoles personnalisés
@@ -1143,31 +1148,63 @@ class CartViewSet(viewsets.ModelViewSet):
         <button class="button" id="redirectButton" onclick="redirectToApp()">Ouvrir l'application</button>
     </div>
     <script>
+        // Zone de debug visible sur la page
+        const debugDiv = document.createElement('div');
+        debugDiv.id = 'debugInfo';
+        debugDiv.style.cssText = 'position: fixed; top: 10px; left: 10px; background: rgba(0,0,0,0.8); color: white; padding: 10px; border-radius: 5px; font-size: 12px; z-index: 999999; max-width: 90%; font-family: monospace;';
+        document.body.appendChild(debugDiv);
+        
+        function logDebug(message) {{
+            const timestamp = new Date().toLocaleTimeString();
+            const logMessage = `[${{timestamp}}] ${{message}}`;
+            console.log(logMessage);
+            if (debugDiv) {{
+                debugDiv.innerHTML += logMessage + '<br>';
+                // Limiter à 50 lignes pour éviter de surcharger
+                const lines = debugDiv.innerHTML.split('<br>');
+                if (lines.length > 50) {{
+                    debugDiv.innerHTML = lines.slice(-50).join('<br>');
+                }}
+            }}
+        }}
+        
+        logDebug('🚀 Script JavaScript chargé');
+        logDebug('📍 URL actuelle: ' + window.location.href);
+        logDebug('🌐 User-Agent: ' + navigator.userAgent);
+        logDebug('📱 Platform: ' + navigator.platform);
+        
         const deepLink = '{deep_link}';
-        console.log('[Payment Callback] Deep link:', deepLink);
+        logDebug('🔗 Deep link: ' + deepLink);
+        logDebug('✅ Deep link valide: ' + (deepLink && deepLink.startsWith('bolibana://')));
         
         let redirectAttempted = false;
+        let redirectMethods = [];
         
         function redirectToApp() {{
+            logDebug('🔄 redirectToApp() appelée');
+            
             if (redirectAttempted) {{
-                console.log('[Payment Callback] Redirection déjà tentée');
-                return;
+                logDebug('⚠️ Redirection déjà tentée, nouvelle tentative');
             }}
             redirectAttempted = true;
             
-            console.log('[Payment Callback] 🔄 Tentative de redirection');
+            logDebug('📋 Début des tentatives de redirection');
             
             // Méthode 1: window.location.href (immédiat)
             try {{
+                logDebug('1️⃣ Tentative: window.location.href');
                 window.location.href = deepLink;
-                console.log('[Payment Callback] ✅ Redirection via href');
+                redirectMethods.push('href');
+                logDebug('✅ window.location.href exécuté');
             }} catch (e) {{
+                logDebug('❌ Erreur href: ' + e.message);
                 console.error('[Payment Callback] ❌ Erreur href:', e);
             }}
             
             // Méthode 2: Créer un lien invisible et le cliquer
             setTimeout(function() {{
                 try {{
+                    logDebug('2️⃣ Tentative: Lien invisible + click');
                     const link = document.createElement('a');
                     link.href = deepLink;
                     link.target = '_self';
@@ -1178,7 +1215,9 @@ class CartViewSet(viewsets.ModelViewSet):
                     link.style.height = '100%';
                     link.style.zIndex = '99999';
                     link.style.opacity = '0';
+                    link.id = 'deepLinkAnchor';
                     document.body.appendChild(link);
+                    logDebug('✅ Lien créé et ajouté au DOM');
                     
                     const clickEvent = new MouseEvent('click', {{
                         view: window,
@@ -1186,15 +1225,17 @@ class CartViewSet(viewsets.ModelViewSet):
                         cancelable: true
                     }});
                     link.dispatchEvent(clickEvent);
-                    
-                    console.log('[Payment Callback] ✅ Redirection via lien invisible');
+                    redirectMethods.push('link-click');
+                    logDebug('✅ Événement click déclenché sur le lien');
                     
                     setTimeout(function() {{
                         if (link.parentNode) {{
                             document.body.removeChild(link);
+                            logDebug('🧹 Lien retiré du DOM');
                         }}
                     }}, 500);
                 }} catch (e) {{
+                    logDebug('❌ Erreur lien: ' + e.message);
                     console.error('[Payment Callback] ❌ Erreur lien:', e);
                 }}
             }}, 100);
@@ -1202,9 +1243,12 @@ class CartViewSet(viewsets.ModelViewSet):
             // Méthode 3: window.location.replace
             setTimeout(function() {{
                 try {{
+                    logDebug('3️⃣ Tentative: window.location.replace');
                     window.location.replace(deepLink);
-                    console.log('[Payment Callback] ✅ Redirection via replace');
+                    redirectMethods.push('replace');
+                    logDebug('✅ window.location.replace exécuté');
                 }} catch (e) {{
+                    logDebug('❌ Erreur replace: ' + e.message);
                     console.error('[Payment Callback] ❌ Erreur replace:', e);
                 }}
             }}, 200);
@@ -1212,27 +1256,100 @@ class CartViewSet(viewsets.ModelViewSet):
             // Méthode 4: Essayer de fermer la fenêtre (si popup)
             setTimeout(function() {{
                 try {{
+                    logDebug('4️⃣ Vérification window.opener');
                     if (window.opener) {{
+                        logDebug('✅ window.opener détecté, tentative de fermeture');
                         window.close();
-                        console.log('[Payment Callback] ✅ Fenêtre fermée');
+                        redirectMethods.push('close');
+                        logDebug('✅ window.close() appelé');
+                    }} else {{
+                        logDebug('ℹ️ Pas de window.opener (pas une popup)');
                     }}
                 }} catch (e) {{
+                    logDebug('⚠️ Impossible de fermer: ' + e.message);
                     console.log('[Payment Callback] ⚠️ Impossible de fermer:', e);
                 }}
             }}, 300);
+            
+            // Méthode 5: Intent Android (pour Android)
+            setTimeout(function() {{
+                try {{
+                    if (navigator.userAgent.toLowerCase().indexOf('android') > -1) {{
+                        logDebug('5️⃣ Tentative: Intent Android');
+                        const orderIdParam = '{order_id_js}';
+                        const orderNumberParam = '{order_number_js}' || '';
+                        const intentParams = orderNumberParam 
+                            ? `order_id=${{orderIdParam}}&order_number=${{orderNumberParam}}`
+                            : `order_id=${{orderIdParam}}`;
+                        const intent = `intent://payment-success?${{intentParams}}#Intent;scheme=bolibana;package=com.bolibana.app;end`;
+                        window.location.href = intent;
+                        redirectMethods.push('android-intent');
+                        logDebug('✅ Intent Android exécuté: ' + intent);
+                    }}
+                }} catch (e) {{
+                    logDebug('❌ Erreur intent: ' + e.message);
+                }}
+            }}, 400);
+            
+            logDebug('📊 Méthodes tentées: ' + redirectMethods.join(', '));
         }}
         
-        // Redirection automatique immédiate
-        redirectToApp();
+        // Vérifier que le DOM est prêt
+        if (document.readyState === 'loading') {{
+            logDebug('⏳ DOM en cours de chargement');
+            document.addEventListener('DOMContentLoaded', function() {{
+                logDebug('✅ DOM chargé');
+                redirectToApp();
+            }});
+        }} else {{
+            logDebug('✅ DOM déjà prêt');
+            // Redirection automatique immédiate
+            setTimeout(function() {{
+                redirectToApp();
+            }}, 100);
+        }}
+        
+        // Attacher le bouton manuel
+        function attachButton() {{
+            const button = document.getElementById('redirectButton');
+            if (button) {{
+                button.addEventListener('click', function(e) {{
+                    e.preventDefault();
+                    e.stopPropagation();
+                    logDebug('👆 Bouton "Ouvrir l\'application" cliqué manuellement');
+                    redirectAttempted = false; // Réinitialiser pour permettre une nouvelle tentative
+                    redirectToApp();
+                }});
+                logDebug('✅ Événement click attaché au bouton');
+            }} else {{
+                logDebug('⚠️ Bouton non trouvé, réessai dans 100ms');
+                setTimeout(attachButton, 100);
+            }}
+        }}
+        
+        // Attacher le bouton dès que possible
+        if (document.readyState === 'loading') {{
+            document.addEventListener('DOMContentLoaded', attachButton);
+        }} else {{
+            attachButton();
+        }}
         
         // Afficher le bouton après 2 secondes si la redirection n'a pas fonctionné
         setTimeout(function() {{
             const button = document.getElementById('redirectButton');
             if (button) {{
                 button.classList.add('show');
-                console.log('[Payment Callback] Bouton de secours affiché');
+                logDebug('🔘 Bouton de secours affiché après 2 secondes');
             }}
         }}, 2000);
+        
+        // Log toutes les 5 secondes pour voir si on est toujours sur la page
+        let checkInterval = setInterval(function() {{
+            logDebug('⏰ Toujours sur la page après ' + Math.round((Date.now() - startTime) / 1000) + ' secondes');
+        }}, 5000);
+        
+        const startTime = Date.now();
+        logDebug('⏱️ Page chargée à: ' + new Date().toISOString());
     </script>
 </body>
 </html>
