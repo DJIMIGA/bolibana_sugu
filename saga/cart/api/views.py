@@ -16,6 +16,7 @@ from cart.orange_money_service import orange_money_service
 from inventory.services import OrderSyncService
 import stripe
 import logging
+import json
 
 logger = logging.getLogger("cart.checkout")
 
@@ -1069,8 +1070,15 @@ class CartViewSet(viewsets.ModelViewSet):
         logger.info("Payment callback - Variables pour template: order_id=%s, order_number=%s", order_id, order_number)
         
         # Préparer les variables pour le template JavaScript (échapper les caractères spéciaux)
-        order_id_js = str(order_id) if order_id else ''
-        order_number_js = str(order_number) if order_number else ''
+        order_id_js = json.dumps(str(order_id) if order_id else '')
+        order_number_js = json.dumps(str(order_number) if order_number else '')
+        deep_link_js = json.dumps(deep_link)
+        
+        logger.info("Payment callback - Variables JavaScript générées:")
+        logger.info("Payment callback - order_id_js: %s", order_id_js)
+        logger.info("Payment callback - order_number_js: %s", order_number_js)
+        logger.info("Payment callback - deep_link_js: %s", deep_link_js)
+        logger.info("Payment callback - Taille du HTML à générer: ~%d caractères", len(deep_link_js) + len(order_id_js) + len(order_number_js) + 2000)
         
         # Retourner une page HTML avec JavaScript pour rediriger vers le deep link
         # Django bloque les redirections HTTP vers des protocoles personnalisés
@@ -1182,11 +1190,14 @@ class CartViewSet(viewsets.ModelViewSet):
         logDebug('📍 URL actuelle: ' + window.location.href);
         logDebug('🌐 User-Agent: ' + navigator.userAgent);
         logDebug('📱 Platform: ' + navigator.platform);
-        logDebug('🔍 Deep link brut: {deep_link}');
-        logDebug('🔍 Order ID brut: {order_id_js}');
-        logDebug('🔍 Order Number brut: {order_number_js}');
         
-        const deepLink = '{deep_link}';
+        const deepLink = {deep_link_js};
+        const orderId = {order_id_js};
+        const orderNumber = {order_number_js};
+        
+        logDebug('🔍 Deep link brut: ' + deepLink);
+        logDebug('🔍 Order ID brut: ' + orderId);
+        logDebug('🔍 Order Number brut: ' + orderNumber);
         logDebug('🔗 Deep link: ' + deepLink);
         logDebug('✅ Deep link valide: ' + (deepLink && deepLink.startsWith('bolibana://')));
         
@@ -1203,97 +1214,55 @@ class CartViewSet(viewsets.ModelViewSet):
             
             logDebug('📋 Début des tentatives de redirection');
             
-            // Méthode 1: window.location.href (immédiat)
+            // Méthode 1: Créer un lien invisible et le cliquer (plus fiable pour les deep links)
             try {{
-                logDebug('1️⃣ Tentative: window.location.href');
-                window.location.href = deepLink;
-                redirectMethods.push('href');
-                logDebug('✅ window.location.href exécuté');
+                logDebug('1️⃣ Tentative: Lien invisible + click');
+                const link = document.createElement('a');
+                link.href = deepLink;
+                link.style.display = 'none';
+                document.body.appendChild(link);
+                logDebug('✅ Lien créé et ajouté au DOM');
+                
+                // Essayer un clic programmatique
+                link.click();
+                redirectMethods.push('link-click');
+                logDebug('✅ Événement click déclenché sur le lien');
+                
+                // Nettoyer après un court délai
+                setTimeout(function() {{
+                    if (link.parentNode) {{
+                        document.body.removeChild(link);
+                        logDebug('🧹 Lien retiré du DOM');
+                    }}
+                }}, 1000);
             }} catch (e) {{
-                logDebug('❌ Erreur href: ' + e.message);
-                console.error('[Payment Callback] ❌ Erreur href:', e);
+                logDebug('❌ Erreur lien: ' + e.message);
+                console.error('[Payment Callback] ❌ Erreur lien:', e);
             }}
             
-            // Méthode 2: Créer un lien invisible et le cliquer
+            // Méthode 2: window.location.href (fallback immédiat)
             setTimeout(function() {{
                 try {{
-                    logDebug('2️⃣ Tentative: Lien invisible + click');
-                    const link = document.createElement('a');
-                    link.href = deepLink;
-                    link.target = '_self';
-                    link.style.position = 'absolute';
-                    link.style.top = '0';
-                    link.style.left = '0';
-                    link.style.width = '100%';
-                    link.style.height = '100%';
-                    link.style.zIndex = '99999';
-                    link.style.opacity = '0';
-                    link.id = 'deepLinkAnchor';
-                    document.body.appendChild(link);
-                    logDebug('✅ Lien créé et ajouté au DOM');
-                    
-                    const clickEvent = new MouseEvent('click', {{
-                        view: window,
-                        bubbles: true,
-                        cancelable: true
-                    }});
-                    link.dispatchEvent(clickEvent);
-                    redirectMethods.push('link-click');
-                    logDebug('✅ Événement click déclenché sur le lien');
-                    
-                    setTimeout(function() {{
-                        if (link.parentNode) {{
-                            document.body.removeChild(link);
-                            logDebug('🧹 Lien retiré du DOM');
-                        }}
-                    }}, 500);
+                    logDebug('2️⃣ Tentative: window.location.href');
+                    window.location.href = deepLink;
+                    redirectMethods.push('href');
+                    logDebug('✅ window.location.href exécuté');
                 }} catch (e) {{
-                    logDebug('❌ Erreur lien: ' + e.message);
-                    console.error('[Payment Callback] ❌ Erreur lien:', e);
+                    logDebug('❌ Erreur href: ' + e.message);
+                    console.error('[Payment Callback] ❌ Erreur href:', e);
                 }}
-            }}, 100);
+            }}, 50);
             
-            // Méthode 3: window.location.replace
-            setTimeout(function() {{
-                try {{
-                    logDebug('3️⃣ Tentative: window.location.replace');
-                    window.location.replace(deepLink);
-                    redirectMethods.push('replace');
-                    logDebug('✅ window.location.replace exécuté');
-                }} catch (e) {{
-                    logDebug('❌ Erreur replace: ' + e.message);
-                    console.error('[Payment Callback] ❌ Erreur replace:', e);
-                }}
-            }}, 200);
-            
-            // Méthode 4: Essayer de fermer la fenêtre (si popup)
-            setTimeout(function() {{
-                try {{
-                    logDebug('4️⃣ Vérification window.opener');
-                    if (window.opener) {{
-                        logDebug('✅ window.opener détecté, tentative de fermeture');
-                        window.close();
-                        redirectMethods.push('close');
-                        logDebug('✅ window.close() appelé');
-                    }} else {{
-                        logDebug('ℹ️ Pas de window.opener (pas une popup)');
-                    }}
-                }} catch (e) {{
-                    logDebug('⚠️ Impossible de fermer: ' + e.message);
-                    console.log('[Payment Callback] ⚠️ Impossible de fermer:', e);
-                }}
-            }}, 300);
-            
-            // Méthode 5: Intent Android (pour Android)
+            // Méthode 3: Intent Android (pour Android - plus fiable)
             setTimeout(function() {{
                 try {{
                     if (navigator.userAgent.toLowerCase().indexOf('android') > -1) {{
-                        logDebug('5️⃣ Tentative: Intent Android');
-                        const orderIdParam = '{order_id_js}';
-                        const orderNumberParam = '{order_number_js}' || '';
+                        logDebug('3️⃣ Tentative: Intent Android');
+                        const orderIdParam = orderId;
+                        const orderNumberParam = orderNumber || '';
                         const intentParams = orderNumberParam 
-                            ? `order_id=${{orderIdParam}}&order_number=${{orderNumberParam}}`
-                            : `order_id=${{orderIdParam}}`;
+                            ? `order_id=${{encodeURIComponent(orderIdParam)}}&order_number=${{encodeURIComponent(orderNumberParam)}}`
+                            : `order_id=${{encodeURIComponent(orderIdParam)}}`;
                         const intent = `intent://payment-success?${{intentParams}}#Intent;scheme=bolibana;package=com.bolibana.app;end`;
                         window.location.href = intent;
                         redirectMethods.push('android-intent');
@@ -1302,24 +1271,36 @@ class CartViewSet(viewsets.ModelViewSet):
                 }} catch (e) {{
                     logDebug('❌ Erreur intent: ' + e.message);
                 }}
-            }}, 400);
+            }}, 200);
+            
+            // Méthode 4: window.location.replace (dernier recours)
+            setTimeout(function() {{
+                try {{
+                    logDebug('4️⃣ Tentative: window.location.replace');
+                    window.location.replace(deepLink);
+                    redirectMethods.push('replace');
+                    logDebug('✅ window.location.replace exécuté');
+                }} catch (e) {{
+                    logDebug('❌ Erreur replace: ' + e.message);
+                    console.error('[Payment Callback] ❌ Erreur replace:', e);
+                }}
+            }}, 500);
             
             logDebug('📊 Méthodes tentées: ' + redirectMethods.join(', '));
         }}
         
-        // Vérifier que le DOM est prêt
+        // Redirection automatique dès que possible
         if (document.readyState === 'loading') {{
             logDebug('⏳ DOM en cours de chargement');
             document.addEventListener('DOMContentLoaded', function() {{
                 logDebug('✅ DOM chargé');
+                // Redirection immédiate après chargement du DOM
                 redirectToApp();
             }});
         }} else {{
             logDebug('✅ DOM déjà prêt');
             // Redirection automatique immédiate
-            setTimeout(function() {{
-                redirectToApp();
-            }}, 100);
+            redirectToApp();
         }}
         
         // Attacher le bouton manuel
@@ -1367,6 +1348,11 @@ class CartViewSet(viewsets.ModelViewSet):
 </body>
 </html>
         """
+        
+        html_size = len(html_content)
+        logger.info("Payment callback - Page HTML générée avec succès")
+        logger.info("Payment callback - Taille finale du HTML: %d caractères", html_size)
+        logger.info("Payment callback - Envoi de la réponse HTTP 200 pour commande %s", order_id)
         
         return HttpResponse(html_content, content_type='text/html', status=200)
     
