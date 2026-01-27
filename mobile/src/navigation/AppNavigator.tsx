@@ -308,8 +308,10 @@ const AppNavigator: React.FC = () => {
       const { url } = event;
       console.log('[AppNavigator] Deep link reçu:', url);
       
-      // Si c'est un retour de paiement, fermer le WebBrowser et naviguer
-      if (url.includes('payment-success') || url.includes('payment_success')) {
+      // Si c'est un retour de paiement (deep link bolibana:// ou URL HTTPS payment-callback)
+      if (url.includes('payment-success') || url.includes('payment_success') || url.includes('/api/cart/payment-callback/')) {
+        console.log('[AppNavigator] Retour de paiement détecté, fermeture du WebBrowser');
+        
         // Fermer le WebBrowser si ouvert
         try {
           await WebBrowser.dismissBrowser();
@@ -318,10 +320,27 @@ const AppNavigator: React.FC = () => {
           console.log('[AppNavigator] WebBrowser déjà fermé ou non ouvert:', e);
         }
         
+        // Extraire les paramètres de l'URL si disponibles
+        let orderId: string | undefined;
+        let orderNumber: string | undefined;
+        
+        try {
+          const parsed = Linking.parse(url);
+          orderId = parsed.queryParams?.order_id as string | undefined;
+          orderNumber = parsed.queryParams?.order_number as string | undefined;
+          console.log('[AppNavigator] Paramètres extraits - orderId:', orderId, 'orderNumber:', orderNumber);
+        } catch (e) {
+          console.log('[AppNavigator] Erreur lors de l\'extraction des paramètres:', e);
+        }
+        
         // Naviguer vers les commandes
         const nav = navigationRef.current;
         if (nav) {
-          nav.navigate('Profile', { screen: 'Orders' });
+          nav.navigate('Profile', { 
+            screen: 'Orders',
+            params: orderId ? { orderId, orderNumber } : undefined
+          });
+          console.log('[AppNavigator] Navigation vers Profile > Orders');
         }
       }
     };
