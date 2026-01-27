@@ -304,13 +304,22 @@ const AppNavigator: React.FC = () => {
 
   // Gérer les deep links pour les retours de paiement
   useEffect(() => {
+    console.log('[AppNavigator] Initialisation du listener de deep links');
+    console.log('[AppNavigator] Prefixes configurés:', ['bolibana://', 'https://www.bolibana.com', 'https://bolibana.com']);
+    
     const handleDeepLink = async (event: { url: string }) => {
       const { url } = event;
-      console.log('[AppNavigator] Deep link reçu:', url);
+      console.log('[AppNavigator] ========== Deep link reçu ==========');
+      console.log('[AppNavigator] URL complète:', url);
+      console.log('[AppNavigator] Type:', typeof url);
+      console.log('[AppNavigator] Contient payment-success:', url.includes('payment-success'));
+      console.log('[AppNavigator] Contient payment_success:', url.includes('payment_success'));
+      console.log('[AppNavigator] Contient payment-callback:', url.includes('payment-callback'));
+      console.log('[AppNavigator] Contient /api/cart/payment-callback/:', url.includes('/api/cart/payment-callback/'));
       
       // Si c'est un retour de paiement (deep link bolibana:// ou URL HTTPS payment-callback)
       if (url.includes('payment-success') || url.includes('payment_success') || url.includes('/api/cart/payment-callback/')) {
-        console.log('[AppNavigator] Retour de paiement détecté, fermeture du WebBrowser');
+        console.log('[AppNavigator] ✅ Retour de paiement détecté, fermeture du WebBrowser');
         
         // Fermer le WebBrowser si ouvert
         try {
@@ -346,16 +355,29 @@ const AppNavigator: React.FC = () => {
     };
 
     // Écouter les deep links au démarrage
-    Linking.getInitialURL().then((url) => {
-      if (url) {
-        handleDeepLink({ url });
-      }
-    });
+    console.log('[AppNavigator] Vérification de l\'URL initiale...');
+    Linking.getInitialURL()
+      .then((url) => {
+        if (url) {
+          console.log('[AppNavigator] URL initiale trouvée:', url);
+          handleDeepLink({ url });
+        } else {
+          console.log('[AppNavigator] Aucune URL initiale');
+        }
+      })
+      .catch((error) => {
+        console.error('[AppNavigator] Erreur lors de la récupération de l\'URL initiale:', error);
+      });
 
     // Écouter les deep links pendant l'exécution
-    const subscription = Linking.addEventListener('url', handleDeepLink);
+    console.log('[AppNavigator] Ajout du listener pour les événements URL...');
+    const subscription = Linking.addEventListener('url', (event) => {
+      console.log('[AppNavigator] Événement URL reçu via addEventListener');
+      handleDeepLink(event);
+    });
 
     return () => {
+      console.log('[AppNavigator] Nettoyage du listener de deep links');
       subscription.remove();
     };
   }, []);
@@ -375,10 +397,15 @@ const AppNavigator: React.FC = () => {
         onReady={() => {
           const route = navigationRef.getCurrentRoute();
           setCurrentRouteName(route?.name);
+          console.log('[AppNavigator] NavigationContainer prêt, route actuelle:', route?.name);
         }}
         onStateChange={() => {
           const route = navigationRef.getCurrentRoute();
           setCurrentRouteName(route?.name);
+          console.log('[AppNavigator] État de navigation changé, route actuelle:', route?.name);
+        }}
+        onUnhandledAction={(action) => {
+          console.log('[AppNavigator] Action non gérée:', action);
         }}
       >
         <RootStack />

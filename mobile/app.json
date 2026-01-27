@@ -39,6 +39,23 @@
             }
           ],
           "category": ["BROWSABLE", "DEFAULT"]
+        },
+        {
+          "action": "VIEW",
+          "autoVerify": true,
+          "data": [
+            {
+              "scheme": "https",
+              "host": "www.bolibana.com",
+              "pathPrefix": "/api/cart/payment-callback"
+            },
+            {
+              "scheme": "https",
+              "host": "bolibana.com",
+              "pathPrefix": "/api/cart/payment-callback"
+            }
+          ],
+          "category": ["BROWSABLE", "DEFAULT"]
         }
       ]
     },

@@ -148,22 +148,28 @@
         
         // Fonction pour rediriger vers l'app via la route de callback
         function redirectToApp() {
+            console.log('[Payment Success] ========== Redirection vers app ==========');
             console.log('[Payment Success] 🔄 Tentative de redirection vers app via callback');
+            console.log('[Payment Success] URL callback:', callbackUrl);
+            console.log('[Payment Success] Order ID:', orderId);
+            console.log('[Payment Success] Order Number:', orderNumber);
+            console.log('[Payment Success] User-Agent:', navigator.userAgent);
+            console.log('[Payment Success] Platform:', navigator.platform);
             
-            // Rediriger vers la route de callback qui fera la redirection HTTP vers le deep link
+            // Rediriger vers la route de callback HTTPS (sera interceptée par l'app via Linking)
             try {
+                console.log('[Payment Success] Tentative window.location.href vers:', callbackUrl);
                 window.location.href = callbackUrl;
-                console.log('[Payment Success] ✅ Redirection vers callback URL');
+                console.log('[Payment Success] ✅ Redirection vers callback URL exécutée');
+                
+                // Log après un court délai pour voir si la redirection a fonctionné
+                setTimeout(function() {
+                    console.log('[Payment Success] ⏰ Après redirection - URL actuelle:', window.location.href);
+                    console.log('[Payment Success] ⏰ Toujours sur la page payment-success:', window.location.href.includes('payment-success'));
+                }, 1000);
             } catch (e) {
                 console.error('[Payment Success] ❌ Erreur redirection:', e);
-                // Fallback: essayer directement le deep link
-                try {
-                    const deepLink = `bolibana://payment-success?order_id=${orderId}&order_number=${orderNumber}`;
-                    window.location.href = deepLink;
-                    console.log('[Payment Success] ✅ Fallback vers deep link direct');
-                } catch (e2) {
-                    console.error('[Payment Success] ❌ Erreur fallback:', e2);
-                }
+                console.error('[Payment Success] ❌ Stack trace:', e.stack);
             }
         }
         
