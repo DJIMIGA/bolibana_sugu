@@ -1203,9 +1203,11 @@ class CartViewSet(viewsets.ModelViewSet):
         
         let redirectAttempted = false;
         let redirectMethods = [];
+        const redirectStartTime = Date.now();
         
         function redirectToApp() {{
-            logDebug('🔄 redirectToApp() appelée');
+            const elapsed = Date.now() - redirectStartTime;
+            logDebug('🔄 redirectToApp() appelée (temps écoulé: ' + elapsed + 'ms)');
             
             if (redirectAttempted) {{
                 logDebug('⚠️ Redirection déjà tentée, nouvelle tentative');
@@ -1214,36 +1216,54 @@ class CartViewSet(viewsets.ModelViewSet):
             
             logDebug('📋 Début des tentatives de redirection');
             
-            // Méthode 1: Créer un lien invisible et le cliquer (plus fiable pour les deep links)
+            // Méthode 1: window.open() (peut mieux fonctionner dans WebBrowser Expo)
             try {{
-                logDebug('1️⃣ Tentative: Lien invisible + click');
-                const link = document.createElement('a');
-                link.href = deepLink;
-                link.style.display = 'none';
-                document.body.appendChild(link);
-                logDebug('✅ Lien créé et ajouté au DOM');
-                
-                // Essayer un clic programmatique
-                link.click();
-                redirectMethods.push('link-click');
-                logDebug('✅ Événement click déclenché sur le lien');
-                
-                // Nettoyer après un court délai
-                setTimeout(function() {{
-                    if (link.parentNode) {{
-                        document.body.removeChild(link);
-                        logDebug('🧹 Lien retiré du DOM');
-                    }}
-                }}, 1000);
+                logDebug('1️⃣ Tentative: window.open()');
+                const opened = window.open(deepLink, '_self');
+                if (opened) {{
+                    redirectMethods.push('window-open');
+                    logDebug('✅ window.open() exécuté avec succès');
+                }} else {{
+                    logDebug('⚠️ window.open() retourné null (peut être bloqué)');
+                }}
             }} catch (e) {{
-                logDebug('❌ Erreur lien: ' + e.message);
-                console.error('[Payment Callback] ❌ Erreur lien:', e);
+                logDebug('❌ Erreur window.open: ' + e.message);
+                console.error('[Payment Callback] ❌ Erreur window.open:', e);
             }}
             
-            // Méthode 2: window.location.href (fallback immédiat)
+            // Méthode 2: Créer un lien invisible et le cliquer (plus fiable pour les deep links)
             setTimeout(function() {{
                 try {{
-                    logDebug('2️⃣ Tentative: window.location.href');
+                    logDebug('2️⃣ Tentative: Lien invisible + click');
+                    const link = document.createElement('a');
+                    link.href = deepLink;
+                    link.style.display = 'none';
+                    link.target = '_self';
+                    document.body.appendChild(link);
+                    logDebug('✅ Lien créé et ajouté au DOM');
+                    
+                    // Essayer un clic programmatique
+                    link.click();
+                    redirectMethods.push('link-click');
+                    logDebug('✅ Événement click déclenché sur le lien');
+                    
+                    // Nettoyer après un court délai
+                    setTimeout(function() {{
+                        if (link.parentNode) {{
+                            document.body.removeChild(link);
+                            logDebug('🧹 Lien retiré du DOM');
+                        }}
+                    }}, 1000);
+                }} catch (e) {{
+                    logDebug('❌ Erreur lien: ' + e.message);
+                    console.error('[Payment Callback] ❌ Erreur lien:', e);
+                }}
+            }}, 10);
+            
+            // Méthode 3: window.location.href (fallback)
+            setTimeout(function() {{
+                try {{
+                    logDebug('3️⃣ Tentative: window.location.href');
                     window.location.href = deepLink;
                     redirectMethods.push('href');
                     logDebug('✅ window.location.href exécuté');
@@ -1253,11 +1273,11 @@ class CartViewSet(viewsets.ModelViewSet):
                 }}
             }}, 50);
             
-            // Méthode 3: Intent Android (pour Android - plus fiable)
+            // Méthode 4: Intent Android (pour Android - plus fiable)
             setTimeout(function() {{
                 try {{
                     if (navigator.userAgent.toLowerCase().indexOf('android') > -1) {{
-                        logDebug('3️⃣ Tentative: Intent Android');
+                        logDebug('4️⃣ Tentative: Intent Android');
                         const orderIdParam = orderId;
                         const orderNumberParam = orderNumber || '';
                         const intentParams = orderNumberParam 
@@ -1271,12 +1291,36 @@ class CartViewSet(viewsets.ModelViewSet):
                 }} catch (e) {{
                     logDebug('❌ Erreur intent: ' + e.message);
                 }}
-            }}, 200);
+            }}, 100);
             
-            // Méthode 4: window.location.replace (dernier recours)
+            // Méthode 5: Iframe invisible (contournement pour certains navigateurs)
             setTimeout(function() {{
                 try {{
-                    logDebug('4️⃣ Tentative: window.location.replace');
+                    logDebug('5️⃣ Tentative: Iframe invisible');
+                    const iframe = document.createElement('iframe');
+                    iframe.style.display = 'none';
+                    iframe.style.width = '1px';
+                    iframe.style.height = '1px';
+                    iframe.src = deepLink;
+                    document.body.appendChild(iframe);
+                    redirectMethods.push('iframe');
+                    logDebug('✅ Iframe créée et ajoutée au DOM');
+                    
+                    setTimeout(function() {{
+                        if (iframe.parentNode) {{
+                            document.body.removeChild(iframe);
+                            logDebug('🧹 Iframe retirée du DOM');
+                        }}
+                    }}, 2000);
+                }} catch (e) {{
+                    logDebug('❌ Erreur iframe: ' + e.message);
+                }}
+            }}, 150);
+            
+            // Méthode 6: window.location.replace (dernier recours)
+            setTimeout(function() {{
+                try {{
+                    logDebug('6️⃣ Tentative: window.location.replace');
                     window.location.replace(deepLink);
                     redirectMethods.push('replace');
                     logDebug('✅ window.location.replace exécuté');
@@ -1284,9 +1328,20 @@ class CartViewSet(viewsets.ModelViewSet):
                     logDebug('❌ Erreur replace: ' + e.message);
                     console.error('[Payment Callback] ❌ Erreur replace:', e);
                 }}
-            }}, 500);
+            }}, 300);
             
             logDebug('📊 Méthodes tentées: ' + redirectMethods.join(', '));
+            logDebug('⏱️ Temps total de redirection: ' + (Date.now() - redirectStartTime) + 'ms');
+            
+            // Log final après toutes les tentatives
+            setTimeout(function() {{
+                const totalTime = Date.now() - redirectStartTime;
+                logDebug('🏁 Toutes les tentatives de redirection terminées après ' + totalTime + 'ms');
+                logDebug('📊 Résumé: ' + redirectMethods.length + ' méthode(s) tentée(s): ' + redirectMethods.join(', '));
+                if (redirectMethods.length === 0) {{
+                    logDebug('⚠️ ATTENTION: Aucune méthode de redirection n\'a été tentée!');
+                }}
+            }}, 1000);
         }}
         
         // Redirection automatique dès que possible
