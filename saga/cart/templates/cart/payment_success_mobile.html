@@ -119,16 +119,32 @@
 
     <script>
         console.log('[Payment Success] Page chargée - Commande #{{ order_number }}');
+        console.log('[Payment Success] Order ID depuis template: {{ order_id }}');
+        console.log('[Payment Success] Order Number depuis template: {{ order_number }}');
         
         const orderId = '{{ order_id }}';
         const orderNumber = '{{ order_number }}';
         
+        console.log('[Payment Success] Order ID JavaScript:', orderId);
+        console.log('[Payment Success] Order Number JavaScript:', orderNumber);
+        console.log('[Payment Success] Type orderId:', typeof orderId);
+        console.log('[Payment Success] Type orderNumber:', typeof orderNumber);
+        
         // URL de callback HTTP qui redirige vers le deep link (plus fiable avec Expo WebBrowser)
         // Utiliser le chemin absolu pour éviter les problèmes de base URL
         const baseUrl = window.location.origin;
-        const callbackUrl = `${baseUrl}/api/cart/payment-callback/?order_id=${orderId}&order_number=${orderNumber}`;
+        console.log('[Payment Success] Base URL:', baseUrl);
         
-        console.log('[Payment Success] URL de callback prête:', callbackUrl);
+        // Encoder les paramètres pour éviter les problèmes d'URL
+        const encodedOrderId = encodeURIComponent(orderId);
+        const encodedOrderNumber = encodeURIComponent(orderNumber || '');
+        
+        console.log('[Payment Success] Order ID encodé:', encodedOrderId);
+        console.log('[Payment Success] Order Number encodé:', encodedOrderNumber);
+        
+        const callbackUrl = `${baseUrl}/api/cart/payment-callback/?order_id=${encodedOrderId}&order_number=${encodedOrderNumber}`;
+        
+        console.log('[Payment Success] URL de callback complète:', callbackUrl);
         
         // Fonction pour rediriger vers l'app via la route de callback
         function redirectToApp() {

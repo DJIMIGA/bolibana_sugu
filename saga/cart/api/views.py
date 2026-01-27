@@ -1004,12 +1004,14 @@ class CartViewSet(viewsets.ModelViewSet):
             if is_mobile_param:
                 from django.shortcuts import render
                 logger.info("Payment success - Retour page HTML mobile pour commande %s", order.id)
+                logger.info("Payment success - Order ID: %s, Order Number: %s", order.id, order.order_number)
                 context = {
-                    'order_id': order.id,
-                    'order_number': order.order_number,
+                    'order_id': str(order.id) if order.id else '',
+                    'order_number': str(order.order_number) if order.order_number else '',
                     'status': order.status,
                     'is_paid': order.is_paid,
                 }
+                logger.info("Payment success - Context envoyé au template: %s", context)
                 return render(request, 'cart/payment_success_mobile.html', context, status=200)
             
             # Sinon, retourner JSON pour les appels API
@@ -1031,23 +1033,47 @@ class CartViewSet(viewsets.ModelViewSet):
         Cette route est appelée depuis la page HTML de succès et fait une redirection HTTP
         vers le deep link, ce qui fonctionne mieux avec Expo WebBrowser.
         """
-        from django.http import HttpResponseRedirect
+        from django.http import HttpResponseRedirect, HttpResponse
+        
+        # Logs détaillés pour déboguer
+        logger.info("Payment callback - Requête reçue")
+        logger.info("Payment callback - Méthode: %s", request.method)
+        logger.info("Payment callback - GET params: %s", dict(request.GET))
+        logger.info("Payment callback - User-Agent: %s", request.META.get('HTTP_USER_AGENT', 'N/A'))
+        logger.info("Payment callback - Referer: %s", request.META.get('HTTP_REFERER', 'N/A'))
         
         order_id = request.GET.get('order_id')
         order_number = request.GET.get('order_number')
         
+        logger.info("Payment callback - order_id extrait: %s", order_id)
+        logger.info("Payment callback - order_number extrait: %s", order_number)
+        
         if not order_id:
-            return Response({'error': 'order_id manquant'}, status=status.HTTP_400_BAD_REQUEST)
+            logger.error("Payment callback - ERREUR: order_id manquant dans les paramètres GET")
+            logger.error("Payment callback - Tous les paramètres GET: %s", dict(request.GET))
+            return HttpResponse(
+                '<html><body><h1>Erreur 400</h1><p>order_id manquant</p><p>Paramètres reçus: ' + 
+                str(dict(request.GET)) + '</p></body></html>',
+                status=400
+            )
         
         # Construire le deep link
         deep_link = f"bolibana://payment-success?order_id={order_id}"
         if order_number:
             deep_link += f"&order_number={order_number}"
         
-        logger.info("Payment callback - Redirection vers deep link: %s pour commande %s", deep_link, order_id)
+        logger.info("Payment callback - Deep link construit: %s", deep_link)
+        logger.info("Payment callback - Redirection HTTP vers deep link pour commande %s", order_id)
         
         # Redirection HTTP vers le deep link
-        return HttpResponseRedirect(deep_link)
+        try:
+            return HttpResponseRedirect(deep_link)
+        except Exception as e:
+            logger.error("Payment callback - ERREUR lors de la redirection: %s", str(e))
+            return HttpResponse(
+                f'<html><body><h1>Erreur</h1><p>Erreur lors de la redirection: {str(e)}</p></body></html>',
+                status=500
+            )
     
     @action(detail=False, methods=['get'], url_path='payment-cancel', permission_classes=[AllowAny])
     def payment_cancel(self, request):
