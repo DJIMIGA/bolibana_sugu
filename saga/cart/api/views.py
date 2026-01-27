@@ -1013,6 +1013,7 @@ class CartViewSet(viewsets.ModelViewSet):
                 }
                 logger.info("Payment success - Context envoyé au template: %s", context)
                 return render(request, 'cart/payment_success_mobile.html', context, status=200)
+
             
             # Sinon, retourner JSON pour les appels API
             return Response({
@@ -1030,10 +1031,11 @@ class CartViewSet(viewsets.ModelViewSet):
     def payment_callback(self, request):
         """
         Route de callback pour rediriger vers le deep link de l'app mobile.
-        Cette route est appelée depuis la page HTML de succès et fait une redirection HTTP
-        vers le deep link, ce qui fonctionne mieux avec Expo WebBrowser.
+        Django bloque les redirections HTTP vers des protocoles personnalisés (bolibana://),
+        donc on retourne une page HTML avec du JavaScript pour faire la redirection.
         """
-        from django.http import HttpResponseRedirect, HttpResponse
+        from django.http import HttpResponse
+        from django.shortcuts import render
         
         # Logs détaillés pour déboguer
         logger.info("Payment callback - Requête reçue")
@@ -1063,17 +1065,78 @@ class CartViewSet(viewsets.ModelViewSet):
             deep_link += f"&order_number={order_number}"
         
         logger.info("Payment callback - Deep link construit: %s", deep_link)
-        logger.info("Payment callback - Redirection HTTP vers deep link pour commande %s", order_id)
+        logger.info("Payment callback - Retour page HTML avec JavaScript pour redirection vers deep link pour commande %s", order_id)
         
-        # Redirection HTTP vers le deep link
-        try:
-            return HttpResponseRedirect(deep_link)
-        except Exception as e:
-            logger.error("Payment callback - ERREUR lors de la redirection: %s", str(e))
-            return HttpResponse(
-                f'<html><body><h1>Erreur</h1><p>Erreur lors de la redirection: {str(e)}</p></body></html>',
-                status=500
-            )
+        # Retourner une page HTML avec JavaScript pour rediriger vers le deep link
+        # Django bloque les redirections HTTP vers des protocoles personnalisés
+        html_content = f"""
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Redirection...</title>
+    <style>
+        body {{
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            margin: 0;
+            background: #f5f5f5;
+        }}
+        .container {{
+            text-align: center;
+            padding: 20px;
+        }}
+    </style>
+</head>
+<body>
+    <div class="container">
+        <p>Redirection vers l'application...</p>
+    </div>
+    <script>
+        console.log('[Payment Callback] Redirection vers deep link: {deep_link}');
+        
+        // Méthode 1: Essayer immédiatement
+        try {{
+            window.location.href = '{deep_link}';
+            console.log('[Payment Callback] ✅ Redirection via href');
+        }} catch (e) {{
+            console.error('[Payment Callback] ❌ Erreur href:', e);
+        }}
+        
+        // Méthode 2: Créer un lien et le cliquer
+        setTimeout(function() {{
+            try {{
+                const link = document.createElement('a');
+                link.href = '{deep_link}';
+                link.style.display = 'none';
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+                console.log('[Payment Callback] ✅ Redirection via lien invisible');
+            }} catch (e) {{
+                console.error('[Payment Callback] ❌ Erreur lien:', e);
+            }}
+        }}, 100);
+        
+        // Méthode 3: window.location.replace
+        setTimeout(function() {{
+            try {{
+                window.location.replace('{deep_link}');
+                console.log('[Payment Callback] ✅ Redirection via replace');
+            }} catch (e) {{
+                console.error('[Payment Callback] ❌ Erreur replace:', e);
+            }}
+        }}, 200);
+    </script>
+</body>
+</html>
+        """
+        
+        return HttpResponse(html_content, content_type='text/html', status=200)
     
     @action(detail=False, methods=['get'], url_path='payment-cancel', permission_classes=[AllowAny])
     def payment_cancel(self, request):
