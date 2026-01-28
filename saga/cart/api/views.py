@@ -1193,29 +1193,27 @@ class CartViewSet(viewsets.ModelViewSet):
             <div class="order-status">Statut: Confirmée</div>
         </div>
         
-        <div class="close-instruction" style="background: #FEF3C7; border: 2px solid #F59E0B; border-radius: 12px; padding: 20px; margin-bottom: 24px; text-align: center;">
-            <p style="color: #92400E; font-weight: 700; font-size: 18px; margin: 0 0 12px 0;">👉 Fermez cette page avec le <strong>X</strong></p>
-            <p style="color: #92400E; font-size: 15px; margin: 0;">En haut à gauche de l'écran (barre d'adresse), appuyez sur le <strong>X</strong> ou utilisez le bouton <strong>Retour</strong> de votre téléphone.</p>
-            <p style="color: #B45309; font-size: 12px; margin: 12px 0 0 0;">Le bouton ci-dessous n'ôte pas la page ; seul le X la ferme.</p>
-        </div>
-        <button class="button button-secondary" id="openAppButton" onclick="openApp()" style="background: #6B7280; margin-top: 0;">Ouvrir l'application</button>
-        <p class="info-text">Tente d'ouvrir l'app. Pour fermer cette page, utilisez le X en haut à gauche.</p>
+        <button class="button" id="openAppButton" onclick="openApp()" style="margin-top: 20px;">Fermer et retourner à l'application</button>
+        <p class="info-text">Si la page ne se ferme pas automatiquement, appuyez sur le bouton ci-dessus.</p>
     </div>
     <script>
-        // Sur Android (Chrome Custom Tabs), la page ne peut pas se fermer par JavaScript - l'utilisateur doit utiliser le X
+        // Utiliser location.replace pour sortir de l'historique
         console.log('[Payment Callback] Page chargée - Order ID: {order_id}, Order Number: {order_number}');
-        console.log('[Payment Callback] User-Agent:', navigator.userAgent);
         
         const orderId = '{order_id}';
         const orderNumber = '{order_number}';
         const deepLink = 'bolibana://payment-success?order_id=' + encodeURIComponent(orderId) + '&order_number=' + encodeURIComponent(orderNumber);
         
         function openApp() {{
-            // Tenter le deep link pour ouvrir l'app (ne ferme pas cette page)
             try {{
+                window.location.replace(deepLink);
+            }} catch (e) {{
                 window.location.href = deepLink;
-            }} catch (e) {{}}
+            }}
         }}
+        
+        // Tentative automatique
+        setTimeout(openApp, 500);
         
         document.addEventListener('DOMContentLoaded', function() {{
             const button = document.getElementById('openAppButton');

@@ -122,12 +122,8 @@
             <div class="order-status">Statut: Confirmée</div>
         </div>
         
-        <div class="close-instruction" style="background: #FEF3C7; border: 2px solid #F59E0B; border-radius: 12px; padding: 16px; margin-bottom: 20px; text-align: center;">
-            <p style="color: #92400E; font-weight: 600; font-size: 14px; margin: 0;">⚠️ Pour fermer et retourner à l'application</p>
-            <p style="color: #92400E; font-size: 13px; margin: 8px 0 0 0;">Appuyez sur le <strong>X</strong> en haut à gauche (barre d'adresse) ou sur le bouton <strong>Retour</strong> de votre téléphone.</p>
-        </div>
-        <button class="button" id="closeButton">Fermer et retourner à l'application</button>
-        <p class="info-text">Si le bouton ne ferme pas la page, utilisez le X en haut à gauche.</p>
+        <button class="button" id="openAppButton" style="margin-top: 20px;">Fermer et retourner à l'application</button>
+        <p class="info-text">Si la page ne se ferme pas automatiquement, appuyez sur le bouton ci-dessus.</p>
     </div>
 
     <script>
@@ -170,15 +166,18 @@
             }
             console.log('[Payment Success] Bouton Ouvrir l\'application cliqué');
             try {
-                window.location.href = deepLink;
+                window.location.replace(deepLink);
             } catch (e) {
+                window.location.href = deepLink;
                 console.error('[Payment Success] Deep link échoué:', e);
             }
-            // Optionnel : rediriger vers payment-callback après un court délai
+            // Utiliser replace pour ne pas rester dans l'historique (évite de revenir sur Stripe)
             setTimeout(function() {
                 try {
+                    window.location.replace(callbackUrl);
+                } catch (err) {
                     window.location.href = callbackUrl;
-                } catch (err) {}
+                }
             }, 200);
         }
         
