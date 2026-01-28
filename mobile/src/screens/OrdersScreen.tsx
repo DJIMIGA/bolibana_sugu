@@ -10,6 +10,7 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
+import * as WebBrowser from 'expo-web-browser';
 import { COLORS, API_ENDPOINTS } from '../utils/constants';
 import { formatWeightQuantity, formatPrice } from '../utils/helpers';
 import apiClient from '../services/api';
@@ -113,7 +114,17 @@ const OrdersScreen: React.FC = () => {
     React.useCallback(() => {
       isScreenFocusedRef.current = true;
       loadOrders();
-      
+
+      // Tenter de fermer le WebBrowser s'il est encore ouvert (retour paiement sur Android)
+      const closeBrowserTimer = setTimeout(async () => {
+        try {
+          await WebBrowser.dismissBrowser();
+          console.log('[OrdersScreen] WebBrowser.dismissBrowser() appelé (écran Commandes focus)');
+        } catch {
+          // Ignorer si déjà fermé ou non supporté
+        }
+      }, 300);
+
       // Démarrer le polling automatique toutes les 30 secondes
       pollingIntervalRef.current = setInterval(() => {
         if (isScreenFocusedRef.current) {
@@ -122,6 +133,7 @@ const OrdersScreen: React.FC = () => {
       }, 30000); // 30 secondes
 
       return () => {
+        clearTimeout(closeBrowserTimer);
         isScreenFocusedRef.current = false;
         if (pollingIntervalRef.current) {
           clearInterval(pollingIntervalRef.current);

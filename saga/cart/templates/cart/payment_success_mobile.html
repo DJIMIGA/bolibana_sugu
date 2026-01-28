@@ -86,8 +86,16 @@
         .button:hover {
             background: #059669;
         }
+        .button-secondary:hover {
+            background: #4B5563;
+        }
         .button:active {
             transform: scale(0.98);
+        }
+        .info-text {
+            font-size: 12px;
+            color: #9CA3AF;
+            margin-top: 20px;
         }
         @media (max-width: 480px) {
             .container {
@@ -114,7 +122,12 @@
             <div class="order-status">Statut: Confirmée</div>
         </div>
         
-        <button class="button" id="closeButton">Fermer</button>
+        <div class="close-instruction" style="background: #FEF3C7; border: 2px solid #F59E0B; border-radius: 12px; padding: 16px; margin-bottom: 20px; text-align: center;">
+            <p style="color: #92400E; font-weight: 600; font-size: 14px; margin: 0;">⚠️ Pour fermer et retourner à l'application</p>
+            <p style="color: #92400E; font-size: 13px; margin: 8px 0 0 0;">Appuyez sur le <strong>X</strong> en haut à gauche (barre d'adresse) ou sur le bouton <strong>Retour</strong> de votre téléphone.</p>
+        </div>
+        <button class="button" id="closeButton">Fermer et retourner à l'application</button>
+        <p class="info-text">Si le bouton ne ferme pas la page, utilisez le X en haut à gauche.</p>
     </div>
 
     <script>
@@ -146,69 +159,44 @@
         
         console.log('[Payment Success] URL de callback complète:', callbackUrl);
         
-        // Fonction pour rediriger vers l'app via la route de callback
-        function redirectToApp() {
-            console.log('[Payment Success] ========== Redirection vers app ==========');
-            console.log('[Payment Success] 🔄 Tentative de redirection vers app via callback');
-            console.log('[Payment Success] URL callback:', callbackUrl);
-            console.log('[Payment Success] Order ID:', orderId);
-            console.log('[Payment Success] Order Number:', orderNumber);
-            console.log('[Payment Success] User-Agent:', navigator.userAgent);
-            console.log('[Payment Success] Platform:', navigator.platform);
-            
-            // Rediriger vers la route de callback HTTPS (sera interceptée par l'app via Linking)
-            try {
-                console.log('[Payment Success] Tentative window.location.href vers:', callbackUrl);
-                window.location.href = callbackUrl;
-                console.log('[Payment Success] ✅ Redirection vers callback URL exécutée');
-                
-                // Log après un court délai pour voir si la redirection a fonctionné
-                setTimeout(function() {
-                    console.log('[Payment Success] ⏰ Après redirection - URL actuelle:', window.location.href);
-                    console.log('[Payment Success] ⏰ Toujours sur la page payment-success:', window.location.href.includes('payment-success'));
-                }, 1000);
-            } catch (e) {
-                console.error('[Payment Success] ❌ Erreur redirection:', e);
-                console.error('[Payment Success] ❌ Stack trace:', e.stack);
-            }
-        }
+        // Deep link pour ramener l'app au premier plan (peut fermer Chrome Custom Tabs sur Android)
+        const deepLink = 'bolibana://payment-success?order_id=' + encodeURIComponent(orderId) + '&order_number=' + encodeURIComponent(orderNumber || '');
         
-        // Fonction pour fermer (bouton)
-        function closeWindow(event) {
-            console.log('[Payment Success] 👆 Bouton Fermer cliqué');
+        // Tente d'ouvrir l'app (ne ferme pas cette page ; l'utilisateur doit utiliser le X)
+        function openApp(event) {
             if (event) {
                 event.preventDefault();
                 event.stopPropagation();
             }
-            redirectToApp();
-            return false;
+            console.log('[Payment Success] Bouton Ouvrir l\'application cliqué');
+            try {
+                window.location.href = deepLink;
+            } catch (e) {
+                console.error('[Payment Success] Deep link échoué:', e);
+            }
+            // Optionnel : rediriger vers payment-callback après un court délai
+            setTimeout(function() {
+                try {
+                    window.location.href = callbackUrl;
+                } catch (err) {}
+            }, 200);
         }
         
-        // Attacher l'événement au bouton dès que possible
         function attachButtonListener() {
-            const button = document.getElementById('closeButton');
+            const button = document.getElementById('openAppButton');
             if (button) {
-                button.addEventListener('click', closeWindow);
-                button.onclick = closeWindow; // Fallback pour compatibilité
-                console.log('[Payment Success] ✅ Bouton attaché');
+                button.addEventListener('click', openApp);
+                console.log('[Payment Success] Bouton attaché');
             } else {
-                // Réessayer si le bouton n'est pas encore disponible
                 setTimeout(attachButtonListener, 100);
             }
         }
         
-        // Attacher dès que le DOM est prêt
         if (document.readyState === 'loading') {
             document.addEventListener('DOMContentLoaded', attachButtonListener);
         } else {
             attachButtonListener();
         }
-        
-        // Redirection automatique après 2 secondes
-        setTimeout(function() {
-            console.log('[Payment Success] ⏰ Redirection automatique après 2 secondes');
-            redirectToApp();
-        }, 2000);
     </script>
 </body>
 </html>
