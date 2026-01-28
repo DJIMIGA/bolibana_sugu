@@ -304,12 +304,15 @@ const AppNavigator: React.FC = () => {
 
   // Gérer les deep links pour les retours de paiement
   useEffect(() => {
+    console.log('[AppNavigator] ========== LISTENER DEEP LINKS ==========');
     console.log('[AppNavigator] Initialisation du listener de deep links');
     console.log('[AppNavigator] Prefixes configurés:', ['bolibana://', 'https://www.bolibana.com', 'https://bolibana.com']);
+    console.log('[AppNavigator] Pour payment-callback: Linking reçoit l\'URL seulement si elle est ouverte DEPUIS L\'EXTÉRIEUR de l\'app (pas depuis le WebBrowser in-app)');
     
     const handleDeepLink = async (event: { url: string }) => {
       const { url } = event;
-      console.log('[AppNavigator] ========== Deep link reçu ==========');
+      console.log('[AppNavigator] ========== URL INTERCEPTÉE VIA LINKING ==========');
+      console.log('[AppNavigator] OUI - L\'app a reçu une URL via Linking.getInitialURL() ou addEventListener(\'url\')');
       console.log('[AppNavigator] URL complète:', url);
       console.log('[AppNavigator] Type:', typeof url);
       console.log('[AppNavigator] Contient payment-success:', url.includes('payment-success'));
@@ -355,24 +358,24 @@ const AppNavigator: React.FC = () => {
     };
 
     // Écouter les deep links au démarrage
-    console.log('[AppNavigator] Vérification de l\'URL initiale...');
+    console.log('[AppNavigator] Vérification de l\'URL initiale (getInitialURL)...');
     Linking.getInitialURL()
       .then((url) => {
         if (url) {
-          console.log('[AppNavigator] URL initiale trouvée:', url);
+          console.log('[AppNavigator] URL initiale trouvée (app lancée via lien):', url);
           handleDeepLink({ url });
         } else {
-          console.log('[AppNavigator] Aucune URL initiale');
+          console.log('[AppNavigator] Aucune URL initiale (app non lancée via lien)');
         }
       })
       .catch((error) => {
-        console.error('[AppNavigator] Erreur lors de la récupération de l\'URL initiale:', error);
+        console.error('[AppNavigator] Erreur getInitialURL:', error);
       });
 
-    // Écouter les deep links pendant l'exécution
-    console.log('[AppNavigator] Ajout du listener pour les événements URL...');
+    // Écouter les deep links pendant l'exécution (URL ouverte pendant que l'app est au premier plan)
+    console.log('[AppNavigator] Listener addEventListener(\'url\') actif - en attente d\'URL...');
     const subscription = Linking.addEventListener('url', (event) => {
-      console.log('[AppNavigator] Événement URL reçu via addEventListener');
+      console.log('[AppNavigator] >>> Événement "url" déclenché - Linking a reçu une URL:', event.url);
       handleDeepLink(event);
     });
 

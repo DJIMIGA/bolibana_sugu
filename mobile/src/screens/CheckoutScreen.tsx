@@ -509,16 +509,17 @@ const CheckoutScreen: React.FC = () => {
           .filter((url: string | undefined) => !!url);
 
         for (const url of checkoutUrls) {
+          console.log('[CheckoutScreen] Ouverture du WebBrowser (multiple commandes):', url);
           const result = await WebBrowser.openBrowserAsync(url, {
             presentationStyle: WebBrowser.WebBrowserPresentationStyle.FULL_SCREEN,
             controlsColor: COLORS.PRIMARY,
           });
           
-          console.log('[CheckoutScreen] WebBrowser result (multiple):', result.type);
+          console.log('[CheckoutScreen] WebBrowser fermé - result.type:', result.type);
           
           // Si le navigateur a été fermé (type: 'dismiss'), rafraîchir le panier et naviguer
           if (result.type === 'dismiss') {
-            console.log('[CheckoutScreen] WebBrowser fermé (multiple), rafraîchissement du panier');
+            console.log('[CheckoutScreen] WebBrowser fermé par l\'utilisateur (multiple)');
             await dispatch(fetchCart());
             (navigation as any).navigate('Profile', { screen: 'Orders' });
           }
@@ -546,16 +547,19 @@ const CheckoutScreen: React.FC = () => {
       }
 
       if (checkout_url) {
+        console.log('[CheckoutScreen] Ouverture du WebBrowser pour paiement:', checkout_url);
         const result = await WebBrowser.openBrowserAsync(checkout_url, {
           presentationStyle: WebBrowser.WebBrowserPresentationStyle.FULL_SCREEN,
           controlsColor: COLORS.PRIMARY,
         });
         
-        console.log('[CheckoutScreen] WebBrowser result:', result.type);
+        console.log('[CheckoutScreen] ========== WebBrowser fermé ==========');
+        console.log('[CheckoutScreen] result.type:', result.type, '(dismiss = fermé par l\'utilisateur, cancel = annulé)');
+        console.log('[CheckoutScreen] Linking n\'a pas intercepté l\'URL payment-callback si chargée dans le WebBrowser - la fermeture du navigateur déclenche ce retour');
         
         // Si le navigateur a été fermé (type: 'dismiss'), rafraîchir le panier
         if (result.type === 'dismiss') {
-          console.log('[CheckoutScreen] WebBrowser fermé, rafraîchissement du panier');
+          console.log('[CheckoutScreen] WebBrowser fermé par l\'utilisateur - rafraîchissement du panier et navigation vers commandes');
           await dispatch(fetchCart());
         }
 
