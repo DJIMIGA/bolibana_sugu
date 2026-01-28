@@ -515,17 +515,18 @@ const CheckoutScreen: React.FC = () => {
             controlsColor: COLORS.PRIMARY,
           });
           
-          console.log('[CheckoutScreen] WebBrowser fermé - result.type:', result.type);
+          console.log('[CheckoutScreen] WebBrowser retour - result.type:', result.type);
           
-          // Si le navigateur a été fermé (type: 'dismiss'), rafraîchir le panier et naviguer
-          if (result.type === 'dismiss') {
-            console.log('[CheckoutScreen] WebBrowser fermé par l\'utilisateur (multiple)');
-            await dispatch(fetchCart());
-            (navigation as any).navigate('Profile', { screen: 'Orders' });
+          // Fermer explicitement le WebBrowser s'il est encore ouvert (cas result.type === 'opened')
+          try {
+            await WebBrowser.dismissBrowser();
+            console.log('[CheckoutScreen] WebBrowser.dismissBrowser() appelé (multiple)');
+          } catch (e) {
+            console.log('[CheckoutScreen] dismissBrowser (déjà fermé):', (e as Error).message);
           }
         }
 
-        // Rafraîchir le panier après paiement dans tous les cas
+        // Rafraîchir le panier et naviguer après paiement
         await dispatch(fetchCart());
         (navigation as any).navigate('Profile', { screen: 'Orders' });
         return;
@@ -553,17 +554,18 @@ const CheckoutScreen: React.FC = () => {
           controlsColor: COLORS.PRIMARY,
         });
         
-        console.log('[CheckoutScreen] ========== WebBrowser fermé ==========');
-        console.log('[CheckoutScreen] result.type:', result.type, '(dismiss = fermé par l\'utilisateur, cancel = annulé)');
-        console.log('[CheckoutScreen] Linking n\'a pas intercepté l\'URL payment-callback si chargée dans le WebBrowser - la fermeture du navigateur déclenche ce retour');
+        console.log('[CheckoutScreen] ========== WebBrowser retour ==========');
+        console.log('[CheckoutScreen] result.type:', result.type, '(dismiss = fermé par l\'utilisateur, opened = ouvert / résolu sans fermeture)');
         
-        // Si le navigateur a été fermé (type: 'dismiss'), rafraîchir le panier
-        if (result.type === 'dismiss') {
-          console.log('[CheckoutScreen] WebBrowser fermé par l\'utilisateur - rafraîchissement du panier et navigation vers commandes');
-          await dispatch(fetchCart());
+        // Fermer explicitement le WebBrowser s'il est encore ouvert (cas result.type === 'opened')
+        try {
+          await WebBrowser.dismissBrowser();
+          console.log('[CheckoutScreen] WebBrowser.dismissBrowser() appelé - navigateur fermé');
+        } catch (e) {
+          console.log('[CheckoutScreen] dismissBrowser (déjà fermé ou non ouvert):', (e as Error).message);
         }
 
-        // Rafraîchir le panier et naviguer vers les commandes dans tous les cas
+        // Rafraîchir le panier et naviguer vers les commandes
         await dispatch(fetchCart());
         (navigation as any).navigate('Profile', { screen: 'Orders' });
       }
