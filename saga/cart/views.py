@@ -2330,28 +2330,20 @@ def orange_money_payment(request):
     """
     Vue pour initier un paiement Orange Money
     """
-    # Debug: Log détaillé de la configuration Orange Money
     logger = logging.getLogger(__name__)
-    logger.info("DEBUG Orange Money Payment - Debut de la verification")
     
     # Vérifier la configuration directement
     from django.conf import settings
     config = settings.ORANGE_MONEY_CONFIG
-    logger.info(f"Configuration Django: enabled={config.get('enabled')}, merchant_key={'OK' if config.get('merchant_key') else 'MANQUANT'}, client_id={'OK' if config.get('client_id') else 'MANQUANT'}, client_secret={'OK' if config.get('client_secret') else 'MANQUANT'}")
     
     # Forcer le rechargement de la configuration avant le test
     orange_money_service.refresh_config()
     
-    # Test de is_enabled avec logs détaillés
+    # Test de is_enabled
     is_enabled_result = orange_money_service.is_enabled()
-    logger.info(f"orange_money_service.is_enabled(): {is_enabled_result}")
     
     if not is_enabled_result:
-        logger.error("Orange Money desactive - Details de la configuration:")
-        logger.error(f"  - config['enabled']: {config.get('enabled')}")
-        logger.error(f"  - config['merchant_key']: {bool(config.get('merchant_key'))}")
-        logger.error(f"  - config['client_id']: {bool(config.get('client_id'))}")
-        logger.error(f"  - config['client_secret']: {bool(config.get('client_secret'))}")
+        logger.error("Orange Money desactive")
         
         messages.error(request, "❌ Le paiement Orange Money n'est pas disponible actuellement.")
         return redirect('cart:cart')
@@ -2393,27 +2385,20 @@ def orange_money_payment(request):
         return redirect('cart:cart')
     
     try:
-        logger.info("DEBUG Orange Money Payment - Debut de l'initialisation")
-        
         # Calculer le total
-        logger.info("DEBUG Orange Money Payment - Calcul du total")
         total_amount = sum(item.get_total_price() for item in cart_items)
-        logger.info(f"DEBUG Orange Money Payment - Total calcule: {total_amount}")
         
         # Vérifier si on a une adresse de livraison (depuis GET ou POST)
         shipping_address_id = request.GET.get('shipping_address_id') or request.POST.get('shipping_address_id')
         if not shipping_address_id:
             # Rediriger vers la page de checkout pour saisir l'adresse
-            logger.info("DEBUG Orange Money Payment - Pas d'adresse, redirection vers checkout")
             checkout_url = reverse('cart:checkout') + f'?type={product_type}&payment={payment_type}&orange_money=true'
             return redirect(checkout_url)
         
         # Récupérer l'adresse de livraison
         try:
             shipping_address = ShippingAddress.objects.get(id=shipping_address_id, user=request.user)
-            logger.info(f"DEBUG Orange Money Payment - Adresse trouvee: {shipping_address.id}")
         except ShippingAddress.DoesNotExist:
-            logger.error(f"DEBUG Orange Money Payment - Adresse introuvable: {shipping_address_id}")
             messages.error(request, "❌ Adresse de livraison introuvable.")
             checkout_url = reverse('cart:checkout') + f'?type={product_type}&payment={payment_type}&method=orange_money'
             return redirect(checkout_url)
@@ -2423,7 +2408,6 @@ def orange_money_payment(request):
         total_with_shipping = total_amount + shipping_cost
         
         # Créer une commande temporaire
-        logger.info("DEBUG Orange Money Payment - Creation de la commande")
         order = Order.objects.create(
             user=request.user,
             shipping_address=shipping_address,
@@ -2433,10 +2417,8 @@ def orange_money_payment(request):
             payment_method=Order.MOBILE_MONEY,
             status=Order.DRAFT
         )
-        logger.info(f"DEBUG Orange Money Payment - Commande creee: {order.order_number}")
         
         # Ajouter les items à la commande
-        logger.info("DEBUG Orange Money Payment - Ajout des items a la commande")
         for cart_item in cart_items:
             OrderItem.objects.create(
                 order=order,
@@ -2444,10 +2426,8 @@ def orange_money_payment(request):
                 quantity=cart_item.quantity,
                 price=cart_item.get_unit_price()
             )
-        logger.info(f"DEBUG Orange Money Payment - {cart_items.count()} items ajoutes")
         
         # Préparer les données pour Orange Money
-        logger.info("DEBUG Orange Money Payment - Preparation des donnees Orange Money")
         
         # Utiliser les URLs configurées dans les variables d'environnement
         from django.conf import settings
@@ -2466,16 +2446,12 @@ def orange_money_payment(request):
             'notif_url': notif_url,
             'reference': f'SagaKore-{order.order_number}'
         }
-        logger.info(f"DEBUG Orange Money Payment - Donnees preparees: {order_data}")
         
         # Créer la session de paiement
-        logger.info("DEBUG Orange Money Payment - Creation de la session de paiement")
         success, response_data = orange_money_service.create_payment_session(order_data)
-        logger.info(f"DEBUG Orange Money Payment - Session creee: success={success}, response={response_data}")
         
         if success:
             # Sauvegarder le token de paiement
-            logger.info("DEBUG Orange Money Payment - Sauvegarde des tokens")
             pay_token = response_data.get('pay_token')
             notif_token = response_data.get('notif_token')
             payment_url_from_api = response_data.get('payment_url')
@@ -2484,26 +2460,22 @@ def orange_money_payment(request):
             request.session['orange_money_pay_token'] = pay_token
             request.session['orange_money_notif_token'] = notif_token
             request.session['orange_money_order_id'] = order.id
-            logger.info(f"DEBUG Orange Money Payment - Tokens sauvegardes: pay_token={pay_token}")
             
             # Construire l'URL de paiement (utiliser l'URL de l'API si disponible)
             payment_url = orange_money_service.get_payment_url(pay_token, payment_url_from_api)
-            logger.info(f"DEBUG Orange Money Payment - URL de paiement: {payment_url}")
             
             # Rediriger vers Orange Money
             return redirect(payment_url)
         else:
             # Erreur lors de la création de la session
-            logger.error(f"DEBUG Orange Money Payment - Erreur creation session: {response_data}")
+            logger.error(f"Erreur Orange Money: {response_data}")
             order.delete()  # Supprimer la commande temporaire
             error_msg = response_data.get('error', 'Erreur inconnue')
             messages.error(request, f"❌ Erreur lors de l'initialisation du paiement Orange Money: {error_msg}")
             return redirect('cart:checkout')
             
     except Exception as e:
-        logger.error(f"DEBUG Orange Money Payment - Exception: {str(e)}")
-        import traceback
-        logger.error(f"DEBUG Orange Money Payment - Traceback: {traceback.format_exc()}")
+        logger.error(f"Orange Money Payment Exception: {str(e)}")
         messages.error(request, f"❌ Une erreur est survenue lors de l'initialisation du paiement: {str(e)}")
         return redirect('cart:checkout')
 
@@ -2514,11 +2486,9 @@ def orange_money_return(request):
     Vue de retour après paiement Orange Money (succès ou échec)
     """
     logger = logging.getLogger(__name__)
-    logger.info("DEBUG Orange Money Return - Début du traitement")
     
     # Vérifier que l'utilisateur est connecté
     if not request.user.is_authenticated:
-        logger.error("DEBUG Orange Money Return - Utilisateur non connecté")
         messages.error(request, "❌ Vous devez être connecté pour accéder à cette page.")
         return redirect('accounts:login')
     
@@ -2526,11 +2496,8 @@ def orange_money_return(request):
     order_id = request.session.get('orange_money_order_id')
     pay_token = request.session.get('orange_money_pay_token')
     
-    logger.info(f"DEBUG Orange Money Return - Session data: order_id={order_id}, pay_token={'OK' if pay_token else 'MANQUANT'}")
-    
     # Vérifier la présence des données de session
     if not order_id or not pay_token:
-        logger.error("DEBUG Orange Money Return - Session de paiement invalide")
         messages.error(request, "❌ Session de paiement invalide. Veuillez recommencer votre paiement.")
         return redirect('cart:cart')
     
@@ -2538,29 +2505,24 @@ def orange_money_return(request):
         # Récupérer la commande avec gestion d'erreur
         try:
             order = Order.objects.get(id=order_id, user=request.user)
-            logger.info(f"DEBUG Orange Money Return - Commande trouvée: {order.order_number}")
         except Order.DoesNotExist:
-            logger.error(f"DEBUG Orange Money Return - Commande introuvable: ID={order_id}, User={request.user.id}")
             messages.error(request, "❌ Commande introuvable. Veuillez contacter le support.")
             return redirect('cart:cart')
         
         # Vérifier que la commande a un total valide
         if not order.total or order.total <= 0:
-            logger.error(f"DEBUG Orange Money Return - Total de commande invalide: {order.total}")
             messages.error(request, "❌ Commande invalide. Veuillez contacter le support.")
             return redirect('cart:cart')
         
         # Vérifier le statut de la transaction
-        logger.info("DEBUG Orange Money Return - Vérification du statut")
         try:
             success, status_data = orange_money_service.check_transaction_status(
                 order.order_number,
                 orange_money_service.format_amount(float(order.total)),
                 pay_token
             )
-            logger.info(f"DEBUG Orange Money Return - Statut vérifié: success={success}")
         except Exception as api_error:
-            logger.error(f"DEBUG Orange Money Return - Erreur API: {str(api_error)}")
+            logger.error(f"Orange Money API Error: {str(api_error)}")
             messages.error(request, "❌ Erreur de communication avec Orange Money. Veuillez réessayer.")
             return redirect('cart:order_detail', order_id=order.id)
         
@@ -2569,11 +2531,8 @@ def orange_money_return(request):
             handled_status = status_data.get('handled_status', False)
             status_message = status_data.get('status_message', '')
             
-            logger.info(f"DEBUG Orange Money Return - Statut final: {status}, handled={handled_status}")
-            
             if status == 'SUCCESS' and handled_status:
                 # Paiement réussi
-                logger.info("DEBUG Orange Money Return - Paiement réussi, mise à jour de la commande")
                 try:
                     order.is_paid = True
                     order.paid_at = timezone.now()
@@ -2595,12 +2554,11 @@ def orange_money_return(request):
                     return redirect('cart:order_success', order_id=order.id)
                     
                 except Exception as save_error:
-                    logger.error(f"DEBUG Orange Money Return - Erreur sauvegarde: {str(save_error)}")
+                    logger.error(f"Confirmation Error: {str(save_error)}")
                     messages.error(request, "❌ Erreur lors de la confirmation du paiement. Veuillez contacter le support.")
                     return redirect('cart:order_detail', order_id=order.id)
             else:
                 # Paiement échoué, en attente ou expiré
-                logger.warning(f"DEBUG Orange Money Return - Paiement non réussi: {status}")
                 
                 # Utiliser le message de statut géré
                 if status_message:
@@ -2613,14 +2571,11 @@ def orange_money_return(request):
         else:
             # Erreur lors de la vérification
             error_msg = status_data.get('error', 'Erreur inconnue') if status_data else 'Aucune réponse d\'Orange Money'
-            logger.error(f"DEBUG Orange Money Return - Erreur vérification: {error_msg}")
             messages.error(request, f"❌ Erreur lors de la vérification du paiement: {error_msg}")
             return redirect('cart:order_detail', order_id=order.id)
             
     except Exception as e:
-        logger.error(f"DEBUG Orange Money Return - Exception: {str(e)}")
-        import traceback
-        logger.error(f"DEBUG Orange Money Return - Traceback: {traceback.format_exc()}")
+        logger.error(f"Orange Money Return Exception: {str(e)}")
         messages.error(request, "❌ Une erreur inattendue est survenue. Veuillez contacter le support.")
         return redirect('cart:cart')
 
@@ -2630,17 +2585,12 @@ def order_success(request, order_id):
     """
     Vue de succès de commande après paiement réussi
     """
-    logger = logging.getLogger(__name__)
-    logger.info(f"DEBUG Order Success - Commande {order_id}")
-    
     try:
         # Récupérer la commande
         order = Order.objects.get(id=order_id, user=request.user)
-        logger.info(f"DEBUG Order Success - Commande trouvée: {order.order_number}")
         
         # Vérifier que la commande est bien payée
         if not order.is_paid:
-            logger.warning(f"DEBUG Order Success - Commande non payée: {order.order_number}")
             messages.warning(request, "⚠️ Cette commande n'est pas encore payée.")
             return redirect('cart:order_detail', order_id=order.id)
         
@@ -2653,15 +2603,12 @@ def order_success(request, order_id):
             'total_items': sum(item.quantity for item in order_items),
         }
         
-        logger.info(f"DEBUG Order Success - Affichage de la page de succès pour {order.order_number}")
         return render(request, 'cart/order_success.html', context)
         
     except Order.DoesNotExist:
-        logger.error(f"DEBUG Order Success - Commande introuvable: {order_id}")
         messages.error(request, "❌ Commande introuvable.")
         return redirect('cart:my_orders')
     except Exception as e:
-        logger.error(f"DEBUG Order Success - Erreur: {str(e)}")
         messages.error(request, "❌ Une erreur est survenue.")
         return redirect('cart:my_orders')
 

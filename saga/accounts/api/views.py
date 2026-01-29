@@ -383,12 +383,6 @@ class OrdersListView(generics.ListAPIView):
         # Récupérer toutes les commandes de l'utilisateur
         queryset = Order.objects.filter(user=self.request.user)
         
-        # Debug: vérifier le nombre total de commandes
-        total_orders = queryset.count()
-        import logging
-        logger = logging.getLogger(__name__)
-        logger.info(f"[OrdersListView] Utilisateur {self.request.user.id} - Total commandes: {total_orders}")
-        
         # Annoter avec l'ordre de priorité des statuts
         queryset = queryset.annotate(status_order=status_priority)
         
@@ -398,16 +392,6 @@ class OrdersListView(generics.ListAPIView):
         
         # Trier par statut puis par date
         queryset = queryset.order_by('status_order', '-created_at')
-        
-        # Debug: vérifier les commandes retournées
-        # Compter toutes les commandes dans le queryset (sans limite)
-        all_orders_count = queryset.count()
-        logger.info(f"[OrdersListView] Commandes dans queryset: {all_orders_count}")
-        
-        # Log les 5 premières pour debug
-        orders_sample = list(queryset[:5])
-        for order in orders_sample:
-            logger.info(f"[OrdersListView] Commande {order.id}: statut={order.status}, created_at={order.created_at}")
         
         return queryset
 

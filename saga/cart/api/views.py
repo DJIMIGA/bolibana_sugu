@@ -713,6 +713,14 @@ class CartViewSet(viewsets.ModelViewSet):
                 is_mobile_request = any(marker in user_agent for marker in ['mobile', 'android', 'iphone', 'ipad', 'okhttp'])
                 mobile_param = '&mobile=1' if is_mobile_request else ''
 
+                logger.info(
+                    "Checkout - Début paiement: user=%s cart=%s method=%s split=%s",
+                    user.id if user else None,
+                    cart.id if cart else None,
+                    payment_method,
+                    len(group_orders) > 1,
+                )
+
                 if payment_method == 'stripe' or payment_method == 'online_payment':
                     stripe.api_key = settings.STRIPE_SECRET_KEY
                     for entry in group_orders:
@@ -793,6 +801,13 @@ class CartViewSet(viewsets.ModelViewSet):
 
                         order.stripe_session_id = checkout_session.id
                         order.save(update_fields=['stripe_session_id'])
+                        logger.info(
+                            "Stripe session créée - order=%s session=%s status=%s amount_total=%s",
+                            order.id,
+                            checkout_session.id,
+                            checkout_session.payment_status,
+                            checkout_session.amount_total,
+                        )
 
                         payment_results.append({
                             'order_id': order.id,
@@ -918,11 +933,12 @@ class CartViewSet(viewsets.ModelViewSet):
         try:
             stripe.api_key = settings.STRIPE_SECRET_KEY
             session = stripe.checkout.Session.retrieve(session_id)
-            
-            logger.info("--- STRIPE PAYMENT SUCCESS DEBUG ---")
-            logger.info("Stripe Session ID: %s", session.id)
-            logger.info("Stripe Payment Status: %s", session.payment_status)
-            logger.info("Stripe Metadata: %s", session.metadata)
+            logger.info(
+                "Stripe payment_success - session=%s status=%s metadata=%s",
+                session.id,
+                session.payment_status,
+                session.metadata,
+            )
             
             if session.payment_status != 'paid':
                 logger.warning("Stripe Payment Success - Le paiement n'est pas encore 'paid' (status: %s)", session.payment_status)
@@ -932,67 +948,64 @@ class CartViewSet(viewsets.ModelViewSet):
             metadata_order_id = session.metadata.get('order_id') if session.metadata else None
             if metadata_order_id:
                 order = Order.objects.filter(id=metadata_order_id).first()
-                logger.info("Commande trouvée via Metadata order_id (%s): %s", metadata_order_id, order.id if order else "NON TROUVÉE")
             
             if not order and order_id:
                 order = Order.objects.filter(id=order_id).first()
-                logger.info("Commande trouvée via Paramètre URL order_id (%s): %s", order_id, order.id if order else "NON TROUVÉE")
             
             if not order:
                 order = Order.objects.filter(stripe_session_id=session_id).first()
-                logger.info("Commande trouvée via stripe_session_id: %s", order.id if order else "NON TROUVÉE")
             
             if not order:
                 logger.error("ERREUR: Commande introuvable pour la session %s", session_id)
                 return Response({'error': 'Commande introuvable'}, status=status.HTTP_404_NOT_FOUND)
 
-            logger.info("Utilisation de la commande ID: %s (Status actuel: %s, Paid: %s)", order.id, order.status, order.is_paid)
-            
+            logger.info(
+                "Stripe payment_success - Commande trouvée: order=%s status=%s is_paid=%s",
+                order.id,
+                order.status,
+                order.is_paid,
+            )
+
             order.stripe_session_id = session.id
             order.stripe_payment_status = session.payment_status
             
             # Mettre à jour le statut et is_paid si nécessaire
-            old_status = order.status
             if not order.is_paid:
-                logger.info("Marquage de la commande %s comme payée...", order.id)
+                old_status = order.status
                 order.mark_as_paid()
                 logger.info(
-                    "Payment success - Commande %s mise à jour: status=%s→%s is_paid=%s→%s",
+                    "Stripe payment_success - Statut mis à jour: order=%s %s→%s is_paid=%s",
                     order.id,
                     old_status,
                     order.status,
-                    False,
-                    order.is_paid
+                    order.is_paid,
                 )
             else:
-                logger.info("La commande %s était déjà marquée comme payée (is_paid=True)", order.id)
                 # Si déjà payé, s'assurer que le statut est CONFIRMED
                 if order.status == Order.DRAFT:
                     order.status = Order.CONFIRMED
                     order.save(update_fields=['status', 'stripe_session_id', 'stripe_payment_status'])
                     logger.info(
-                        "Payment success - Commande %s statut mis à jour: %s→%s",
+                        "Stripe payment_success - Statut forcé CONFIRMED: order=%s",
                         order.id,
-                        old_status,
-                        order.status
                     )
                 else:
                     order.save(update_fields=['stripe_session_id', 'stripe_payment_status'])
 
             # Synchroniser vers B2B après paiement réussi
-            logger.info("Début synchronisation B2B pour commande %s", order.id)
             self._sync_order_to_b2b(order)
+            logger.info(
+                "Stripe payment_success - Sync B2B déclenchée: order=%s",
+                order.id,
+            )
             
             # Vider le panier de l'utilisateur après un paiement réussi.
-            # Les articles ont déjà été transformés en commandes, donc le panier doit être vidé.
-            # On ne vérifie plus s'il reste d'autres commandes DRAFT car d'anciennes commandes
-            # pourraient bloquer le vidage du panier.
-            logger.info("Paiement réussi pour la commande %s. Vidage du panier pour l'utilisateur %s (ID: %s)...", order.id, order.user, order.user.id)
             self._clear_user_cart(order.user)
-            logger.info("Checkout Stripe - Panier vidé avec succès pour utilisateur %s", order.user.id)
+            logger.info(
+                "Stripe payment_success - Panier vidé: user=%s",
+                order.user.id if order.user else None,
+            )
             
-            logger.info("--- FIN STRIPE PAYMENT SUCCESS DEBUG ---")
-
             # Détection mobile : priorité au paramètre mobile=1 dans l'URL
             is_mobile_param = request.GET.get('mobile') == '1' or request.GET.get('mobile') == 'true'
             
@@ -1007,28 +1020,22 @@ class CartViewSet(viewsets.ModelViewSet):
                 wants_html = 'text/html' in accept or request.GET.get('format') == 'html'
                 
                 is_mobile_param = is_mobile_ua or is_mobile_referer or wants_html
-                
-                logger.info(
-                    "Payment success - Détection mobile (sans param): ua=%s, referer=%s, accept=%s, final=%s",
-                    is_mobile_ua, is_mobile_referer, wants_html, is_mobile_param
-                )
-            else:
-                logger.info("Payment success - Détection mobile: paramètre mobile=1 détecté dans l'URL")
             
             # Si c'est mobile, retourner une page HTML qui redirige vers l'app
             if is_mobile_param:
                 from django.shortcuts import render
-                logger.info("Payment success - Retour page HTML mobile pour commande %s", order.id)
-                logger.info("Payment success - Order ID: %s, Order Number: %s", order.id, order.order_number)
                 context = {
                     'order_id': str(order.id) if order.id else '',
                     'order_number': str(order.order_number) if order.order_number else '',
                     'status': order.status,
                     'is_paid': order.is_paid,
                 }
-                logger.info("Payment success - Context envoyé au template: %s", context)
+                logger.info(
+                    "Stripe payment_success - Réponse HTML mobile: order=%s",
+                    order.id,
+                )
                 return render(request, 'cart/payment_success_mobile.html', context, status=200)
-r
+
             
             # Sinon, retourner JSON pour les appels API
             return Response({
@@ -1052,25 +1059,12 @@ r
         """
         from django.http import HttpResponse
         
-        # Logs détaillés pour déboguer
-        logger.info("Payment callback - Requête reçue")
-        logger.info("Payment callback - Méthode: %s", request.method)
-        logger.info("Payment callback - GET params: %s", dict(request.GET))
-        logger.info("Payment callback - User-Agent: %s", request.META.get('HTTP_USER_AGENT', 'N/A'))
-        logger.info("Payment callback - Referer: %s", request.META.get('HTTP_REFERER', 'N/A'))
-        
         order_id = request.GET.get('order_id')
         order_number = request.GET.get('order_number')
         
-        logger.info("Payment callback - order_id extrait: %s", order_id)
-        logger.info("Payment callback - order_number extrait: %s", order_number)
-        
         if not order_id:
-            logger.error("Payment callback - ERREUR: order_id manquant dans les paramètres GET")
-            logger.error("Payment callback - Tous les paramètres GET: %s", dict(request.GET))
             return HttpResponse(
-                '<html><body><h1>Erreur 400</h1><p>order_id manquant</p><p>Paramètres reçus: ' + 
-                str(dict(request.GET)) + '</p></body></html>',
+                '<html><body><h1>Erreur 400</h1><p>order_id manquant</p></body></html>',
                 status=400
             )
         
@@ -1079,10 +1073,6 @@ r
         callback_url = f"{domain_url}/api/cart/payment-callback/?order_id={order_id}"
         if order_number:
             callback_url += f"&order_number={order_number}"
-        
-        logger.info("Payment callback - URL HTTPS callback: %s", callback_url)
-        logger.info("Payment callback - Cette URL sera interceptée par l'app via Linking")
-        logger.info("Payment callback - L'app fermera le WebBrowser et naviguera vers Profile > Orders")
         
         # Page HTML simple : l'app intercepte cette URL HTTPS via Linking
         # Plus besoin de JavaScript complexe pour rediriger vers bolibana://
@@ -1212,7 +1202,6 @@ r
     </div>
     <script>
         // Utiliser location.replace pour sortir de l'historique
-        console.log('[Payment Callback] Page chargée - Order ID: {order_id}, Order Number: {order_number}');
         
         const orderId = '{order_id}';
         const orderNumber = '{order_number}';
@@ -1238,15 +1227,12 @@ r
 </html>
         """
         
-        html_size = len(html_content)
-        logger.info("Payment callback - Page HTML générée avec succès")
-        logger.info("Payment callback - Taille finale du HTML: %d caractères", html_size)
-        logger.info("Payment callback - Envoi de la réponse HTTP 200 pour commande %s", order_id)
-        
         return HttpResponse(html_content, content_type='text/html', status=200)
     
     @action(detail=False, methods=['get'], url_path='payment-cancel', permission_classes=[AllowAny])
     def payment_cancel(self, request):
+        order_id = request.GET.get('order_id')
+        logger.info("Stripe payment_cancel - order=%s", order_id)
         accept = (request.META.get('HTTP_ACCEPT') or '').lower()
         if request.GET.get('mobile') == '1' or 'text/html' in accept:
             return render(request, 'payment_cancel.html', status=200)
@@ -1294,9 +1280,6 @@ r
                 # Si c'est la dernière commande en attente, vider le panier
                 if not user_orders_pending.exists():
                     self._clear_user_cart(order.user)
-                    logger.info("Checkout Orange Money - Toutes les commandes payées, panier vidé")
-                else:
-                    logger.info("Checkout Orange Money - D'autres commandes en attente, panier conservé")
                 
                 return Response({
                     'status': 'success',

@@ -38,16 +38,11 @@ class CategoryViewSet(viewsets.ReadOnlyModelViewSet):
         from django.db.models import Prefetch
         from django.core.exceptions import ValidationError
         
-        logger.info(f"[CategoryViewSet] Appel de l'endpoint synced depuis {request.META.get('REMOTE_ADDR')}")
-
         # Déclencher une synchronisation automatique non bloquante si nécessaire
         try:
             from inventory.tasks import trigger_categories_sync_async
             force_sync = request.query_params.get('force', 'false').lower() == 'true'
-            if force_sync:
-                logger.info("[CategoryViewSet] 🔄 Synchronisation forcée demandée via ?force=true")
-            triggered = trigger_categories_sync_async(force=force_sync)
-            logger.info(f"[CategoryViewSet] ✅ Sync auto catégories déclenchée: {triggered}")
+            trigger_categories_sync_async(force=force_sync)
         except Exception as e:
             logger.warning(f"[CategoryViewSet] ⚠️ Impossible de déclencher la sync auto catégories: {str(e)}")
         
@@ -55,13 +50,10 @@ class CategoryViewSet(viewsets.ReadOnlyModelViewSet):
             categories = get_synced_categories()
             
             if not categories:
-                logger.info("Aucune catégorie synchronisée trouvée")
                 return Response({
                     'count': 0,
                     'results': []
                 })
-            
-            logger.info(f"Récupération de {len(categories)} catégories synchronisées")
             
             # Annoter les catégories avec le nombre de produits disponibles
             category_ids = [cat.id for cat in categories]
@@ -118,9 +110,7 @@ class CategoryViewSet(viewsets.ReadOnlyModelViewSet):
             
             if errors:
                 response_data['warnings'] = errors
-                logger.warning(f"{len(errors)} erreurs lors de la sérialisation, {len(results)} catégories retournées")
             
-            logger.info(f"[CategoryViewSet] Retour de {len(results)} catégories synchronisées")
             return Response(response_data)
             
         except Exception as e:
@@ -218,7 +208,6 @@ class ProductViewSet(viewsets.ReadOnlyModelViewSet):
     @action(detail=False, methods=['get'], url_path='synced', url_name='synced')
     def synced(self, request):
         """Retourne les produits synchronisés depuis B2B"""
-        logger.info(f"[B2B API] Requête reçue pour /api/inventory/products/synced/")
         
         # Permettre de forcer la synchronisation via paramètre ?force=true
         force_sync = request.query_params.get('force', 'false').lower() == 'true'
@@ -230,10 +219,7 @@ class ProductViewSet(viewsets.ReadOnlyModelViewSet):
         try:
             # Non bloquant: ne ralentit pas l'API mobile
             # Le lock dans trigger_products_sync_async évite les synchronisations concurrentes
-            if force_sync:
-                logger.info("[B2B API] 🔄 Synchronisation forcée demandée via paramètre ?force=true")
-            triggered = trigger_products_sync_async(force=force_sync)
-            logger.info(f"[B2B API] ✅ Sync auto produits déclenchée: {triggered}")
+            trigger_products_sync_async(force=force_sync)
         except Exception as e:
             logger.warning(f"Erreur lors de la synchronisation automatique: {str(e)}")
         
@@ -242,7 +228,6 @@ class ProductViewSet(viewsets.ReadOnlyModelViewSet):
             from inventory.models import ApiKey
             api_key = ApiKey.get_active_key()
             if not api_key:
-                logger.warning("[B2B API] Aucune clé API active trouvée. Vérifiez /admin/inventory/apikey/")
                 return Response({
                     'error': 'Aucune clé API configurée. Veuillez configurer une clé API active dans /admin/inventory/apikey/',
                     'count': 0,
@@ -255,11 +240,9 @@ class ProductViewSet(viewsets.ReadOnlyModelViewSet):
                 is_b2b=True
             ).select_related('product')
             external_count = external_products.count()
-            logger.info(f"[B2B API] Produits B2B avec sync_status='synced' et is_b2b=True: {external_count}")
             
             if external_count == 0:
                 # Aucun produit synchronisé - suggérer de synchroniser
-                logger.warning("[B2B API] Aucun produit synchronisé trouvé. Exécutez: python manage.py sync_products_from_inventory")
                 return Response({
                     'error': 'Aucun produit synchronisé trouvé. Veuillez synchroniser les produits depuis B2B avec: python manage.py sync_products_from_inventory',
                     'count': 0,
@@ -270,7 +253,6 @@ class ProductViewSet(viewsets.ReadOnlyModelViewSet):
             # Extraire les IDs des produits (via la relation OneToOneField)
             product_ids = [ep.product.id for ep in external_products if ep.product]
             if not product_ids:
-                logger.warning("[B2B API] Aucun product_id valide trouvé dans ExternalProduct")
                 return Response({
                     'error': 'Aucun produit valide trouvé',
                     'count': 0,
@@ -290,19 +272,7 @@ class ProductViewSet(viewsets.ReadOnlyModelViewSet):
                 is_available=False
             ).count()
             
-            logger.info(f"[B2B API] Produits synchronisés: {external_count}")
-            logger.info(f"[B2B API] Produits avec Product valide: {len(product_ids)}")
-            logger.info(f"[B2B API] Produits disponibles (is_available=True): {products_count}")
-            logger.info(f"[B2B API] Produits non disponibles (is_available=False): {unavailable_products}")
-            
-            if unavailable_products > 0:
-                logger.warning(
-                    f"[B2B API] ⚠️  {unavailable_products} produits synchronisés ne sont pas disponibles "
-                    f"(is_available=False) et ne seront pas retournés par l'API"
-                )
-            
             if products_count == 0:
-                logger.warning(f"[B2B API] Aucun produit disponible trouvé pour les IDs: {product_ids[:5]}...")
                 return Response({
                     'error': 'Aucun produit disponible trouvé pour les IDs synchronisés',
                     'count': 0,
@@ -342,11 +312,9 @@ def sync_status_view(request):
     return Response(status_payload)
 
 
-# Vue simple pour tester l'endpoint synced directement
 @api_view(['GET'])
 def synced_products_view(request):
     """Vue alternative pour récupérer les produits B2B synchronisés"""
-    logger.info(f"[B2B API] Requête reçue via vue alternative pour /api/inventory/products/synced/")
     
     # Permettre de forcer la synchronisation via paramètre ?force=true
     force_sync = request.query_params.get('force', 'false').lower() == 'true'
@@ -354,8 +322,6 @@ def synced_products_view(request):
     # Déclencher une synchronisation automatique si nécessaire
     from inventory.tasks import trigger_products_sync_async
     try:
-        if force_sync:
-            logger.info("[B2B API] 🔄 Synchronisation forcée demandée via paramètre ?force=true")
         trigger_products_sync_async(force=force_sync)
     except Exception as e:
         logger.warning(f"Erreur lors de la synchronisation automatique: {str(e)}")
@@ -365,7 +331,6 @@ def synced_products_view(request):
         from inventory.models import ApiKey
         api_key = ApiKey.get_active_key()
         if not api_key:
-            logger.warning("[B2B API] Aucune clé API active trouvée. Vérifiez /admin/inventory/apikey/")
             return Response({
                 'error': 'Aucune clé API configurée. Veuillez configurer une clé API active dans /admin/inventory/apikey/',
                 'count': 0,
@@ -378,10 +343,8 @@ def synced_products_view(request):
             is_b2b=True
         ).select_related('product')
         external_count = external_products.count()
-        logger.info(f"[B2B API] Produits B2B avec sync_status='synced' et is_b2b=True: {external_count}")
         
         if external_count == 0:
-            logger.warning("[B2B API] Aucun produit synchronisé trouvé. Exécutez: python manage.py sync_products_from_inventory")
             return Response({
                 'error': 'Aucun produit synchronisé trouvé. Veuillez synchroniser les produits depuis B2B avec: python manage.py sync_products_from_inventory',
                 'count': 0,
@@ -392,7 +355,6 @@ def synced_products_view(request):
         # Extraire les IDs des produits (via la relation OneToOneField)
         product_ids = [ep.product.id for ep in external_products if ep.product]
         if not product_ids:
-            logger.warning("[B2B API] Aucun product_id valide trouvé dans ExternalProduct")
             return Response({
                 'error': 'Aucun produit valide trouvé',
                 'count': 0,
@@ -412,19 +374,7 @@ def synced_products_view(request):
             is_available=False
         ).count()
         
-        logger.info(f"[B2B API] Produits synchronisés: {external_count}")
-        logger.info(f"[B2B API] Produits avec Product valide: {len(product_ids)}")
-        logger.info(f"[B2B API] Produits disponibles (is_available=True): {products_count}")
-        logger.info(f"[B2B API] Produits non disponibles (is_available=False): {unavailable_products}")
-        
-        if unavailable_products > 0:
-            logger.warning(
-                f"[B2B API] ⚠️  {unavailable_products} produits synchronisés ne sont pas disponibles "
-                f"(is_available=False) et ne seront pas retournés par l'API"
-            )
-        
         if products_count == 0:
-            logger.warning(f"[B2B API] Aucun produit disponible trouvé pour les IDs: {product_ids[:5]}...")
             return Response({
                 'error': 'Aucun produit disponible trouvé pour les IDs synchronisés',
                 'count': 0,
@@ -457,7 +407,6 @@ def synced_products_view(request):
 @api_view(['GET'])
 def synced_categories_view(request):
     """Vue alternative pour récupérer les catégories B2B synchronisées"""
-    logger.info(f"[synced_categories_view] Requête reçue pour /api/inventory/categories/synced/")
     from django.db.models import Prefetch
     from django.core.exceptions import ValidationError
     
@@ -465,13 +414,10 @@ def synced_categories_view(request):
         categories = get_synced_categories()
         
         if not categories:
-            logger.info("Aucune catégorie synchronisée trouvée")
             return Response({
                 'count': 0,
                 'results': []
             })
-        
-        logger.info(f"Récupération de {len(categories)} catégories synchronisées")
         
         # Annoter les catégories avec le nombre de produits disponibles
         category_ids = [cat.id for cat in categories]
@@ -499,7 +445,6 @@ def synced_categories_view(request):
             try:
                 # Vérifier que la catégorie a les champs requis
                 if not cat.name:
-                    logger.warning(f"Catégorie {cat.id} n'a pas de nom, ignorée")
                     continue
                 
                 cat_serializer = CategorySerializer(cat, context={'request': request})
@@ -520,9 +465,7 @@ def synced_categories_view(request):
         
         if errors:
             response_data['warnings'] = errors
-            logger.warning(f"{len(errors)} erreurs lors de la sérialisation, {len(results)} catégories retournées")
         
-        logger.info(f"[synced_categories_view] Retour de {len(results)} catégories synchronisées")
         return Response(response_data)
         
     except Exception as e:
