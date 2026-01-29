@@ -918,27 +918,43 @@ class CartViewSet(viewsets.ModelViewSet):
         try:
             stripe.api_key = settings.STRIPE_SECRET_KEY
             session = stripe.checkout.Session.retrieve(session_id)
-
+            
+            logger.info("--- STRIPE PAYMENT SUCCESS DEBUG ---")
+            logger.info("Stripe Session ID: %s", session.id)
+            logger.info("Stripe Payment Status: %s", session.payment_status)
+            logger.info("Stripe Metadata: %s", session.metadata)
+            
             if session.payment_status != 'paid':
+                logger.warning("Stripe Payment Success - Le paiement n'est pas encore 'paid' (status: %s)", session.payment_status)
                 return Response({'status': 'pending', 'message': 'Paiement non confirmé'}, status=status.HTTP_200_OK)
 
             order = None
             metadata_order_id = session.metadata.get('order_id') if session.metadata else None
             if metadata_order_id:
                 order = Order.objects.filter(id=metadata_order_id).first()
+                logger.info("Commande trouvée via Metadata order_id (%s): %s", metadata_order_id, order.id if order else "NON TROUVÉE")
+            
             if not order and order_id:
                 order = Order.objects.filter(id=order_id).first()
+                logger.info("Commande trouvée via Paramètre URL order_id (%s): %s", order_id, order.id if order else "NON TROUVÉE")
+            
             if not order:
                 order = Order.objects.filter(stripe_session_id=session_id).first()
+                logger.info("Commande trouvée via stripe_session_id: %s", order.id if order else "NON TROUVÉE")
+            
             if not order:
+                logger.error("ERREUR: Commande introuvable pour la session %s", session_id)
                 return Response({'error': 'Commande introuvable'}, status=status.HTTP_404_NOT_FOUND)
 
+            logger.info("Utilisation de la commande ID: %s (Status actuel: %s, Paid: %s)", order.id, order.status, order.is_paid)
+            
             order.stripe_session_id = session.id
             order.stripe_payment_status = session.payment_status
             
             # Mettre à jour le statut et is_paid si nécessaire
             old_status = order.status
             if not order.is_paid:
+                logger.info("Marquage de la commande %s comme payée...", order.id)
                 order.mark_as_paid()
                 logger.info(
                     "Payment success - Commande %s mise à jour: status=%s→%s is_paid=%s→%s",
@@ -949,6 +965,7 @@ class CartViewSet(viewsets.ModelViewSet):
                     order.is_paid
                 )
             else:
+                logger.info("La commande %s était déjà marquée comme payée (is_paid=True)", order.id)
                 # Si déjà payé, s'assurer que le statut est CONFIRMED
                 if order.status == Order.DRAFT:
                     order.status = Order.CONFIRMED
@@ -963,6 +980,7 @@ class CartViewSet(viewsets.ModelViewSet):
                     order.save(update_fields=['stripe_session_id', 'stripe_payment_status'])
 
             # Synchroniser vers B2B après paiement réussi
+            logger.info("Début synchronisation B2B pour commande %s", order.id)
             self._sync_order_to_b2b(order)
             
             # Vérifier si toutes les commandes du panier sont payées avant de vider
@@ -972,12 +990,21 @@ class CartViewSet(viewsets.ModelViewSet):
                 status=Order.DRAFT
             ).exclude(id=order.id)
             
+            logger.info("Vérification pour vider le panier de l'utilisateur %s (ID: %s)", order.user, order.user.id)
+            logger.info("Nombre d'autres commandes DRAFT trouvées: %d", user_orders_draft.count())
+            if user_orders_draft.exists():
+                draft_ids = list(user_orders_draft.values_list('id', flat=True))
+                logger.info("IDs des commandes DRAFT restantes: %s", draft_ids)
+            
             # Si c'est la dernière commande DRAFT, vider le panier
             if not user_orders_draft.exists():
+                logger.info("Toutes les commandes du panier sont traitées. Vidage du panier en cours...")
                 self._clear_user_cart(order.user)
-                logger.info("Checkout Stripe - Toutes les commandes payées, panier vidé pour utilisateur %s", order.user.id)
+                logger.info("Checkout Stripe - Panier vidé avec succès pour utilisateur %s", order.user.id)
             else:
-                logger.info("Checkout Stripe - D'autres commandes DRAFT existent (%d), panier conservé", user_orders_draft.count())
+                logger.info("Checkout Stripe - Le panier n'a PAS été vidé car il reste des commandes DRAFT")
+            
+            logger.info("--- FIN STRIPE PAYMENT SUCCESS DEBUG ---")
 
             # Détection mobile : priorité au paramètre mobile=1 dans l'URL
             is_mobile_param = request.GET.get('mobile') == '1' or request.GET.get('mobile') == 'true'
