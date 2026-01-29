@@ -1026,7 +1026,6 @@ class CartViewSet(viewsets.ModelViewSet):
                 }
                 logger.info("Payment success - Context envoyé au template: %s", context)
                 return render(request, 'cart/payment_success_mobile.html', context, status=200)
-r
             
             # Sinon, retourner JSON pour les appels API
             return Response({
