@@ -1647,8 +1647,32 @@ class OrderSyncService:
             metadata['b2b_sync_status'] = 'synced'
             metadata['b2b_sale_id'] = external_sale_id
             metadata['b2b_synced_at'] = timezone.now().isoformat()
+            b2b_status = response.get('b2b_status') or response.get('status')
+            if b2b_status:
+                metadata['b2b_status'] = b2b_status
             order.metadata = metadata
             order.save(update_fields=['metadata'])
+
+            # Aligner le statut local si B2B renvoie un statut explicite
+            if b2b_status in [Order.CONFIRMED, Order.SHIPPED, Order.DELIVERED, Order.CANCELLED, Order.DRAFT]:
+                if b2b_status == Order.DRAFT and order.is_paid:
+                    logger.warning(
+                        "[SYNC B2B] Downgrade ignoré (order=%s) : %s → %s (is_paid=%s)",
+                        order.order_number,
+                        order.status,
+                        b2b_status,
+                        order.is_paid
+                    )
+                else:
+                    old_status = order.status
+                    order.status = b2b_status
+                    order.save(update_fields=['status'])
+                    logger.info(
+                        "[SYNC B2B] Statut local aligné: order=%s %s→%s",
+                        order.order_number,
+                        old_status,
+                        b2b_status
+                    )
 
             logger.info(
                 "Commande %s envoyée avec succès vers B2B (external_sale_id=%s, total=%s)",
