@@ -983,26 +983,13 @@ class CartViewSet(viewsets.ModelViewSet):
             logger.info("Début synchronisation B2B pour commande %s", order.id)
             self._sync_order_to_b2b(order)
             
-            # Vérifier si toutes les commandes du panier sont payées avant de vider
-            # Récupérer toutes les commandes DRAFT de ce panier (même si payées)
-            user_orders_draft = Order.objects.filter(
-                user=order.user,
-                status=Order.DRAFT
-            ).exclude(id=order.id)
-            
-            logger.info("Vérification pour vider le panier de l'utilisateur %s (ID: %s)", order.user, order.user.id)
-            logger.info("Nombre d'autres commandes DRAFT trouvées: %d", user_orders_draft.count())
-            if user_orders_draft.exists():
-                draft_ids = list(user_orders_draft.values_list('id', flat=True))
-                logger.info("IDs des commandes DRAFT restantes: %s", draft_ids)
-            
-            # Si c'est la dernière commande DRAFT, vider le panier
-            if not user_orders_draft.exists():
-                logger.info("Toutes les commandes du panier sont traitées. Vidage du panier en cours...")
-                self._clear_user_cart(order.user)
-                logger.info("Checkout Stripe - Panier vidé avec succès pour utilisateur %s", order.user.id)
-            else:
-                logger.info("Checkout Stripe - Le panier n'a PAS été vidé car il reste des commandes DRAFT")
+            # Vider le panier de l'utilisateur après un paiement réussi.
+            # Les articles ont déjà été transformés en commandes, donc le panier doit être vidé.
+            # On ne vérifie plus s'il reste d'autres commandes DRAFT car d'anciennes commandes
+            # pourraient bloquer le vidage du panier.
+            logger.info("Paiement réussi pour la commande %s. Vidage du panier pour l'utilisateur %s (ID: %s)...", order.id, order.user, order.user.id)
+            self._clear_user_cart(order.user)
+            logger.info("Checkout Stripe - Panier vidé avec succès pour utilisateur %s", order.user.id)
             
             logger.info("--- FIN STRIPE PAYMENT SUCCESS DEBUG ---")
 
