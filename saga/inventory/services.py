@@ -150,6 +150,21 @@ class InventoryAPIClient:
             
             # Log de la réponse
             logger.debug(f"Réponse {response.status_code} de {url}")
+            if method in ['POST', 'PUT']:
+                try:
+                    response_data = response.json()
+                except ValueError:
+                    text_preview = response.text[:500] if response.text else "N/A"
+                    if '<' in text_preview and '>' in text_preview:
+                        text_preview = "Réponse HTML (non affichée)"
+                    response_data = text_preview
+                logger.info(
+                    "Réponse API %s %s -> %s : %s",
+                    method,
+                    url,
+                    response.status_code,
+                    response_data,
+                )
             
             # Gestion spéciale des erreurs 403 (Forbidden)
             if response.status_code == 403:

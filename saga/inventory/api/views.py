@@ -636,6 +636,23 @@ def b2b_order_status_webhook(request):
     try:
         old_status = order.status
         
+        # Empêcher le downgrade vers DRAFT après paiement/confirmation
+        if status_value == Order.DRAFT and (order.is_paid or order.status in [Order.CONFIRMED, Order.SHIPPED, Order.DELIVERED]):
+            logger.warning(
+                "[B2B Webhook] Downgrade ignoré pour %s: %s → %s (is_paid=%s)",
+                order_number,
+                old_status,
+                status_value,
+                order.is_paid
+            )
+            return Response(
+                {
+                    'status': 'ignored',
+                    'message': f'Downgrade ignoré: {old_status} → {status_value}',
+                },
+                status=status.HTTP_200_OK
+            )
+
         # Mettre à jour le statut
         order.status = status_value
         
