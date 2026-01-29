@@ -9,7 +9,7 @@ import {
   RefreshControl,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { useNavigation, useFocusEffect } from '@react-navigation/native';
+import { useNavigation, useFocusEffect, useRoute } from '@react-navigation/native';
 import * as WebBrowser from 'expo-web-browser';
 import { COLORS, API_ENDPOINTS } from '../utils/constants';
 import { formatWeightQuantity, formatPrice } from '../utils/helpers';
@@ -48,6 +48,7 @@ const FILTER_OPTIONS: { value: FilterStatus; label: string }[] = [
 
 const OrdersScreen: React.FC = () => {
   const navigation = useNavigation();
+  const route = useRoute<any>();
   const [orders, setOrders] = useState<OrderLite[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
@@ -90,6 +91,7 @@ const OrdersScreen: React.FC = () => {
       console.log('[OrdersScreen] 📊 Répartition par statut:', statusCounts);
       
       setOrders(list);
+      return list;
     } catch (error: any) {
       // Si c'est une erreur de mode hors ligne, gérer silencieusement
       if (error.isOfflineBlocked || error.code === 'OFFLINE_MODE_FORCED') {
@@ -142,6 +144,48 @@ const OrdersScreen: React.FC = () => {
       };
     }, [])
   );
+
+  // Après un retour de paiement, re-poll quelques fois pour récupérer le statut confirmé
+  useEffect(() => {
+    const targetOrderId = route?.params?.orderId ? Number(route.params.orderId) : undefined;
+    const targetOrderNumber = route?.params?.orderNumber as string | undefined;
+    if (!targetOrderId && !targetOrderNumber) {
+      return;
+    }
+
+    let attempts = 0;
+    let intervalId: NodeJS.Timeout | null = null;
+
+    const pollOnce = async () => {
+      attempts += 1;
+      const list = await loadOrders(true);
+      const match = (list || []).find((order) =>
+        targetOrderId ? order.id === targetOrderId : order.order_number === targetOrderNumber
+      );
+
+      if (match && match.status !== 'draft') {
+        console.log('[OrdersScreen] ✅ Statut mis à jour pour la commande:', match.order_number, match.status);
+        if (intervalId) {
+          clearInterval(intervalId);
+          intervalId = null;
+        }
+      } else if (attempts >= 6) {
+        if (intervalId) {
+          clearInterval(intervalId);
+          intervalId = null;
+        }
+      }
+    };
+
+    pollOnce();
+    intervalId = setInterval(pollOnce, 2000);
+
+    return () => {
+      if (intervalId) {
+        clearInterval(intervalId);
+      }
+    };
+  }, [route?.params?.orderId, route?.params?.orderNumber]);
 
   const formatDate = (iso: string) => {
     const d = new Date(iso);
