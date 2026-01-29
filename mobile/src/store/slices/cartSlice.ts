@@ -115,48 +115,12 @@ export const addToCart = createAsyncThunk(
         // S'assurer que la quantité est bien un nombre (préserver les décimales pour les produits au poids)
         const quantity = typeof data.quantity === 'number' ? data.quantity : parseFloat(String(data.quantity));
         
-        if (__DEV__) {
-          console.log('[cartSlice] ⚖️ Ajout au panier - quantité envoyée:', {
-            productId: data.product,
-            quantity: data.quantity,
-            quantityType: typeof data.quantity,
-            parsedQuantity: quantity,
-          });
-        }
-
         const payload: any = { product: data.product, quantity: quantity };
         if (data.variant) payload.variant = data.variant;
         if (data.colors?.length) payload.colors = data.colors;
         if (data.sizes?.length) payload.sizes = data.sizes;
 
         const response = await apiClient.post(API_ENDPOINTS.CART, payload);
-        
-        if (__DEV__) {
-          const rawItems = response.data?.items || response.data?.cart_items || [];
-          const unitInfo = rawItems.map((item: any) => {
-            const specs = item?.product?.specifications || {};
-            const unitType = specs.unit_type || specs.unit || null;
-            const soldByWeight = specs.sold_by_weight;
-            const isWeighted = soldByWeight === true ||
-              (typeof soldByWeight === 'string' && ['true', '1', 'yes'].includes(soldByWeight.toLowerCase())) ||
-              (typeof unitType === 'string' && ['weight', 'kg', 'kilogram', 'g', 'gram', 'grams'].includes(unitType.toLowerCase()));
-            return {
-              itemId: item?.id,
-              productId: item?.product?.id,
-              productTitle: item?.product?.title,
-              quantity: item?.quantity,
-              unitType: unitType,
-              sold_by_weight: soldByWeight,
-              isWeighted,
-            };
-          });
-          console.log('[cartSlice] ⚖️ Réponse backend après ajout:', {
-            responseData: response.data,
-            items: rawItems,
-            sentQuantity: quantity,
-            unitInfo,
-          });
-        }
         
         // Mapper le panier et corriger les quantités à 0 si nécessaire
         const cart = mapCartFromBackend(response.data);
@@ -165,14 +129,6 @@ export const addToCart = createAsyncThunk(
         if (cart && cart.items) {
           cart.items.forEach((item: CartItem) => {
             if (item.quantity === 0 && item.product.id === data.product) {
-              if (__DEV__) {
-                console.warn('[cartSlice] ⚠️ Backend retourne quantity: 0, correction avec quantité envoyée:', {
-                  itemId: item.id,
-                  productId: item.product.id,
-                  backendQuantity: 0,
-                  correctedQuantity: quantity,
-                });
-              }
               item.quantity = quantity;
             }
           });
@@ -207,7 +163,6 @@ export const updateCartItem = createAsyncThunk(
       }
       return null;
     } catch (error: any) {
-      console.error(`[cartSlice] ❌ Erreur API updateCartItem:`, cleanErrorForLog(error));
       const errorMessage = error.response?.data?.error || 
                           error.response?.data?.detail || 
                           error.message || 
@@ -248,7 +203,6 @@ export const clearCart = createAsyncThunk(
         return null;
       }
     } catch (error: any) {
-      console.error(`[cartSlice] ❌ Erreur vidage panier:`, cleanErrorForLog(error));
       const errorMessage = error.response?.data?.error || 
                           error.response?.data?.detail || 
                           error.message || 
@@ -282,9 +236,6 @@ export const enrichCartProducts = createAsyncThunk(
             // L'API utilise le slug, pas l'ID pour récupérer un produit
             const productSlug = item.product.slug;
             if (!productSlug) {
-              if (__DEV__) {
-                console.warn('[cartSlice] ⚠️ Produit sans slug, impossible d\'enrichir:', item.product.id);
-              }
               return item;
             }
 
@@ -303,14 +254,6 @@ export const enrichCartProducts = createAsyncThunk(
             };
           } catch (error: any) {
             // En cas d'erreur, retourner l'item tel quel
-            if (__DEV__) {
-              console.warn('[cartSlice] ⚠️ Impossible d\'enrichir le produit:', {
-                productId: item.product.id,
-                productSlug: item.product.slug,
-                error: error?.message || error,
-                status: error?.response?.status,
-              });
-            }
             return item;
           }
         })
@@ -389,25 +332,10 @@ const cartSlice = createSlice({
             );
             // Si on trouve un item existant avec une quantité > 0, préserver cette quantité
             if (existingItem && existingItem.quantity > 0) {
-              if (__DEV__) {
-                console.warn('[cartSlice] ⚠️ Backend retourne quantity: 0, préservation de la quantité optimiste:', {
-                  itemId: newItem.id,
-                  productId: newItem.product.id,
-                  backendQuantity: newItem.quantity,
-                  preservedQuantity: existingItem.quantity,
-                });
-              }
               newItem.quantity = existingItem.quantity;
             } else {
               // Si pas d'item existant, c'est un nouveau produit
-              // Le backend devrait retourner la bonne quantité, mais si c'est 0,
-              // on peut essayer de récupérer depuis l'action si disponible
-              if (__DEV__) {
-                console.warn('[cartSlice] ⚠️ Backend retourne quantity: 0 pour un nouveau produit:', {
-                  itemId: newItem.id,
-                  productId: newItem.product.id,
-                });
-              }
+              // Le backend devrait retourner la bonne quantité
             }
           }
         });

@@ -565,11 +565,7 @@ const CheckoutScreen: React.FC = () => {
           console.log('[CheckoutScreen] dismissBrowser (déjà fermé ou non ouvert):', (e as Error).message);
         }
 
-        // Petit délai pour laisser au serveur le temps de vider le panier
-        await new Promise(resolve => setTimeout(resolve, 1000));
-        
         // Rafraîchir le panier et naviguer vers les commandes
-        console.log('[CheckoutScreen] Rafraîchissement du panier et navigation...');
         await dispatch(fetchCart());
         (navigation as any).navigate('Profile', { screen: 'Orders' });
       }

@@ -1,0 +1,28 @@
+Bonjour,
+
+Je rencontre un problème avec la redirection d'un deep link depuis un WebBrowser Expo vers mon application React Native.
+
+CONTEXTE :
+- Application React Native avec Expo
+- Utilisation de expo-web-browser pour les paiements Stripe
+- Après paiement, je dois rediriger vers bolibana://payment-success?order_id=XXX
+
+PROBLÈME :
+Le serveur Django génère une page HTML avec JavaScript qui tente plusieurs méthodes de redirection (window.open(), location.href, Android Intent, iframe, etc.), mais aucune ne fonctionne. Le bouton manuel disparaît également.
+
+QUESTIONS :
+1. Le WebBrowser Expo bloque-t-il les redirections vers des protocoles personnalisés ?
+2. Y a-t-il une méthode spécifique pour déclencher un deep link depuis un WebBrowser Expo ?
+3. Faut-il utiliser une approche différente (fermer le WebBrowser et utiliser Linking.openURL() depuis l'app) ?
+
+CODE :
+- Deep link configuré : prefixes: ['bolibana://', ...]
+- Écoute des deep links avec Linking.addEventListener('url', ...)
+- WebBrowser ouvert avec WebBrowser.openBrowserAsync()
+
+LOGS SERVEUR :
+Le serveur génère correctement la page HTML (13688 caractères) avec le deep link, mais la redirection ne se produit pas côté client.
+
+User-Agent : Android 10 (Chrome Mobile)
+
+Merci pour votre aide !

@@ -41,28 +41,6 @@ const CartScreen: React.FC = () => {
   }, [dispatch]);
 
   useEffect(() => {
-    if (!__DEV__) return;
-    const unitInfo = (items || []).map((item) => {
-      const specs = item?.product?.specifications || {};
-      const unitType = specs.unit_type || specs.unit || null;
-      const soldByWeight = specs.sold_by_weight;
-      const isWeighted = soldByWeight === true ||
-        (typeof soldByWeight === 'string' && ['true', '1', 'yes'].includes(soldByWeight.toLowerCase())) ||
-        (typeof unitType === 'string' && ['weight', 'kg', 'kilogram', 'g', 'gram', 'grams'].includes(unitType.toLowerCase()));
-      return {
-        itemId: item?.id,
-        productId: item?.product?.id,
-        productTitle: item?.product?.title,
-        quantity: item?.quantity,
-        unitType,
-        sold_by_weight: soldByWeight,
-        isWeighted,
-      };
-    });
-    console.log('[CartScreen] 🛒 Panier - unités et quantités:', unitInfo);
-  }, [items]);
-
-  useEffect(() => {
     const hasMissingSpecs = (items || []).some(
       (item) => !item.product?.specifications || Object.keys(item.product.specifications).length === 0
     );
@@ -175,9 +153,6 @@ const CartScreen: React.FC = () => {
     } catch (error: any) {
       // Si l'article n'existe plus, recharger le panier
       if (error?.response?.status === 404 || error?.message?.includes('introuvable') || error?.message?.includes('Pas trouvé')) {
-        if (__DEV__) {
-          console.warn('[CartScreen] ⚠️ Article introuvable, rechargement du panier:', itemId);
-        }
         // Recharger le panier pour synchroniser avec le serveur
         dispatch(fetchCart());
         Alert.alert('Erreur', 'L\'article a été modifié. Le panier a été mis à jour.');
@@ -760,48 +735,48 @@ const styles = StyleSheet.create({
   },
   footer: {
     backgroundColor: '#FFFFFF',
-    padding: 16,
+    padding: 10,
     borderTopWidth: 1,
     borderTopColor: '#E5E7EB',
   },
   summaryContainer: {
-    marginBottom: 16,
+    marginBottom: 10,
   },
   summaryRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 8,
+    marginBottom: 4,
   },
   summaryLabel: {
-    fontSize: 16,
+    fontSize: 14,
     fontWeight: '500',
     color: COLORS.TEXT,
   },
   summaryValue: {
-    fontSize: 16,
+    fontSize: 14,
     fontWeight: '600',
     color: COLORS.TEXT,
   },
   totalPrice: {
-    fontSize: 24,
+    fontSize: 20,
     fontWeight: 'bold',
     color: COLORS.PRIMARY,
   },
   checkoutButton: {
     backgroundColor: COLORS.PRIMARY,
     borderRadius: 8,
-    padding: 16,
+    padding: 12,
     alignItems: 'center',
     justifyContent: 'center',
-    minHeight: 50,
+    minHeight: 44,
   },
   checkoutButtonDisabled: {
     opacity: 0.6,
   },
   checkoutButtonText: {
     color: '#FFFFFF',
-    fontSize: 18,
+    fontSize: 16,
     fontWeight: '600',
   },
   clearButton: {

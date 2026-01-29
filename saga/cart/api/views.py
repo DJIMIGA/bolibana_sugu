@@ -951,43 +951,45 @@ class CartViewSet(viewsets.ModelViewSet):
             order.stripe_session_id = session.id
             order.stripe_payment_status = session.payment_status
             
-            # Mettre à jour le statut et is_paid en priorité
+            # Mettre à jour le statut et is_paid si nécessaire
             old_status = order.status
-            logger.info("Mise à jour du statut pour la commande %s (ancien statut: %s)", order.id, old_status)
-            
             if not order.is_paid:
-                logger.info("Exécution de mark_as_paid() pour la commande %s", order.id)
+                logger.info("Marquage de la commande %s comme payée...", order.id)
                 order.mark_as_paid()
-                # Re-vérifier après sauvegarde
-                order.refresh_from_db()
-                logger.info("Après mark_as_paid() et refresh: status=%s, is_paid=%s", order.status, order.is_paid)
+                logger.info(
+                    "Payment success - Commande %s mise à jour: status=%s→%s is_paid=%s→%s",
+                    order.id,
+                    old_status,
+                    order.status,
+                    False,
+                    order.is_paid
+                )
             else:
-                logger.info("La commande %s est déjà is_paid=True. Vérification du statut...", order.id)
+                logger.info("La commande %s était déjà marquée comme payée (is_paid=True)", order.id)
+                # Si déjà payé, s'assurer que le statut est CONFIRMED
                 if order.status == Order.DRAFT:
                     order.status = Order.CONFIRMED
-                    logger.info("Forçage du statut à CONFIRMED pour la commande %s", order.id)
-                
-                order.stripe_session_id = session.id
-                order.stripe_payment_status = session.payment_status
-                order.save(update_fields=['status', 'stripe_session_id', 'stripe_payment_status', 'is_paid'])
-            
-            # SÉCURITÉ : S'assurer que le statut est CONFIRMED si on est ici (paiement Stripe OK)
-            if order.status == Order.DRAFT:
-                order.status = Order.CONFIRMED
-                order.save(update_fields=['status'])
-                logger.warning("Statut forcé à CONFIRMED en fin de bloc pour commande %s", order.id)
+                    order.save(update_fields=['status', 'stripe_session_id', 'stripe_payment_status'])
+                    logger.info(
+                        "Payment success - Commande %s statut mis à jour: %s→%s",
+                        order.id,
+                        old_status,
+                        order.status
+                    )
+                else:
+                    order.save(update_fields=['stripe_session_id', 'stripe_payment_status'])
 
-            # Synchroniser vers B2B après paiement réussi (opération potentiellement longue)
+            # Synchroniser vers B2B après paiement réussi
             logger.info("Début synchronisation B2B pour commande %s", order.id)
-            try:
-                self._sync_order_to_b2b(order)
-            except Exception as sync_err:
-                logger.error("Erreur durant la sync B2B (ignorée pour ne pas bloquer le succès): %s", str(sync_err))
+            self._sync_order_to_b2b(order)
             
             # Vider le panier de l'utilisateur après un paiement réussi.
-            logger.info("Vidage du panier pour l'utilisateur %s...", order.user.id)
+            # Les articles ont déjà été transformés en commandes, donc le panier doit être vidé.
+            # On ne vérifie plus s'il reste d'autres commandes DRAFT car d'anciennes commandes
+            # pourraient bloquer le vidage du panier.
+            logger.info("Paiement réussi pour la commande %s. Vidage du panier pour l'utilisateur %s (ID: %s)...", order.id, order.user, order.user.id)
             self._clear_user_cart(order.user)
-            logger.info("Checkout Stripe - Panier vidé avec succès")
+            logger.info("Checkout Stripe - Panier vidé avec succès pour utilisateur %s", order.user.id)
             
             logger.info("--- FIN STRIPE PAYMENT SUCCESS DEBUG ---")
 
@@ -1026,6 +1028,7 @@ class CartViewSet(viewsets.ModelViewSet):
                 }
                 logger.info("Payment success - Context envoyé au template: %s", context)
                 return render(request, 'cart/payment_success_mobile.html', context, status=200)
+r
             
             # Sinon, retourner JSON pour les appels API
             return Response({
