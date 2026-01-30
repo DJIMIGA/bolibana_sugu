@@ -1444,8 +1444,11 @@ def my_orders(request):
         orders = orders.filter(status=status_filter)
         print(f"[my_orders] Filtre appliqué: {status_filter} - Commandes après filtre: {orders.count()}")
     
-    # Trier par statut puis par date
-    orders = orders.order_by('status_order', '-created_at')
+    # Trier selon le filtre: toutes par date décroissante, sinon par date
+    if status_filter == 'all':
+        orders = orders.order_by('-created_at')
+    else:
+        orders = orders.order_by('status_order', '-created_at')
     
     # Debug: afficher les commandes récupérées
     orders_list = list(orders)
