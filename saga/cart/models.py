@@ -290,11 +290,12 @@ class Order(models.Model):
 
     def _log_time_event(self, event_label):
         logger = logging.getLogger('saga.cart')
+        default_tz = timezone.get_default_timezone()
         def _format_dt(value):
             if not value:
                 return None
             try:
-                local_value = timezone.localtime(value)
+                local_value = timezone.localtime(value, default_tz)
             except Exception:
                 local_value = value
             return {

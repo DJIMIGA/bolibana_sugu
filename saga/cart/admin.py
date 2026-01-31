@@ -67,15 +67,21 @@ class OrderAdmin(admin.ModelAdmin):
 
     @admin.display(description="Créée (local)")
     def created_at_local(self, obj):
-        return timezone.localtime(obj.created_at) if obj.created_at else None
+        if not obj.created_at:
+            return None
+        return timezone.localtime(obj.created_at, timezone.get_default_timezone())
 
     @admin.display(description="Modifiée (local)")
     def updated_at_local(self, obj):
-        return timezone.localtime(obj.updated_at) if obj.updated_at else None
+        if not obj.updated_at:
+            return None
+        return timezone.localtime(obj.updated_at, timezone.get_default_timezone())
 
     @admin.display(description="Payée (local)")
     def paid_at_local(self, obj):
-        return timezone.localtime(obj.paid_at) if obj.paid_at else None
+        if not obj.paid_at:
+            return None
+        return timezone.localtime(obj.paid_at, timezone.get_default_timezone())
 
 # Enregistrement avec admin_site
 admin_site.register(Cart, CartAdmin)
