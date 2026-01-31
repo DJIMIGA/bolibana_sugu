@@ -1,4 +1,5 @@
 from django.contrib import admin
+from django.utils import timezone
 from accounts.admin import admin_site
 from .models import Cart, CartItem, Order, OrderItem
 
@@ -25,7 +26,16 @@ class OrderItemInline(admin.TabularInline):
     readonly_fields = ('price',)
 
 class OrderAdmin(admin.ModelAdmin):
-    list_display = ('order_number', 'user', 'status', 'total', 'created_at')
+    list_display = (
+        'order_number',
+        'user',
+        'status',
+        'total',
+        'created_at',
+        'created_at_local',
+        'updated_at_local',
+        'paid_at_local',
+    )
     list_filter = ('status', 'payment_method', 'created_at')
     search_fields = ('order_number', 'user__email')
     readonly_fields = ('order_number', 'created_at', 'updated_at', 'paid_at', 'shipped_at', 'delivered_at')
@@ -54,6 +64,18 @@ class OrderAdmin(admin.ModelAdmin):
         return super().get_queryset(request).select_related(
             'user', 'shipping_address', 'shipping_method'
         )
+
+    @admin.display(description="Créée (local)")
+    def created_at_local(self, obj):
+        return timezone.localtime(obj.created_at) if obj.created_at else None
+
+    @admin.display(description="Modifiée (local)")
+    def updated_at_local(self, obj):
+        return timezone.localtime(obj.updated_at) if obj.updated_at else None
+
+    @admin.display(description="Payée (local)")
+    def paid_at_local(self, obj):
+        return timezone.localtime(obj.paid_at) if obj.paid_at else None
 
 # Enregistrement avec admin_site
 admin_site.register(Cart, CartAdmin)

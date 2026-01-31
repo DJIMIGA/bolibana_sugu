@@ -90,6 +90,9 @@ if DATABASE_URL and not DEBUG:
             ssl_require=True
         )
     }
+    # Forcer la timezone de la session DB pour éviter les décalages
+    DATABASES['default'].setdefault('OPTIONS', {})
+    DATABASES['default']['OPTIONS'].setdefault('options', '-c timezone=UTC')
 else:
     # Configuration pour le développement local
     DATABASES = {
@@ -108,6 +111,8 @@ else:
             'ATOMIC_REQUESTS': True,
         }
     }
+    # Forcer la timezone de la session DB pour éviter les décalages
+    DATABASES['default']['OPTIONS'].setdefault('options', '-c timezone=UTC')
 
 # Vérification de la connexion à la base de données
 try:

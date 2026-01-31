@@ -1,3 +1,5 @@
+import logging
+
 from django.contrib.auth import get_user_model
 from django.db import models
 from django.db.models import Sum, F
@@ -286,7 +288,36 @@ class Order(models.Model):
     def __str__(self):
         return f"Commande #{self.order_number} - {self.get_status_display()}"
 
+    def _log_time_event(self, event_label):
+        logger = logging.getLogger('saga.cart')
+        def _format_dt(value):
+            if not value:
+                return None
+            try:
+                local_value = timezone.localtime(value)
+            except Exception:
+                local_value = value
+            return {
+                'utc': value.isoformat(),
+                'local': local_value.isoformat(),
+            }
+
+        logger.info(
+            "[order_time] event=%s order_id=%s order_number=%s tz=%s use_tz=%s created_at=%s updated_at=%s paid_at=%s now=%s now_local=%s",
+            event_label,
+            self.id,
+            self.order_number,
+            settings.TIME_ZONE,
+            settings.USE_TZ,
+            _format_dt(self.created_at),
+            _format_dt(self.updated_at),
+            _format_dt(self.paid_at),
+            timezone.now().isoformat(),
+            timezone.localtime(timezone.now()).isoformat(),
+        )
+
     def save(self, *args, **kwargs):
+        is_new = self.pk is None
         if not self.order_number:
             # Sauvegarder d'abord pour avoir un ID
             super().save(*args, **kwargs)
@@ -295,6 +326,8 @@ class Order(models.Model):
             # Sauvegarder à nouveau avec le numéro de commande
             kwargs['force_insert'] = False
             super().save(*args, **kwargs)
+            if is_new:
+                self._log_time_event('order_created')
         else:
             super().save(*args, **kwargs)
 
@@ -312,6 +345,7 @@ class Order(models.Model):
         self.paid_at = timezone.now()
         self.status = self.CONFIRMED
         self.save()
+        self._log_time_event('order_paid')
 
     def mark_as_shipped(self, tracking_number=None):
         """Marque la commande comme expédiée"""
