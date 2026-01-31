@@ -69,27 +69,6 @@ const OrdersScreen: React.FC = () => {
         ? raw.results
         : [];
       
-      // Log détaillé des commandes avec leur statut
-      console.log('[OrdersScreen] 📋 Commandes chargées:', {
-        total: list.length,
-        orders: list.map(order => ({
-          id: order.id,
-          order_number: order.order_number,
-          status: order.status,
-          status_label: order.status_label,
-          total: order.total,
-          created_at: order.created_at,
-          items_count: order.items?.length || 0,
-        })),
-      });
-      
-      // Log répartition par statut
-      const statusCounts = list.reduce((acc, order) => {
-        acc[order.status] = (acc[order.status] || 0) + 1;
-        return acc;
-      }, {} as Record<string, number>);
-      console.log('[OrdersScreen] 📊 Répartition par statut:', statusCounts);
-      
       setOrders(list);
       return list;
     } catch (error: any) {
@@ -121,7 +100,6 @@ const OrdersScreen: React.FC = () => {
       const closeBrowserTimer = setTimeout(async () => {
         try {
           await WebBrowser.dismissBrowser();
-          console.log('[OrdersScreen] WebBrowser.dismissBrowser() appelé (écran Commandes focus)');
         } catch {
           // Ignorer si déjà fermé ou non supporté
         }
@@ -164,7 +142,6 @@ const OrdersScreen: React.FC = () => {
       );
 
       if (match && match.status !== 'draft') {
-        console.log('[OrdersScreen] ✅ Statut mis à jour pour la commande:', match.order_number, match.status);
         if (intervalId) {
           clearInterval(intervalId);
           intervalId = null;
@@ -201,20 +178,11 @@ const OrdersScreen: React.FC = () => {
       filtered = orders.filter(order => order.status === selectedFilter);
     }
     
-    // Log des commandes filtrées
-    console.log('[OrdersScreen] 🔍 Filtrage commandes:', {
-      filter: selectedFilter,
-      total_orders: orders.length,
-      filtered_count: filtered.length,
-      filtered_orders: filtered.map(order => ({
-        id: order.id,
-        order_number: order.order_number,
-        status: order.status,
-        status_label: order.status_label,
-      })),
-    });
-    
-    return filtered;
+    const sorted = [...filtered].sort(
+      (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+    );
+
+    return sorted;
   }, [orders, selectedFilter]);
 
   return (

@@ -322,6 +322,20 @@ class CartViewSet(viewsets.ModelViewSet):
                             {'error': f'La quantité minimale est de 0.5 {unit}'},
                             status=status.HTTP_400_BAD_REQUEST
                         )
+                else:
+                    # Produits classiques: vérifier le stock total (variante ou produit)
+                    if variant:
+                        if variant.stock < float(new_quantity):
+                            return Response(
+                                {'error': f'Stock insuffisant pour cette variante. Disponible: {variant.stock}'},
+                                status=status.HTTP_400_BAD_REQUEST
+                            )
+                    else:
+                        if product.stock < float(new_quantity):
+                            return Response(
+                                {'error': f'Stock insuffisant. Disponible: {product.stock}'},
+                                status=status.HTTP_400_BAD_REQUEST
+                            )
             cart_item.quantity = new_quantity
             cart_item.save()
         else:

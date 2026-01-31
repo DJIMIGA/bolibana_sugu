@@ -202,8 +202,20 @@ class ErrorService {
   }
 
   handleApiError(error: any): ApiError {
-    const { type, severity } = this.classifyError(error);
+    const { type: initialType, severity: initialSeverity } = this.classifyError(error);
     const message = this.getUserMessage(error);
+    let type = initialType;
+    let severity = initialSeverity;
+    const url = error instanceof AxiosError ? error.config?.url : undefined;
+    const isStockInsufficient =
+      typeof message === 'string' && message.toLowerCase().includes('stock insuffisant');
+    const isCheckoutEndpoint =
+      typeof url === 'string' && url.includes('/cart/checkout/');
+    if (isStockInsufficient && isCheckoutEndpoint) {
+      // Cas attendu: stock insuffisant lors du checkout, pas une erreur critique
+      type = ErrorType.VALIDATION;
+      severity = ErrorSeverity.LOW;
+    }
     const isOfflineBlocked = error.isOfflineBlocked || error.code === 'OFFLINE_MODE_FORCED' || error.message === 'OFFLINE_MODE_FORCED';
 
     const apiError: ApiError = {
@@ -217,8 +229,8 @@ class ErrorService {
     // Préparer les détails pour le log (inclure l'URL pour détecter les endpoints B2B)
     const logDetails: any = {
       ...(apiError.details || {}),
-      url: error instanceof AxiosError ? error.config?.url : undefined,
-      config: error instanceof AxiosError ? { url: error.config?.url } : undefined,
+      url,
+      config: error instanceof AxiosError ? { url } : undefined,
     };
 
     // Logging

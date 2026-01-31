@@ -156,64 +156,24 @@ const CheckoutScreen: React.FC = () => {
       if (unit === 'g') {
         const discountPricePerG = specs.discount_price_per_g;
         if (discountPricePerG && discountPricePerG > 0) {
-          if (__DEV__) {
-            console.log('[CheckoutScreen] ⚖️ Prix unitaire (promo au g):', {
-              productId: product.id,
-              productTitle: product.title,
-              discountPricePerG,
-              quantity: item.quantity,
-            });
-          }
           return discountPricePerG;
         }
         const pricePerG = specs.price_per_g;
         if (pricePerG) {
-          if (__DEV__) {
-            console.log('[CheckoutScreen] ⚖️ Prix unitaire (normal au g):', {
-              productId: product.id,
-              productTitle: product.title,
-              pricePerG,
-              quantity: item.quantity,
-            });
-          }
           return pricePerG;
         }
       }
       // Vérifier d'abord s'il y a un prix promotionnel au kg
       const discountPricePerKg = specs.discount_price_per_kg;
       if (discountPricePerKg && discountPricePerKg > 0) {
-        if (__DEV__) {
-          console.log('[CheckoutScreen] ⚖️ Prix unitaire (promo au kg):', {
-            productId: product.id,
-            productTitle: product.title,
-            discountPricePerKg,
-            quantity: item.quantity,
-          });
-        }
         return discountPricePerKg;
       }
       // Sinon, utiliser le prix normal au kg
       const pricePerKg = specs.price_per_kg;
       if (pricePerKg) {
-        if (__DEV__) {
-          console.log('[CheckoutScreen] ⚖️ Prix unitaire (normal au kg):', {
-            productId: product.id,
-            productTitle: product.title,
-            pricePerKg,
-            quantity: item.quantity,
-          });
-        }
         return pricePerKg;
       }
       // Fallback sur le prix du produit si price_per_kg/g n'est pas défini
-      if (__DEV__) {
-        console.log('[CheckoutScreen] ⚖️ Prix unitaire (fallback):', {
-          productId: product.id,
-          productTitle: product.title,
-          fallbackPrice: product.discount_price || product.price || 0,
-          quantity: item.quantity,
-        });
-      }
       return product.discount_price || product.price || 0;
     }
     // Pour les produits normaux, utiliser discount_price ou price
@@ -400,16 +360,22 @@ const CheckoutScreen: React.FC = () => {
     }
   };
 
+  const refreshCartUntilEmpty = async (maxAttempts = 3, baseDelayMs = 800) => {
+    for (let attempt = 0; attempt < maxAttempts; attempt += 1) {
+      try {
+        const cart = await dispatch(fetchCart()).unwrap();
+        const itemsCount = Array.isArray(cart?.items) ? cart.items.length : 0;
+        if (itemsCount === 0) {
+          return;
+        }
+      } catch {
+        // Si la synchro échoue, on ne bloque pas le flux utilisateur
+      }
+      await new Promise(resolve => setTimeout(resolve, baseDelayMs * (attempt + 1)));
+    }
+  };
+
   const handlePlaceOrder = async () => {
-    console.log('[CheckoutScreen] 🧾 Finalisation: début', {
-      isAuthenticated,
-      sessionExpired,
-      paymentMethod,
-      selectedAddressId: selectedAddress?.id,
-      selectedDeliveryMethodId,
-      deliveryGroupsCount: deliveryGroups.length,
-      itemsCount: cartItemsSafe.length,
-    });
     // Vérifier l'authentification avant de procéder
     if (!isAuthenticated) {
       Alert.alert(
@@ -443,9 +409,6 @@ const CheckoutScreen: React.FC = () => {
       // Re-synchroniser le panier avant de passer la commande
       const refreshedCart = await dispatch(fetchCart()).unwrap();
       const refreshedItems = refreshedCart?.items || [];
-      console.log('[CheckoutScreen] 🛒 Panier re-synchronisé', {
-        refreshedItemsCount: refreshedItems.length,
-      });
       if (!refreshedItems.length) {
         Alert.alert('Panier vide', 'Votre panier est vide. Veuillez ajouter des articles avant de commander.', [
           { text: 'OK', onPress: () => navigation.goBack() },
@@ -462,12 +425,6 @@ const CheckoutScreen: React.FC = () => {
         product_type: 'all',
         shipping_method_id: shippingMethodId,
       };
-      console.log('[CheckoutScreen] 📦 Payload checkout', {
-        paymentMethod,
-        shippingAddressId: selectedAddress.id,
-        shippingMethodId,
-        deliveryIntersection: deliveryMethodsInfo.isIntersection,
-      });
 
       const response = await apiClient.post(`${API_ENDPOINTS.CART}checkout/`, {
         ...payload,
@@ -476,14 +433,6 @@ const CheckoutScreen: React.FC = () => {
       const data = response.data || {};
       const orders = Array.isArray(data.orders) ? data.orders : [];
       const warnings = Array.isArray(data.warnings) ? data.warnings : [];
-      console.log('[CheckoutScreen] ✅ Réponse checkout', {
-        hasOrdersArray: Array.isArray(data.orders),
-        ordersCount: orders.length,
-        warningsCount: warnings.length,
-        paymentMethod: data.payment_method,
-        status: data.status,
-        checkoutUrl: !!data.checkout_url,
-      });
 
       if (warnings.length > 0) {
         Alert.alert('Info livraison', warnings.join('\n'));
@@ -509,25 +458,22 @@ const CheckoutScreen: React.FC = () => {
           .filter((url: string | undefined) => !!url);
 
         for (const url of checkoutUrls) {
-          console.log('[CheckoutScreen] Ouverture du WebBrowser (multiple commandes):', url);
           const result = await WebBrowser.openBrowserAsync(url, {
             presentationStyle: WebBrowser.WebBrowserPresentationStyle.FULL_SCREEN,
             controlsColor: COLORS.PRIMARY,
           });
           
-          console.log('[CheckoutScreen] WebBrowser retour - result.type:', result.type);
           
           // Fermer explicitement le WebBrowser s'il est encore ouvert (cas result.type === 'opened')
           try {
             await WebBrowser.dismissBrowser();
-            console.log('[CheckoutScreen] WebBrowser.dismissBrowser() appelé (multiple)');
           } catch (e) {
-            console.log('[CheckoutScreen] dismissBrowser (déjà fermé):', (e as Error).message);
+            // ignore
           }
         }
 
-        // Rafraîchir le panier et naviguer après paiement
-        await dispatch(fetchCart());
+        // Rafraîchir le panier (retry pour laisser Stripe vider côté serveur)
+        await refreshCartUntilEmpty();
         (navigation as any).navigate('Profile', { screen: 'Orders' });
         return;
       }
@@ -548,36 +494,33 @@ const CheckoutScreen: React.FC = () => {
       }
 
       if (checkout_url) {
-        console.log('[CheckoutScreen] Ouverture du WebBrowser pour paiement:', checkout_url);
         const result = await WebBrowser.openBrowserAsync(checkout_url, {
           presentationStyle: WebBrowser.WebBrowserPresentationStyle.FULL_SCREEN,
           controlsColor: COLORS.PRIMARY,
         });
         
-        console.log('[CheckoutScreen] ========== WebBrowser retour ==========');
-        console.log('[CheckoutScreen] result.type:', result.type, '(dismiss = fermé par l\'utilisateur, opened = ouvert / résolu sans fermeture)');
         
         // Fermer explicitement le WebBrowser s'il est encore ouvert (cas result.type === 'opened')
         try {
           await WebBrowser.dismissBrowser();
-          console.log('[CheckoutScreen] WebBrowser.dismissBrowser() appelé - navigateur fermé');
         } catch (e) {
-          console.log('[CheckoutScreen] dismissBrowser (déjà fermé ou non ouvert):', (e as Error).message);
+          // ignore
         }
 
-        // Rafraîchir le panier et naviguer vers les commandes
-        await dispatch(fetchCart());
+        // Rafraîchir le panier (retry pour laisser Stripe vider côté serveur)
+        await refreshCartUntilEmpty();
         (navigation as any).navigate('Profile', { screen: 'Orders' });
       }
     } catch (error: any) {
-      const status = error?.response?.status;
       const responseData = error?.response?.data;
-      const msg = responseData?.error || responseData?.detail || 'Une erreur est survenue lors de la commande';
-      console.log('[CheckoutScreen] ❌ Erreur checkout', {
-        status,
-        message: error?.message,
-        responseData,
-      });
+      const details = error?.details || responseData;
+      const msg =
+        error?.message ||
+        details?.error ||
+        details?.detail ||
+        details?.message ||
+        'Une erreur est survenue lors de la commande';
+
       if (isStockInsufficientError(msg)) {
         // Re-synchroniser le panier et revenir à l'écran panier
         dispatch(fetchCart());
