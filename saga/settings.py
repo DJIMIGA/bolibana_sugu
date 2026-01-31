@@ -655,6 +655,7 @@ MIDDLEWARE = [
     'whitenoise.middleware.WhiteNoiseMiddleware',
     'saga.middleware.SecurityMiddleware',  # Middleware de sécurité personnalisé
     'django.contrib.sessions.middleware.SessionMiddleware',
+    'saga.middleware.TimezoneMiddleware',
     'core.middleware.CookieConsentMiddleware',  # Middleware pour le consentement cookies
     'core.middleware.AnalyticsMiddleware',  # Middleware pour le tracking automatique
     'corsheaders.middleware.CorsMiddleware',
@@ -729,7 +730,7 @@ AUTHENTICATION_BACKENDS = [
 
 LANGUAGE_CODE = 'fr-fr'
 
-TIME_ZONE = 'Africa/Bamako'
+TIME_ZONE = os.getenv('TIME_ZONE', 'Africa/Lagos')
 
 USE_I18N = True
 

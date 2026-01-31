@@ -16,6 +16,17 @@ from accounts.models import AllowedIP
 
 logger = logging.getLogger(__name__)
 
+class TimezoneMiddleware:
+    def __init__(self, get_response):
+        self.get_response = get_response
+
+    def __call__(self, request):
+        timezone.activate(timezone.get_default_timezone())
+        try:
+            return self.get_response(request)
+        finally:
+            timezone.deactivate()
+
 class SecurityMiddleware:
     """Middleware de sécurité pour la protection contre les attaques"""
     
