@@ -141,7 +141,14 @@ export const addToCart = createAsyncThunk(
         return null; // On attendra la synchro
       }
     } catch (error: any) {
-      return rejectWithValue(error.response?.data?.error || 'Erreur lors de l\'ajout');
+      const details = error?.details || error?.response?.data;
+      const errorMessage =
+        error?.message ||
+        details?.error ||
+        details?.detail ||
+        details?.message ||
+        'Erreur lors de l\'ajout';
+      return rejectWithValue(errorMessage);
     }
   }
 );

@@ -1,4 +1,5 @@
 from django.contrib import admin
+from django.db.models.functions import Coalesce
 from django.utils import timezone
 from accounts.admin import admin_site
 from .models import Cart, CartItem, Order, OrderItem
@@ -31,12 +32,13 @@ class OrderAdmin(admin.ModelAdmin):
         'user',
         'status',
         'total',
+        'order_time_local',
         'created_at',
         'created_at_local',
         'updated_at_local',
         'paid_at_local',
     )
-    list_filter = ('status', 'payment_method', 'created_at')
+    list_filter = ('status', 'payment_method', 'created_at', 'updated_at', 'paid_at')
     search_fields = ('order_number', 'user__email')
     readonly_fields = ('order_number', 'created_at', 'updated_at', 'paid_at', 'shipped_at', 'delivered_at')
     inlines = [OrderItemInline]
@@ -63,6 +65,8 @@ class OrderAdmin(admin.ModelAdmin):
     def get_queryset(self, request):
         return super().get_queryset(request).select_related(
             'user', 'shipping_address', 'shipping_method'
+        ).annotate(
+            order_time_ref=Coalesce('paid_at', 'updated_at', 'created_at')
         )
 
     @admin.display(description="Créée (local)")
@@ -82,6 +86,13 @@ class OrderAdmin(admin.ModelAdmin):
         if not obj.paid_at:
             return None
         return timezone.localtime(obj.paid_at, timezone.get_default_timezone())
+
+    @admin.display(description="Heure réelle (local)")
+    def order_time_local(self, obj):
+        reference_time = getattr(obj, 'order_time_ref', None) or obj.paid_at or obj.updated_at or obj.created_at
+        if not reference_time:
+            return None
+        return timezone.localtime(reference_time, timezone.get_default_timezone())
 
 # Enregistrement avec admin_site
 admin_site.register(Cart, CartAdmin)

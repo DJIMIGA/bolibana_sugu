@@ -209,10 +209,10 @@ class ErrorService {
     const url = error instanceof AxiosError ? error.config?.url : undefined;
     const isStockInsufficient =
       typeof message === 'string' && message.toLowerCase().includes('stock insuffisant');
-    const isCheckoutEndpoint =
-      typeof url === 'string' && url.includes('/cart/checkout/');
-    if (isStockInsufficient && isCheckoutEndpoint) {
-      // Cas attendu: stock insuffisant lors du checkout, pas une erreur critique
+    const isCartEndpoint =
+      typeof url === 'string' && (url.includes('/cart/checkout/') || url.includes('/cart/'));
+    if (isStockInsufficient && isCartEndpoint) {
+      // Cas attendu: stock insuffisant lors d'actions panier/checkout, pas une erreur critique
       type = ErrorType.VALIDATION;
       severity = ErrorSeverity.LOW;
     }

@@ -928,6 +928,12 @@ class ProductSyncService:
             # Pour les produits au poids, le stock est en poids (g, kg, etc.)
             # On stocke le poids disponible dans le champ weight
             weight_available = to_number(stock_value)
+            if weight_available is not None and weight_available < 0:
+                logger.warning(
+                    f"[SYNC B2B] Stock poids négatif reçu pour produit {external_id}: "
+                    f"{weight_available}. Valeur normalisée à 0."
+                )
+                weight_available = 0
             
             # Convertir en kg si nécessaire (pour uniformiser)
             if weight_unit and weight_unit.lower() == 'g':
@@ -938,6 +944,12 @@ class ProductSyncService:
         else:
             # Produit normal vendu à l'unité
             stock_units = to_number(stock_value, is_integer=True)
+            if stock_units is not None and stock_units < 0:
+                logger.warning(
+                    f"[SYNC B2B] Stock négatif reçu pour produit {external_id}: "
+                    f"{stock_units}. Valeur normalisée à 0."
+                )
+                stock_units = 0
 
         # Si le produit est au poids ET n'a pas de stock disponible, alors c'est un produit Salam
         # (IMPORTANT: weight_available est calculé plus haut, pour éviter "variable not associated with a value")
