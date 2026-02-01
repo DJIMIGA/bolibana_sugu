@@ -131,8 +131,8 @@ export interface Order {
   id: number;
   order_number: string;
   user: number;
-  status: 'pending' | 'confirmed' | 'processing' | 'shipped' | 'delivered' | 'cancelled' | 'refunded';
-  payment_method: 'cash_on_delivery' | 'online_payment' | 'mobile_money';
+  status: 'draft' | 'confirmed' | 'shipped' | 'delivered' | 'cancelled';
+  payment_method: 'cash_on_delivery' | 'online_payment' | 'mobile_money' | 'orange_money' | 'stripe';
   is_paid: boolean;
   paid_at?: string;
   shipping_address: ShippingAddress;

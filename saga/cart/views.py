@@ -1467,6 +1467,26 @@ def my_orders(request):
     return render(request, 'cart/my_orders.html', context)
 
 
+@login_required
+def order_detail(request, order_id):
+    order = Order.objects.select_related(
+        'user', 'shipping_address', 'shipping_method'
+    ).prefetch_related(
+        'items__product__images',
+        'items__colors',
+        'items__sizes',
+        'status_history'
+    ).filter(id=order_id, user=request.user).first()
+
+    if not order:
+        return redirect('cart:my_orders')
+
+    context = {
+        'order': order,
+    }
+    return render(request, 'cart/order_detail.html', context)
+
+
 @csrf_exempt
 def stripe_webhook(request):
     debug_log("\n" + "="*80)
@@ -2410,16 +2430,49 @@ def orange_money_payment(request):
         shipping_cost = 0  # Pour l'instant, pas de frais de livraison pour Orange Money
         total_with_shipping = total_amount + shipping_cost
         
-        # Créer une commande temporaire
-        order = Order.objects.create(
-            user=request.user,
-            shipping_address=shipping_address,
-            subtotal=total_amount,
-            shipping_cost=shipping_cost,
-            total=total_with_shipping,
-            payment_method=Order.MOBILE_MONEY,
-            status=Order.DRAFT
+        metadata = {
+            'cart_id': cart.id,
+            'product_type': product_type,
+            'payment_type': payment_type,
+        }
+        order = (
+            Order.objects.filter(
+                user=request.user,
+                status=Order.DRAFT,
+                is_paid=False,
+                payment_method=Order.MOBILE_MONEY,
+                metadata__cart_id=cart.id,
+            )
+            .order_by('-created_at')
+            .first()
         )
+        if order:
+            order.shipping_address = shipping_address
+            order.subtotal = total_amount
+            order.shipping_cost = shipping_cost
+            order.total = total_with_shipping
+            order.metadata = metadata
+            order.save(update_fields=[
+                'shipping_address',
+                'subtotal',
+                'shipping_cost',
+                'total',
+                'metadata',
+                'updated_at',
+            ])
+            order.items.all().delete()
+        else:
+            # Créer une commande temporaire
+            order = Order.objects.create(
+                user=request.user,
+                shipping_address=shipping_address,
+                subtotal=total_amount,
+                shipping_cost=shipping_cost,
+                total=total_with_shipping,
+                payment_method=Order.MOBILE_MONEY,
+                status=Order.DRAFT,
+                metadata=metadata
+            )
         
         # Ajouter les items à la commande
         for cart_item in cart_items:

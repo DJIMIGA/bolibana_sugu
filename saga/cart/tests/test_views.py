@@ -9,7 +9,7 @@ class CartViewsTest(TestCase):
         # Créer un utilisateur
         User = get_user_model()
         self.user = User.objects.create_user(email='test@example.com', password='12345')
-        self.client.login(email='test@example.com', password='12345')
+        self.client.force_login(self.user)
         
         # Créer une catégorie
         self.category = Category.objects.create(name='Test Category', slug='test-category')

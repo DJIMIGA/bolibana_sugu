@@ -162,7 +162,10 @@ def migrate_anonymous_cart(sender, request, user, **kwargs):
                         old_quantity = existing_item.quantity
                         existing_item.quantity += anonymous_item.quantity
                         existing_item.save()
-                        print(f"  ✅ Quantité mise à jour pour {anonymous_item.product.title}: {old_quantity} + {anonymous_item.quantity} = {existing_item.quantity}")
+                        print(
+                            f"  Quantite mise a jour pour {anonymous_item.product.title}: "
+                            f"{old_quantity} + {anonymous_item.quantity} = {existing_item.quantity}"
+                        )
                     else:
                         # Créer un nouvel item
                         new_item = CartItem.objects.create(
@@ -175,21 +178,26 @@ def migrate_anonymous_cart(sender, request, user, **kwargs):
                             new_item.colors.set(anonymous_item.colors.all())
                         if anonymous_item.sizes.exists():
                             new_item.sizes.set(anonymous_item.sizes.all())
-                        print(f"  ✅ Nouvel article ajouté: {anonymous_item.product.title} x{anonymous_item.quantity}")
+                        print(
+                            f"  Nouvel article ajoute: {anonymous_item.product.title} x{anonymous_item.quantity}"
+                        )
                     
                     migrated_items += 1
                 
                 # Supprimer le panier anonyme seulement si la migration a réussi
                 if migrated_items > 0:
                     anonymous_cart.delete()
-                    print(f"✅ Migration terminée: {migrated_items} articles migrés, panier anonyme supprimé")
+                    print(
+                        f"Migration terminee: {migrated_items} articles migres, "
+                        "panier anonyme supprime"
+                    )
                 else:
-                    print("⚠️ Aucun article migré, panier anonyme conservé")
+                    print("Aucun article migre, panier anonyme conserve")
             else:
-                print("ℹ️ Aucun panier anonyme à migrer")
+                print("Aucun panier anonyme a migrer")
                 
     except Exception as e:
         # Log l'erreur mais ne pas bloquer la connexion
-        print(f"❌ Erreur lors de la migration du panier: {str(e)}")
+        print(f"Erreur lors de la migration du panier: {str(e)}")
         import traceback
         print(traceback.format_exc())

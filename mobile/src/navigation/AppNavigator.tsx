@@ -28,6 +28,7 @@ import PriceCheckScreen from '../screens/PriceCheckScreen';
 import AddressesScreen from '../screens/AddressesScreen';
 import AddAddressScreen from '../screens/AddAddressScreen';
 import OrdersScreen from '../screens/OrdersScreen';
+import OrderDetailScreen from '../screens/OrderDetailScreen';
 import SettingsScreen from '../screens/SettingsScreen';
 
 const Stack = createStackNavigator();
@@ -90,6 +91,7 @@ const ProfileStack = () => (
     <Stack.Screen name="Addresses" component={AddressesScreen} />
     <Stack.Screen name="AddAddress" component={AddAddressScreen} />
     <Stack.Screen name="Orders" component={OrdersScreen} />
+    <Stack.Screen name="OrderDetail" component={OrderDetailScreen} />
     <Stack.Screen name="Settings" component={SettingsScreen} />
   </Stack.Navigator>
 );

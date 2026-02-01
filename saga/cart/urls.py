@@ -18,6 +18,7 @@ urlpatterns = [
     path('update-shipping/', views.update_shipping, name='update_shipping'),
     path('order-confirmation/<int:order_id>/', views.order_confirmation, name='order_confirmation'),
     path('my-orders/', views.my_orders, name='my_orders'),
+    path('order-detail/<int:order_id>/', views.order_detail, name='order_detail'),
     path('stripe/webhook/', views.stripe_webhook, name='stripe_webhook'),
     path('payment-success/', views.payment_success, name='payment_success'),
     path('order-success/<int:order_id>/', views.order_success, name='order_success'),

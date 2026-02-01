@@ -20,7 +20,7 @@ type OrderItemLite = {
   id: number;
   product_title: string;
   quantity: number;
-  price: string;
+  price: number;
   weight_unit?: string | null;
   is_weighted?: boolean;
 };
@@ -30,9 +30,27 @@ type OrderLite = {
   order_number: string;
   status: string;
   status_label: string;
-  total: string;
+  total: number;
   created_at: string;
   items: OrderItemLite[];
+};
+
+type OrderApiItem = {
+  id: number;
+  product?: { title?: string };
+  quantity: number;
+  price: number;
+  weight_unit?: string | null;
+  is_weighted?: boolean;
+};
+
+type OrderApi = {
+  id: number;
+  order_number: string;
+  status: string;
+  total: number;
+  created_at: string;
+  items: OrderApiItem[];
 };
 
 type FilterStatus = 'all' | 'draft' | 'confirmed' | 'shipped' | 'delivered' | 'cancelled';
@@ -56,18 +74,54 @@ const OrdersScreen: React.FC = () => {
   const pollingIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const isScreenFocusedRef = useRef(false);
 
+  const formatStatusLabel = (status: string) => {
+    switch (status) {
+      case 'draft':
+        return 'Brouillon';
+      case 'confirmed':
+        return 'Confirmée';
+      case 'shipped':
+        return 'Expédiée';
+      case 'delivered':
+        return 'Livrée';
+      case 'cancelled':
+        return 'Annulée';
+      default:
+        return status;
+    }
+  };
+
   const loadOrders = async (silent = false) => {
     try {
       if (!silent) {
         setIsLoading(true);
       }
-      const response = await apiClient.get(API_ENDPOINTS.ORDERS);
+      const response = await apiClient.get(API_ENDPOINTS.CART_ORDERS);
       const raw = response.data;
-      const list: OrderLite[] = Array.isArray(raw)
+      const apiOrders: OrderApi[] = Array.isArray(raw?.orders)
+        ? raw.orders
+        : Array.isArray(raw)
         ? raw
         : Array.isArray(raw?.results)
         ? raw.results
         : [];
+
+      const list: OrderLite[] = apiOrders.map((order) => ({
+        id: order.id,
+        order_number: order.order_number,
+        status: order.status,
+        status_label: formatStatusLabel(order.status),
+        total: order.total,
+        created_at: order.created_at,
+        items: (order.items || []).map((item) => ({
+          id: item.id,
+          product_title: item.product?.title || 'Produit',
+          quantity: item.quantity,
+          price: item.price,
+          weight_unit: item.weight_unit,
+          is_weighted: item.is_weighted,
+        })),
+      }));
       
       setOrders(list);
       return list;
@@ -245,7 +299,11 @@ const OrdersScreen: React.FC = () => {
         ) : (
           <View style={{ gap: 12 }}>
             {filteredOrders.map((order) => (
-              <View key={order.id} style={styles.orderCard}>
+              <TouchableOpacity
+                key={order.id}
+                style={styles.orderCard}
+                onPress={() => navigation.navigate('OrderDetail' as never, { orderId: order.id } as never)}
+              >
                 <View style={styles.orderHeader}>
                   <Text style={styles.orderNumber}>#{order.order_number}</Text>
                   <View style={styles.statusBadge}>
@@ -267,9 +325,9 @@ const OrdersScreen: React.FC = () => {
                 </View>
                 <View style={styles.totalRow}>
                   <Text style={styles.totalLabel}>Total</Text>
-                  <Text style={styles.totalValue}>{formatPrice(parseFloat(order.total))}</Text>
+                  <Text style={styles.totalValue}>{formatPrice(order.total)}</Text>
                 </View>
-              </View>
+              </TouchableOpacity>
             ))}
           </View>
         )}

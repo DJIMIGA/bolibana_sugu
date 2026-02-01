@@ -317,8 +317,30 @@ class Order(models.Model):
             timezone.localtime(timezone.now()).isoformat(),
         )
 
+    def _log_status_change(self, old_status, new_status, source='system', note=''):
+        try:
+            OrderStatusHistory.objects.create(
+                order=self,
+                old_status=old_status,
+                new_status=new_status,
+                source=source,
+                note=note
+            )
+        except Exception as e:
+            logger = logging.getLogger('saga.cart')
+            logger.warning(
+                "Order status history log failed: order=%s old=%s new=%s error=%s",
+                self.id,
+                old_status,
+                new_status,
+                str(e),
+            )
+
     def save(self, *args, **kwargs):
         is_new = self.pk is None
+        previous_status = None
+        if not is_new:
+            previous_status = Order.objects.filter(pk=self.pk).values_list('status', flat=True).first()
         if not self.order_number:
             # Sauvegarder d'abord pour avoir un ID
             super().save(*args, **kwargs)
@@ -329,8 +351,13 @@ class Order(models.Model):
             super().save(*args, **kwargs)
             if is_new:
                 self._log_time_event('order_created')
+                self._log_status_change(previous_status, self.status, note='initial')
+            elif previous_status and previous_status != self.status:
+                self._log_status_change(previous_status, self.status)
         else:
             super().save(*args, **kwargs)
+            if previous_status and previous_status != self.status:
+                self._log_status_change(previous_status, self.status)
 
     def get_total_items(self):
         return self.items.aggregate(total=models.Sum('quantity'))['total'] or 0
@@ -385,9 +412,6 @@ class OrderItem(models.Model):
     colors = models.ManyToManyField('product.Color', blank=True)
     sizes = models.ManyToManyField('product.Size', blank=True)
 
-    def __str__(self):
-        return f"{self.quantity} of {self.product.title} in Order {self.order.id}"
-
     def get_weight_unit(self):
         if not self.product or not self.product.specifications:
             return 'kg'
@@ -403,7 +427,7 @@ class OrderItem(models.Model):
         if unit in ['g', 'gram', 'gramme']:
             return 'g'
         return unit
-    
+
     def get_total_price(self):
         # Pour les produits au poids, utiliser le prix au kg/g depuis les spécifications
         if self.product and hasattr(self.product, 'specifications') and self.product.specifications:
@@ -414,20 +438,23 @@ class OrderItem(models.Model):
                 if unit == 'g':
                     price_per_g = specs.get('discount_price_per_g') or specs.get('price_per_g')
                     if price_per_g:
-                        from decimal import Decimal
                         return Decimal(str(price_per_g)) * Decimal(str(self.quantity))
-                # Produit au poids : utiliser price_per_kg
                 price_per_kg = specs.get('discount_price_per_kg') or specs.get('price_per_kg')
                 if price_per_kg:
-                    from decimal import Decimal
                     return Decimal(str(price_per_kg)) * Decimal(str(self.quantity))
-        
-        # Utiliser le prix promotionnel si disponible, sinon le prix normal
-        price = self.product.discount_price if hasattr(self.product, 'discount_price') and self.product.discount_price else self.product.price
-        from decimal import Decimal
-        return Decimal(str(price)) * Decimal(str(self.quantity))
+        return Decimal(str(self.price)) * Decimal(str(self.quantity))
 
-    def save(self, *args, **kwargs):
-        from decimal import Decimal
-        self.total_price = Decimal(str(self.price)) * Decimal(str(self.quantity))
-        super().save(*args, **kwargs)
+    def __str__(self):
+        return f"{self.quantity} of {self.product.title} in Order {self.order.id}"
+
+
+class OrderStatusHistory(models.Model):
+    order = models.ForeignKey(Order, related_name='status_history', on_delete=models.CASCADE)
+    old_status = models.CharField(max_length=20, choices=Order.STATUS_CHOICES, null=True, blank=True)
+    new_status = models.CharField(max_length=20, choices=Order.STATUS_CHOICES)
+    changed_at = models.DateTimeField(auto_now_add=True)
+    source = models.CharField(max_length=50, blank=True)
+    note = models.CharField(max_length=255, blank=True)
+
+    class Meta:
+        ordering = ['-changed_at']

@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from cart.models import Cart, CartItem
+from cart.models import Cart, CartItem, Order, OrderItem, OrderStatusHistory
 from product.api.serializers import ProductDetailSerializer, PhoneSerializer
 
 
@@ -96,3 +96,80 @@ class CartSerializer(serializers.ModelSerializer):
 
     def get_total_price(self, obj):
         return float(obj.get_total_price()) 
+
+
+class OrderStatusHistorySerializer(serializers.ModelSerializer):
+    class Meta:
+        model = OrderStatusHistory
+        fields = [
+            'id',
+            'old_status',
+            'new_status',
+            'changed_at',
+            'source',
+            'note',
+        ]
+
+
+class OrderItemSerializer(serializers.ModelSerializer):
+    product = ProductDetailSerializer(read_only=True)
+    colors = serializers.SerializerMethodField()
+    sizes = serializers.SerializerMethodField()
+    total_price = serializers.SerializerMethodField()
+
+    class Meta:
+        model = OrderItem
+        fields = [
+            'id',
+            'product',
+            'quantity',
+            'price',
+            'total_price',
+            'colors',
+            'sizes',
+        ]
+
+    def get_colors(self, obj):
+        return [color.id for color in obj.colors.all()]
+
+    def get_sizes(self, obj):
+        return [size.id for size in obj.sizes.all()]
+
+    def get_total_price(self, obj):
+        return float(obj.get_total_price())
+
+
+class OrderSerializer(serializers.ModelSerializer):
+    items = OrderItemSerializer(many=True, read_only=True)
+    status_history = OrderStatusHistorySerializer(many=True, read_only=True)
+    subtotal = serializers.FloatField()
+    shipping_cost = serializers.FloatField()
+    tax = serializers.FloatField()
+    discount = serializers.FloatField()
+    total = serializers.FloatField()
+
+    class Meta:
+        model = Order
+        fields = [
+            'id',
+            'order_number',
+            'status',
+            'payment_method',
+            'is_paid',
+            'paid_at',
+            'created_at',
+            'updated_at',
+            'shipping_address_id',
+            'shipping_method_id',
+            'tracking_number',
+            'shipped_at',
+            'delivered_at',
+            'subtotal',
+            'shipping_cost',
+            'tax',
+            'discount',
+            'total',
+            'items',
+            'status_history',
+            'metadata',
+        ]

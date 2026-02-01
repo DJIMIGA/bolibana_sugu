@@ -10,6 +10,7 @@ from django.urls import reverse
 from django.conf import settings
 from django.core.cache import cache
 from cart.models import Cart, CartItem, Order, OrderItem
+from accounts.models import ShippingAddress
 from product.models import Product
 from cart.orange_money_service import OrangeMoneyService
 
@@ -161,12 +162,18 @@ class OrangeMoneyViewsTest(TestCase):
             email='test@example.com',
             password='testpass123'
         )
+        self.shipping_address = ShippingAddress.objects.create(
+            user=self.user,
+            quarter='Quartier Test',
+            street_address='Rue 123'
+        )
         
         # Créer un produit de test
         self.product = Product.objects.create(
             title='Test Product',
             price=1000.00,
-            is_salam=False
+            is_salam=False,
+            stock=10
         )
         
         # Créer un panier avec un article
@@ -182,15 +189,16 @@ class OrangeMoneyViewsTest(TestCase):
         """Test d'accès à la vue de paiement quand Orange Money est désactivé"""
         mock_is_enabled.return_value = False
         
-        self.client.login(email='test@example.com', password='testpass123')
+        self.client.force_login(self.user)
         response = self.client.get(reverse('cart:orange_money_payment'))
         
         self.assertEqual(response.status_code, 302)  # Redirection
         self.assertRedirects(response, reverse('cart:cart'))
     
+    @patch('cart.views.orange_money_service.refresh_config')
     @patch('cart.views.orange_money_service.is_enabled')
     @patch('cart.views.orange_money_service.create_payment_session')
-    def test_orange_money_payment_success(self, mock_create_session, mock_is_enabled):
+    def test_orange_money_payment_success(self, mock_create_session, mock_is_enabled, mock_refresh_config):
         """Test de création réussie d'une session de paiement"""
         mock_is_enabled.return_value = True
         mock_create_session.return_value = (True, {
@@ -199,8 +207,9 @@ class OrangeMoneyViewsTest(TestCase):
             'payment_url': 'https://test.payment.url'
         })
         
-        self.client.login(email='test@example.com', password='testpass123')
-        response = self.client.get(reverse('cart:orange_money_payment'))
+        self.client.force_login(self.user)
+        url = reverse('cart:orange_money_payment') + f'?shipping_address_id={self.shipping_address.id}'
+        response = self.client.get(url)
         
         # Vérifier qu'une commande a été créée
         self.assertEqual(Order.objects.count(), 1)
@@ -219,6 +228,7 @@ class OrangeMoneyViewsTest(TestCase):
         order = Order.objects.create(
             user=self.user,
             subtotal=1000.00,
+            shipping_cost=0,
             total=1000.00,
             payment_method=Order.MOBILE_MONEY,
             status=Order.DRAFT
@@ -229,7 +239,7 @@ class OrangeMoneyViewsTest(TestCase):
         session['orange_money_order_id'] = order.id
         session.save()
         
-        self.client.login(email='test@example.com', password='testpass123')
+        self.client.force_login(self.user)
         response = self.client.get(reverse('cart:orange_money_cancel'))
         
         # Vérifier que la commande est annulée
@@ -290,38 +300,46 @@ class OrangeMoneyIntegrationTest(TestCase):
         self.product1 = Product.objects.create(
             title='Product 1',
             price=1000.00,
-            is_salam=False
+            is_salam=False,
+            stock=10
         )
         
         self.product2 = Product.objects.create(
             title='Product 2 (Salam)',
             price=2000.00,
-            is_salam=True
+            is_salam=True,
+            stock=10
         )
     
-    def test_payment_flow_salam_products(self):
+    @patch('cart.orange_money_service.orange_money_service.refresh_config')
+    @patch('cart.orange_money_service.orange_money_service.is_enabled')
+    def test_payment_flow_salam_products(self, mock_is_enabled, mock_refresh_config):
         """Test du flux de paiement pour les produits Salam"""
+        mock_is_enabled.return_value = True
         # Ajouter des produits Salam au panier
         cart = Cart.objects.create(user=self.user)
         CartItem.objects.create(cart=cart, product=self.product2, quantity=1)
         
-        self.client.login(email='test@example.com', password='testpass123')
+        self.client.force_login(self.user)
         
         # Vérifier que Orange Money est disponible pour les produits Salam
         response = self.client.get(reverse('cart:checkout'))
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, 'Orange Money')
     
-    def test_payment_flow_mixed_cart(self):
+    @patch('cart.orange_money_service.orange_money_service.refresh_config')
+    @patch('cart.orange_money_service.orange_money_service.is_enabled')
+    def test_payment_flow_mixed_cart(self, mock_is_enabled, mock_refresh_config):
         """Test du flux de paiement pour un panier mixte"""
+        mock_is_enabled.return_value = True
         # Créer un panier mixte
         cart = Cart.objects.create(user=self.user)
         CartItem.objects.create(cart=cart, product=self.product1, quantity=1)
         CartItem.objects.create(cart=cart, product=self.product2, quantity=1)
         
-        self.client.login(email='test@example.com', password='testpass123')
+        self.client.force_login(self.user)
         
-        # Vérifier que Orange Money est disponible pour le panier mixte
+        # Vérifier que la page panier mixte est affichée
         response = self.client.get(reverse('cart:checkout'))
         self.assertEqual(response.status_code, 200)
-        self.assertContains(response, 'Orange Money')
+        self.assertContains(response, 'Panier mixte')

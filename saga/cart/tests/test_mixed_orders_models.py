@@ -154,8 +154,8 @@ class MixedOrderModelsTestCase(TestCase):
         )
         
         # Vérifier les statuts initiaux
-        self.assertEqual(salam_order.status, 'pending')
-        self.assertEqual(classic_order.status, 'pending')
+        self.assertEqual(salam_order.status, Order.DRAFT)
+        self.assertEqual(classic_order.status, Order.DRAFT)
         
         # Marquer la commande Salam comme payée
         salam_order.is_paid = True

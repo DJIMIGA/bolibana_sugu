@@ -9,7 +9,7 @@ from django.core.cache import cache
 from django.utils import timezone
 from django.urls import reverse
 from decimal import Decimal
-from .serializers import CartSerializer, CartItemSerializer
+from .serializers import CartSerializer, CartItemSerializer, OrderSerializer
 from cart.models import Cart, CartItem, Order, OrderItem
 from product.models import Product, Phone, ShippingMethod
 from accounts.models import ShippingAddress
@@ -99,6 +99,42 @@ class CartViewSet(viewsets.ModelViewSet):
                 order_ids,
                 str(error),
             )
+
+    def _build_stripe_line_items(self, order):
+        line_items = []
+        for item in order.items.all():
+            total_price = Decimal(str(item.price)) * Decimal(str(item.quantity))
+            quantity_decimal = Decimal(str(item.quantity))
+            is_weighted = self._is_weighted_product(item.product)
+
+            if is_weighted:
+                stripe_quantity = 1
+                stripe_unit_amount = max(1, int(float(total_price)))
+            else:
+                stripe_quantity = max(1, int(float(quantity_decimal)))
+                stripe_unit_amount = max(1, int(float(item.price)))
+
+            line_items.append({
+                'price_data': {
+                    'currency': 'xof',
+                    'product_data': {'name': item.product.title},
+                    'unit_amount': stripe_unit_amount,
+                },
+                'quantity': stripe_quantity,
+            })
+
+        shipping_cost_int = int(order.shipping_cost)
+        if shipping_cost_int > 0:
+            line_items.append({
+                'price_data': {
+                    'currency': 'xof',
+                    'product_data': {'name': 'Frais de livraison'},
+                    'unit_amount': shipping_cost_int,
+                },
+                'quantity': 1,
+            })
+
+        return line_items
 
     def _get_available_weight(self, product):
         specs = product.specifications or {}
@@ -715,18 +751,50 @@ class CartViewSet(viewsets.ModelViewSet):
                         'delivery_group_key': f"{group_key[0]}:{group_key[1]}",
                         'split_order': len(groups) > 1,
                         'group_items_count': len(group['items']),
+                        'cart_id': cart.id,
                     }
-                    order = Order.objects.create(
-                        user=user,
-                        shipping_address=address,
-                        shipping_method=method.get('shipping_method_obj'),
-                        payment_method=payment_method,
-                        subtotal=subtotal,
-                        shipping_cost=shipping_cost,
-                        total=subtotal + shipping_cost,
-                        status=Order.DRAFT,
-                        metadata=metadata
+                    order = (
+                        Order.objects.filter(
+                            user=user,
+                            status=Order.DRAFT,
+                            is_paid=False,
+                            payment_method=payment_method,
+                            metadata__cart_id=cart.id,
+                            metadata__delivery_group_key=f"{group_key[0]}:{group_key[1]}",
+                            metadata__delivery_site_configuration=site_id,
+                        )
+                        .order_by('-created_at')
+                        .first()
                     )
+                    if order:
+                        order.shipping_address = address
+                        order.shipping_method = method.get('shipping_method_obj')
+                        order.subtotal = subtotal
+                        order.shipping_cost = shipping_cost
+                        order.total = subtotal + shipping_cost
+                        order.metadata = metadata
+                        order.save(update_fields=[
+                            'shipping_address',
+                            'shipping_method',
+                            'subtotal',
+                            'shipping_cost',
+                            'total',
+                            'metadata',
+                            'updated_at',
+                        ])
+                        order.items.all().delete()
+                    else:
+                        order = Order.objects.create(
+                            user=user,
+                            shipping_address=address,
+                            shipping_method=method.get('shipping_method_obj'),
+                            payment_method=payment_method,
+                            subtotal=subtotal,
+                            shipping_cost=shipping_cost,
+                            total=subtotal + shipping_cost,
+                            status=Order.DRAFT,
+                            metadata=metadata
+                        )
 
                     for item in group['items']:
                         order_item = OrderItem.objects.create(
@@ -770,203 +838,203 @@ class CartViewSet(viewsets.ModelViewSet):
                 len(group_orders) > 1,
             )
 
-                if payment_method == 'stripe' or payment_method == 'online_payment':
-                    stripe.api_key = settings.STRIPE_SECRET_KEY
-                    for entry in group_orders:
-                        order = entry['order']
+            if payment_method == 'stripe' or payment_method == 'online_payment':
+                stripe.api_key = settings.STRIPE_SECRET_KEY
+                for entry in group_orders:
+                    order = entry['order']
+                    logger.warning(
+                        "Checkout Stripe - order=%s cart=%s items=%s total=%s shipping=%s",
+                        order.id,
+                        cart.id,
+                        order.items.count(),
+                        order.total,
+                        order.shipping_cost,
+                    )
+                    line_items = []
+                    for item in order.items.all():
+                        total_price = Decimal(str(item.price)) * Decimal(str(item.quantity))
+                        quantity_decimal = Decimal(str(item.quantity))
+                        is_weighted = self._is_weighted_product(item.product)
+                        weight_unit = self._get_weight_unit(item.product) if is_weighted else 'unité'
+                        specs = item.product.specifications or {}
+
+                        if is_weighted:
+                            stripe_quantity = 1
+                            stripe_unit_amount = max(1, int(float(total_price)))
+                        else:
+                            stripe_quantity = max(1, int(float(quantity_decimal)))
+                            stripe_unit_amount = max(1, int(float(item.price)))
+
                         logger.warning(
-                            "Checkout Stripe - order=%s cart=%s items=%s total=%s shipping=%s",
-                            order.id,
-                            cart.id,
-                            order.items.count(),
-                            order.total,
-                            order.shipping_cost,
-                        )
-                        line_items = []
-                        for item in order.items.all():
-                            total_price = Decimal(str(item.price)) * Decimal(str(item.quantity))
-                            quantity_decimal = Decimal(str(item.quantity))
-                            is_weighted = self._is_weighted_product(item.product)
-                            weight_unit = self._get_weight_unit(item.product) if is_weighted else 'unité'
-                            specs = item.product.specifications or {}
-
-                            if is_weighted:
-                                stripe_quantity = 1
-                                stripe_unit_amount = max(1, int(float(total_price)))
-                            else:
-                                stripe_quantity = max(1, int(float(quantity_decimal)))
-                                stripe_unit_amount = max(1, int(float(item.price)))
-
-                            logger.warning(
-                                "Checkout Stripe item - product=%s title=%s qty=%s is_weighted=%s unit=%s "
-                                "price=%s total=%s stripe_qty=%s stripe_amount=%s specs_keys=%s",
-                                item.product.id,
-                                item.product.title,
-                                item.quantity,
-                                is_weighted,
-                                weight_unit,
-                                item.price,
-                                total_price,
-                                stripe_quantity,
-                                stripe_unit_amount,
-                                list(specs.keys()),
-                            )
-
-                            line_items.append({
-                                'price_data': {
-                                    'currency': 'xof',
-                                    'product_data': {'name': item.product.title},
-                                    'unit_amount': stripe_unit_amount,
-                                },
-                                'quantity': stripe_quantity,
-                            })
-
-                        shipping_cost_int = int(order.shipping_cost)
-                        if shipping_cost_int > 0:
-                            line_items.append({
-                                'price_data': {
-                                    'currency': 'xof',
-                                    'product_data': {'name': 'Frais de livraison'},
-                                    'unit_amount': shipping_cost_int,
-                                },
-                                'quantity': 1,
-                            })
-
-                        checkout_session = stripe.checkout.Session.create(
-                            customer_email=user.email,
-                            payment_method_types=['card'],
-                            line_items=line_items,
-                            mode='payment',
-                            success_url=f"{domain_url}/api/cart/payment-success/?session_id={{CHECKOUT_SESSION_ID}}&order_id={order.id}{mobile_param}",
-                            cancel_url=f"{domain_url}/api/cart/payment-cancel/?order_id={order.id}&mobile=1",
-                            metadata={
-                                'order_id': str(order.id),
-                                'cart_id': str(cart.id),
-                                'user_id': str(user.id),
-                                'payment_method': payment_method,
-                                'mobile': 'true'
-                            }
+                            "Checkout Stripe item - product=%s title=%s qty=%s is_weighted=%s unit=%s "
+                            "price=%s total=%s stripe_qty=%s stripe_amount=%s specs_keys=%s",
+                            item.product.id,
+                            item.product.title,
+                            item.quantity,
+                            is_weighted,
+                            weight_unit,
+                            item.price,
+                            total_price,
+                            stripe_quantity,
+                            stripe_unit_amount,
+                            list(specs.keys()),
                         )
 
-                        order.stripe_session_id = checkout_session.id
-                        order.save(update_fields=['stripe_session_id'])
-                        logger.info(
-                            "Stripe session créée - order=%s session=%s status=%s amount_total=%s",
-                            order.id,
-                            checkout_session.id,
-                            checkout_session.payment_status,
-                            checkout_session.amount_total,
-                        )
-
-                        payment_results.append({
-                            'order_id': order.id,
-                            'checkout_url': checkout_session.url,
-                            'payment_method': 'stripe',
-                            'shipping_method': entry['method'],
-                            'site_configuration': entry['site_configuration'],
-                            'subtotal': str(order.subtotal),
-                            'shipping_cost': str(order.shipping_cost),
-                            'total': str(order.total),
+                        line_items.append({
+                            'price_data': {
+                                'currency': 'xof',
+                                'product_data': {'name': item.product.title},
+                                'unit_amount': stripe_unit_amount,
+                            },
+                            'quantity': stripe_quantity,
                         })
 
-                elif payment_method == 'orange_money' or payment_method == 'mobile_money':
-                    for entry in group_orders:
-                        order = entry['order']
-                        logger.info(
-                            "Checkout Orange Money - order=%s site=%s method=%s items=%s total=%s",
-                            order.id,
-                            entry['site_configuration'],
-                            entry['method'].get('id'),
-                            order.items.count(),
-                            order.total,
-                        )
-                        order_data = {
-                            'order_id': order.order_number,
-                            'amount': int(order.total * 100),
-                            'amount': orange_money_service.format_amount(float(order.total)),
-                            'return_url': f"{domain_url}/api/cart/orange-money-return/?order_id={order.id}",
-                            'cancel_url': f"{domain_url}/api/cart/orange-money-cancel/?order_id={order.id}&mobile=1",
-                            'notif_url': f"{domain_url}/api/cart/orange-money-webhook/",
-                            'reference': f"CMD-{order.id}"
+                    shipping_cost_int = int(order.shipping_cost)
+                    if shipping_cost_int > 0:
+                        line_items.append({
+                            'price_data': {
+                                'currency': 'xof',
+                                'product_data': {'name': 'Frais de livraison'},
+                                'unit_amount': shipping_cost_int,
+                            },
+                            'quantity': 1,
+                        })
+
+                    checkout_session = stripe.checkout.Session.create(
+                        customer_email=user.email,
+                        payment_method_types=['card'],
+                        line_items=line_items,
+                        mode='payment',
+                        success_url=f"{domain_url}/api/cart/payment-success/?session_id={{CHECKOUT_SESSION_ID}}&order_id={order.id}{mobile_param}",
+                        cancel_url=f"{domain_url}/api/cart/payment-cancel/?order_id={order.id}&mobile=1",
+                        metadata={
+                            'order_id': str(order.id),
+                            'cart_id': str(cart.id),
+                            'user_id': str(user.id),
+                            'payment_method': payment_method,
+                            'mobile': 'true'
                         }
+                    )
 
-                        success, response_data = orange_money_service.create_payment_session(order_data)
-                        if not success:
-                            raise ValueError(response_data.get('error', 'Erreur Orange Money'))
+                    order.stripe_session_id = checkout_session.id
+                    order.save(update_fields=['stripe_session_id'])
+                    logger.info(
+                        "Stripe session créée - order=%s session=%s status=%s amount_total=%s",
+                        order.id,
+                        checkout_session.id,
+                        checkout_session.payment_status,
+                        checkout_session.amount_total,
+                    )
 
-                        payment_url = orange_money_service.get_payment_url(
-                            response_data.get('pay_token'),
-                            response_data.get('payment_url')
-                        )
-                        metadata = order.metadata or {}
-                        metadata.update({
-                            'orange_money_pay_token': response_data.get('pay_token'),
-                            'orange_money_notif_token': response_data.get('notif_token'),
-                            'orange_money_order_number': order.order_number
-                        })
-                        order.metadata = metadata
-                        order.save(update_fields=['metadata'])
-
-                        payment_results.append({
-                            'order_id': order.id,
-                            'checkout_url': payment_url,
-                            'payment_method': 'orange_money',
-                            'shipping_method': entry['method'],
-                            'site_configuration': entry['site_configuration'],
-                            'subtotal': str(order.subtotal),
-                            'shipping_cost': str(order.shipping_cost),
-                            'total': str(order.total),
-                        })
-
-                elif payment_method == 'cash_on_delivery':
-                    # Vider le panier après création de toutes les commandes
-                    transaction.on_commit(lambda: cart.cart_items.all().delete())
-                    
-                    for entry in group_orders:
-                        order = entry['order']
-                        if order.status != Order.CONFIRMED:
-                            order.status = Order.CONFIRMED
-                            order.save(update_fields=['status'])
-                        
-                        # Synchroniser chaque commande vers B2B
-                        transaction.on_commit(lambda o=order: self._sync_order_to_b2b(o))
-                        
-                        logger.info(
-                            "Checkout cash_on_delivery - Commande confirmée: order=%s site=%s total=%s",
-                            order.id,
-                            entry['site_configuration'],
-                            order.total
-                        )
-                        
-                        payment_results.append({
-                            'order_id': order.id,
-                            'status': 'confirmed',
-                            'payment_method': 'cash_on_delivery',
-                            'shipping_method': entry['method'],
-                            'site_configuration': entry['site_configuration'],
-                            'subtotal': str(order.subtotal),
-                            'shipping_cost': str(order.shipping_cost),
-                            'total': str(order.total),
-                        })
-                else:
-                    return Response({'error': 'Méthode de paiement non supportée'}, status=status.HTTP_400_BAD_REQUEST)
-
-                response_payload = {
-                    'orders': payment_results,
-                    'payment_method': payment_method,
-                    'split': len(payment_results) > 1,
-                }
-                if warnings:
-                    response_payload['warnings'] = warnings
-                if len(payment_results) == 1:
-                    single = payment_results[0]
-                    response_payload.update({
-                        'order_id': single.get('order_id'),
-                        'checkout_url': single.get('checkout_url'),
-                        'status': single.get('status'),
+                    payment_results.append({
+                        'order_id': order.id,
+                        'checkout_url': checkout_session.url,
+                        'payment_method': 'stripe',
+                        'shipping_method': entry['method'],
+                        'site_configuration': entry['site_configuration'],
+                        'subtotal': str(order.subtotal),
+                        'shipping_cost': str(order.shipping_cost),
+                        'total': str(order.total),
                     })
 
-                return Response(response_payload)
+            elif payment_method == 'orange_money' or payment_method == 'mobile_money':
+                for entry in group_orders:
+                    order = entry['order']
+                    logger.info(
+                        "Checkout Orange Money - order=%s site=%s method=%s items=%s total=%s",
+                        order.id,
+                        entry['site_configuration'],
+                        entry['method'].get('id'),
+                        order.items.count(),
+                        order.total,
+                    )
+                    order_data = {
+                        'order_id': order.order_number,
+                        'amount': int(order.total * 100),
+                        'amount': orange_money_service.format_amount(float(order.total)),
+                        'return_url': f"{domain_url}/api/cart/orange-money-return/?order_id={order.id}",
+                        'cancel_url': f"{domain_url}/api/cart/orange-money-cancel/?order_id={order.id}&mobile=1",
+                        'notif_url': f"{domain_url}/api/cart/orange-money-webhook/",
+                        'reference': f"CMD-{order.id}"
+                    }
+
+                    success, response_data = orange_money_service.create_payment_session(order_data)
+                    if not success:
+                        raise ValueError(response_data.get('error', 'Erreur Orange Money'))
+
+                    payment_url = orange_money_service.get_payment_url(
+                        response_data.get('pay_token'),
+                        response_data.get('payment_url')
+                    )
+                    metadata = order.metadata or {}
+                    metadata.update({
+                        'orange_money_pay_token': response_data.get('pay_token'),
+                        'orange_money_notif_token': response_data.get('notif_token'),
+                        'orange_money_order_number': order.order_number
+                    })
+                    order.metadata = metadata
+                    order.save(update_fields=['metadata'])
+
+                    payment_results.append({
+                        'order_id': order.id,
+                        'checkout_url': payment_url,
+                        'payment_method': 'orange_money',
+                        'shipping_method': entry['method'],
+                        'site_configuration': entry['site_configuration'],
+                        'subtotal': str(order.subtotal),
+                        'shipping_cost': str(order.shipping_cost),
+                        'total': str(order.total),
+                    })
+
+            elif payment_method == 'cash_on_delivery':
+                # Vider le panier après création de toutes les commandes
+                transaction.on_commit(lambda: cart.cart_items.all().delete())
+
+                for entry in group_orders:
+                    order = entry['order']
+                    if order.status != Order.CONFIRMED:
+                        order.status = Order.CONFIRMED
+                        order.save(update_fields=['status'])
+
+                    # Synchroniser chaque commande vers B2B
+                    transaction.on_commit(lambda o=order: self._sync_order_to_b2b(o))
+
+                    logger.info(
+                        "Checkout cash_on_delivery - Commande confirmée: order=%s site=%s total=%s",
+                        order.id,
+                        entry['site_configuration'],
+                        order.total
+                    )
+
+                    payment_results.append({
+                        'order_id': order.id,
+                        'status': 'confirmed',
+                        'payment_method': 'cash_on_delivery',
+                        'shipping_method': entry['method'],
+                        'site_configuration': entry['site_configuration'],
+                        'subtotal': str(order.subtotal),
+                        'shipping_cost': str(order.shipping_cost),
+                        'total': str(order.total),
+                    })
+            else:
+                return Response({'error': 'Méthode de paiement non supportée'}, status=status.HTTP_400_BAD_REQUEST)
+
+            response_payload = {
+                'orders': payment_results,
+                'payment_method': payment_method,
+                'split': len(payment_results) > 1,
+            }
+            if warnings:
+                response_payload['warnings'] = warnings
+            if len(payment_results) == 1:
+                single = payment_results[0]
+                response_payload.update({
+                    'order_id': single.get('order_id'),
+                    'checkout_url': single.get('checkout_url'),
+                    'status': single.get('status'),
+                })
+
+            return Response(response_payload)
 
         except Exception as e:
             order_ids = []
@@ -1371,3 +1439,27 @@ class CartViewSet(viewsets.ModelViewSet):
         except Exception as e:
             logger.error(f"Orange Money webhook error: {str(e)}")
             return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+    @action(detail=False, methods=['get'], url_path='orders', permission_classes=[IsAuthenticated])
+    def orders(self, request):
+        orders = (
+            Order.objects.filter(user=request.user)
+            .select_related('shipping_address', 'shipping_method')
+            .prefetch_related('items__product', 'status_history')
+            .order_by('-created_at')
+        )
+        serializer = OrderSerializer(orders, many=True, context={'request': request})
+        return Response({'orders': serializer.data})
+
+    @action(detail=False, methods=['get'], url_path='orders/(?P<order_id>[^/.]+)', permission_classes=[IsAuthenticated])
+    def order_detail(self, request, order_id=None):
+        order = (
+            Order.objects.filter(id=order_id, user=request.user)
+            .select_related('shipping_address', 'shipping_method')
+            .prefetch_related('items__product', 'status_history')
+            .first()
+        )
+        if not order:
+            return Response({'error': 'Commande introuvable'}, status=status.HTTP_404_NOT_FOUND)
+        serializer = OrderSerializer(order, context={'request': request})
+        return Response(serializer.data)
