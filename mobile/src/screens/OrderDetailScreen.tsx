@@ -74,6 +74,21 @@ const OrderDetailScreen: React.FC = () => {
     }
   };
 
+  const formatPaymentMethod = (method: string) => {
+    switch (method) {
+      case 'cash_on_delivery':
+        return 'Paiement a la livraison';
+      case 'online_payment':
+      case 'stripe':
+        return 'Paiement en ligne';
+      case 'mobile_money':
+      case 'orange_money':
+        return 'Mobile Money';
+      default:
+        return method;
+    }
+  };
+
   const formatDate = (iso: string) => {
     const d = new Date(iso);
     return d.toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit', year: 'numeric' });
@@ -162,7 +177,7 @@ const OrderDetailScreen: React.FC = () => {
         </View>
         <View style={styles.row}>
           <Text style={styles.label}>Paiement</Text>
-          <Text style={styles.value}>{order.payment_method}</Text>
+          <Text style={styles.value}>{formatPaymentMethod(order.payment_method)}</Text>
         </View>
       </View>
       )}
@@ -198,14 +213,6 @@ const OrderDetailScreen: React.FC = () => {
         <View style={styles.row}>
           <Text style={styles.label}>Livraison</Text>
           <Text style={styles.value}>{formatPrice(order.shipping_cost)}</Text>
-        </View>
-        <View style={styles.row}>
-          <Text style={styles.label}>Taxes</Text>
-          <Text style={styles.value}>{formatPrice(order.tax)}</Text>
-        </View>
-        <View style={styles.row}>
-          <Text style={styles.label}>Réduction</Text>
-          <Text style={styles.value}>-{formatPrice(order.discount)}</Text>
         </View>
         <View style={styles.totalRow}>
           <Text style={styles.totalLabel}>Total</Text>
