@@ -218,20 +218,17 @@ class ErrorService {
     }
     const isOfflineBlocked = error.isOfflineBlocked || error.code === 'OFFLINE_MODE_FORCED' || error.message === 'OFFLINE_MODE_FORCED';
 
+    const status = error instanceof AxiosError ? error.response?.status : undefined;
     const apiError: ApiError = {
       message,
       code: type,
-      status: error instanceof AxiosError ? error.response?.status : undefined,
-      details: error instanceof AxiosError ? error.response?.data : undefined,
+      status,
+      details: url ? { url, status } : undefined,
       isOfflineBlocked,
     };
 
     // Préparer les détails pour le log (inclure l'URL pour détecter les endpoints B2B)
-    const logDetails: any = {
-      ...(apiError.details || {}),
-      url,
-      config: error instanceof AxiosError ? { url } : undefined,
-    };
+    const logDetails: any = url ? { url, status } : undefined;
 
     // Logging
     this.log({
@@ -270,7 +267,7 @@ class ErrorService {
 
     // Logging console en développement (sauf pour les erreurs de mode hors ligne)
     if (__DEV__ && errorLog.severity !== ErrorSeverity.LOW) {
-      console.error(`[${errorLog.severity.toUpperCase()}] ${errorLog.type}:`, errorLog.message, errorLog.details);
+      console.error(`[${errorLog.severity.toUpperCase()}] ${errorLog.type}:`, errorLog.message);
     }
   }
 

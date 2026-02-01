@@ -53,6 +53,7 @@ const OrderDetailScreen: React.FC = () => {
   const [order, setOrder] = useState<OrderDetail | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
+  const [errorMessage, setErrorMessage] = useState<string>('');
 
   const orderId = Number(route?.params?.orderId);
 
@@ -83,10 +84,22 @@ const OrderDetailScreen: React.FC = () => {
       if (!silent) {
         setIsLoading(true);
       }
+      if (!orderId || Number.isNaN(orderId)) {
+        setErrorMessage('Commande invalide.');
+        return;
+      }
       const response = await apiClient.get(API_ENDPOINTS.CART_ORDER_DETAIL(orderId));
       setOrder(response.data);
+      setErrorMessage('');
     } catch (error: any) {
-      const message = error?.message || 'Erreur inconnue';
+      const status = error?.status;
+      let message = error?.message || 'Erreur inconnue';
+      if (status === 404) {
+        message = 'Commande introuvable.';
+      } else if (status === 401) {
+        message = 'Session expirée. Veuillez vous reconnecter.';
+      }
+      setErrorMessage(message);
       console.error('[OrderDetail] ❌ Error loading order:', message);
     } finally {
       setIsLoading(false);
@@ -105,7 +118,7 @@ const OrderDetailScreen: React.FC = () => {
     await loadOrder(true);
   };
 
-  if (isLoading || !order) {
+  if (isLoading || (!order && !errorMessage)) {
     return <LoadingScreen />;
   }
 
@@ -114,6 +127,21 @@ const OrderDetailScreen: React.FC = () => {
       style={styles.container}
       refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
     >
+      {errorMessage ? (
+        <View style={styles.errorContainer}>
+          <Ionicons name="alert-circle-outline" size={48} color={COLORS.ERROR} />
+          <Text style={styles.errorTitle}>Impossible d’ouvrir la commande</Text>
+          <Text style={styles.errorText}>{errorMessage}</Text>
+          <View style={styles.errorActions}>
+            <TouchableOpacity style={styles.errorButton} onPress={() => loadOrder()}>
+              <Text style={styles.errorButtonText}>Réessayer</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.errorLink} onPress={() => navigation.goBack()}>
+              <Text style={styles.errorLinkText}>Retour</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      ) : (
       <View style={styles.header}>
         <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
           <Ionicons name="arrow-back" size={20} color="#FFFFFF" />
@@ -122,7 +150,9 @@ const OrderDetailScreen: React.FC = () => {
         <Text style={styles.title}>Commande #{order.order_number}</Text>
         <Text style={styles.subtitle}>Créée le {formatDate(order.created_at)}</Text>
       </View>
+      )}
 
+      {!errorMessage && (
       <View style={styles.section}>
         <View style={styles.statusRow}>
           <Text style={styles.label}>Statut</Text>
@@ -135,7 +165,9 @@ const OrderDetailScreen: React.FC = () => {
           <Text style={styles.value}>{order.payment_method}</Text>
         </View>
       </View>
+      )}
 
+      {!errorMessage && (
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>Articles</Text>
         {order.items.map((item) => (
@@ -154,7 +186,9 @@ const OrderDetailScreen: React.FC = () => {
           </View>
         ))}
       </View>
+      )}
 
+      {!errorMessage && (
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>Récapitulatif</Text>
         <View style={styles.row}>
@@ -178,7 +212,9 @@ const OrderDetailScreen: React.FC = () => {
           <Text style={styles.totalValue}>{formatPrice(order.total)}</Text>
         </View>
       </View>
+      )}
 
+      {!errorMessage && (
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>Historique des statuts</Text>
         {order.status_history?.length ? (
@@ -202,6 +238,7 @@ const OrderDetailScreen: React.FC = () => {
           <Text style={styles.emptyTimeline}>Aucun changement de statut pour le moment.</Text>
         )}
       </View>
+      )}
     </ScrollView>
   );
 };
@@ -359,6 +396,50 @@ const styles = StyleSheet.create({
   emptyTimeline: {
     fontSize: 12,
     color: COLORS.TEXT_SECONDARY,
+  },
+  errorContainer: {
+    marginTop: 24,
+    marginHorizontal: 16,
+    backgroundColor: '#FFFFFF',
+    borderRadius: 12,
+    padding: 20,
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#FECACA',
+  },
+  errorTitle: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: COLORS.TEXT,
+    marginTop: 12,
+  },
+  errorText: {
+    fontSize: 13,
+    color: COLORS.TEXT_SECONDARY,
+    textAlign: 'center',
+    marginTop: 8,
+  },
+  errorActions: {
+    marginTop: 16,
+    alignItems: 'center',
+  },
+  errorButton: {
+    backgroundColor: COLORS.PRIMARY,
+    paddingHorizontal: 18,
+    paddingVertical: 10,
+    borderRadius: 8,
+  },
+  errorButtonText: {
+    color: '#FFFFFF',
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  errorLink: {
+    marginTop: 8,
+  },
+  errorLinkText: {
+    color: COLORS.TEXT_SECONDARY,
+    fontSize: 13,
   },
 });
 
