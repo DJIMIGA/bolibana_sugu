@@ -33,7 +33,6 @@ class OrderAdmin(admin.ModelAdmin):
         'status',
         'total',
         'order_time_local',
-        'created_at',
         'created_at_local',
         'updated_at_local',
         'paid_at_local',
@@ -93,6 +92,7 @@ class OrderAdmin(admin.ModelAdmin):
         if not reference_time:
             return None
         return timezone.localtime(reference_time, timezone.get_default_timezone())
+    order_time_local.admin_order_field = 'order_time_ref'
 
 # Enregistrement avec admin_site
 admin_site.register(Cart, CartAdmin)

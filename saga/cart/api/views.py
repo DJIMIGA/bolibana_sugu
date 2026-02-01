@@ -5,6 +5,8 @@ from rest_framework.permissions import AllowAny, IsAuthenticated
 from django.db import transaction
 from django.shortcuts import get_object_or_404, render
 from django.conf import settings
+from django.core.cache import cache
+from django.utils import timezone
 from django.urls import reverse
 from decimal import Decimal
 from .serializers import CartSerializer, CartItemSerializer
@@ -64,6 +66,39 @@ class CartViewSet(viewsets.ModelViewSet):
         if normalized_unit.endswith('g'):
             return 'g'
         return unit
+
+    def _get_client_ip(self, request):
+        if not request:
+            return None
+        x_forwarded_for = request.META.get('HTTP_X_FORWARDED_FOR')
+        if x_forwarded_for:
+            return x_forwarded_for.split(',')[0].strip()
+        return request.META.get('REMOTE_ADDR')
+
+    def _track_payment_failure(self, request, payment_method, order_ids, error):
+        window_seconds = getattr(settings, 'PAYMENT_FAILURE_WINDOW_SECONDS', 900)
+        threshold = getattr(settings, 'PAYMENT_FAILURE_ALERT_THRESHOLD', 3)
+        client_ip = self._get_client_ip(request) or 'unknown'
+        method = payment_method or 'unknown'
+        cache_key = f"payment_failed:{method}:{client_ip}"
+        data = cache.get(cache_key) or {
+            'count': 0,
+            'first_seen': timezone.now().isoformat(),
+        }
+        data['count'] += 1
+        cache.set(cache_key, data, timeout=window_seconds)
+
+        if data['count'] == threshold or data['count'] % threshold == 0:
+            logger.warning(
+                "Alerte paiement anormal: method=%s ip=%s count=%s first_seen=%s window=%ss orders=%s error=%s",
+                method,
+                client_ip,
+                data['count'],
+                data['first_seen'],
+                window_seconds,
+                order_ids,
+                str(error),
+            )
 
     def _get_available_weight(self, product):
         specs = product.specifications or {}
@@ -656,7 +691,7 @@ class CartViewSet(viewsets.ModelViewSet):
                     "Checkout - Groupement par site/méthode: %s groupes créés",
                     len(groups)
                 )
-                
+
                 for group_key, group in groups.items():
                     method = group['method']
                     shipping_cost = self._get_delivery_method_price(method)
@@ -664,7 +699,7 @@ class CartViewSet(viewsets.ModelViewSet):
                     method_payload = serialize_method(method)
                     site_id = method.get('site_configuration')
                     method_id = method.get('id')
-                    
+
                     logger.info(
                         "Checkout - Création commande groupe: site=%s method=%s items=%s subtotal=%s shipping=%s",
                         site_id,
@@ -673,7 +708,7 @@ class CartViewSet(viewsets.ModelViewSet):
                         subtotal,
                         shipping_cost
                     )
-                    
+
                     metadata = {
                         'delivery_method': method_payload,
                         'delivery_site_configuration': site_id,
@@ -710,7 +745,7 @@ class CartViewSet(viewsets.ModelViewSet):
                         'method': method_payload,
                         'site_configuration': site_id,
                     })
-                    
+
                     logger.info(
                         "Checkout - Commande créée: order=%s site=%s method=%s total=%s",
                         order.id,
@@ -719,21 +754,21 @@ class CartViewSet(viewsets.ModelViewSet):
                         order.total
                     )
 
-                domain_url = request.build_absolute_uri('/')[:-1]
-                payment_results = []
-                
-                # Détecter si la requête vient d'un mobile
-                user_agent = (request.META.get('HTTP_USER_AGENT', '') or '').lower()
-                is_mobile_request = any(marker in user_agent for marker in ['mobile', 'android', 'iphone', 'ipad', 'okhttp'])
-                mobile_param = '&mobile=1' if is_mobile_request else ''
+            domain_url = request.build_absolute_uri('/')[:-1]
+            payment_results = []
 
-                logger.info(
-                    "Checkout - Début paiement: user=%s cart=%s method=%s split=%s",
-                    user.id if user else None,
-                    cart.id if cart else None,
-                    payment_method,
-                    len(group_orders) > 1,
-                )
+            # Détecter si la requête vient d'un mobile
+            user_agent = (request.META.get('HTTP_USER_AGENT', '') or '').lower()
+            is_mobile_request = any(marker in user_agent for marker in ['mobile', 'android', 'iphone', 'ipad', 'okhttp'])
+            mobile_param = '&mobile=1' if is_mobile_request else ''
+
+            logger.info(
+                "Checkout - Début paiement: user=%s cart=%s method=%s split=%s",
+                user.id if user else None,
+                cart.id if cart else None,
+                payment_method,
+                len(group_orders) > 1,
+            )
 
                 if payment_method == 'stripe' or payment_method == 'online_payment':
                     stripe.api_key = settings.STRIPE_SECRET_KEY
@@ -934,8 +969,14 @@ class CartViewSet(viewsets.ModelViewSet):
                 return Response(response_payload)
 
         except Exception as e:
+            order_ids = []
+            try:
+                order_ids = [entry['order'].id for entry in group_orders]
+            except Exception:
+                order_ids = []
+            self._track_payment_failure(request, payment_method, order_ids, e)
             logger.error(f"Checkout Error: {str(e)}")
-            return Response({'error': f"Erreur lors de la commande: {str(e)}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR) 
+            return Response({'error': f"Erreur lors de la commande: {str(e)}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
     @action(detail=False, methods=['get'], url_path='payment-success', permission_classes=[AllowAny])
     def payment_success(self, request):
