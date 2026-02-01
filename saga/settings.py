@@ -92,7 +92,7 @@ if DATABASE_URL and not DEBUG:
     }
     # Forcer la timezone de la session DB pour éviter les décalages
     DATABASES['default'].setdefault('OPTIONS', {})
-    DATABASES['default']['OPTIONS'].setdefault('options', '-c timezone=UTC')
+    DATABASES['default']['OPTIONS']['options'] = '-c timezone=UTC'
 else:
     # Configuration pour le développement local
     DATABASES = {
@@ -112,7 +112,7 @@ else:
         }
     }
     # Forcer la timezone de la session DB pour éviter les décalages
-    DATABASES['default']['OPTIONS'].setdefault('options', '-c timezone=UTC')
+    DATABASES['default']['OPTIONS']['options'] = '-c timezone=UTC'
 
 # Vérification de la connexion à la base de données
 try:

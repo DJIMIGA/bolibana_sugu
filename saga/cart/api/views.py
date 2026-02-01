@@ -100,6 +100,15 @@ class CartViewSet(viewsets.ModelViewSet):
                 str(error),
             )
 
+    def _normalize_payment_method(self, payment_method):
+        if payment_method in ['stripe', 'online_payment']:
+            return Order.ONLINE_PAYMENT
+        if payment_method in ['orange_money', 'mobile_money']:
+            return Order.MOBILE_MONEY
+        if payment_method == 'cash_on_delivery':
+            return Order.CASH_ON_DELIVERY
+        return payment_method
+
     def _build_stripe_line_items(self, order):
         line_items = []
         for item in order.items.all():
@@ -583,6 +592,8 @@ class CartViewSet(viewsets.ModelViewSet):
         if not payment_method:
             return Response({'error': 'La méthode de paiement est requise'}, status=status.HTTP_400_BAD_REQUEST)
         
+        normalized_payment_method = self._normalize_payment_method(payment_method)
+        
         if not address_id:
             return Response({'error': 'L\'adresse de livraison est requise'}, status=status.HTTP_400_BAD_REQUEST)
             
@@ -758,7 +769,7 @@ class CartViewSet(viewsets.ModelViewSet):
                             user=user,
                             status=Order.DRAFT,
                             is_paid=False,
-                            payment_method=payment_method,
+                            payment_method=normalized_payment_method,
                             metadata__cart_id=cart.id,
                             metadata__delivery_group_key=f"{group_key[0]}:{group_key[1]}",
                             metadata__delivery_site_configuration=site_id,
@@ -788,7 +799,7 @@ class CartViewSet(viewsets.ModelViewSet):
                             user=user,
                             shipping_address=address,
                             shipping_method=method.get('shipping_method_obj'),
-                            payment_method=payment_method,
+                            payment_method=normalized_payment_method,
                             subtotal=subtotal,
                             shipping_cost=shipping_cost,
                             total=subtotal + shipping_cost,
