@@ -91,6 +91,7 @@ if DATABASE_URL and not DEBUG:
         )
     }
     # Forcer la timezone de la session DB pour éviter les décalages
+    DATABASES['default']['TIME_ZONE'] = 'UTC'
     DATABASES['default'].setdefault('OPTIONS', {})
     DATABASES['default']['OPTIONS']['options'] = '-c timezone=UTC'
 else:
@@ -106,13 +107,13 @@ else:
             'OPTIONS': {
                 'sslmode': 'disable',
                 'connect_timeout': 10,
+                'options': '-c timezone=UTC',
             },
             'CONN_MAX_AGE': 600,
             'ATOMIC_REQUESTS': True,
+            'TIME_ZONE': 'UTC',
         }
     }
-    # Forcer la timezone de la session DB pour éviter les décalages
-    DATABASES['default']['OPTIONS']['options'] = '-c timezone=UTC'
 
 # Vérification de la connexion à la base de données
 try:
