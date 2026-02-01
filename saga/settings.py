@@ -730,7 +730,7 @@ AUTHENTICATION_BACKENDS = [
 
 LANGUAGE_CODE = 'fr-fr'
 
-TIME_ZONE = os.getenv('TIME_ZONE', 'Africa/Lagos')
+TIME_ZONE = 'Africa/Bamako'
 
 USE_I18N = True
 

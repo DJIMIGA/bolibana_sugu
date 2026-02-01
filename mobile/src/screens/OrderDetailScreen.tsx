@@ -85,8 +85,9 @@ const OrderDetailScreen: React.FC = () => {
       }
       const response = await apiClient.get(API_ENDPOINTS.CART_ORDER_DETAIL(orderId));
       setOrder(response.data);
-    } catch (error) {
-      console.error('[OrderDetail] ❌ Error loading order:', error);
+    } catch (error: any) {
+      const message = error?.message || 'Erreur inconnue';
+      console.error('[OrderDetail] ❌ Error loading order:', message);
     } finally {
       setIsLoading(false);
       setRefreshing(false);

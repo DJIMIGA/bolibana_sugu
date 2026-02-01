@@ -91,6 +91,24 @@ const OrdersScreen: React.FC = () => {
     }
   };
 
+  const mapOrders = (apiOrders: OrderApi[]): OrderLite[] =>
+    apiOrders.map((order) => ({
+      id: order.id,
+      order_number: order.order_number,
+      status: order.status,
+      status_label: formatStatusLabel(order.status),
+      total: order.total,
+      created_at: order.created_at,
+      items: (order.items || []).map((item) => ({
+        id: item.id,
+        product_title: item.product?.title || 'Produit',
+        quantity: item.quantity,
+        price: item.price,
+        weight_unit: item.weight_unit,
+        is_weighted: item.is_weighted,
+      })),
+    }));
+
   const loadOrders = async (silent = false) => {
     try {
       if (!silent) {
@@ -106,22 +124,20 @@ const OrdersScreen: React.FC = () => {
         ? raw.results
         : [];
 
-      const list: OrderLite[] = apiOrders.map((order) => ({
-        id: order.id,
-        order_number: order.order_number,
-        status: order.status,
-        status_label: formatStatusLabel(order.status),
-        total: order.total,
-        created_at: order.created_at,
-        items: (order.items || []).map((item) => ({
-          id: item.id,
-          product_title: item.product?.title || 'Produit',
-          quantity: item.quantity,
-          price: item.price,
-          weight_unit: item.weight_unit,
-          is_weighted: item.is_weighted,
-        })),
-      }));
+      let list = mapOrders(apiOrders);
+
+      if (list.length === 0) {
+        const fallbackResponse = await apiClient.get(API_ENDPOINTS.ORDERS);
+        const fallbackRaw = fallbackResponse.data;
+        const fallbackOrders: OrderApi[] = Array.isArray(fallbackRaw?.orders)
+          ? fallbackRaw.orders
+          : Array.isArray(fallbackRaw)
+          ? fallbackRaw
+          : Array.isArray(fallbackRaw?.results)
+          ? fallbackRaw.results
+          : [];
+        list = mapOrders(fallbackOrders);
+      }
       
       setOrders(list);
       return list;
@@ -132,7 +148,8 @@ const OrdersScreen: React.FC = () => {
         // setOrders([]); // Optionnel : vider si on veut forcer l'utilisateur à être en ligne
         return;
       }
-      console.error('[OrdersScreen] ❌ Error loading orders:', error);
+      const message = error?.message || 'Erreur inconnue';
+      console.error('[OrdersScreen] ❌ Error loading orders:', message);
     } finally {
       setIsLoading(false);
       setRefreshing(false);
