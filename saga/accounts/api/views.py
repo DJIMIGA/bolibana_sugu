@@ -5,7 +5,9 @@ from rest_framework_simplejwt.views import TokenObtainPairView
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 from django.shortcuts import get_object_or_404
 from django.contrib.auth import get_user_model
-from ..models import Shopper, ShippingAddress
+from django.core import signing
+from django.utils import timezone
+from ..models import Shopper, ShippingAddress, LoyaltyHistory
 from .serializers import UserSerializer, AddressSerializer, OrderSerializer
 from cart.models import Order, Cart, CartItem
 
@@ -292,6 +294,13 @@ class LoyaltyInfoView(APIView):
         from cart.models import Order
         from django.db.models import Sum
         
+        loyalty_tiers = [
+            {"name": "Bronze", "min_points": 0, "color": "#CD7F32"},
+            {"name": "Argent", "min_points": 20, "color": "#C0C0C0"},
+            {"name": "Or", "min_points": 50, "color": "#FFD700"},
+            {"name": "Diamant", "min_points": 100, "color": "#B9F2FF"},
+        ]
+
         # Compter les commandes de l'utilisateur
         total_orders = Order.objects.filter(
             user=request.user,
@@ -311,32 +320,75 @@ class LoyaltyInfoView(APIView):
         loyalty_points = int(total_spent / 1000) if total_spent > 0 else 0
         
         # Déterminer le niveau de fidélité
-        if loyalty_points >= 100:
-            loyalty_level = "Diamant"
-            loyalty_level_color = "#B9F2FF"  # Bleu clair pour diamant
-        elif loyalty_points >= 50:
-            loyalty_level = "Or"
-            loyalty_level_color = "#FFD700"  # Or
-        elif loyalty_points >= 20:
-            loyalty_level = "Argent"
-            loyalty_level_color = "#C0C0C0"  # Argent
+        current_tier_index = 0
+        for idx, tier in enumerate(loyalty_tiers):
+            if loyalty_points >= tier["min_points"]:
+                current_tier_index = idx
+        current_tier = loyalty_tiers[current_tier_index]
+        loyalty_level = current_tier["name"]
+        loyalty_level_color = current_tier["color"]
+
+        next_tier = loyalty_tiers[current_tier_index + 1] if current_tier_index + 1 < len(loyalty_tiers) else None
+        next_level = next_tier["name"] if next_tier else None
+        next_min_points = next_tier["min_points"] if next_tier else None
+        points_needed = (next_min_points - loyalty_points) if next_min_points is not None else 0
+
+        # Progression vers le prochain palier
+        if next_min_points is not None:
+            current_min_points = current_tier["min_points"]
+            range_points = max(1, next_min_points - current_min_points)
+            progress_to_next_tier = (loyalty_points - current_min_points) / range_points
+            progress_to_next_tier = max(0, min(1, progress_to_next_tier))
         else:
-            loyalty_level = "Bronze"
-            loyalty_level_color = "#CD7F32"  # Bronze
-        
-        # Points nécessaires pour le niveau suivant
-        if loyalty_level == "Bronze":
-            next_level = "Argent"
-            points_needed = 20 - loyalty_points
-        elif loyalty_level == "Argent":
-            next_level = "Or"
-            points_needed = 50 - loyalty_points
-        elif loyalty_level == "Or":
-            next_level = "Diamant"
-            points_needed = 100 - loyalty_points
+            progress_to_next_tier = 1
+
+        # Messages dynamiques
+        messages = []
+        if total_orders == 0:
+            messages.append("Passez votre première commande pour commencer à gagner des points.")
+        if next_level:
+            messages.append(f"Plus que {points_needed} points pour atteindre le niveau {next_level}.")
         else:
-            next_level = None
-            points_needed = 0
+            messages.append("Vous êtes au niveau le plus élevé. Merci pour votre fidélité !")
+
+        # Payload QR signé pour éviter d'exposer un identifiant brut
+        qr_payload = signing.dumps(
+            {
+                "uid": request.user.id,
+                "fid": request.user.fidelys_number,
+                "ts": timezone.now().isoformat(),
+            },
+            salt="loyalty-qr",
+        )
+
+        # Historiser uniquement si le statut a changé
+        last_history = LoyaltyHistory.objects.filter(user=request.user).first()
+        if (
+            not last_history
+            or last_history.loyalty_points != loyalty_points
+            or last_history.loyalty_level != loyalty_level
+            or last_history.total_spent != total_spent
+            or last_history.total_orders != total_orders
+        ):
+            LoyaltyHistory.objects.create(
+                user=request.user,
+                loyalty_points=loyalty_points,
+                loyalty_level=loyalty_level,
+                total_spent=total_spent,
+                total_orders=total_orders,
+                metadata={"source": "api"},
+            )
+
+        history_items = [
+            {
+                "loyalty_points": item.loyalty_points,
+                "loyalty_level": item.loyalty_level,
+                "total_spent": item.total_spent,
+                "total_orders": item.total_orders,
+                "created_at": item.created_at.isoformat(),
+            }
+            for item in LoyaltyHistory.objects.filter(user=request.user)[:10]
+        ]
         
         return Response({
             'fidelys_number': request.user.fidelys_number,
@@ -347,6 +399,13 @@ class LoyaltyInfoView(APIView):
             'total_spent': total_spent,
             'next_level': next_level,
             'points_needed': points_needed,
+            'next_tier_name': next_level,
+            'progress_to_next_tier': progress_to_next_tier,
+            'loyalty_tiers': loyalty_tiers,
+            'points_expires_at': None,
+            'messages': messages,
+            'qr_payload': qr_payload,
+            'history': history_items,
         }, status=status.HTTP_200_OK)
 
 

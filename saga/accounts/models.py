@@ -150,6 +150,32 @@ class Shopper(AbstractUser):
         return None
 
 
+LOYALTY_LEVEL_CHOICES = [
+    ("Bronze", "Bronze"),
+    ("Argent", "Argent"),
+    ("Or", "Or"),
+    ("Diamant", "Diamant"),
+]
+
+
+class LoyaltyHistory(models.Model):
+    user = models.ForeignKey(Shopper, on_delete=models.CASCADE, related_name="loyalty_history")
+    loyalty_points = models.PositiveIntegerField(default=0)
+    loyalty_level = models.CharField(max_length=20, choices=LOYALTY_LEVEL_CHOICES)
+    total_spent = models.FloatField(default=0)
+    total_orders = models.PositiveIntegerField(default=0)
+    created_at = models.DateTimeField(auto_now_add=True)
+    metadata = models.JSONField(blank=True, null=True)
+
+    class Meta:
+        verbose_name = "Historique fidélité"
+        verbose_name_plural = "Historique fidélité"
+        ordering = ["-created_at"]
+
+    def __str__(self):
+        return f"{self.user.email} - {self.loyalty_level} - {self.loyalty_points} pts"
+
+
 class ShippingAddress(models.Model):
     CITY_CHOICES = [
         ('BKO', 'Bamako'),
