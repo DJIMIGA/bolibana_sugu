@@ -14,6 +14,20 @@ export interface User {
   updated_at: string;
 }
 
+export interface LoyaltyTier {
+  name: 'Bronze' | 'Argent' | 'Or' | 'Diamant';
+  min_points: number;
+  color: string;
+}
+
+export interface LoyaltyHistoryItem {
+  loyalty_points: number;
+  loyalty_level: 'Bronze' | 'Argent' | 'Or' | 'Diamant';
+  total_spent: number;
+  total_orders: number;
+  created_at: string;
+}
+
 export interface LoyaltyInfo {
   fidelys_number: string;
   total_orders: number;
@@ -23,6 +37,13 @@ export interface LoyaltyInfo {
   total_spent: number;
   next_level: string | null;
   points_needed: number;
+  next_tier_name: string | null;
+  progress_to_next_tier: number;
+  loyalty_tiers: LoyaltyTier[];
+  points_expires_at: string | null;
+  messages: string[];
+  qr_payload: string;
+  history: LoyaltyHistoryItem[];
 }
 
 export interface Product {

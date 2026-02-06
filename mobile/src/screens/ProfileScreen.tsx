@@ -10,6 +10,7 @@ import {
   Alert,
   TextInput,
   Modal,
+  Platform,
 } from 'react-native';
 import { useAppDispatch, useAppSelector } from '../store/hooks';
 import { logoutAsync, updateProfileAsync, fetchProfileAsync, fetchLoyaltyInfoAsync } from '../store/slices/authSlice';
@@ -20,17 +21,31 @@ import { Ionicons } from '@expo/vector-icons';
 import Logo from '../components/Logo';
 import { LoadingScreen } from '../components/LoadingScreen';
 import * as SecureStore from 'expo-secure-store';
+import QRCode from 'react-native-qrcode-svg';
 
 const ProfileScreen: React.FC = () => {
   const dispatch = useAppDispatch();
   const navigation = useNavigation();
-  const { user, isLoading, error, loyaltyInfo, isLoadingLoyalty, isAuthenticated, isLoggingIn, token } = useAppSelector((state) => state.auth);
+  const { 
+    user, 
+    isLoading, 
+    error, 
+    loyaltyInfo, 
+    isLoadingLoyalty, 
+    isAuthenticated, 
+    isLoggingIn, 
+    token, 
+    isLoyaltyStale, 
+    loyaltyLastUpdated 
+  } = useAppSelector((state) => state.auth);
   const [refreshing, setRefreshing] = useState(false);
   const [isEditModalVisible, setIsEditModalVisible] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
-  const [checkingToken, setCheckingToken] = useState(true); // État pour vérifier le token dans le storage
+  
+  // Initialiser à false si on a déjà les infos dans Redux pour éviter le flash au remount (unmountOnBlur)
+  const [checkingToken, setCheckingToken] = useState(!(user || token || isAuthenticated)); 
+  
   const [hasTokenInStorage, setHasTokenInStorage] = useState(false); // Mémoriser si on a trouvé un token dans le storage
-  const [isTransitioning, setIsTransitioning] = useState(false); // État pour éviter l'affichage pendant la transition
   const [editForm, setEditForm] = useState({
     full_name: '',
     phone: '',
@@ -78,6 +93,10 @@ const ProfileScreen: React.FC = () => {
     
     checkTokenInStorage();
     
+    // Nettoyer les erreurs au montage pour éviter d'être bloqué sur un écran de chargement
+    // si une action précédente a échoué
+    dispatch(clearError());
+    
     return () => {
       isMounted = false;
     };
@@ -101,19 +120,13 @@ const ProfileScreen: React.FC = () => {
     }
   }, [dispatch, user]);
 
+  const loyaltyProgressPercent = loyaltyInfo
+    ? Math.min(100, Math.max(0, (loyaltyInfo.progress_to_next_tier || 0) * 100))
+    : 0;
+  const loyaltyLastUpdatedLabel = loyaltyLastUpdated
+    ? new Date(loyaltyLastUpdated).toLocaleString('fr-FR')
+    : null;
 
-  // Détecter quand on vient de se connecter pour éviter l'affichage pendant la transition
-  useEffect(() => {
-    // Si on vient juste de se connecter (isLoggingIn passe de true à false)
-    if (!isLoggingIn && isAuthenticated && user && token) {
-      // Afficher le loading pendant un court instant pour la transition
-      setIsTransitioning(true);
-      const timer = setTimeout(() => {
-        setIsTransitioning(false);
-      }, 300); // 300ms pour permettre à la navigation de se terminer
-      return () => clearTimeout(timer);
-    }
-  }, [isLoggingIn, isAuthenticated, user, token]);
 
   // Charger le profil si on est authentifié mais qu'on n'a pas encore de user
   // Cela se produit après une connexion réussie ou lors du chargement initial
@@ -260,22 +273,23 @@ const ProfileScreen: React.FC = () => {
   // console.log('[ProfileScreen] RENDER - token:', !!token, 'isAuthenticated:', isAuthenticated, 'hasTokenInStorage:', hasTokenInStorage);
   // console.log('[ProfileScreen] RENDER - user:', !!user, 'user email:', user?.email);
 
-  // Afficher le loading pendant le chargement initial, la connexion, la vérification du token, ou la transition
-  if (isLoading || isLoggingIn || checkingToken || isTransitioning) {
+  // Afficher le loading pendant le chargement initial, la connexion, la vérification du token
+  // Mais ne pas l'afficher si on a une erreur et pas d'utilisateur (pour éviter le chargement infini)
+  if ((isLoading || isLoggingIn || checkingToken) && !error) {
     return <LoadingScreen />;
   }
 
   // PRIORITÉ 1: Si on a un token (dans le state ou dans le storage) ou qu'on est authentifié
-  // On affiche le loading si on n'a pas encore de user, sinon on affiche le profil
-  if (token || isAuthenticated || hasTokenInStorage) {
+  // On affiche le loading si on n'a pas encore de user, sauf si on a une erreur
+  if ((token || isAuthenticated || hasTokenInStorage) && !error) {
     if (!user) {
       // On a un token/isAuthenticated mais pas encore de user : on charge le profil
       // Le useEffect va charger le profil, on affiche le loading
       return <LoadingScreen />;
     }
     // On a un user : on affiche le profil (continuera plus bas)
-  } else {
-    // Pas de token, pas authentifié, pas de token dans le storage, et vérification terminée : afficher l'écran de login
+  } else if (!user) {
+    // Pas de token, pas authentifié, pas de token dans le storage, OU erreur présente : afficher l'écran de login
     return (
       <View style={styles.container}>
         <View style={styles.notLoggedInContainer}>
@@ -396,20 +410,26 @@ const ProfileScreen: React.FC = () => {
 
       {/* Section Fidélité */}
       {loyaltyInfo && (
-        <View style={styles.section}>
+        <TouchableOpacity
+          activeOpacity={0.7}
+          onPress={() => (navigation as any).navigate('Loyalty')}
+          style={styles.section}
+        >
           <View style={styles.loyaltyHeader}>
             <Ionicons name="trophy" size={24} color={loyaltyInfo.loyalty_level_color} />
             <Text style={styles.sectionTitle}>Programme de Fidélité</Text>
           </View>
-          
+
           <View style={[styles.loyaltyCard, { borderColor: loyaltyInfo.loyalty_level_color }]}>
             <View style={styles.loyaltyLevelContainer}>
               <View style={[styles.loyaltyBadge, { backgroundColor: loyaltyInfo.loyalty_level_color }]}>
                 <Text style={styles.loyaltyLevelText}>{loyaltyInfo.loyalty_level}</Text>
               </View>
-              <Text style={styles.loyaltyNumber}>N° {loyaltyInfo.fidelys_number}</Text>
+              <Text style={styles.loyaltyNumber}>
+                N° <Text style={styles.loyaltyNumberMono}>{loyaltyInfo.fidelys_number}</Text>
+              </Text>
             </View>
-            
+
             <View style={styles.loyaltyStats}>
               <View style={styles.loyaltyStatItem}>
                 <Text style={styles.loyaltyStatValue}>{loyaltyInfo.loyalty_points}</Text>
@@ -426,27 +446,51 @@ const ProfileScreen: React.FC = () => {
                 <Text style={styles.loyaltyStatLabel}>Total dépensé</Text>
               </View>
             </View>
-            
+
             {loyaltyInfo.next_level && (
               <View style={styles.nextLevelContainer}>
                 <Text style={styles.nextLevelText}>
                   {loyaltyInfo.points_needed} points pour atteindre le niveau {loyaltyInfo.next_level}
                 </Text>
                 <View style={styles.progressBar}>
-                  <View 
+                  <View
                     style={[
-                      styles.progressFill, 
-                      { 
-                        width: `${Math.min(100, (loyaltyInfo.loyalty_points / (loyaltyInfo.loyalty_points + loyaltyInfo.points_needed)) * 100)}%`,
-                        backgroundColor: loyaltyInfo.loyalty_level_color 
+                      styles.progressFill,
+                      {
+                        width: `${loyaltyProgressPercent}%`,
+                        backgroundColor: loyaltyInfo.loyalty_level_color
                       }
-                    ]} 
+                    ]}
                   />
                 </View>
               </View>
             )}
+
+            {loyaltyInfo.messages?.length > 0 && (
+              <Text style={styles.loyaltyMessage}>{loyaltyInfo.messages[0]}</Text>
+            )}
+
+            {loyaltyInfo.qr_payload && (
+              <View style={styles.qrContainer}>
+                <QRCode
+                  value={loyaltyInfo.qr_payload}
+                  size={120}
+                  backgroundColor="#FFFFFF"
+                  color="#111827"
+                />
+                <Text style={styles.qrLabel}>Présenter au magasin</Text>
+              </View>
+            )}
+
+            {loyaltyLastUpdatedLabel && (
+              <Text style={styles.loyaltyMetaText}>
+                {isLoyaltyStale ? 'Hors ligne' : 'À jour'} • {loyaltyLastUpdatedLabel}
+              </Text>
+            )}
+
+            <Text style={styles.loyaltyDetailLink}>Voir le détail ›</Text>
           </View>
-        </View>
+        </TouchableOpacity>
       )}
 
       <View style={styles.section}>
@@ -927,6 +971,9 @@ const styles = StyleSheet.create({
     color: COLORS.TEXT_SECONDARY,
     fontWeight: '600',
   },
+  loyaltyNumberMono: {
+    fontFamily: Platform.OS === 'ios' ? 'Menlo' : 'monospace',
+  },
   loyaltyStats: {
     flexDirection: 'row',
     justifyContent: 'space-around',
@@ -973,6 +1020,39 @@ const styles = StyleSheet.create({
   progressFill: {
     height: '100%',
     borderRadius: 4,
+  },
+  loyaltyMessage: {
+    fontSize: 12,
+    color: COLORS.TEXT_SECONDARY,
+    marginTop: 10,
+    textAlign: 'center',
+  },
+  qrContainer: {
+    marginTop: 16,
+    alignItems: 'center',
+    backgroundColor: '#FFFFFF',
+    padding: 12,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
+  },
+  qrLabel: {
+    marginTop: 8,
+    fontSize: 12,
+    color: COLORS.TEXT_SECONDARY,
+  },
+  loyaltyMetaText: {
+    marginTop: 12,
+    fontSize: 11,
+    color: COLORS.TEXT_SECONDARY,
+    textAlign: 'center',
+  },
+  loyaltyDetailLink: {
+    marginTop: 12,
+    fontSize: 14,
+    fontWeight: '600',
+    color: COLORS.PRIMARY,
+    textAlign: 'center',
   },
   notLoggedInContainer: {
     flex: 1,

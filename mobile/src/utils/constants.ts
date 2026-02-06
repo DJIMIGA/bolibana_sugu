@@ -22,6 +22,7 @@ export const STORAGE_KEYS = {
   AUTH_TOKEN: 'auth_token',
   AUTH_REFRESH_TOKEN: 'auth_refresh_token',
   AUTH_USER: 'auth_user',
+  LOYALTY_INFO: 'loyalty_info',
   SYNC_QUEUE: 'sync_queue',
 } as const;
 

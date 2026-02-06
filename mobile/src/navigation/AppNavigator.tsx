@@ -30,6 +30,7 @@ import AddAddressScreen from '../screens/AddAddressScreen';
 import OrdersScreen from '../screens/OrdersScreen';
 import OrderDetailScreen from '../screens/OrderDetailScreen';
 import SettingsScreen from '../screens/SettingsScreen';
+import LoyaltyScreen from '../screens/LoyaltyScreen';
 
 const Stack = createStackNavigator();
 const Tab = createBottomTabNavigator();
@@ -93,6 +94,7 @@ const ProfileStack = () => (
     <Stack.Screen name="Orders" component={OrdersScreen} />
     <Stack.Screen name="OrderDetail" component={OrderDetailScreen} />
     <Stack.Screen name="Settings" component={SettingsScreen} />
+    <Stack.Screen name="Loyalty" component={LoyaltyScreen} />
   </Stack.Navigator>
 );
 
@@ -173,6 +175,7 @@ const MainTabs = () => {
         component={CategoryStack}
         options={{ 
           tabBarLabel: 'Catégories',
+          unmountOnBlur: true,
           tabBarIcon: ({ color, focused }) => (
             <TabBarIcon name="grid" color={color} focused={focused} />
           ),
@@ -183,6 +186,7 @@ const MainTabs = () => {
         component={ProductStack}
         options={{ 
           tabBarLabel: 'Produits',
+          unmountOnBlur: true,
           tabBarIcon: ({ color, focused }) => (
             <TabBarIcon name="bag" color={color} focused={focused} />
           ),
@@ -218,6 +222,7 @@ const MainTabs = () => {
         component={ProfileStack}
         options={{ 
           tabBarLabel: 'Profil',
+          unmountOnBlur: true,
           tabBarIcon: ({ color, focused }) => (
             <TabBarIcon name="person" color={color} focused={focused} />
           ),

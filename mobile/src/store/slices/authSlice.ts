@@ -2,8 +2,8 @@ import { createSlice, createAsyncThunk, PayloadAction } from '@reduxjs/toolkit';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as SecureStore from 'expo-secure-store';
 import apiClient, { setSessionExpiredCallback } from '../../services/api';
-import { STORAGE_KEYS, API_ENDPOINTS, SESSION_EXPIRY } from '../../utils/constants';
-import { User, LoyaltyInfo } from '../../types';
+import { STORAGE_KEYS, API_ENDPOINTS, SESSION_EXPIRY, CACHE_TTL } from '../../utils/constants';
+import { User, LoyaltyInfo, CacheItem } from '../../types';
 
 interface AuthState {
   user: User | null;
@@ -17,6 +17,8 @@ interface AuthState {
   error: string | null;
   loyaltyInfo: LoyaltyInfo | null;
   isLoadingLoyalty: boolean;
+  loyaltyLastUpdated: number | null;
+  isLoyaltyStale: boolean;
 }
 
 const initialState: AuthState = {
@@ -31,6 +33,8 @@ const initialState: AuthState = {
   error: null,
   loyaltyInfo: null,
   isLoadingLoyalty: false,
+  loyaltyLastUpdated: null,
+  isLoyaltyStale: false,
 };
 
 // Thunk pour la connexion
@@ -239,8 +243,27 @@ export const fetchLoyaltyInfoAsync = createAsyncThunk(
   'auth/fetchLoyaltyInfo',
   async (_, { rejectWithValue }) => {
     try {
+      const { connectivityService } = await import('../../services/connectivityService');
+      const isOnline = connectivityService.getIsOnline();
+
+      if (!isOnline) {
+        const cached = await AsyncStorage.getItem(STORAGE_KEYS.LOYALTY_INFO);
+        if (cached) {
+          const cacheItem = JSON.parse(cached) as CacheItem<LoyaltyInfo>;
+          const isStale = Date.now() - cacheItem.timestamp > CACHE_TTL;
+          return { loyaltyInfo: cacheItem.data, isStale, lastUpdated: cacheItem.timestamp };
+        }
+      }
+
       const response = await apiClient.get(API_ENDPOINTS.LOYALTY);
-      return response.data as LoyaltyInfo;
+      const loyaltyInfo = response.data as LoyaltyInfo;
+      const cacheItem: CacheItem<LoyaltyInfo> = {
+        data: loyaltyInfo,
+        timestamp: Date.now(),
+        version: '1',
+      };
+      await AsyncStorage.setItem(STORAGE_KEYS.LOYALTY_INFO, JSON.stringify(cacheItem));
+      return { loyaltyInfo, isStale: false, lastUpdated: cacheItem.timestamp };
     } catch (error: any) {
       return rejectWithValue(error.response?.data?.detail || 'Erreur de chargement des informations de fidélité');
     }
@@ -398,7 +421,9 @@ const authSlice = createSlice({
       })
       .addCase(fetchLoyaltyInfoAsync.fulfilled, (state, action) => {
         state.isLoadingLoyalty = false;
-        state.loyaltyInfo = action.payload;
+        state.loyaltyInfo = action.payload.loyaltyInfo;
+        state.isLoyaltyStale = action.payload.isStale;
+        state.loyaltyLastUpdated = action.payload.lastUpdated;
       })
       .addCase(fetchLoyaltyInfoAsync.rejected, (state) => {
         state.isLoadingLoyalty = false;
@@ -413,6 +438,8 @@ const authSlice = createSlice({
         state.sessionExpired = false;
         state.error = null;
         state.loyaltyInfo = null;
+        state.isLoyaltyStale = false;
+        state.loyaltyLastUpdated = null;
       });
   },
 });
