@@ -25,17 +25,7 @@ INVENTORY_ENCRYPTION_KEY=votre_cle
 
 ### 3. Tester la Connexion (1 min)
 
-```bash
-python manage.py test_b2b_api
-```
-
-**Résultat attendu** :
-```
-✅ Catégories: X récupérée(s)
-✅ Produits: X récupéré(s)
-✅ Sites: X récupéré(s)
-✅ Connexion réussie !
-```
+Vérifier la connexion en lançant la synchronisation des catégories (voir étape 4). En cas d’erreur, consulter `TEST_GUIDE.md`.
 
 ### 4. Synchroniser (1 min)
 

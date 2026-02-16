@@ -82,7 +82,7 @@ else:
 print("================================================\n")
 
 if DATABASE_URL and not DEBUG:
-    # Configuration pour Heroku (Production)
+    # Configuration via DATABASE_URL (Heroku ou autre PaaS)
     DATABASES = {
         'default': dj_database_url.config(
             default=DATABASE_URL,
@@ -90,12 +90,13 @@ if DATABASE_URL and not DEBUG:
             ssl_require=True
         )
     }
-    # Forcer la timezone de la session DB pour éviter les décalages
     DATABASES['default']['TIME_ZONE'] = 'UTC'
     DATABASES['default'].setdefault('OPTIONS', {})
     DATABASES['default']['OPTIONS']['options'] = '-c timezone=UTC'
 else:
-    # Configuration pour le développement local
+    # Configuration par variables individuelles (Elestio / dev local)
+    # Sur Elestio : DB locale sur le VPS, pas besoin de SSL
+    DB_SSLMODE = os.getenv('DB_SSLMODE', 'disable')
     DATABASES = {
         'default': {
             'ENGINE': 'django.db.backends.postgresql',
@@ -105,7 +106,7 @@ else:
             'HOST': os.getenv('DB_HOST'),
             'PORT': os.getenv('DB_PORT'),
             'OPTIONS': {
-                'sslmode': 'disable',
+                'sslmode': DB_SSLMODE,
                 'connect_timeout': 10,
                 'options': '-c timezone=UTC',
             },
@@ -503,13 +504,12 @@ print("=====================================\n")
 # PARAMÈTRES DE SÉCURITÉ SSL
 # ======================================================================
 
-# Vérifier si nous sommes en production (Heroku)
-IS_HEROKU = os.environ.get('HEROKU', '') == 'True'
+# Détection de l'environnement de production (Elestio / Heroku)
+IS_PRODUCTION = not DEBUG
 
-# Configuration de la redirection HTTPS
-if IS_HEROKU:
-    # Configuration pour la production (Heroku)
-    SECURE_SSL_REDIRECT = True
+if IS_PRODUCTION:
+    # Configuration SSL pour la production (Elestio reverse proxy ou Heroku)
+    SECURE_SSL_REDIRECT = False  # Elestio gère le SSL via OpenResty, pas de redirect interne
     SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
     SESSION_COOKIE_SECURE = True
     CSRF_COOKIE_SECURE = True
@@ -517,7 +517,7 @@ if IS_HEROKU:
     SECURE_HSTS_INCLUDE_SUBDOMAINS = True
     SECURE_HSTS_PRELOAD = True
 else:
-    # Configuration pour le développement local
+    # Développement local
     SECURE_SSL_REDIRECT = False
     SECURE_PROXY_SSL_HEADER = None
     SESSION_COOKIE_SECURE = False
@@ -525,17 +525,6 @@ else:
     SECURE_HSTS_SECONDS = 0
     SECURE_HSTS_INCLUDE_SUBDOMAINS = False
     SECURE_HSTS_PRELOAD = False
-    # Désactiver complètement HSTS en développement
-    SECURE_HSTS_SECONDS = 0
-    SECURE_HSTS_INCLUDE_SUBDOMAINS = False
-    SECURE_HSTS_PRELOAD = False
-    # Désactiver la redirection HTTPS
-    SECURE_SSL_REDIRECT = False
-    # Désactiver les cookies sécurisés
-    SESSION_COOKIE_SECURE = False
-    CSRF_COOKIE_SECURE = False
-    # Désactiver le proxy SSL
-    SECURE_PROXY_SSL_HEADER = None
 
 # Paramètres de cookies sécurisés (communs aux deux environnements)
 SESSION_COOKIE_HTTPONLY = True
@@ -563,10 +552,12 @@ SECURE_CROSS_ORIGIN_EMBEDDER_POLICY = 'require-corp'
 if DEBUG:
     ALLOWED_HOSTS = ['localhost', '127.0.0.1', '192.168.1.7', '0.0.0.0']
 else:
-    ALLOWED_HOSTS = [
-        'bolibana-sugu-d56937020d1c.herokuapp.com',
+    ALLOWED_HOSTS = os.getenv('ALLOWED_HOSTS', '').split(',') if os.getenv('ALLOWED_HOSTS') else [
         'bolibana.com',
-        'www.bolibana.com'
+        'www.bolibana.com',
+        'sagakore-u67346.vm.elestio.app',
+        'bolibana-sugu-d56937020d1c.herokuapp.com',
+        'localhost',
     ]
 
 # Origines CSRF autorisées
@@ -580,11 +571,10 @@ if DEBUG:
     ]
 else:
     CSRF_TRUSTED_ORIGINS = [
-        'https://bolibana-sugu-d56937020d1c.herokuapp.com',
         'https://bolibana.com',
         'https://www.bolibana.com',
-        'http://bolibana.com',
-        'http://www.bolibana.com'
+        'https://sagakore-u67346.vm.elestio.app',
+        'https://bolibana-sugu-d56937020d1c.herokuapp.com',
     ]
 
 # Configuration CORS
@@ -603,6 +593,7 @@ else:
     CORS_ALLOWED_ORIGINS = [
         'https://bolibana.com',
         'https://www.bolibana.com',
+        'https://sagakore-u67346.vm.elestio.app',
         'https://bolibana-sugu-d56937020d1c.herokuapp.com',
     ]
 

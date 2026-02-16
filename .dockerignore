@@ -1,0 +1,52 @@
+# Git
+.git
+.gitignore
+
+# IDE
+.cursor
+.vscode
+.idea
+*.swp
+*.swo
+
+# Python
+__pycache__
+*.pyc
+*.pyo
+*.egg-info
+.venv
+venv
+env
+
+# Node / Mobile
+mobile
+node_modules
+package-lock.json
+yarn.lock
+
+# Docs
+docs
+*.md
+!README.md
+
+# Fichiers de dev
+*.log
+wsgi.log
+django.log
+security.log
+*.sqlite3
+db.sqlite3
+media
+
+# Environnement
+.env
+.env.*
+!.env.example
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Tests
+**/test_*.py
+**/*_test.py

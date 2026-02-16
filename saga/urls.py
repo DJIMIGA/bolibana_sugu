@@ -3,14 +3,24 @@ URL configuration for saga project.
 """
 from django.conf import settings
 from django.conf.urls.static import static
+from django.http import JsonResponse
 from django.urls import path, include
 from rest_framework_simplejwt.views import TokenRefreshView, TokenVerifyView
 from accounts.admin import admin_site
+
+
+def health_check(request):
+    """Endpoint de santé pour le healthcheck Docker / Elestio."""
+    return JsonResponse({"status": "ok"})
+
 
 # Chemin d'accès admin sécurisé
 ADMIN_URL = settings.ADMIN_URL
 
 urlpatterns = [
+    # Healthcheck (doit être avant tout middleware d'authentification)
+    path('health/', health_check, name='health_check'),
+
     # URL d'administration personnalisée avec 2FA
     path(f'{settings.ADMIN_URL}', admin_site.urls),
     

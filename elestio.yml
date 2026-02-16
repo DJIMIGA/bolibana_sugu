@@ -1,0 +1,25 @@
+ports:
+  - protocol: "HTTPS"
+    targetProtocol: "HTTP"
+    listeningPort: "443"
+    targetPort: "8080"
+    targetIP: "172.17.0.1"
+    public: true
+    path: "/"
+    isAuth: false
+
+environments:
+  - key: "DEBUG"
+    value: "False"
+  - key: "DOMAIN"
+    value: "[CI_CD_DOMAIN]"
+
+config:
+  runTime: "dockerCompose"
+  buildCommand: "docker-compose build"
+  buildDir: "/"
+  runCommand: "docker-compose up -d"
+
+webUI:
+  - url: "https://[CI_CD_DOMAIN]"
+    label: "SagaKore"

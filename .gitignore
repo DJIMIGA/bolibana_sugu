@@ -1,3 +1,20 @@
+# Database dumps
+*.backup
+*.dump
+*.sql.gz
+
+# Logs
+*.log
+wsgi.log
+django.log
+security.log
+
+# Secrets (ne JAMAIS committer)
+.env
+.env.*
+!.env.example
+saga/.env.secrets
+
 # Dependencies
 node_modules/
 npm-debug.log
