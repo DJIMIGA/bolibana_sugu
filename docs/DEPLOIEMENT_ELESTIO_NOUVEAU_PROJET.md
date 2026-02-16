@@ -50,6 +50,7 @@ Internet (HTTPS, port 443)
 | Service | Port interne | Domaine | Fichier conf.d |
 |---------|-------------|---------|----------------|
 | Latigue (Django) | 8000 | bolibana.net, www.bolibana.net | `latigue-u67346.vm.elestio.app.conf` |
+| **SagaKore (Django)** | **8180** | **bolibana.com, www.bolibana.com** | `sagakore.conf` |
 | MinIO Console | 9001 | minio.bolibana.net | `minio.conf` |
 | MinIO API S3 | 9000 | s3.bolibana.net | `minio.conf` |
 | OpenClaw | 18789 | openclaw-u67346.vm.elestio.app | `openclaw-u67346.vm.elestio.app.conf` |
@@ -58,7 +59,7 @@ Internet (HTTPS, port 443)
 
 ### Ports deja utilises (ne pas reutiliser)
 
-`80, 443, 8000, 8080, 9000, 9001, 18789, 25432`
+`80, 443, 8000, 8080, 8180, 9000, 9001, 18789, 25432`
 
 ---
 
@@ -475,6 +476,41 @@ Retour d'experience de tous les problemes rencontres.
 |-------|------|
 | **Solution** | Relancer le script : `bash /opt/app/latigue/scripts/elestio-fix-ssl-domains.sh` |
 
+### Piege 11 : Le pipeline CI/CD Elestio ne clone pas le code source
+
+| Cause | Elestio cree le `docker-compose.yml` et `.env` dans `/opt/app/<projet>/` mais ne clone PAS le repo Git. Le Dockerfile n'est pas trouve (`transferring dockerfile: 2B`) |
+|-------|------|
+| **Symptome** | `failed to read dockerfile: open Dockerfile: no such file or directory` |
+| **Solution** | Cloner le repo manuellement dans `/opt/app/<projet>/` : `git clone <url> tmp_clone && cp -r tmp_clone/* . && rm -rf tmp_clone` |
+
+### Piege 12 : Repo prive + build context URL GitHub
+
+| Cause | `build: { context: https://github.com/user/repo.git#main }` echoue si le repo est prive |
+|-------|------|
+| **Symptome** | `fatal: could not read Username for 'https://github.com': terminal prompts disabled` |
+| **Solution** | Rendre le repo public temporairement, ou cloner manuellement avec `build: .` (contexte local) |
+
+### Piege 13 : Port deja utilise (ex: 8080 pris par PgAdmin)
+
+| Cause | Un autre service sur le VPS utilise deja le port choisi |
+|-------|------|
+| **Symptome** | `failed to bind host port... address already in use` |
+| **Diagnostic** | `ss -tlnp \| grep <port>` |
+| **Solution** | Changer le port dans docker-compose.yml : `"8180:8080"` (port hote:port conteneur) |
+
+### Piege 14 : DB_HOST=localhost dans le .env d'Elestio
+
+| Cause | Elestio copie les variables d'environnement telles quelles depuis le Dashboard (qui peut contenir des valeurs de dev) |
+|-------|------|
+| **Symptome** | `entrypoint.sh` boucle sur « Attente de PostgreSQL... Tentative X/30 » |
+| **Solution** | `DB_HOST=db` (nom du service docker-compose), `DB_NAME` et `DB_USER` doivent correspondre a `POSTGRES_DB` et `POSTGRES_USER` |
+
+### Piege 15 : DATABASE_URL present dans le .env active le mode Heroku
+
+| Cause | Si `DATABASE_URL` est defini et `DEBUG=False`, Django utilise `dj_database_url` avec SSL obligatoire (config Heroku) |
+|-------|------|
+| **Solution** | Commenter `DATABASE_URL` dans le `.env` : `#DATABASE_URL=...` pour utiliser les variables `DB_*` |
+
 ---
 
 ## 10. Commandes de reference
@@ -568,6 +604,15 @@ bash /opt/app/latigue/scripts/elestio-fix-ssl-domains.sh
 │   ├── marketing/
 │   ├── scripts/
 │   │   └── elestio-fix-ssl-domains.sh
+│   └── ...
+├── sagakore/          # Django (bolibana.com) — port 8180
+│   ├── docker-compose.yml
+│   ├── Dockerfile
+│   ├── .env
+│   ├── entrypoint.sh
+│   ├── manage.py
+│   ├── saga/          # settings, urls, wsgi
+│   ├── requirements.txt
 │   └── ...
 ├── minio/             # MinIO (stockage S3)
 │   ├── docker-compose.yml
