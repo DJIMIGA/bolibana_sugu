@@ -505,7 +505,22 @@ Retour d'experience de tous les problemes rencontres.
 | **Symptome** | `entrypoint.sh` boucle sur « Attente de PostgreSQL... Tentative X/30 » |
 | **Solution** | `DB_HOST=db` (nom du service docker-compose), `DB_NAME` et `DB_USER` doivent correspondre a `POSTGRES_DB` et `POSTGRES_USER` |
 
-### Piege 15 : DATABASE_URL present dans le .env active le mode Heroku
+### Piege 15 : Elestio genere proxy_pass vers le mauvais port (3001 par defaut)
+
+| Cause | Elestio genere la config nginx avec `proxy_pass http://172.17.0.1:3001/` quel que soit le port du service |
+|-------|------|
+| **Symptome** | 502 Bad Gateway |
+| **Diagnostic** | `grep proxy_pass /opt/elestio/nginx/conf.d/sagakore*.conf` |
+| **Solution** | `sed -i 's\|proxy_pass http://172.17.0.1:3001/\|proxy_pass http://172.17.0.1:8180/\|' <fichier>.conf` puis `docker exec elestio-nginx nginx -s reload` |
+
+### Piege 16 : ALLOWED_HOSTS incomplet → erreur 400
+
+| Cause | Le `.env` d'Elestio ne contient que `localhost,127.0.0.1` dans ALLOWED_HOSTS |
+|-------|------|
+| **Symptome** | HTTP 400 Bad Request apres correction du 502 |
+| **Solution** | Ajouter tous les domaines dans ALLOWED_HOSTS : `bolibana.com,www.bolibana.com,sagakore-u67346.vm.elestio.app` |
+
+### Piege 17 : DATABASE_URL present dans le .env active le mode Heroku
 
 | Cause | Si `DATABASE_URL` est defini et `DEBUG=False`, Django utilise `dj_database_url` avec SSL obligatoire (config Heroku) |
 |-------|------|
