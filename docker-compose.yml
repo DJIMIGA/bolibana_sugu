@@ -17,8 +17,7 @@ services:
       retries: 5
 
   web:
-    build:
-      context: https://github.com/DJIMIGA/bolibana_sugu.git#main
+    build: .
     restart: unless-stopped
     ports:
       - "8080:8080"

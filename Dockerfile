@@ -1,9 +1,8 @@
 FROM python:3.11-slim-bookworm
 
-# Dépendances système (curl pour healthcheck, git pour clone, libpq pour PostgreSQL, libgl pour opencv)
+# Dépendances système (curl pour healthcheck, libpq pour PostgreSQL, libgl pour opencv)
 RUN apt-get update && apt-get install -y --no-install-recommends \
     curl \
-    git \
     libpq-dev \
     gcc \
     libgl1 \
@@ -12,13 +11,12 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 
 WORKDIR /app
 
-# Cloner le repo (branch main)
-ARG REPO_URL=https://github.com/DJIMIGA/bolibana_sugu.git
-ARG BRANCH=main
-RUN git clone --depth 1 --branch ${BRANCH} ${REPO_URL} /app
-
-# Installer les dépendances Python
+# Installer les dépendances Python en premier (meilleur cache Docker)
+COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
+
+# Copier le projet
+COPY . .
 
 # Collecter les fichiers statiques au build
 RUN DJANGO_SETTINGS_MODULE=saga.settings \
