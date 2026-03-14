@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Paiement réussi - BoliBana</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #10B981 0%, #059669 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        .container {
+            background: white;
+            border-radius: 20px;
+            padding: 40px;
+            max-width: 400px;
+            width: 100%;
+            text-align: center;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+        }
+        .success-icon {
+            width: 80px;
+            height: 80px;
+            background: #10B981;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 20px;
+        }
+        .success-icon svg {
+            width: 50px;
+            height: 50px;
+            color: white;
+        }
+        h1 {
+            color: #1F2937;
+            font-size: 24px;
+            margin-bottom: 10px;
+        }
+        .message {
+            color: #6B7280;
+            font-size: 16px;
+            margin-bottom: 30px;
+            line-height: 1.5;
+        }
+        .order-info {
+            background: #F3F4F6;
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 30px;
+        }
+        .order-number {
+            font-size: 18px;
+            font-weight: 600;
+            color: #1F2937;
+            margin-bottom: 5px;
+        }
+        .order-status {
+            font-size: 14px;
+            color: #10B981;
+            font-weight: 500;
+        }
+        .button {
+            background: #10B981;
+            color: white;
+            border: none;
+            border-radius: 12px;
+            padding: 16px 32px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            width: 100%;
+            transition: background 0.2s;
+        }
+        .button:hover {
+            background: #059669;
+        }
+        .button-secondary:hover {
+            background: #4B5563;
+        }
+        .button:active {
+            transform: scale(0.98);
+        }
+        .info-text {
+            font-size: 12px;
+            color: #9CA3AF;
+            margin-top: 20px;
+        }
+        @media (max-width: 480px) {
+            .container {
+                padding: 30px 20px;
+            }
+            h1 {
+                font-size: 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="success-icon">
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+            </svg>
+        </div>
+        <h1>Paiement réussi !</h1>
+        <p class="message">Votre commande a été confirmée avec succès.</p>
+        
+        <div class="order-info">
+            <div class="order-number">Commande #{{ order_number }}</div>
+            <div class="order-status">Statut: Confirmée</div>
+        </div>
+        
+        <button class="button" id="openAppButton" style="margin-top: 20px;">Fermer et retourner à l'application</button>
+        <p class="info-text">Si la page ne se ferme pas automatiquement, appuyez sur le bouton ci-dessus.</p>
+    </div>
+
+    <script>
+        console.log('[Payment Success] Page chargée - Commande #{{ order_number }}');
+        console.log('[Payment Success] Order ID depuis template: {{ order_id }}');
+        console.log('[Payment Success] Order Number depuis template: {{ order_number }}');
+        
+        const orderId = '{{ order_id }}';
+        const orderNumber = '{{ order_number }}';
+        
+        console.log('[Payment Success] Order ID JavaScript:', orderId);
+        console.log('[Payment Success] Order Number JavaScript:', orderNumber);
+        console.log('[Payment Success] Type orderId:', typeof orderId);
+        console.log('[Payment Success] Type orderNumber:', typeof orderNumber);
+        
+        // URL de callback HTTP qui redirige vers le deep link (plus fiable avec Expo WebBrowser)
+        // Utiliser le chemin absolu pour éviter les problèmes de base URL
+        const baseUrl = window.location.origin;
+        console.log('[Payment Success] Base URL:', baseUrl);
+        
+        // Encoder les paramètres pour éviter les problèmes d'URL
+        const encodedOrderId = encodeURIComponent(orderId);
+        const encodedOrderNumber = encodeURIComponent(orderNumber || '');
+        
+        console.log('[Payment Success] Order ID encodé:', encodedOrderId);
+        console.log('[Payment Success] Order Number encodé:', encodedOrderNumber);
+        
+        const callbackUrl = `${baseUrl}/api/cart/payment-callback/?order_id=${encodedOrderId}&order_number=${encodedOrderNumber}`;
+        
+        console.log('[Payment Success] URL de callback complète:', callbackUrl);
+        
+        // Deep link pour ramener l'app au premier plan (peut fermer Chrome Custom Tabs sur Android)
+        const deepLink = 'bolibana://payment-success?order_id=' + encodeURIComponent(orderId) + '&order_number=' + encodeURIComponent(orderNumber || '');
+        
+        // Tente d'ouvrir l'app (ne ferme pas cette page ; l'utilisateur doit utiliser le X)
+        function openApp(event) {
+            if (event) {
+                event.preventDefault();
+                event.stopPropagation();
+            }
+            console.log('[Payment Success] Bouton Ouvrir l\'application cliqué');
+            try {
+                window.location.replace(deepLink);
+            } catch (e) {
+                window.location.href = deepLink;
+                console.error('[Payment Success] Deep link échoué:', e);
+            }
+            // Utiliser replace pour ne pas rester dans l'historique (évite de revenir sur Stripe)
+            setTimeout(function() {
+                try {
+                    window.location.replace(callbackUrl);
+                } catch (err) {
+                    window.location.href = callbackUrl;
+                }
+            }, 200);
+        }
+        
+        function attachButtonListener() {
+            const button = document.getElementById('openAppButton');
+            if (button) {
+                button.addEventListener('click', openApp);
+                console.log('[Payment Success] Bouton attaché');
+            } else {
+                setTimeout(attachButtonListener, 100);
+            }
+        }
+        
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', attachButtonListener);
+        } else {
+            attachButtonListener();
+        }
+    </script>
+</body>
+</html>

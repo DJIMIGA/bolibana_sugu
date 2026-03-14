@@ -1,0 +1,143 @@
+{% load product_tags %}
+
+<!-- Bouton favoris -->
+<div class="favorite-component {% if is_detail %}detail-view{% endif %}" id="favorite-{{ product.id }}" data-product-id="{{ product.id }}">
+{% if user.is_authenticated %}
+        <button hx-post="{% url 'suppliers:toggle_favorite' product.id %}?template=button"
+          hx-target="#favorite-{{ product.id }}, #favorite-card-{{ product.id }}"
+          hx-swap="outerHTML"
+                class="w-full bg-white border-2 border-gray-300 text-gray-700 font-semibold px-4 py-2 rounded-lg hover:bg-gray-50 hover:border-gray-400 hover:text-gray-900 transition-all duration-300 flex items-center justify-center gap-2 cursor-pointer"
+                data-motion="button"
+                aria-label="{% if user|is_favorite:product %}Retirer des favoris{% else %}Ajouter aux favoris{% endif %}"
+                role="button"
+                tabindex="0">
+            <svg class="h-5 w-5 {% if user|is_favorite:product %}text-red-500{% else %}text-gray-500 group-hover:text-red-500{% endif %}" 
+                 xmlns="http://www.w3.org/2000/svg" 
+                 fill="{% if user|is_favorite:product %}currentColor{% else %}none{% endif %}" 
+                 viewBox="0 0 24 24" 
+                 stroke="currentColor">
+                <path stroke-linecap="round" 
+                      stroke-linejoin="round" 
+                      stroke-width="2" 
+                      d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"/>
+            </svg>
+            <span>{% if user|is_favorite:product %}Retirer des favoris{% else %}Ajouter aux favoris{% endif %}</span>
+        </button>
+{% else %}
+    <a href="{% url 'accounts:login' %}?next={{ request.path }}" 
+           class="w-full bg-white border-2 border-gray-300 text-gray-700 font-semibold px-4 py-2 rounded-lg hover:bg-gray-50 hover:border-gray-400 hover:text-gray-900 transition-all duration-300 flex items-center justify-center gap-2 cursor-pointer"
+           role="button"
+           tabindex="0">
+            <svg class="h-5 w-5 text-gray-500 group-hover:text-red-500" 
+                 xmlns="http://www.w3.org/2000/svg" 
+                 fill="none" 
+                 viewBox="0 0 24 24" 
+                 stroke="currentColor">
+                <path stroke-linecap="round" 
+                      stroke-linejoin="round" 
+                      stroke-width="2" 
+                      d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"/>
+        </svg>
+            <span>Ajouter aux favoris</span>
+    </a>
+{% endif %} 
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const favoriteButton = document.querySelector('#favorite-{{ product.id }} button');
+    
+    if (favoriteButton) {
+        // Animation au survol
+        favoriteButton.addEventListener('mouseenter', () => {
+            gsap.to(favoriteButton, {
+                scale: 1.02,
+                duration: 0.2,
+                ease: "power2.out"
+            });
+        });
+
+        favoriteButton.addEventListener('mouseleave', () => {
+            gsap.to(favoriteButton, {
+                scale: 1,
+                duration: 0.2,
+                ease: "power2.out"
+            });
+        });
+
+        // Animation au clic
+        favoriteButton.addEventListener('mousedown', () => {
+            gsap.to(favoriteButton, {
+                scale: 0.98,
+                duration: 0.1,
+                ease: "power2.in"
+            });
+        });
+
+        favoriteButton.addEventListener('mouseup', () => {
+            gsap.to(favoriteButton, {
+                scale: 1,
+                duration: 0.1,
+                ease: "power2.out"
+            });
+        });
+
+        // Gestion du focus au clavier
+        favoriteButton.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                favoriteButton.click();
+            }
+        });
+    }
+});
+</script>
+
+<style>
+.favorite-component button,
+.favorite-component a {
+    @apply transition-all duration-300 ease-in-out;
+}
+
+.favorite-component button:hover:not(:disabled),
+.favorite-component a:hover {
+    @apply shadow-md;
+}
+
+.favorite-component button:active:not(:disabled) {
+    @apply shadow-inner;
+}
+
+/* Styles pour le focus */
+.favorite-component button:focus-visible,
+.favorite-component a:focus-visible {
+    @apply outline-none ring-2 ring-offset-2 ring-gray-400 ring-opacity-50 shadow-md;
+}
+
+/* Style pour le focus au clavier */
+.favorite-component button:focus-visible:not(:active),
+.favorite-component a:focus-visible:not(:active) {
+    @apply scale-[1.02];
+}
+
+/* Masquer le focus pour la souris */
+.favorite-component button:focus:not(:focus-visible),
+.favorite-component a:focus:not(:focus-visible) {
+    @apply outline-none ring-0;
+}
+
+/* Styles spécifiques pour la vue détaillée */
+.detail-view {
+    @apply w-full max-w-md mx-auto;
+}
+
+.detail-view button,
+.detail-view a {
+    @apply px-6 py-3 text-lg font-semibold;
+}
+
+.detail-view button svg,
+.detail-view a svg {
+    @apply h-6 w-6;
+}
+</style> 

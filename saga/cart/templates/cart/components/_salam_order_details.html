@@ -1,0 +1,75 @@
+<!-- Résumé de la commande Salam -->
+<div class="mt-0">
+    <div class="mt-0 bg-transparent">
+        <h3 class="sr-only">Articles Salam dans votre panier</h3>
+        
+        <!-- En-tête Salam compact -->
+        <div class="p-1.5 bg-gradient-to-r from-yellow-50 to-yellow-100 border-b border-yellow-200 rounded-t-lg">
+            <div class="flex items-center space-x-1.5">
+                <svg class="w-3.5 h-3.5 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                </svg>
+                <h4 class="text-[10px] sm:text-xs font-bold text-yellow-800 uppercase tracking-tight">Produits Salam</h4>
+            </div>
+        </div>
+        
+        <!-- Liste des articles Salam -->
+        <ul class="divide-y divide-yellow-100">
+            {% for item in cart_items %}
+            {% if item.product.is_salam %}
+            <li class="py-2 px-1 flex items-center">
+                <!-- Image -->
+                {% load cart_tags %}
+                {% product_image item.product size_class="w-12 h-12 sm:w-20 sm:h-20 rounded-lg flex-shrink-0 object-cover" alt_text=item.product.title %}
+
+                <!-- Détails du produit -->
+                <div class="ml-3 flex-1 min-w-0">
+                    <div class="flex justify-between items-start">
+                        <h4 class="text-[11px] sm:text-sm font-medium text-gray-900 truncate pr-2">{{ item.product.title }}</h4>
+                        <p class="text-[11px] sm:text-sm font-bold text-gray-900 whitespace-nowrap">{{ item.get_total_price|format_price }}</p>
+                    </div>
+                    
+                    <div class="flex justify-between items-center mt-0.5">
+                        <p class="text-[10px] sm:text-xs text-gray-500">
+                            <span class="font-medium text-gray-700">{{ item.quantity }}</span> × {{ item.get_unit_price|format_price }}
+                        </p>
+                        
+                        <!-- Options compactes -->
+                        {% if item.colors.exists or item.sizes.exists %}
+                        <div class="flex gap-1">
+                            {% if item.colors.exists %}
+                                {% for color in item.colors.all %}
+                                <div class="w-2 h-2 rounded-full border border-yellow-200" style="background-color: {{ color.color_code }}" title="{{ color.name }}"></div>
+                                {% endfor %}
+                            {% endif %}
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </li>
+            {% endif %}
+            {% endfor %}
+        </ul>
+
+        <!-- Résumé des totaux Salam -->
+        <div class="border-t border-yellow-200 p-2 bg-gradient-to-r from-yellow-50 to-yellow-100 rounded-b-lg mt-1">
+            <div class="flex justify-between text-[11px] sm:text-sm text-gray-600 mb-0.5">
+                <p>Sous-total Salam</p>
+                <p>{{ order_total|format_price }}</p>
+            </div>
+            <div class="flex justify-between text-[11px] sm:text-sm text-gray-600 mb-0.5">
+                <p>Livraison</p>
+                <p>{% if selected_shipping_method %}
+                    {{ selected_shipping_method.price|format_price }}
+                {% else %}
+                    {{ shipping_cost|format_price }}
+                {% endif %}</p>
+            </div>
+        
+            <div class="flex justify-between text-xs sm:text-base font-bold text-gray-900 border-t border-yellow-200 pt-1 mt-1">
+                <p>Total à payer</p>
+                <p class="text-yellow-800">{{ total_with_shipping|format_price }}</p>
+            </div>
+        </div>
+    </div>
+</div>

@@ -1,0 +1,41 @@
+[
+  {
+    "model": "product.product",
+    "pk": 1,
+    "fields": {
+      "image_urls": {
+        "main": "https://bolibana-sugu.s3.eu-north-1.amazonaws.com/products/tecno-pop-2f-champagne/main.jpg",
+        "gallery": [
+          "https://bolibana-sugu.s3.eu-north-1.amazonaws.com/products/tecno-pop-2f-champagne/gallery/1.jpg",
+          "https://bolibana-sugu.s3.eu-north-1.amazonaws.com/products/tecno-pop-2f-champagne/gallery/2.jpg"
+        ]
+      }
+    }
+  },
+  {
+    "model": "product.product",
+    "pk": 2,
+    "fields": {
+      "image_urls": {
+        "main": "https://bolibana-sugu.s3.eu-north-1.amazonaws.com/products/tecno-pop-2f-noir/main.jpg",
+        "gallery": [
+          "https://bolibana-sugu.s3.eu-north-1.amazonaws.com/products/tecno-pop-2f-noir/gallery/1.jpg",
+          "https://bolibana-sugu.s3.eu-north-1.amazonaws.com/products/tecno-pop-2f-noir/gallery/2.jpg"
+        ]
+      }
+    }
+  },
+  {
+    "model": "product.product",
+    "pk": 3,
+    "fields": {
+      "image_urls": {
+        "main": "https://bolibana-sugu.s3.eu-north-1.amazonaws.com/products/tecno-pop-2f-bleu/main.jpg",
+        "gallery": [
+          "https://bolibana-sugu.s3.eu-north-1.amazonaws.com/products/tecno-pop-2f-bleu/gallery/1.jpg",
+          "https://bolibana-sugu.s3.eu-north-1.amazonaws.com/products/tecno-pop-2f-bleu/gallery/2.jpg"
+        ]
+      }
+    }
+  }
+] 

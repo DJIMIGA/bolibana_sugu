@@ -1,0 +1,83 @@
+{
+  "expo": {
+    "name": "BoliBana Sugu",
+    "slug": "sugu",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/app-logo.png",
+    "userInterfaceStyle": "light",
+    "splash": {
+      "image": "./assets/splash.png",
+      "resizeMode": "cover",
+      "backgroundColor": "#008000"
+    },
+    "assetBundlePatterns": [
+      "**/*"
+    ],
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.bolibana.sugu"
+    },
+    "android": {
+      "softwareKeyboardLayoutMode": "pan",
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/app-logo-adaptive.png",
+        "backgroundColor": "#008000"
+      },
+      "package": "com.bolibana.sugu",
+      "permissions": [
+        "android.permission.CAMERA",
+        "android.permission.RECORD_AUDIO"
+      ],
+      "intentFilters": [
+        {
+          "action": "VIEW",
+          "autoVerify": true,
+          "data": [
+            {
+              "scheme": "bolibana",
+              "host": "payment-success"
+            }
+          ],
+          "category": ["BROWSABLE", "DEFAULT"]
+        },
+        {
+          "action": "VIEW",
+          "autoVerify": true,
+          "data": [
+            {
+              "scheme": "https",
+              "host": "www.bolibana.com",
+              "pathPrefix": "/api/cart/payment-callback"
+            },
+            {
+              "scheme": "https",
+              "host": "bolibana.com",
+              "pathPrefix": "/api/cart/payment-callback"
+            }
+          ],
+          "category": ["BROWSABLE", "DEFAULT"]
+        }
+      ]
+    },
+    "scheme": "bolibana",
+    "web": {
+      "favicon": "./assets/app-logo.png"
+    },
+    "plugins": [
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "Autoriser l'accès à la caméra pour scanner les codes-barres"
+        }
+      ]
+    ],
+    "extra": {
+      "apiBaseUrl": "https://www.bolibana.com/api",
+      "eas": {
+        "projectId": "408e7748-1d05-460b-92f4-0614d8b2a3c4"
+      }
+    },
+    "owner": "pymalien"
+  }
+}

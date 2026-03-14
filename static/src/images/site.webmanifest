@@ -1,0 +1,23 @@
+{
+  "name": "BoliBana - SuGu",
+  "short_name": "BoliBana",
+  "description": "Votre intermédiaire expert du marché. Comparateur de prix, sélection de fournisseurs fiables, gestion livraison, meilleur prix garanti.",
+  "icons": [
+    {
+      "src": "/static/src/images/android-chrome-192x192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "/static/src/images/android-chrome-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ],
+  "theme_color": "#008000",
+  "background_color": "#fffaf0",
+  "display": "standalone",
+  "start_url": "/",
+  "scope": "/",
+  "lang": "fr"
+}

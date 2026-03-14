@@ -1,0 +1,49 @@
+{% extends "admin/base_site.html" %}
+{% load i18n static %}
+
+{% block extrastyle %}
+{{ block.super }}
+<link rel="stylesheet" href="{% static "admin/css/forms.css" %}">
+<style>
+    .verify-form {
+        max-width: 400px;
+        margin: 20px auto;
+        padding: 20px;
+        background: #f8f9fa;
+        border-radius: 4px;
+    }
+    .verify-form input[type="text"] {
+        width: 100%;
+        padding: 8px;
+        margin: 10px 0;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div id="content-main">
+    <h1>{% trans "Vérification de l'authentification à deux facteurs" %}</h1>
+    
+    {% if messages %}
+    <ul class="messagelist">
+        {% for message in messages %}
+        <li{% if message.tags %} class="{{ message.tags }}"{% endif %}>{{ message }}</li>
+        {% endfor %}
+    </ul>
+    {% endif %}
+
+    <div class="verify-form">
+        <p>{% trans "Veuillez entrer le code à 6 chiffres généré par votre application d'authentification :" %}</p>
+        <form method="post">
+            {% csrf_token %}
+            <div class="form-row">
+                <label for="token">{% trans "Code de vérification" %}</label>
+                <input type="text" name="token" id="token" required>
+            </div>
+            <div class="submit-row">
+                <input type="submit" value="{% trans 'Vérifier' %}" class="default">
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %} 

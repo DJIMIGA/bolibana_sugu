@@ -1,0 +1,50 @@
+{% load static %}
+<!-- BoliBana Splash Loader -->
+<div id="bolibana-splash" class="fixed inset-0 z-[9999] flex items-center justify-center transition-opacity duration-500" style="background:#008000;">
+  <div class="flex flex-col items-center">
+    <svg id="splash-logo" viewBox="0 0 128 120" xmlns="http://www.w3.org/2000/svg" style="width:120px;height:120px;overflow:visible;margin-bottom:20px;">
+      <path id="splash-handle" d="M28 52 Q28 14 64 14 Q100 14 100 52" fill="none" stroke="rgba(255,255,255,0.92)" stroke-width="5.5" stroke-linecap="round" style="stroke-dasharray:130;stroke-dashoffset:130;animation:splashDraw 0.6s cubic-bezier(0.4,0,0.2,1) 0.1s forwards;"/>
+      <path id="splash-basket" d="M16 52 L26 96 Q26 102 34 102 L94 102 Q102 102 102 96 L112 52 Z" fill="none" stroke="rgba(255,255,255,0.92)" stroke-width="5.5" stroke-linejoin="round" stroke-linecap="round" style="stroke-dasharray:280;stroke-dashoffset:280;animation:splashDraw 0.75s cubic-bezier(0.4,0,0.2,1) 0.55s forwards;"/>
+      <circle cx="42" cy="74" r="12" fill="#009A00" style="transform-origin:42px 74px;transform:scale(0);animation:splashPop 0.35s cubic-bezier(0.34,1.56,0.64,1) 1.15s forwards;"/>
+      <circle cx="64" cy="74" r="12" fill="#FFD700" stroke="#D4A017" stroke-width="1.2" style="transform-origin:64px 74px;transform:scale(0);animation:splashPop 0.35s cubic-bezier(0.34,1.56,0.64,1) 1.32s forwards;"/>
+      <circle cx="86" cy="74" r="12" fill="#C0392B" style="transform-origin:86px 74px;transform:scale(0);animation:splashPop 0.35s cubic-bezier(0.34,1.56,0.64,1) 1.5s forwards;"/>
+      <g style="transform-origin:106px 34px;transform:scale(0);animation:splashPop 0.4s cubic-bezier(0.34,1.56,0.64,1) 1.72s forwards;">
+        <circle cx="106" cy="34" r="14" fill="#C0392B"/>
+        <text x="106" y="39.5" font-size="14" font-weight="700" fill="white" font-family="sans-serif" text-anchor="middle">3</text>
+      </g>
+    </svg>
+    <div class="flex items-baseline" style="opacity:0;transform:translateY(18px);animation:splashSlideUp 0.5s cubic-bezier(0.34,1.2,0.64,1) 2s forwards;">
+      <span style="color:white;font-size:40px;font-weight:700;font-family:Georgia,serif;letter-spacing:-2px;">Boli</span>
+      <span style="color:#FFD700;font-size:40px;font-weight:700;font-family:Georgia,serif;letter-spacing:-2px;">Bana</span>
+    </div>
+    <div style="color:#C0392B;font-family:sans-serif;font-size:13px;font-weight:700;letter-spacing:6px;margin-top:6px;opacity:0;animation:splashFadeIn 0.4s ease 2.5s forwards;">SUGU</div>
+    <div class="flex gap-1 mt-3" style="opacity:0;animation:splashFadeIn 0.01s ease 2.7s forwards;">
+      <span style="height:3px;width:36px;border-radius:2px;background:rgba(255,255,255,0.75);transform:scaleX(0);transform-origin:left;animation:splashBar 0.3s ease 2.7s forwards;"></span>
+      <span style="height:3px;width:36px;border-radius:2px;background:#FFD700;transform:scaleX(0);transform-origin:left;animation:splashBar 0.3s ease 2.85s forwards;"></span>
+      <span style="height:3px;width:36px;border-radius:2px;background:#C0392B;transform:scaleX(0);transform-origin:left;animation:splashBar 0.3s ease 3.0s forwards;"></span>
+    </div>
+    <div style="color:rgba(255,255,255,0.4);font-family:sans-serif;font-size:11px;margin-top:12px;opacity:0;animation:splashFadeIn 0.5s ease 3.2s forwards;">{{ brand_tagline|default:"Votre intermédiaire expert du marché" }}</div>
+  </div>
+</div>
+<style>
+@keyframes splashDraw{to{stroke-dashoffset:0}}
+@keyframes splashPop{to{transform:scale(1)}}
+@keyframes splashSlideUp{to{opacity:1;transform:translateY(0)}}
+@keyframes splashFadeIn{to{opacity:1}}
+@keyframes splashBar{to{transform:scaleX(1)}}
+</style>
+<script>
+(function(){
+  var s=document.getElementById('bolibana-splash');
+  if(!s)return;
+  window.addEventListener('load',function(){
+    setTimeout(function(){
+      s.style.opacity='0';
+      setTimeout(function(){s.remove();},500);
+    },3600);
+  });
+  setTimeout(function(){
+    if(s&&s.parentNode){s.style.opacity='0';setTimeout(function(){if(s.parentNode)s.remove();},500);}
+  },6000);
+})();
+</script>

@@ -1,0 +1,20 @@
+<svg viewBox="0 0 300 80" width="300" height="80" xmlns="http://www.w3.org/2000/svg">
+  <!-- Panier outline V4 -->
+  <path d="M12 26 L17 48 Q17 53 22 53 L50 53 Q55 53 55 48 L60 26Z" fill="none" stroke="#008000" stroke-width="2.2" stroke-linejoin="round"/>
+  <!-- 3 pastilles tricolores Mali -->
+  <circle cx="25" cy="40" r="5.5" fill="#009A00"/>
+  <circle cx="36" cy="40" r="5.5" fill="#FFD700" stroke="#D4A017" stroke-width="0.8"/>
+  <circle cx="47" cy="40" r="5.5" fill="#C0392B"/>
+  <!-- Anse -->
+  <path d="M22 26 Q22 12 36 12 Q50 12 50 26" fill="none" stroke="#008000" stroke-width="2.2" stroke-linecap="round"/>
+  <!-- Badge rouge -->
+  <circle cx="60" cy="20" r="7" fill="#C0392B"/>
+  <text x="60" y="24.5" font-size="8" font-weight="700" fill="white" font-family="Georgia,serif" text-anchor="middle">3</text>
+  <!-- BoliBana -->
+  <text x="80" y="34" font-size="28" font-weight="700" fill="#008000" font-family="Georgia,serif" letter-spacing="-1">Boli</text>
+  <text x="148" y="34" font-size="28" font-weight="700" fill="#C8890A" font-family="Georgia,serif" letter-spacing="-1">Bana</text>
+  <!-- SUGU -->
+  <text x="80" y="52" font-size="13" fill="#C0392B" font-family="sans-serif" letter-spacing="6" font-weight="600">SUGU</text>
+  <line x1="80" y1="58" x2="240" y2="58" stroke="rgba(192,57,43,0.2)" stroke-width="0.6"/>
+  <text x="80" y="69" font-size="8.5" fill="#bbbbbb" font-family="sans-serif" letter-spacing="0.4">Votre intermédiaire expert du marché</text>
+</svg>

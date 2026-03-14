@@ -1,0 +1,71 @@
+{
+  "name": "sugu",
+  "version": "1.0.0",
+  "main": "expo/AppEntry.js",
+  "scripts": {
+    "start": "expo start --offline",
+    "start:online": "expo start",
+    "start:dev": "expo start --offline",
+    "start:clear": "expo start --clear --offline",
+    "android": "expo start --android",
+    "ios": "expo start --ios",
+    "web": "expo start --web",
+    "clean": "expo start --clear",
+    "reset": "npx expo start --clear --reset-cache",
+    "build:dev": "eas build --profile development",
+    "build:preview": "eas build --profile preview",
+    "build:prod": "eas build --profile production",
+    "submit:android": "eas submit --platform android",
+    "submit:ios": "eas submit --platform ios",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
+    "type-check": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@react-native-async-storage/async-storage": "^2.1.0",
+    "@react-native-community/netinfo": "^11.3.1",
+    "@react-navigation/bottom-tabs": "^6.6.1",
+    "@react-navigation/native": "^6.1.18",
+    "@react-navigation/stack": "^6.4.1",
+    "@reduxjs/toolkit": "^2.5.0",
+    "axios": "^1.7.9",
+    "crypto-js": "^4.2.0",
+    "expo": "~54.0.25",
+    "expo-camera": "~17.0.10",
+    "expo-constants": "~18.0.12",
+    "expo-image": "^3.0.11",
+    "expo-image-picker": "~17.0.10",
+    "expo-secure-store": "~15.0.8",
+    "expo-splash-screen": "~0.29.21",
+    "expo-status-bar": "~3.0.9",
+    "expo-web-browser": "^15.0.10",
+    "qrcode": "^1.5.4",
+    "react": "19.1.0",
+    "react-native": "0.81.5",
+    "react-native-gesture-handler": "~2.28.0",
+    "react-native-get-random-values": "^2.0.0",
+    "react-native-qrcode-svg": "^6.3.21",
+    "react-native-safe-area-context": "~5.6.0",
+    "react-native-screens": "~4.16.0",
+    "react-native-svg": "^15.15.3",
+    "react-redux": "^9.2.0",
+    "redux": "^5.0.0",
+    "redux-persist": "^6.0.0",
+    "redux-persist-transform-encrypt": "^3.0.1"
+  },
+  "devDependencies": {
+    "@babel/core": "^7.25.2",
+    "@types/react": "~19.1.10",
+    "@types/react-native": "~0.73.0",
+    "babel-plugin-module-resolver": "^5.0.2",
+    "eslint": "^8.57.1",
+    "eslint-config-expo": "~10.0.0",
+    "typescript": "~5.9.2"
+  },
+  "overrides": {
+    "redux-persist": {
+      "redux": "^5.0.0"
+    }
+  },
+  "private": true
+}

@@ -1,0 +1,31 @@
+{% load static %}
+<div class="lg:hidden bg-white">
+  <div class="max-w-8xl mx-auto px-4 sm:px-6 lg:px-8">
+    <div class="h-16 flex items-center justify-between">
+      <!-- Menu mobile -->
+      {% include 'components/_mobile_menu.html' %}
+      <!-- search mobile -->
+      {% include 'components/_search_mobile.html' %}
+      <!-- Logo mobile -->
+      <a href="{% url 'suppliers:supplier_index' %}" class="flex items-center">
+        <div
+          class="relative flex items-center justify-center h-12 w-12 rounded-full hover:scale-110 transition-transform duration-300"
+        >
+          {% if site_logo_small_url %}
+            <img src="{{ site_logo_small_url }}" alt="Logo {{ site_name }}" class="h-10 w-10 mx-auto" />
+          {% else %}
+            <img src="{% static 'icons/bolibana_icon_64_blanc.svg' %}" alt="Logo {{ site_name|default:'BoliBana SuGu' }}" class="h-10 w-10 mx-auto" />
+          {% endif %}
+        </div>
+      </a>
+
+      <!-- profile mobile -->
+      {% include 'accounts/components/_profile_button_mobile.html' %}
+      <!-- cart mobile -->
+      {% include 'components/_cart_button.html' %}
+    </div>
+  </div>
+</div>
+
+<!-- Include mobile menu component -->
+

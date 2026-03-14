@@ -1,0 +1,458 @@
+{% extends "base.html" %}
+{% load static %}
+{% load product_badges %}
+
+{% block title %}{{ product.title }} - BoliBana{% endblock %}
+
+{% block extra_head %}
+{{ block.super }}
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.css" />
+<style>
+    .swiper-button-next,
+    .swiper-button-prev {
+        color: #059669 !important;
+        background-color: white;
+        width: 40px !important;
+        height: 40px !important;
+        border-radius: 50%;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+
+    .swiper-button-next {
+        right: -5px !important;
+    }
+
+    .swiper-button-prev {
+        left: -5px !important;
+    }
+
+    .swiper-button-next:after,
+    .swiper-button-prev:after {
+        font-size: 20px !important;
+    }
+
+    .swiper-button-next:hover,
+    .swiper-button-prev:hover {
+        color: #047857 !important;
+        background-color: #f3f4f6;
+    }
+
+    .swiper-button-disabled {
+        opacity: 0.35 !important;
+        cursor: auto !important;
+        pointer-events: none !important;
+    }
+
+    .swiper-pagination {
+        position: relative !important;
+        margin-top: 24px !important;
+        display: flex !important;
+        justify-content: center !important;
+        align-items: center !important;
+        gap: 8px !important;
+    }
+
+    .swiper-pagination-bullet {
+        width: 8px !important;
+        height: 8px !important;
+        background: #E5E7EB !important;
+        opacity: 1 !important;
+        transition: all 0.3s ease !important;
+        margin: 0 !important;
+    }
+    
+    .swiper-pagination-bullet-active {
+        background: #059669 !important;
+        transform: scale(1.2) !important;
+        width: 10px !important;
+        height: 10px !important;
+    }
+    
+    .swiper-pagination-bullet:hover {
+        background: #059669 !important;
+        opacity: 0.7 !important;
+    }
+
+    .swiper-slide {
+        height: auto !important;
+        display: flex !important;
+        align-items: stretch !important;
+    }
+
+    .swiper-slide > * {
+        width: 100% !important;
+        height: 100% !important;
+    }
+
+    .swiper {
+        padding: 0 5px !important;
+    }
+
+    .swiper-wrapper {
+        touch-action: pan-x !important;
+        -webkit-overflow-scrolling: touch !important;
+        will-change: transform !important;
+    }
+
+    .swiper-slide {
+        touch-action: pan-x !important;
+        -webkit-user-select: none !important;
+        -moz-user-select: none !important;
+        -ms-user-select: none !important;
+        user-select: none !important;
+        will-change: transform !important;
+    }
+
+    @media (max-width: 640px) {
+        .swiper-slide {
+            cursor: grab !important;
+        }
+        
+        .swiper-slide:active {
+            cursor: grabbing !important;
+        }
+        
+        .similarProductsSwiper {
+            touch-action: pan-x !important;
+            -webkit-overflow-scrolling: touch !important;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <!-- Fil d'Ariane -->
+    <div class="mb-8">
+        {% include "suppliers/components/breadcrumb.html" with category=product.category product=product %}
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+        <!-- Galerie d'images -->
+        <div class="space-y-4">
+            <div class="bg-white rounded-2xl sm:rounded-lg shadow-md overflow-hidden">
+                {% with display_image_url=product.get_display_image_url %}
+                {% if display_image_url %}
+                    <img id="main-image" src="{{ display_image_url }}" alt="{{ product.title }}" class="w-full h-auto object-cover rounded-2xl sm:rounded-lg">
+                {% elif images %}
+                    <img id="main-image" src="{{ images.0.image.url }}" alt="{{ product.title }}" class="w-full h-auto object-cover rounded-2xl sm:rounded-lg">
+                {% elif b2b_image_urls %}
+                    <img id="main-image" src="{{ b2b_image_urls.0 }}" alt="{{ product.title }}" class="w-full h-auto object-cover rounded-2xl sm:rounded-lg">
+                {% else %}
+                    <img id="main-image" src="{% static 'images/no-image.png' %}" alt="Image non disponible" class="w-full h-auto object-cover rounded-2xl sm:rounded-lg">
+                {% endif %}
+                {% endwith %}
+            </div>
+            {% with display_image_url=product.get_display_image_url %}
+            {% if display_image_url or images or b2b_image_urls %}
+                <div class="grid grid-cols-4 gap-2">
+                    {% if display_image_url %}
+                        <button onclick="changeMainImage('{{ display_image_url }}', this)" class="js-gallery-thumb w-full h-24 rounded overflow-hidden focus:outline-none focus:ring-2 focus:ring-green-500 ring-2 ring-green-500" data-ring-class="ring-green-500" aria-selected="true">
+                            <img src="{{ display_image_url }}" alt="{{ product.title }}" class="w-full h-full object-cover">
+                        </button>
+                    {% endif %}
+                    {% for image in images %}
+                        <button onclick="changeMainImage('{{ image.image.url }}', this)" class="js-gallery-thumb w-full h-24 rounded overflow-hidden focus:outline-none focus:ring-2 focus:ring-green-500 {% if not display_image_url and forloop.first %}ring-2 ring-green-500{% endif %}" data-ring-class="ring-green-500" aria-selected="{% if not display_image_url and forloop.first %}true{% else %}false{% endif %}">
+                            <img src="{{ image.image.url }}" alt="{{ product.title }}" class="w-full h-full object-cover">
+                        </button>
+                    {% endfor %}
+                    {% for url in b2b_image_urls %}
+                        {% if display_image_url and display_image_url == url %}
+                        {% else %}
+                        <button onclick="changeMainImage('{{ url }}', this)" class="js-gallery-thumb w-full h-24 rounded overflow-hidden focus:outline-none focus:ring-2 focus:ring-green-500" data-ring-class="ring-green-500" aria-selected="false">
+                            <img src="{{ url }}" alt="{{ product.title }}" class="w-full h-full object-cover">
+                        </button>
+                        {% endif %}
+                    {% endfor %}
+                </div>
+            {% endif %}
+            {% endwith %}
+        </div>
+
+        <!-- Informations produit -->
+        <div class="space-y-6">
+            <!-- Titre et badges -->
+            <div class="flex items-start justify-between">
+                <h1 class="text-2xl md:text-3xl font-bold font-bitter text-gray-900">{{ product.title }}</h1>
+                <div class="flex space-x-2">
+                    {% product_badges product %}
+                </div>
+            </div>
+
+            <!-- Catégorie et SKU -->
+            <div class="flex items-center space-x-4 text-sm text-gray-500">
+                {% if product.category %}
+                <span>Catégorie: <a href="{% url 'suppliers:category_detail' product.category.slug %}" class="text-green-600 hover:underline">{{ product.category.name }}</a></span>
+                {% else %}
+                <span>Catégorie: <span class="text-gray-400">Sans catégorie</span></span>
+                {% endif %}
+                {% if product.sku %}
+                    <span>Réf: {{ product.sku }}</span>
+                {% endif %}
+            </div>
+
+            <!-- Prix -->
+            <div class="bg-white p-4 rounded-xl shadow-sm border border-gray-200">
+                <div class="space-y-4">
+                    <div>
+                        <p class="text-2xl sm:text-3xl font-bold bg-gradient-to-r from-green-600 via-yellow-500 to-red-500 bg-clip-text text-transparent">
+                            {{ product.price|floatformat:0 }} FCFA
+                        </p>
+                        <p class="text-sm text-gray-600">Prix TTC, livraison incluse</p>
+                    </div>
+                    
+                    <div class="mt-6 flex flex-col sm:grid sm:grid-cols-2 gap-4">
+                        {% include "suppliers/components/_add_to_cart_button.html" with product=product is_detail=True %}
+                        {% include "suppliers/components/_favorite_button.html" with product=product is_detail=True %}
+                    </div>
+                </div>
+            </div>
+
+            <!-- Disponibilité -->
+            <div class="flex items-center text-sm {% if product.is_available %}text-green-600{% else %}text-red-500{% endif %}">
+                <svg class="h-5 w-5 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                    <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
+                </svg>
+                {% if product.is_available %}En stock{% else %}Rupture de stock{% endif %}
+            </div>
+
+            <!-- Note moyenne -->
+            {% if average_rating %}
+                <div class="mt-8 border-t border-gray-200 pt-6">
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center space-x-4">
+                            <div class="text-4xl font-bold text-gray-900">{{ average_rating|floatformat:1 }}</div>
+                            <div class="flex items-center text-yellow-400">
+                                {% for i in "12345" %}
+                                    {% if forloop.counter <= average_rating|floatformat:"0"|add:"0" %}
+                                        <svg class="h-5 w-5" fill="currentColor" viewBox="0 0 20 20">
+                                            <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/>
+                                        </svg>
+                                    {% else %}
+                                        <svg class="h-5 w-5 text-gray-300" fill="currentColor" viewBox="0 0 20 20">
+                                            <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/>
+                                        </svg>
+                                    {% endif %}
+                                {% endfor %}
+                            </div>
+                            <div class="text-sm text-gray-500">
+                                {% if review_count == 1 %}
+                                    1 avis
+                                {% else %}
+                                    {{ review_count }} avis
+                                {% endif %}
+                            </div>
+                        </div>
+                        <button onclick="openReviewModal()" class="px-4 py-2 text-sm font-medium text-white bg-green-600 rounded-md hover:bg-green-700">
+                            Ajouter un avis
+                        </button>
+                    </div>
+                </div>
+            {% endif %}
+
+            <!-- Détails spécifiques au produit culturel -->
+            {% if product.cultural_product %}
+            <div class="bg-gray-50 p-4 rounded-lg">
+                <h3 class="text-lg font-semibold text-gray-900 mb-3">Détails du produit</h3>
+                <div class="space-y-3">
+                    {% if product.cultural_product.author %}
+                    <div class="flex justify-between">
+                        <span class="text-gray-600">Auteur:</span>
+                        <span class="font-medium">{{ product.cultural_product.author }}</span>
+                </div>
+            {% endif %}
+                    {% if product.cultural_product.isbn %}
+                    <div class="flex justify-between">
+                        <span class="text-gray-600">ISBN:</span>
+                        <span class="font-medium">{{ product.cultural_product.isbn }}</span>
+            </div>
+            {% endif %}
+                    {% if product.cultural_product.publication_date %}
+                    <div class="flex justify-between">
+                        <span class="text-gray-600">Date de publication:</span>
+                        <span class="font-medium">{{ product.cultural_product.publication_date|date:"Y" }}</span>
+            </div>
+            {% endif %}
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Produits similaires -->
+    {% include "suppliers/components/_similar_products.html" with similar_products=similar_products category_slug=category_slug %}
+
+    <!-- Modal pour ajouter un avis -->
+    <div id="reviewModal" class="fixed inset-0 bg-gray-500 bg-opacity-75 hidden z-50" aria-labelledby="modal-title" role="dialog" aria-modal="true">
+        <div class="fixed inset-0 z-50 overflow-y-auto">
+            <div class="flex min-h-full items-end justify-center p-4 text-center sm:items-center sm:p-0">
+                <div class="relative transform overflow-hidden rounded-lg bg-white w-full max-w-lg mx-auto z-50">
+                    <!-- En-tête du modal -->
+                    <div class="px-4 sm:px-6 pt-4 sm:pt-6 pb-4 border-b border-gray-200">
+                        <div class="flex items-center justify-between">
+                            <h3 class="text-lg font-semibold text-gray-900" id="modal-title">
+                                Ajouter un avis
+                            </h3>
+                            <button type="button" class="text-gray-400 hover:text-gray-600" onclick="closeReviewModal()">
+                                <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                                </svg>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Contenu du modal -->
+                    <div class="px-4 sm:px-6 py-4">
+                        <form id="reviewForm" method="post" action="{% url 'suppliers:add_review' product.id %}">
+                            {% csrf_token %}
+                            <div class="space-y-4">
+                                <!-- Note -->
+                            <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-2">Votre note</label>
+                                    <div class="flex items-center space-x-2">
+                                    {% for i in "12345" %}
+                                        <button type="button" class="text-2xl text-gray-300 hover:text-yellow-400 transition-colors" 
+                                                onclick="setRating({{ forloop.counter }})" id="star-{{ forloop.counter }}">
+                                            ★
+                                        </button>
+                                        {% endfor %}
+                                    </div>
+                                    <input type="hidden" name="rating" id="rating-input" value="5">
+                                </div>
+                                
+                                <!-- Commentaire -->
+                                <div>
+                                    <label for="comment" class="block text-sm font-medium text-gray-700 mb-2">Votre commentaire</label>
+                                    <textarea id="comment" name="comment" rows="4" 
+                                              class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                                              placeholder="Partagez votre expérience avec ce produit..."></textarea>
+                                </div>
+                            </div>
+
+                            <!-- Boutons -->
+                            <div class="mt-6 flex justify-end space-x-3">
+                                <button type="button" onclick="closeReviewModal()" 
+                                        class="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 border border-gray-300 rounded-md hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500">
+                                    Annuler
+                                </button>
+                                <button type="submit" 
+                                        class="px-4 py-2 text-sm font-medium text-white bg-green-600 border border-transparent rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500">
+                                    Publier l'avis
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function changeMainImage(src, button) {
+    document.getElementById('main-image').src = src;
+    
+    // Retirer la classe active de tous les boutons
+    document.querySelectorAll('.thumbnail-button').forEach(btn => {
+        btn.classList.remove('ring-2', 'ring-green-500');
+    });
+    
+    // Ajouter la classe active au bouton cliqué
+    button.classList.add('ring-2', 'ring-green-500');
+}
+
+function openReviewModal() {
+    document.getElementById('reviewModal').classList.remove('hidden');
+}
+
+function closeReviewModal() {
+    document.getElementById('reviewModal').classList.add('hidden');
+}
+
+function setRating(rating) {
+    document.getElementById('rating-input').value = rating;
+    
+    // Mettre à jour l'affichage des étoiles
+    for (let i = 1; i <= 5; i++) {
+        const star = document.getElementById(`star-${i}`);
+        if (i <= rating) {
+            star.classList.remove('text-gray-300');
+            star.classList.add('text-yellow-400');
+        } else {
+            star.classList.remove('text-yellow-400');
+            star.classList.add('text-gray-300');
+        }
+    }
+}
+
+// Fermer le modal en cliquant à l'extérieur
+document.getElementById('reviewModal').addEventListener('click', function(e) {
+    if (e.target === this) {
+        closeReviewModal();
+    }
+});
+</script>
+{% endblock %}
+
+{% block extra_scripts %}
+{{ block.super }}
+<script src="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    new Swiper('.similarProductsSwiper', {
+        slidesPerView: 1,
+        spaceBetween: 24,
+        centeredSlides: false,
+        loop: false,
+        effect: 'slide',
+        speed: 300,
+        // Configuration tactile optimisée
+        touchRatio: 1,
+        touchAngle: 45,
+        grabCursor: true,
+        allowTouchMove: true,
+        resistance: true,
+        resistanceRatio: 0.85,
+        // Configuration pour mobile
+        touchStartPreventDefault: false,
+        touchMoveStopPropagation: false,
+        // Amélioration de la sensibilité
+        threshold: 10,
+        shortSwipes: true,
+        longSwipes: true,
+        longSwipesRatio: 0.5,
+        longSwipesMs: 300,
+        followFinger: true,
+        // Désactiver les animations qui peuvent interférer
+        watchSlidesProgress: false,
+        watchSlidesVisibility: false,
+        pagination: {
+            el: '.swiper-pagination',
+            clickable: true,
+        },
+        navigation: {
+            nextEl: '.swiper-button-next',
+            prevEl: '.swiper-button-prev',
+            disabledClass: 'swiper-button-disabled',
+        },
+        breakpoints: {
+            640: {
+                slidesPerView: 2,
+                spaceBetween: 24,
+                centeredSlides: false,
+            },
+            1024: {
+                slidesPerView: 3,
+                spaceBetween: 32,
+                centeredSlides: false,
+            },
+            1280: {
+                slidesPerView: 4,
+                spaceBetween: 32,
+                centeredSlides: false,
+            },
+        },
+    });
+});
+</script>
+{% endblock %} 

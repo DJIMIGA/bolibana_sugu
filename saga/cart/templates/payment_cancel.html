@@ -1,0 +1,108 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+<div class="min-h-screen bg-gradient-to-br from-red-50 via-yellow-50 to-white">
+    <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+        <div class="text-center">
+            <!-- Icône d'annulation -->
+            <div class="mx-auto flex items-center justify-center h-24 w-24 rounded-full bg-red-100 mb-8">
+                <svg class="h-12 w-12 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                </svg>
+            </div>
+
+            <!-- Titre -->
+            <h1 class="text-4xl font-bold text-gray-900 mb-4">
+                Paiement annulé
+            </h1>
+
+            <!-- Message -->
+            <p class="text-xl text-gray-600 mb-8 max-w-2xl mx-auto">
+                Votre paiement a été annulé. Aucun montant n'a été débité de votre compte.
+            </p>
+
+            <!-- Informations -->
+            <div class="bg-white rounded-2xl shadow-lg border border-gray-200 p-8 mb-8">
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <div class="text-center">
+                        <div class="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                            <svg class="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/>
+                            </svg>
+                        </div>
+                        <h3 class="font-semibold text-gray-900 mb-2">Aucun débit</h3>
+                        <p class="text-sm text-gray-600">Aucun montant n'a été prélevé de votre compte</p>
+                    </div>
+
+                    <div class="text-center">
+                        <div class="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                            <svg class="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"/>
+                            </svg>
+                        </div>
+                        <h3 class="font-semibold text-gray-900 mb-2">Panier préservé</h3>
+                        <p class="text-sm text-gray-600">Vos produits restent dans votre panier</p>
+                    </div>
+
+                    <div class="text-center">
+                        <div class="w-12 h-12 bg-yellow-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                            <svg class="w-6 h-6 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                            </svg>
+                        </div>
+                        <h3 class="font-semibold text-gray-900 mb-2">Réessayer</h3>
+                        <p class="text-sm text-gray-600">Vous pouvez réessayer quand vous voulez</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Boutons d'action -->
+            <div class="flex flex-col sm:flex-row gap-4 justify-center">
+                <a href="{% url 'cart:cart' %}" 
+                   class="inline-flex items-center px-6 py-3 border border-transparent text-base font-medium rounded-xl text-white bg-green-600 hover:bg-green-700 transition-colors">
+                    <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"/>
+                    </svg>
+                    Voir mon panier
+                </a>
+
+                <a href="{% url 'cart:checkout' %}" 
+                   class="inline-flex items-center px-6 py-3 border border-gray-300 text-base font-medium rounded-xl text-gray-700 bg-white hover:bg-gray-50 transition-colors">
+                    <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"/>
+                    </svg>
+                    Réessayer le paiement
+                </a>
+
+                <a href="{% url 'suppliers:supplier_index' %}" 
+                   class="inline-flex items-center px-6 py-3 border border-gray-300 text-base font-medium rounded-xl text-gray-700 bg-white hover:bg-gray-50 transition-colors">
+                    <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+                    </svg>
+                    Continuer mes achats
+                </a>
+            </div>
+
+            <!-- Informations supplémentaires -->
+            <div class="mt-12 bg-gray-50 rounded-xl p-6">
+                <h3 class="text-lg font-semibold text-gray-900 mb-4">Questions fréquentes</h3>
+                <div class="space-y-4 text-left">
+                    <div>
+                        <h4 class="font-medium text-gray-900">Pourquoi mon paiement a-t-il été annulé ?</h4>
+                        <p class="text-sm text-gray-600 mt-1">Vous avez peut-être fermé la page de paiement ou cliqué sur "Annuler". C'est normal et vous pouvez réessayer.</p>
+                    </div>
+                    <div>
+                        <h4 class="font-medium text-gray-900">Mes produits sont-ils toujours dans le panier ?</h4>
+                        <p class="text-sm text-gray-600 mt-1">Oui, vos produits restent dans votre panier. Vous pouvez les retrouver en cliquant sur "Voir mon panier".</p>
+                    </div>
+                    <div>
+                        <h4 class="font-medium text-gray-900">Puis-je utiliser un autre moyen de paiement ?</h4>
+                        <p class="text-sm text-gray-600 mt-1">Oui, vous pouvez choisir entre paiement en ligne, Mobile Money ou paiement à la livraison selon vos préférences.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

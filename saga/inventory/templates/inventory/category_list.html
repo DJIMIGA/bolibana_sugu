@@ -1,0 +1,306 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Catégories Synchronisées - {{ config.site_name }}{% endblock %}
+
+{% block extra_head %}
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.css" />
+<style>
+    .swiper-button-next,
+    .swiper-button-prev {
+        color: #059669 !important; /* green-600 */
+        background-color: white;
+        width: 40px !important;
+        height: 40px !important;
+        border-radius: 50%;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+
+    .swiper-button-next {
+        right: -5px !important;
+    }
+
+    .swiper-button-prev {
+        left: -5px !important;
+    }
+
+    .swiper-button-next:after,
+    .swiper-button-prev:after {
+        font-size: 20px !important;
+    }
+
+    .swiper-button-next:hover,
+    .swiper-button-prev:hover {
+        color: #047857 !important; /* green-700 */
+        background-color: #f3f4f6;
+    }
+
+    .swiper-button-disabled {
+        opacity: 0.35 !important;
+        cursor: auto !important;
+        pointer-events: none !important;
+    }
+
+    .swiper-pagination {
+        position: relative !important;
+        margin-top: 24px !important;
+        display: flex !important;
+        justify-content: center !important;
+        align-items: center !important;
+        gap: 8px !important;
+    }
+
+    .swiper-pagination-bullet {
+        width: 8px !important;
+        height: 8px !important;
+        background: #E5E7EB !important; /* gray-200 */
+        opacity: 1 !important;
+        transition: all 0.3s ease !important;
+        margin: 0 !important;
+    }
+    
+    .swiper-pagination-bullet-active {
+        background: #059669 !important; /* green-600 */
+        transform: scale(1.2) !important;
+        width: 10px !important;
+        height: 10px !important;
+    }
+    
+    .swiper-pagination-bullet:hover {
+        background: #059669 !important; /* green-600 */
+        opacity: 0.7 !important;
+    }
+
+    .swiper-slide {
+        height: auto !important;
+        display: flex !important;
+        align-items: stretch !important;
+    }
+
+    .swiper-slide > * {
+        width: 100% !important;
+        height: 100% !important;
+    }
+
+    .swiper {
+        padding: 0 5px !important;
+    }
+
+    .swiper-wrapper {
+        touch-action: pan-x !important;
+        -webkit-overflow-scrolling: touch !important;
+    }
+
+    .swiper-slide {
+        touch-action: pan-x !important;
+        -webkit-user-select: none !important;
+        -moz-user-select: none !important;
+        -ms-user-select: none !important;
+        user-select: none !important;
+    }
+
+    @media (max-width: 640px) {
+        .swiper-slide {
+            cursor: grab !important;
+        }
+        
+        .swiper-slide:active {
+            cursor: grabbing !important;
+        }
+        
+        body {
+            overflow-x: hidden !important;
+        }
+        
+        .container, .mx-auto {
+            overflow-x: hidden !important;
+            max-width: 100vw !important;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="bg-gray-50">
+    <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-12">
+        <!-- En-tête -->
+        <div class="text-center mb-12">
+            <h1 class="text-3xl font-bold font-bitter text-gray-900 sm:text-4xl">
+                {{ title|default:"Catégories Synchronisées" }}
+            </h1>
+            <p class="mt-4 text-lg text-gray-600">
+                Catégories récupérées depuis B2B et synchronisées automatiquement
+            </p>
+            {% if synced_categories %}
+            <p class="mt-2 text-sm text-green-600">
+                {{ synced_categories|length }} catégor{{ synced_categories|length|pluralize:"ie,ies" }} disponible{{ synced_categories|length|pluralize:"s" }}
+            </p>
+            {% endif %}
+        </div>
+
+        <!-- Catégories principales -->
+        {% if main_categories %}
+        <div class="mb-16">
+            <h2 class="text-2xl font-bold font-bitter text-gray-900 mb-6">
+                Catégories principales
+            </h2>
+            <div class="swiper categoriesSwiper">
+                <div class="swiper-wrapper">
+                    {% for category in main_categories %}
+                    <div class="swiper-slide">
+                        <a href="{% url 'inventory:category_detail_synced' category.slug %}" 
+                           class="group bg-white rounded-xl shadow-lg overflow-hidden transition-all duration-300 hover:shadow-xl hover:-translate-y-1 block h-full">
+                            <div class="aspect-w-1 aspect-h-1 w-full overflow-hidden bg-gray-200 xl:aspect-w-7 xl:aspect-h-8 rounded-lg">
+                                {% if category.image %}
+                                    <img src="{{ category.image.url }}" alt="{{ category.name }}" class="w-full h-full object-cover rounded-lg">
+                                {% else %}
+                                    <div class="w-full h-full flex items-center justify-center bg-{{ category.color|default:'green' }}-100 rounded-lg">
+                                        <svg class="w-24 h-24 text-{{ category.color|default:'green' }}-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                                        </svg>
+                                    </div>
+                                {% endif %}
+                            </div>
+                            <div class="p-6">
+                                <h3 class="text-xl font-semibold font-bitter text-gray-900 group-hover:text-{{ category.color|default:'green' }}-600 transition-colors duration-300">
+                                    {{ category.name }}
+                                </h3>
+                                {% if category.description %}
+                                <p class="mt-2 text-gray-600 line-clamp-2">{{ category.description }}</p>
+                                {% endif %}
+                                {% if category.children.exists %}
+                                <p class="mt-4 text-sm text-{{ category.color|default:'green' }}-600">
+                                    {{ category.children.count }} sous-catégor{{ category.children.count|pluralize:"ie,ies" }}
+                                </p>
+                                {% endif %}
+                            </div>
+                        </a>
+                    </div>
+                    {% endfor %}
+                </div>
+                <div class="swiper-pagination"></div>
+                <div class="swiper-button-prev"></div>
+                <div class="swiper-button-next"></div>
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Grille des sous-catégories -->
+        {% if sub_categories %}
+        <div class="mb-8">
+            <h2 class="text-2xl font-bold font-bitter text-gray-900 mb-6">
+                Sous-catégories
+            </h2>
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
+                {% for category in sub_categories %}
+                <a href="{% url 'inventory:category_detail_synced' category.slug %}" 
+                   class="group bg-white rounded-xl shadow-lg overflow-hidden transition-all duration-300 hover:shadow-xl hover:-translate-y-1">
+                    <div class="aspect-w-1 aspect-h-1 w-full overflow-hidden bg-gray-200 xl:aspect-w-7 xl:aspect-h-8 rounded-lg">
+                        {% if category.image %}
+                            <img src="{{ category.image.url }}" alt="{{ category.name }}" class="w-full h-full object-cover rounded-lg">
+                        {% else %}
+                            <div class="w-full h-full flex items-center justify-center bg-{{ category.color|default:'green' }}-100 rounded-lg">
+                                <svg class="w-24 h-24 text-{{ category.color|default:'green' }}-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                                </svg>
+                            </div>
+                        {% endif %}
+                    </div>
+                    <div class="p-6">
+                        <h3 class="text-xl font-semibold font-bitter text-gray-900 group-hover:text-{{ category.color|default:'green' }}-600 transition-colors duration-300">
+                            {{ category.name }}
+                        </h3>
+                        {% if category.parent %}
+                        <p class="mt-1 text-sm text-gray-500">
+                            {{ category.parent.name }}
+                        </p>
+                        {% endif %}
+                        {% if category.description %}
+                        <p class="mt-2 text-gray-600 line-clamp-2">{{ category.description }}</p>
+                        {% endif %}
+                    </div>
+                </a>
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Message si aucune catégorie -->
+        {% if not synced_categories %}
+        <div class="text-center py-12">
+            <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-8 max-w-2xl mx-auto">
+                <svg class="w-16 h-16 text-yellow-600 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                </svg>
+                <h3 class="text-xl font-bold text-gray-900 mb-2">
+                    Aucune catégorie synchronisée
+                </h3>
+                <p class="text-gray-600 mb-4">
+                    Les catégories n'ont pas encore été synchronisées depuis B2B.
+                </p>
+                <p class="text-sm text-gray-500">
+                    Exécutez la commande : <code class="bg-gray-100 px-2 py-1 rounded">python manage.py sync_categories_from_inventory</code>
+                </p>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script src="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const swiper = document.querySelector('.categoriesSwiper');
+    if (swiper) {
+        new Swiper('.categoriesSwiper', {
+            slidesPerView: 1,
+            spaceBetween: 24,
+            touchRatio: 1,
+            touchAngle: 45,
+            grabCursor: true,
+            allowTouchMove: true,
+            resistance: true,
+            resistanceRatio: 0.85,
+            touchStartPreventDefault: false,
+            touchMoveStopPropagation: true,
+            threshold: 10,
+            shortSwipes: true,
+            longSwipes: true,
+            longSwipesRatio: 0.5,
+            longSwipesMs: 300,
+            followFinger: true,
+            pagination: {
+                el: '.swiper-pagination',
+                clickable: true,
+            },
+            navigation: {
+                nextEl: '.swiper-button-next',
+                prevEl: '.swiper-button-prev',
+            },
+            breakpoints: {
+                640: {
+                    slidesPerView: 2,
+                },
+                1024: {
+                    slidesPerView: 3,
+                },
+                1280: {
+                    slidesPerView: 4,
+                },
+            },
+            on: {
+                touchStart: function() {
+                    document.body.style.overflow = 'hidden';
+                },
+                touchEnd: function() {
+                    document.body.style.overflow = '';
+                }
+            }
+        });
+    }
+});
+</script>
+{% endblock %}
+

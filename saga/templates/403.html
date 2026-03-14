@@ -1,0 +1,78 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Accès interdit - {{ site_name|default:"BoliBana" }}{% endblock %}
+
+{% block content %}
+<div class="min-h-screen bg-gradient-to-br from-yellow-50 to-red-50 flex items-center justify-center px-4">
+    <div class="max-w-md w-full text-center">
+        <!-- Logo BoliBana -->
+        <div class="mb-8">
+            {% if site_logo_url %}
+                <img src="{{ site_logo_url }}" alt="{{ site_name }}" class="h-16 mx-auto">
+            {% else %}
+                <img src="{% static 'icons/bolibana_logo_principal.svg' %}" alt="{{ site_name|default:'BoliBana' }}" class="h-16 w-auto mx-auto">
+            {% endif %}
+        </div>
+        
+        <!-- Numéro d'erreur -->
+        <div class="text-8xl font-bold text-yellow-600 mb-4">403</div>
+        
+        <!-- Titre -->
+        <h1 class="text-3xl font-bold text-gray-800 mb-4">Accès interdit</h1>
+        
+        <!-- Message -->
+        <p class="text-gray-600 mb-8">
+            Désolé, vous n'avez pas les permissions nécessaires pour accéder à cette page.
+        </p>
+        
+        <!-- Actions -->
+        <div class="space-y-4">
+            <a href="{% url 'suppliers:supplier_index' %}" 
+               class="inline-block bg-green-600 hover:bg-green-700 text-white font-semibold py-3 px-6 rounded-lg transition duration-300">
+                Retour à l'accueil
+            </a>
+            
+            <div class="text-sm text-gray-500">
+                <p>Ou essayez de :</p>
+                <div class="mt-2 space-x-4">
+                    <a href="{% url 'accounts:login' %}" class="text-green-600 hover:text-green-700">
+                        Vous connecter
+                    </a>
+                    <span class="text-gray-400">|</span>
+                    <a href="{% url 'suppliers:category_list' %}" class="text-green-600 hover:text-green-700">
+                        Parcourir nos produits
+                    </a>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Message de contact -->
+        {% if config.email or config.phone_number or config.whatsapp_number %}
+        <div class="mt-8 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+            <p class="text-sm text-yellow-800">
+                <strong>Besoin d'aide ?</strong><br>
+                {% if config.email %}
+                    Contactez-nous à <a href="mailto:{{ config.email }}" class="text-green-600 hover:text-green-700">{{ config.email }}</a>
+                {% endif %}
+                {% if config.phone_number %}
+                    <br>Ou appelez-nous au <a href="tel:+223{{ config.phone_number }}" class="text-green-600 hover:text-green-700">+223 {{ config.phone_number }}</a>
+                {% endif %}
+                {% if config.whatsapp_number %}
+                    <br>WhatsApp : <a href="https://wa.me/{{ config.whatsapp_number }}" target="_blank" class="text-green-600 hover:text-green-700">{{ config.whatsapp_number }}</a>
+                {% endif %}
+            </p>
+        </div>
+        {% endif %}
+        
+        <!-- Illustration -->
+        <div class="mt-12">
+            <div class="w-32 h-32 mx-auto bg-yellow-100 rounded-full flex items-center justify-center">
+                <svg class="w-16 h-16 text-yellow-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path>
+                </svg>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

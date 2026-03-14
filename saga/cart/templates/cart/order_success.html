@@ -1,0 +1,153 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Commande Confirmée - {{ order.order_number }}{% endblock %}
+
+{% block content %}
+<div class="min-h-screen bg-gray-50 py-8">
+    <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+        <!-- En-tête de succès -->
+        <div class="bg-white rounded-lg shadow-lg p-8 mb-8">
+            <div class="text-center">
+                <div class="mx-auto flex items-center justify-center h-16 w-16 rounded-full bg-green-100 mb-4">
+                    <svg class="h-8 w-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                    </svg>
+                </div>
+                <h1 class="text-3xl font-bold text-gray-900 mb-2">
+                    🎉 Commande Confirmée !
+                </h1>
+                <p class="text-lg text-gray-600 mb-4">
+                    Votre paiement Orange Money a été effectué avec succès
+                </p>
+                <div class="bg-green-50 border border-green-200 rounded-lg p-4 mb-6">
+                    <p class="text-green-800 font-medium">
+                        Numéro de commande : <span class="font-mono text-lg">{{ order.order_number }}</span>
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Détails de la commande -->
+        <div class="bg-white rounded-lg shadow-lg p-8 mb-8">
+            <h2 class="text-2xl font-bold text-gray-900 mb-6">Détails de votre commande</h2>
+            
+            <!-- Informations de la commande -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+                <div>
+                    <h3 class="text-lg font-semibold text-gray-900 mb-3">Informations de livraison</h3>
+                    <div class="space-y-2 text-gray-600">
+                        <p><strong>Nom :</strong> {{ order.user.get_full_name|default:order.user.email }}</p>
+                        <p><strong>Email :</strong> {{ order.user.email }}</p>
+                        {% if order.shipping_address %}
+                            <p><strong>Adresse :</strong> {{ order.shipping_address }}</p>
+                        {% endif %}
+                        {% if order.phone_number %}
+                            <p><strong>Téléphone :</strong> {{ order.phone_number }}</p>
+                        {% endif %}
+                    </div>
+                </div>
+                
+                <div>
+                    <h3 class="text-lg font-semibold text-gray-900 mb-3">Informations de paiement</h3>
+                    <div class="space-y-2 text-gray-600">
+                        <p><strong>Méthode :</strong> Orange Money</p>
+                        <p><strong>Statut :</strong> <span class="text-green-600 font-medium">Payé</span></p>
+                        <p><strong>Date de paiement :</strong> {{ order.paid_at|date:"d/m/Y à H:i" }}</p>
+                        <p><strong>Total :</strong> <span class="font-bold text-lg text-green-600">{{ order.total|floatformat:0 }} FCFA</span></p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Articles commandés -->
+            <div class="border-t pt-6">
+                <h3 class="text-lg font-semibold text-gray-900 mb-4">Articles commandés ({{ total_items }})</h3>
+                <div class="space-y-4">
+                    {% for item in order_items %}
+                    <div class="flex items-center space-x-4 p-4 bg-gray-50 rounded-lg">
+                        {% if item.product.image %}
+                            <img src="{{ item.product.image.url }}" alt="{{ item.product.title }}" 
+                                 class="w-16 h-16 object-cover rounded-lg">
+                        {% else %}
+                            <div class="w-16 h-16 bg-gray-200 rounded-lg flex items-center justify-center">
+                                <svg class="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+                                </svg>
+                            </div>
+                        {% endif %}
+                        <div class="flex-1">
+                            <h4 class="font-medium text-gray-900">{{ item.product.title }}</h4>
+                            <p class="text-sm text-gray-600">Quantité : {{ item.quantity }}</p>
+                        </div>
+                        <div class="text-right">
+                            <p class="font-medium text-gray-900">{{ item.price|floatformat:0 }} FCFA</p>
+                            <p class="text-sm text-gray-600">× {{ item.quantity }}</p>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Résumé des coûts -->
+        <div class="bg-white rounded-lg shadow-lg p-8 mb-8">
+            <h3 class="text-lg font-semibold text-gray-900 mb-4">Résumé des coûts</h3>
+            <div class="space-y-3">
+                <div class="flex justify-between">
+                    <span class="text-gray-600">Sous-total :</span>
+                    <span class="font-medium">{{ order.subtotal|floatformat:0 }} FCFA</span>
+                </div>
+                {% if order.shipping_cost > 0 %}
+                <div class="flex justify-between">
+                    <span class="text-gray-600">Frais de livraison :</span>
+                    <span class="font-medium">{{ order.shipping_cost|floatformat:0 }} FCFA</span>
+                </div>
+                {% endif %}
+                <div class="border-t pt-3">
+                    <div class="flex justify-between">
+                        <span class="text-lg font-semibold text-gray-900">Total :</span>
+                        <span class="text-lg font-bold text-green-600">{{ order.total|floatformat:0 }} FCFA</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Actions -->
+        <div class="bg-white rounded-lg shadow-lg p-8">
+            <div class="text-center">
+                <h3 class="text-lg font-semibold text-gray-900 mb-4">Prochaines étapes</h3>
+                <p class="text-gray-600 mb-6">
+                    Vous recevrez un email de confirmation avec tous les détails de votre commande. 
+                    Notre équipe vous contactera pour organiser la livraison.
+                </p>
+                
+                <div class="flex flex-col sm:flex-row gap-4 justify-center">
+                    <a href="{% url 'cart:my_orders' %}" 
+                       class="inline-flex items-center px-6 py-3 border border-transparent text-base font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 transition-colors">
+                        <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path>
+                        </svg>
+                        Voir mes commandes
+                    </a>
+                    
+                    <a href="{% url 'product:product_list' %}" 
+                       class="inline-flex items-center px-6 py-3 border border-gray-300 text-base font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 transition-colors">
+                        <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"></path>
+                        </svg>
+                        Continuer mes achats
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Message de remerciement -->
+        <div class="text-center mt-8">
+            <p class="text-gray-600">
+                Merci pour votre confiance ! 🙏<br>
+                L'équipe SagaKore vous remercie pour votre commande.
+            </p>
+        </div>
+    </div>
+</div>
+{% endblock %}

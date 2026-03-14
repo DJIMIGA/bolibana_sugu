@@ -1,0 +1,1559 @@
+{% extends "base.html" %}
+{% load static %}
+{% load product_tags %}
+
+{% block extra_head %}
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.css" />
+<style>
+    .swiper-button-next,
+    .swiper-button-prev {
+        color: #059669 !important; /* green-600 */
+        background-color: white;
+        width: 32px !important;
+        height: 32px !important;
+        border-radius: 50%;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        top: 50% !important; /* Centré verticalement */
+        transform: translateY(-50%) !important; /* Centré parfaitement */
+        opacity: 0.7 !important;
+        transition: all 0.2s ease;
+    }
+
+    .swiper-button-next {
+        right: -8px !important;
+    }
+
+    .swiper-button-prev {
+        left: -8px !important;
+    }
+
+    .swiper-button-next:after,
+    .swiper-button-prev:after {
+        font-size: 16px !important; 
+    }
+
+    .swiper-button-next:hover,
+    .swiper-button-prev:hover {
+        color: #047857 !important; /* green-700 */
+        background-color: #f3f4f6;
+        opacity: 0.9 !important;
+    }
+
+    .swiper-button-disabled {
+        opacity: 0.35 !important;
+        cursor: auto !important;
+        pointer-events: none !important;
+    }
+
+    /* Style des indicateurs */
+    .swiper-pagination {
+        position: relative !important;
+        margin-top: 16px !important;
+        margin-bottom: 8px !important;
+        display: flex !important;
+        justify-content: center !important;
+        align-items: center !important;
+        gap: 8px !important;
+        width: 100% !important;
+        z-index: 10 !important;
+        overflow: visible !important;
+    }
+
+    .swiper-pagination-bullet {
+        width: 10px !important;
+        height: 10px !important;
+        background: #d1d5db !important; /* gray-300 */
+        opacity: 0.6 !important;
+        transition: all 0.3s ease !important;
+        margin: 0 4px !important;
+        border-radius: 50% !important;
+        cursor: pointer !important;
+        display: inline-block !important;
+    }
+    
+    .swiper-pagination-bullet-active {
+        background: #10b981 !important; /* green-500 */
+        opacity: 1 !important;
+        transform: scale(1.3) !important;
+        width: 12px !important;
+        height: 12px !important;
+    }
+    
+    .swiper-pagination-bullet:hover {
+        background: #10b981 !important; /* green-500 */
+        opacity: 0.8 !important;
+        transform: scale(1.1) !important;
+    }
+
+    /* Ajustement de l'espacement pour les slides */
+    .swiper-slide {
+        height: auto !important;
+        display: flex !important;
+        align-items: stretch !important;
+        touch-action: auto !important;
+    }
+
+    .swiper-slide > * {
+        width: 100% !important;
+        height: 100% !important;
+        touch-action: auto !important;
+    }
+
+    /* Permettre le scroll vertical sur les cartes dans les slides */
+    .swiper-slide .product-card {
+        touch-action: auto !important;
+        overflow-y: auto !important;
+        -webkit-overflow-scrolling: touch !important;
+    }
+
+    /* Ajustement du conteneur pour les flèches */
+    .swiper {
+        padding: 0 5px !important;
+        margin-bottom: 16px !important;
+        overflow: hidden !important; /* Changé de visible à hidden */
+    }
+
+    /* Amélioration de l'expérience tactile - CORRIGÉE */
+    .swiper-wrapper {
+        touch-action: pan-x pan-y !important; /* Permettre pan-x ET pan-y */
+        -webkit-overflow-scrolling: touch !important;
+        will-change: transform !important;
+    }
+
+    /* Permettre le scroll vertical sur les cartes de produits */
+    .product-card,
+    .product-card * {
+        touch-action: auto !important;
+        -webkit-overflow-scrolling: touch !important;
+    }
+
+    /* Permettre le scroll vertical sur le contenu des cartes */
+    .product-card .card-body,
+    .product-card .card-content,
+    .product-card .p-4,
+    .product-card .p-3,
+    .product-card .p-2 {
+        touch-action: auto !important;
+        overflow-y: auto !important;
+        -webkit-overflow-scrolling: touch !important;
+    }
+
+    /* S'assurer que les liens et boutons dans les cartes sont cliquables */
+    .product-card a,
+    .product-card button,
+    .product-card .btn {
+        touch-action: manipulation !important;
+        -webkit-tap-highlight-color: rgba(0,0,0,0.1) !important;
+    }
+
+    /* Garantir l'affichage de 5 éléments sur une ligne */
+    .grid-5-cols {
+        display: grid !important;
+        grid-template-columns: repeat(5, minmax(0, 1fr)) !important;
+        gap: 1rem !important;
+    }
+
+    /* Responsive pour les grilles de 5 éléments */
+    @media (max-width: 640px) {
+        .grid-5-cols {
+            grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+        }
+    }
+
+    @media (min-width: 640px) and (max-width: 1024px) {
+        .grid-5-cols {
+            grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+        }
+    }
+
+    @media (min-width: 1024px) and (max-width: 1280px) {
+        .grid-5-cols {
+            grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+        }
+    }
+
+    @media (min-width: 1280px) {
+        .grid-5-cols {
+            grid-template-columns: repeat(5, minmax(0, 1fr)) !important;
+        }
+    }
+
+    /* Garantir que les cartes de produits s'affichent correctement */
+    .grid-5-cols > * {
+        min-width: 0 !important;
+        max-width: 100% !important;
+    }
+
+    /* Contraintes spécifiques pour les cartes de produits - CORRIGÉE */
+    .product-card {
+        width: 100% !important;
+        min-width: 0 !important; /* Changé de 200px à 0 */
+        max-width: 100% !important; /* Changé de 300px à 100% */
+    }
+
+    /* Responsive pour les cartes - CORRIGÉE */
+    @media (max-width: 640px) {
+        .product-card {
+            min-width: 0 !important; /* Changé de 150px à 0 */
+            max-width: 100% !important; /* Changé de 200px à 100% */
+        }
+    }
+
+    @media (min-width: 640px) and (max-width: 1024px) {
+        .product-card {
+            min-width: 180px !important;
+            max-width: 250px !important;
+        }
+    }
+
+    /* Styles pour les cartes de téléphone colorisées */
+    .phone-card-colorized {
+        position: relative;
+        overflow: hidden;
+    }
+
+    .phone-card-colorized::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 3px;
+        background: linear-gradient(90deg, var(--phone-color) 0%, var(--phone-color-light) 50%, var(--phone-color) 100%);
+        transform: scaleX(0);
+        transform-origin: left;
+        transition: transform 0.3s ease;
+    }
+
+    .phone-card-colorized:hover::before {
+        transform: scaleX(1);
+    }
+
+    /* Effet de brillance au survol */
+    .phone-card-colorized::after {
+        content: '';
+        position: absolute;
+        top: -50%;
+        left: -50%;
+        width: 200%;
+        height: 200%;
+        background: linear-gradient(45deg, transparent 30%, rgba(255,255,255,0.1) 50%, transparent 70%);
+        transform: rotate(45deg) translateX(-100%);
+        transition: transform 0.6s ease;
+        pointer-events: none;
+    }
+
+    .phone-card-colorized:hover::after {
+        transform: rotate(45deg) translateX(100%);
+    }
+
+    /* Animation des badges avec la couleur */
+    .phone-card-colorized .badge {
+        transition: all 0.3s ease;
+    }
+
+    .phone-card-colorized:hover .badge {
+        transform: scale(1.05);
+        box-shadow: 0 4px 12px var(--phone-color-light);
+    }
+
+    /* Effet de pulsation pour l'indicateur de couleur */
+    .phone-card-colorized .color-indicator {
+        animation: colorPulse 2s ease-in-out infinite;
+    }
+
+    @keyframes colorPulse {
+        0%, 100% {
+            transform: scale(1);
+            opacity: 1;
+        }
+        50% {
+            transform: scale(1.1);
+            opacity: 0.8;
+        }
+    }
+
+    /* Amélioration des transitions pour les prix */
+    .phone-card-colorized .price {
+        transition: all 0.3s ease;
+    }
+
+    .phone-card-colorized:hover .price {
+        transform: translateY(-2px);
+        text-shadow: 0 2px 4px var(--phone-color-light);
+    }
+
+    /* Effet de profondeur pour les boutons d'action */
+    .phone-card-colorized .action-buttons button {
+        transition: all 0.3s ease;
+    }
+
+    .phone-card-colorized:hover .action-buttons button {
+        transform: translateY(-1px);
+        box-shadow: 0 4px 8px var(--phone-color-light);
+    }
+
+    /* Gradient subtil pour l'arrière-plan de la carte */
+    .phone-card-colorized {
+        background: linear-gradient(135deg, #ffffff 0%, var(--phone-color-light) 100%);
+    }
+
+    /* Effet de bordure animée */
+    .phone-card-colorized .border-animated {
+        position: relative;
+    }
+
+    .phone-card-colorized .border-animated::before {
+        content: '';
+        position: absolute;
+        inset: 0;
+        border-radius: inherit;
+        padding: 2px;
+        background: linear-gradient(45deg, var(--phone-color), var(--phone-color-light), var(--phone-color));
+        mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+        mask-composite: exclude;
+        opacity: 0;
+        transition: opacity 0.3s ease;
+    }
+
+    .phone-card-colorized:hover .border-animated::before {
+        opacity: 1;
+    }
+
+
+
+
+
+    /* Garantir la séparation mobile/desktop pour toutes les sections */
+    .pilotProductsSwiper,
+    .promotionsSwiper,
+    .b2bProductsSwiper,
+    .phonesSwiper,
+    .clothingSwiper,
+    .fabricSwiper,
+    .culturalSwiper {
+        display: block !important;
+        margin-bottom: 24px !important;
+        padding-bottom: 8px !important;
+    }
+    
+    @media (min-width: 640px) {
+        .pilotProductsSwiper,
+        .promotionsSwiper,
+        .b2bProductsSwiper,
+        .phonesSwiper,
+        .clothingSwiper,
+        .fabricSwiper,
+        .culturalSwiper {
+            display: none !important;
+        }
+    }
+    
+    .pilot-products-desktop-grid,
+    .promotions-desktop-grid,
+    .b2b-products-desktop-grid,
+    .phones-desktop-grid,
+    .clothing-desktop-grid,
+    .fabric-desktop-grid,
+    .cultural-desktop-grid {
+        display: none !important;
+    }
+    
+    @media (min-width: 640px) {
+        .pilot-products-desktop-grid,
+        .promotions-desktop-grid,
+        .b2b-products-desktop-grid,
+        .phones-desktop-grid,
+        .clothing-desktop-grid,
+        .fabric-desktop-grid,
+        .cultural-desktop-grid {
+            display: grid !important;
+        }
+    }
+
+    /* Amélioration de la navigation tactile - CORRIGÉE */
+    .swiper-slide {
+        touch-action: pan-x !important; /* Seulement pan-x pour le swiper */
+        -webkit-user-select: none !important;
+        -moz-user-select: none !important;
+        -ms-user-select: none !important;
+        user-select: none !important;
+        will-change: transform !important;
+    }
+
+    /* Amélioration du curseur sur mobile */
+    @media (max-width: 640px) {
+        .swiper-slide {
+            cursor: grab !important;
+        }
+        
+        .swiper-slide:active {
+            cursor: grabbing !important;
+        }
+
+        /* Amélioration de la réactivité tactile - CORRIGÉE */
+        .swiper {
+            touch-action: pan-x !important; /* Seulement pan-x */
+            -webkit-overflow-scrolling: touch !important;
+        }
+        
+        /* Empêcher le scroll horizontal sur le body en mobile */
+        body {
+            overflow-x: hidden !important;
+        }
+        
+        /* S'assurer que les conteneurs ne débordent pas */
+        .container, .mx-auto {
+            overflow-x: hidden !important;
+            max-width: 100vw !important;
+        }
+        
+        /* Permettre le scroll vertical sur la page */
+        html, body {
+            overflow-y: auto !important;
+            -webkit-overflow-scrolling: touch !important;
+        }
+    }
+
+    /* Amélioration du scroll de la page - CORRIGÉE */
+    @media (max-width: 640px) {
+        /* Permettre le scroll horizontal de la page */
+        body {
+            overflow-x: auto !important;
+            -webkit-overflow-scrolling: touch !important;
+        }
+        
+        /* S'assurer que les conteneurs permettent le scroll */
+        .container, .mx-auto {
+            overflow-x: auto !important;
+            max-width: 100vw !important;
+        }
+        
+        /* Améliorer la réactivité tactile du Swiper */
+        .swiper {
+            touch-action: pan-x pan-y !important;
+            -webkit-overflow-scrolling: touch !important;
+        }
+        
+        .swiper-slide {
+            touch-action: pan-x pan-y !important;
+            cursor: grab !important;
+        }
+        
+        .swiper-slide:active {
+            cursor: grabbing !important;
+        }
+        
+        /* Permettre le scroll de la page sur les cartes */
+        .swiper-slide .product-card {
+            touch-action: auto !important;
+            overflow-y: auto !important;
+            -webkit-overflow-scrolling: touch !important;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block extra_scripts %}
+<script src="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.js"></script>
+    <script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Configuration commune pour tous les Swipers - CORRIGÉE
+        const defaultSwiperConfig = {
+            slidesPerView: 2,
+            spaceBetween: 16,
+            centeredSlides: false,
+            loop: false,
+            effect: 'slide',
+            speed: 300,
+            // Configuration tactile optimisée pour mobile - CORRIGÉE
+            touchRatio: 1,
+            touchAngle: 45,
+            grabCursor: true,
+            allowTouchMove: true,
+            resistance: true,
+            resistanceRatio: 0.85,
+            // Configuration pour mobile - CORRIGÉE
+            touchStartPreventDefault: false,
+            touchMoveStopPropagation: false, // Changé à false pour permettre le scroll de la page
+            // Amélioration de la sensibilité - CORRIGÉE
+            threshold: 5, // Réduit de 10 à 5 pour plus de sensibilité
+            shortSwipes: true,
+            longSwipes: true,
+            longSwipesRatio: 0.5,
+            longSwipesMs: 300,
+            followFinger: true,
+            // Amélioration de la réactivité tactile - CORRIGÉE
+            watchSlidesProgress: true, // Changé à true
+            watchSlidesVisibility: true, // Changé à true
+            // Permettre le scroll de la page - CORRIGÉE
+            allowTouchMove: true,
+            touchEventsTarget: 'container', // Changé à container
+            // Pagination améliorée - calculée dynamiquement
+            pagination: {
+                clickable: true,
+                dynamicBullets: false,
+                renderBullet: function (index, className) {
+                    return '<span class="' + className + '"></span>';
+                },
+            },
+            navigation: {
+                disabledClass: 'swiper-button-disabled',
+            },
+            // Masquer la navigation si pas assez de slides
+            on: {
+                init: function() {
+                    this.updateSlidesClasses();
+                    this.updateProgress();
+                    this.updateSlidesOffset();
+                    this.updateSize();
+                    this.updateSlides();
+                    this.updateProgress();
+                    this.updateSlidesClasses();
+                    
+                    if (this.slides.length <= this.params.slidesPerView) {
+                        this.el.querySelector('.swiper-button-prev').style.display = 'none';
+                        this.el.querySelector('.swiper-button-next').style.display = 'none';
+                    }
+                },
+                // Améliorer la gestion des événements tactiles - CORRIGÉE
+                touchStart: function(swiper, event) {
+                    // Permettre le scroll de la page si le mouvement est vertical
+                    const touch = event.touches[0];
+                    swiper.touchStartX = touch.clientX;
+                    swiper.touchStartY = touch.clientY;
+                },
+                touchMove: function(swiper, event) {
+                    const touch = event.touches[0];
+                    const deltaX = Math.abs(touch.clientX - swiper.touchStartX);
+                    const deltaY = Math.abs(touch.clientY - swiper.touchStartY);
+                    
+                    // Si le mouvement est plus vertical qu'horizontal, permettre le scroll de la page
+                    if (deltaY > deltaX && deltaY > 10) {
+                        event.stopPropagation();
+                        return;
+                    }
+                }
+            }
+        };
+
+        // Configuration spécifique pour chaque Swiper
+        const swiperConfigs = {
+            pilotProducts: {
+                ...defaultSwiperConfig,
+                slidesPerView: 2,
+                spaceBetween: 16,
+                navigation: {
+                    ...defaultSwiperConfig.navigation,
+                    nextEl: '.pilotProductsSwiper .swiper-button-next',
+                    prevEl: '.pilotProductsSwiper .swiper-button-prev',
+                },
+                pagination: {
+                    ...defaultSwiperConfig.pagination,
+                    el: '.pilotProductsSwiper .swiper-pagination',
+                    clickable: true,
+                    dynamicBullets: false,
+                },
+                breakpoints: {
+                    640: {
+                        slidesPerView: 2,
+                        spaceBetween: 24,
+                        centeredSlides: false,
+                    },
+                    1024: {
+                        slidesPerView: 3,
+                        spaceBetween: 32,
+                        centeredSlides: false,
+                    }
+                },
+                // Configuration spéciale pour les produits pilotes
+                on: {
+                    init: function() {
+                        const totalSlides = this.slides.length;
+                        const slidesPerView = this.params.slidesPerView;
+                        const totalPages = Math.ceil(totalSlides / slidesPerView);
+                        
+                        // Masquer la navigation si moins de 2 pages
+                        if (totalPages <= 1) {
+                            this.navigation.nextEl.style.display = 'none';
+                            this.navigation.prevEl.style.display = 'none';
+                            this.pagination.el.style.display = 'none';
+                        }
+                        
+                        // Ajuster la pagination pour 5 produits max
+                        if (totalSlides <= 4) {
+                            this.pagination.el.style.display = 'none';
+                        }
+                    }
+                }
+            },
+            categories: {
+                ...defaultSwiperConfig,
+                slidesPerView: 1,
+                spaceBetween: 16,
+                centeredSlides: false,
+                loop: false,
+                navigation: {
+                    ...defaultSwiperConfig.navigation,
+                    nextEl: '.categoriesSwiper .swiper-button-next',
+                    prevEl: '.categoriesSwiper .swiper-button-prev',
+                },
+                pagination: {
+                    ...defaultSwiperConfig.pagination,
+                    el: '.categoriesSwiper .swiper-pagination',
+                },
+                breakpoints: {
+                    640: {
+                        slidesPerView: 2,
+                        spaceBetween: 24,
+                        centeredSlides: false,
+                    },
+                    1024: {
+                        slidesPerView: 3,
+                        spaceBetween: 32,
+                        centeredSlides: false,
+                    }
+                }
+            },
+            phones: {
+                ...defaultSwiperConfig,
+                slidesPerView: 2,
+                spaceBetween: 16,
+                navigation: {
+                    ...defaultSwiperConfig.navigation,
+                    nextEl: '.phonesSwiper .swiper-button-next',
+                    prevEl: '.phonesSwiper .swiper-button-prev',
+                },
+                pagination: {
+                    ...defaultSwiperConfig.pagination,
+                    el: '.phonesSwiper .swiper-pagination',
+                    clickable: true,
+                    dynamicBullets: false,
+                },
+                breakpoints: {
+                    640: {
+                        slidesPerView: 2,
+                        spaceBetween: 24,
+                        centeredSlides: false,
+                    },
+                    1024: {
+                        slidesPerView: 3,
+                        spaceBetween: 32,
+                        centeredSlides: false,
+                    }
+                },
+                // Configuration spéciale pour les téléphones
+                on: {
+                    init: function() {
+                        const totalSlides = this.slides.length;
+                        const slidesPerView = this.params.slidesPerView;
+                        const totalPages = Math.ceil(totalSlides / slidesPerView);
+                        
+                        // Masquer la navigation si moins de 2 pages
+                        if (totalPages <= 1) {
+                            this.navigation.nextEl.style.display = 'none';
+                            this.navigation.prevEl.style.display = 'none';
+                            this.pagination.el.style.display = 'none';
+                        }
+                        
+                        // Ajuster la pagination pour 5 produits max
+                        if (totalSlides <= 4) {
+                            this.pagination.el.style.display = 'none';
+                        }
+                    }
+                }
+            },
+            clothing: {
+                ...defaultSwiperConfig,
+                slidesPerView: 2,
+                spaceBetween: 16,
+                navigation: {
+                    ...defaultSwiperConfig.navigation,
+                    nextEl: '.clothingSwiper .swiper-button-next',
+                    prevEl: '.clothingSwiper .swiper-button-prev',
+                },
+                pagination: {
+                    ...defaultSwiperConfig.pagination,
+                    el: '.clothingSwiper .swiper-pagination',
+                    clickable: true,
+                    dynamicBullets: false,
+                },
+                breakpoints: {
+                    640: {
+                        slidesPerView: 2,
+                        spaceBetween: 24,
+                        centeredSlides: false,
+                    },
+                    1024: {
+                        slidesPerView: 3,
+                        spaceBetween: 32,
+                        centeredSlides: false,
+                    }
+                },
+                // Configuration spéciale pour les vêtements
+                on: {
+                    init: function() {
+                        const totalSlides = this.slides.length;
+                        const slidesPerView = this.params.slidesPerView;
+                        const totalPages = Math.ceil(totalSlides / slidesPerView);
+                        
+                        // Masquer la navigation si moins de 2 pages
+                        if (totalPages <= 1) {
+                            this.navigation.nextEl.style.display = 'none';
+                            this.navigation.prevEl.style.display = 'none';
+                            this.pagination.el.style.display = 'none';
+                        }
+                        
+                        // Ajuster la pagination pour 5 produits max
+                        if (totalSlides <= 4) {
+                            this.pagination.el.style.display = 'none';
+                        }
+                    }
+                }
+            },
+            fabric: {
+                ...defaultSwiperConfig,
+                slidesPerView: 2,
+                spaceBetween: 16,
+                navigation: {
+                    ...defaultSwiperConfig.navigation,
+                    nextEl: '.fabricSwiper .swiper-button-next',
+                    prevEl: '.fabricSwiper .swiper-button-prev',
+                },
+                pagination: {
+                    ...defaultSwiperConfig.pagination,
+                    el: '.fabricSwiper .swiper-pagination',
+                    clickable: true,
+                    dynamicBullets: false,
+                },
+                breakpoints: {
+                    640: {
+                        slidesPerView: 2,
+                        spaceBetween: 24,
+                        centeredSlides: false,
+                    },
+                    1024: {
+                        slidesPerView: 3,
+                        spaceBetween: 32,
+                        centeredSlides: false,
+                    }
+                },
+                // Configuration spéciale pour les tissus
+                on: {
+                    init: function() {
+                        const totalSlides = this.slides.length;
+                        const slidesPerView = this.params.slidesPerView;
+                        const totalPages = Math.ceil(totalSlides / slidesPerView);
+                        
+                        // Masquer la navigation si moins de 2 pages
+                        if (totalPages <= 1) {
+                            this.navigation.nextEl.style.display = 'none';
+                            this.navigation.prevEl.style.display = 'none';
+                            this.pagination.el.style.display = 'none';
+                        }
+                        
+                        // Ajuster la pagination pour 5 produits max
+                        if (totalSlides <= 4) {
+                            this.pagination.el.style.display = 'none';
+                        }
+                    }
+                }
+            },
+            cultural: {
+                ...defaultSwiperConfig,
+                slidesPerView: 2,
+                spaceBetween: 16,
+                navigation: {
+                    ...defaultSwiperConfig.navigation,
+                    nextEl: '.culturalSwiper .swiper-button-next',
+                    prevEl: '.culturalSwiper .swiper-button-prev',
+                },
+                pagination: {
+                    ...defaultSwiperConfig.pagination,
+                    el: '.culturalSwiper .swiper-pagination',
+                    clickable: true,
+                    dynamicBullets: false,
+                },
+                breakpoints: {
+                    640: {
+                        slidesPerView: 2,
+                        spaceBetween: 24,
+                        centeredSlides: false,
+                    },
+                    1024: {
+                        slidesPerView: 3,
+                        spaceBetween: 32,
+                        centeredSlides: false,
+                    }
+                },
+                // Configuration spéciale pour les articles culturels
+                on: {
+                    init: function() {
+                        const totalSlides = this.slides.length;
+                        const slidesPerView = this.params.slidesPerView;
+                        const totalPages = Math.ceil(totalSlides / slidesPerView);
+                        
+                        // Masquer la navigation si moins de 2 pages
+                        if (totalPages <= 1) {
+                            this.navigation.nextEl.style.display = 'none';
+                            this.navigation.prevEl.style.display = 'none';
+                            this.pagination.el.style.display = 'none';
+                        }
+                        
+                        // Ajuster la pagination pour 5 produits max
+                        if (totalSlides <= 4) {
+                            this.pagination.el.style.display = 'none';
+                        }
+                    }
+                }
+            },
+            promotions: {
+                ...defaultSwiperConfig,
+                slidesPerView: 2,
+                spaceBetween: 16,
+                centeredSlides: false,
+                loop: false,
+                navigation: {
+                    ...defaultSwiperConfig.navigation,
+                    nextEl: '.promotionsSwiper .swiper-button-next',
+                    prevEl: '.promotionsSwiper .swiper-button-prev',
+                },
+                pagination: {
+                    ...defaultSwiperConfig.pagination,
+                    el: '.promotionsSwiper .swiper-pagination',
+                    clickable: true,
+                    dynamicBullets: false,
+                },
+                breakpoints: {
+                    640: {
+                        slidesPerView: 2,
+                        spaceBetween: 24,
+                        centeredSlides: false,
+                    },
+                    1024: {
+                        slidesPerView: 3,
+                        spaceBetween: 32,
+                        centeredSlides: false,
+                    }
+                },
+                // Configuration spéciale pour les promotions (max 5 produits)
+                on: {
+                    init: function() {
+                        const totalSlides = this.slides.length;
+                        const slidesPerView = this.params.slidesPerView;
+                        const totalPages = Math.ceil(totalSlides / slidesPerView);
+                        
+                        // Masquer la navigation si moins de 2 pages
+                        if (totalPages <= 1) {
+                            this.navigation.nextEl.style.display = 'none';
+                            this.navigation.prevEl.style.display = 'none';
+                            this.pagination.el.style.display = 'none';
+                        }
+                        
+                        // Ajuster la pagination pour 5 produits max (3 slides max)
+                        if (totalSlides <= 4) {
+                            this.pagination.el.style.display = 'none';
+                        }
+                    }
+                }
+            }
+        };
+
+        // Fonction pour initialiser un Swiper
+        function initSwiper(containerClass, config) {
+            const container = document.querySelector(containerClass);
+            if (container) {
+                const swiper = new Swiper(containerClass, config);
+                return swiper;
+            }
+            console.error(`[Swiper] ⚠️ ${containerClass} non trouvé`);
+            return null;
+        }
+
+        // Initialisation de tous les Swipers
+        const swipers = {
+            pilotProducts: initSwiper('.pilotProductsSwiper', swiperConfigs.pilotProducts),
+            categories: initSwiper('.categoriesSwiper', swiperConfigs.categories),
+            phones: initSwiper('.phonesSwiper', swiperConfigs.phones),
+            clothing: initSwiper('.clothingSwiper', swiperConfigs.clothing),
+            fabric: initSwiper('.fabricSwiper', swiperConfigs.fabric),
+            cultural: initSwiper('.culturalSwiper', swiperConfigs.cultural),
+            promotions: initSwiper('.promotionsSwiper', swiperConfigs.promotions)
+        };
+
+        // Fonction pour ajouter des écouteurs d'événements aux boutons
+        function addButtonListeners(swiper, containerClass) {
+            const container = document.querySelector(containerClass);
+            if (!container) return;
+
+            const nextButton = container.querySelector('.swiper-button-next');
+            const prevButton = container.querySelector('.swiper-button-prev');
+
+            if (nextButton) {
+                nextButton.addEventListener('click', () => {
+                    swiper.slideNext();
+                });
+            }
+
+            if (prevButton) {
+                prevButton.addEventListener('click', () => {
+                    swiper.slidePrev();
+                });
+            }
+        }
+
+        // Ajout des écouteurs d'événements pour chaque Swiper
+        Object.entries(swipers).forEach(([name, swiper]) => {
+            if (swiper) {
+                addButtonListeners(swiper, `.${name}Swiper`);
+            }
+        });
+        });
+    </script>
+{% endblock %}
+
+{% block content %}
+<div class="bg-gray-50">
+    {% if hero %}
+    <section class="relative h-[500px] md:h-[600px] overflow-hidden">
+        <!-- Overlay pour la lisibilité -->
+        <div class="absolute inset-0 bg-gradient-to-r from-black/80 via-black/60 to-transparent md:to-transparent z-10"></div>
+
+        <!-- Grille d'images (3 colonnes sur desktop, 1 sur mobile) -->
+        <div class="grid h-full md:grid-cols-{{ hero_images|length }} grid-cols-1">
+            {% for image in hero_images %}
+            <div class="relative h-full group {% if not forloop.first %}hidden md:block{% endif %}">
+                <div class="relative bg-cover bg-center h-full transition-transform duration-500 group-hover:scale-105"
+                     style="background-image: url('{{ image.image.url }}');">
+                    <div class="absolute inset-0 bg-black/30 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+
+        <!-- Section Texte (positionnée à droite sur desktop, centrée sur mobile) -->
+        <div class="absolute inset-0 z-20 flex items-center justify-end">
+            <div class="container mx-auto px-4 h-full flex items-center">
+                <div class="max-w-xl lg:max-w-2xl transform transition-all duration-500 md:ml-auto md:mr-0 md:pr-0 lg:pr-8 xl:pr-16">
+                    <h1 class="text-4xl sm:text-5xl md:text-6xl font-bold mb-4 text-white drop-shadow-lg leading-tight">
+                        {{ hero.title }}
+                    </h1>
+                    <p class="text-lg sm:text-xl text-white mb-8 font-medium leading-relaxed drop-shadow-md">
+                        {{ hero.subtitle }}
+                    </p>
+                    <div class="flex flex-wrap gap-4">
+                        <a href="{{ hero.primary_button_url }}" 
+                           class="inline-flex items-center px-6 sm:px-8 py-3 sm:py-4 border border-transparent text-base sm:text-lg font-medium rounded-md shadow-lg text-white bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-all duration-300 transform hover:scale-105">
+                            {{ hero.primary_button_text }}
+                        </a>
+                        <a href="{{ hero.secondary_button_url }}" 
+                           class="inline-flex items-center px-6 py-3 border border-transparent text-base font-medium rounded-md text-white bg-green-600 hover:bg-green-700">
+                            {{ hero.secondary_button_text|default:"Découvrir" }}
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+    {% endif %}
+    </div>
+
+
+    <div class="mx-auto max-w-6xl px-4 sm:px-6 py-8 sm:py-16 lg:max-w-8xl xl:max-w-full xl:px-8">
+       
+        <!-- Section Produits Pilotes - Tunnel de Vente -->
+        {% include "suppliers/components/_pilot_products.html" %}       
+
+        <!-- Section Nos Catégories -->
+        <div class="mb-24">
+            <div class="relative px-2 sm:px-0 flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 sm:gap-0">
+                <div class="relative">
+                    <h1 class="text-2xl sm:text-3xl font-bold font-bitter bg-gradient-to-r from-gray-900 to-gray-700 bg-clip-text text-transparent mb-3 sm:mb-4">
+                        Nos Catégories
+                    </h1>
+                    <div class="absolute -bottom-1 left-0 w-24 h-1 bg-gradient-to-r from-green-600 via-yellow-500 to-red-500 rounded-full"></div>
+                </div>
+                {% if main_categories|length > 5 %}
+                <a href="{% url 'suppliers:category_list' %}" 
+                   class="inline-flex items-center justify-center w-full sm:w-auto px-4 py-2 border border-transparent text-sm font-medium rounded-md text-green-700 bg-green-100 hover:bg-green-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-all duration-300">
+                    Voir toutes les catégories
+                    <svg class="ml-2 w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8l4 4m0 0l-4 4m4-4H3" />
+                    </svg>
+                </a>
+                {% endif %}
+            </div>
+
+            <!-- Swiper sur mobile, grille sur desktop -->
+            <div class="mt-12 relative">
+                <!-- Swiper container -->
+                <div class="swiper categoriesSwiper sm:hidden">
+                    <div class="swiper-wrapper">
+                        {% if main_categories %}
+                            {% for category in main_categories|slice:":5" %}
+                            <div class="swiper-slide">
+                                <a href="{% url 'suppliers:category_detail' category.slug %}" 
+                                   class="group bg-white rounded-xl shadow-lg overflow-hidden transition-all duration-300 hover:shadow-xl hover:-translate-y-1 block">
+                                    <div class="aspect-w-1 aspect-h-1 w-full overflow-hidden bg-gray-200 xl:aspect-w-7 xl:aspect-h-8">
+                                        {% if category.image %}
+                                            <img src="{{ category.image.url }}" alt="{{ category.name }}" class="w-full h-full object-cover">
+                                        {% else %}
+                                            <div class="w-full h-full flex items-center justify-center bg-{{ category.color }}-100">
+                                                <svg class="w-24 h-24 text-{{ category.color }}-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    {% if category.slug == 'telephones' %}
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z" />
+                                                    {% elif category.slug == 'vetements' %}
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
+                                                    {% elif category.slug == 'tissus' %}
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                                                    {% else %}
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                                                    {% endif %}
+                                                </svg>
+                                            </div>
+                                        {% endif %}
+                                    </div>
+                                    <div class="p-4 xl:p-6">
+                                        <h3 class="text-lg xl:text-xl font-semibold font-bitter text-gray-900 group-hover:text-{{ category.color }}-600 transition-colors duration-300">
+                                            {{ category.name }}
+                                        </h3>
+                                        <p class="mt-2 text-sm xl:text-base text-gray-600 line-clamp-2 font-bitter">{{ category.description }}</p>
+                                    </div>
+                                </a>
+                            </div>
+                            {% endfor %}
+                        {% else %}
+                        <div class="swiper-slide">
+                            <div class="text-center py-12">
+                                <p class="text-gray-500 text-xl">Aucune catégorie disponible pour le moment.</p>
+                            </div>
+                        </div>
+                        {% endif %}
+                    </div>
+                    <!-- Add Pagination -->
+                    <div class="swiper-pagination"></div>
+                    <!-- Add Navigation -->
+                    <div class="swiper-button-prev"></div>
+                    <div class="swiper-button-next"></div>
+                </div>
+
+                <!-- Grille pour desktop - Optimisée pour 5 éléments -->
+                <div class="hidden sm:grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-6">
+                {% if main_categories %}
+                    {% for category in main_categories|slice:":5" %}
+                        <div>
+                    <a href="{% url 'suppliers:category_detail' category.slug %}" 
+                               class="group bg-white rounded-xl shadow-lg overflow-hidden transition-all duration-300 hover:shadow-xl hover:-translate-y-1 block">
+                        <div class="aspect-w-1 aspect-h-1 w-full overflow-hidden bg-gray-200 xl:aspect-w-7 xl:aspect-h-8">
+                            {% if category.image %}
+                                <img src="{{ category.image.url }}" alt="{{ category.name }}" class="w-full h-full object-cover">
+                            {% else %}
+                                <div class="w-full h-full flex items-center justify-center bg-{{ category.color }}-100">
+                                    <svg class="w-24 h-24 text-{{ category.color }}-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        {% if category.slug == 'telephones' %}
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z" />
+                                        {% elif category.slug == 'vetements' %}
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
+                                        {% elif category.slug == 'tissus' %}
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                                        {% else %}
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                                        {% endif %}
+                                    </svg>
+                                </div>
+                            {% endif %}
+                        </div>
+                        <div class="p-4 xl:p-6">
+                            <h3 class="text-lg xl:text-xl font-semibold font-bitter text-gray-900 group-hover:text-{{ category.color }}-600 transition-colors duration-300">
+                                {{ category.name }}
+                            </h3>
+                            <p class="mt-2 text-sm xl:text-base text-gray-600 line-clamp-2 font-bitter">{{ category.description }}</p>
+                        </div>
+                    </a>
+                        </div>
+                    {% endfor %}
+                {% else %}
+                <div class="col-span-full text-center py-12">
+                    <p class="text-gray-500 text-xl">Aucune catégorie disponible pour le moment.</p>
+                </div>
+                {% endif %}
+                </div>
+                
+                <!-- Bouton Voir plus en bas de la section -->
+                <div class="mt-8 text-center">
+                    <a href="{% url 'suppliers:category_list' %}" 
+                       class="inline-flex items-center justify-center px-6 py-3 border border-transparent text-base font-medium rounded-md text-white bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-all duration-300 transform hover:scale-105 shadow-lg">
+                        Voir plus de catégories
+                        <svg class="ml-2 w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8l4 4m0 0l-4 4m4-4H3" />
+                        </svg>
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Section Catégories B2B avec Hiérarchie -->
+        {% include "suppliers/components/_b2b_categories_hierarchy.html" %}
+
+        <!-- Section Promotions en Cours -->
+        {% if promotional_products or products %}
+        <div id="promotions" class="mb-24">
+            <div class="relative px-2 sm:px-0 flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 sm:gap-0">
+                <div class="relative">
+                    <h1 class="text-2xl sm:text-3xl font-bold font-bitter bg-gradient-to-r from-gray-900 to-gray-700 bg-clip-text text-transparent mb-3 sm:mb-4 flex items-center gap-2">
+                        <svg class="w-8 h-8 text-red-500" fill="currentColor" viewBox="0 0 20 20">
+                            <path fill-rule="evenodd" d="M12.395 2.553a1 1 0 00-1.45-.385c-.345.23-.614.558-.822.88-.214.33-.403.713-.57 1.116-.334.804-.614 1.768-.84 2.734a31.365 31.365 0 00-.613 3.58 2.64 2.64 0 01-.945-1.067c-.328-.68-.398-1.534-.398-2.654A1 1 0 005.05 6.05 6.981 6.981 0 003 11a7 7 0 1011.95-4.95c-.592-.591-.98-.985-1.348-1.467-.363-.476-.724-1.063-1.207-2.03zM12.12 15.12A3 3 0 017 13s.879.5 2.5.5c0-1 .5-4 1.25-4.5.5 1 .786 1.293 1.371 1.879A2.99 2.99 0 0113 13a2.99 2.99 0 01-.879 2.121z" clip-rule="evenodd"/>
+                        </svg>
+                        {% if promotional_products %}Promotions en Cours{% else %}Produits en Vedette{% endif %}
+                    </h1>
+                    <div class="absolute -bottom-1 left-0 w-24 h-1 bg-gradient-to-r from-red-500 via-yellow-500 to-green-500 rounded-full"></div>
+                </div>
+                <a href="{% url 'suppliers:category_detail' 'tous-les-produits' %}{% if promotional_products %}?promotion=yes{% endif %}" 
+                   class="inline-flex items-center justify-center w-full sm:w-auto px-4 py-2 border border-transparent text-sm font-medium rounded-md text-red-700 bg-red-100 hover:bg-red-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 transition-all duration-300">
+                    {% if promotional_products %}Voir toutes les promotions{% else %}Voir tous les produits{% endif %}
+                    <svg class="ml-2 w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8l4 4m0 0l-4 4m4-4H3" />
+                    </svg>
+                </a>
+            </div>
+
+            <!-- Swiper sur mobile, grille sur desktop -->
+            <div class="mt-12 relative">
+                <!-- Swiper container - Visible uniquement sur mobile -->
+                <div class="swiper promotionsSwiper block sm:hidden">
+                    <div class="swiper-wrapper">
+                        {% for product in promotional_products|slice:":5" %}
+                            <div class="swiper-slide">
+                                {% if product.phone %}
+                                    {% render_phone_card product %}
+                                {% elif product.clothing_product %}
+                                    {% render_clothing_card product %}
+                                {% elif product.fabric_product %}
+                                    {% render_fabric_card product %}
+                                {% elif product.cultural_product %}
+                                    {% render_cultural_card product %}
+                                {% else %}
+                                    {% render_product_card product %}
+                                {% endif %}
+                            </div>
+                        {% empty %}
+                            {% for product in products|slice:":5" %}
+                                <div class="swiper-slide">
+                                    {% if product.phone %}
+                                        {% render_phone_card product %}
+                                    {% elif product.clothing_product %}
+                                        {% render_clothing_card product %}
+                                    {% elif product.fabric_product %}
+                                        {% render_fabric_card product %}
+                                    {% elif product.cultural_product %}
+                                        {% render_cultural_card product %}
+                                    {% else %}
+                                        {% render_product_card product %}
+                                    {% endif %}
+                                </div>
+                            {% empty %}
+                            <div class="swiper-slide">
+                                <div class="text-center py-12">
+                                    <p class="text-gray-500 text-xl">Aucun produit disponible pour le moment.</p>
+                                    <a href="{% url 'suppliers:category_detail' 'tous-les-produits' %}" class="mt-4 inline-flex items-center px-6 py-3 text-sm text-green-700 bg-green-50 hover:bg-green-100 transition-colors duration-200 rounded-lg">
+                                        <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                                        </svg>
+                                        Découvrir tous nos produits
+                                    </a>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        {% endfor %}
+                    </div>
+                    <!-- Navigation -->
+                    <div class="swiper-button-next"></div>
+                    <div class="swiper-button-prev"></div>
+                    <!-- Pagination -->
+                    <div class="swiper-pagination"></div>
+                </div>
+
+                <!-- Grille pour desktop - Visible uniquement sur desktop -->
+                <div class="hidden sm:grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4 grid-5-cols promotions-desktop-grid">
+                {% for product in promotional_products|slice:":5" %}
+                    {% if product.phone %}
+                        {% render_phone_card product %}
+                    {% elif product.clothing_product %}
+                        {% render_clothing_card product %}
+                    {% elif product.fabric_product %}
+                        {% render_fabric_card product %}
+                    {% elif product.cultural_product %}
+                        {% render_cultural_card product %}
+                    {% else %}
+                        {% render_product_card product %}
+                    {% endif %}
+                {% empty %}
+                    {% for product in products|slice:":5" %}
+                        {% if product.phone %}
+                            {% render_phone_card product %}
+                        {% elif product.clothing_product %}
+                            {% render_clothing_card product %}
+                        {% elif product.fabric_product %}
+                            {% render_fabric_card product %}
+                        {% elif product.cultural_product %}
+                            {% render_cultural_card product %}
+                        {% else %}
+                            {% render_product_card product %}
+                        {% endif %}
+                    {% empty %}
+                    <div class="col-span-full text-center py-12">
+                        <p class="text-gray-500 text-xl">Aucun produit disponible pour le moment.</p>
+                        <a href="{% url 'suppliers:category_detail' 'tous-les-produits' %}" class="mt-4 inline-flex items-center px-6 py-3 text-sm text-green-700 bg-green-50 hover:bg-green-100 transition-colors duration-200 rounded-lg">
+                            <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                            </svg>
+                            Découvrir tous nos produits
+                        </a>
+                    </div>
+                    {% endfor %}
+                {% endfor %}
+                </div>
+            </div>
+        </div>
+        {% else %}
+        <!-- Espacement quand pas de promotions -->
+        <div class="mb-24"></div>
+        {% endif %}
+
+        <!-- Section Produits B2B -->
+        {% if b2b_products %}
+        <div id="produits-b2b" class="mb-24">
+            <div class="relative px-2 sm:px-0 flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 sm:gap-0">
+                <div class="relative">
+                    <h1 class="text-2xl sm:text-3xl font-bold font-bitter bg-gradient-to-r from-gray-900 to-gray-700 bg-clip-text text-transparent mb-3 sm:mb-4 flex items-center gap-2">
+                        <svg class="w-8 h-8 text-green-600" fill="currentColor" viewBox="0 0 20 20">
+                            <path d="M9 2a1 1 0 000 2h2a1 1 0 100-2H9z"/>
+                            <path fill-rule="evenodd" d="M4 5a2 2 0 012-2 3 3 0 003 3h2a3 3 0 003-3 2 2 0 012 2v11a2 2 0 01-2 2H6a2 2 0 01-2-2V5zm3 4a1 1 0 000 2h.01a1 1 0 100-2H7zm3 0a1 1 0 000 2h3a1 1 0 100-2h-3zm-3 4a1 1 0 100 2h.01a1 1 0 100-2H7zm3 0a1 1 0 100 2h3a1 1 0 100-2h-3z" clip-rule="evenodd"/>
+                        </svg>
+                        Produits B2B
+                    </h1>
+                    <div class="absolute -bottom-1 left-0 w-24 h-1 bg-gradient-to-r from-green-500 via-yellow-500 to-red-500 rounded-full"></div>
+                </div>
+                <a href="{% url 'inventory:category_list_synced' %}" 
+                   class="inline-flex items-center justify-center w-full sm:w-auto px-4 py-2 border border-transparent text-sm font-medium rounded-md text-green-700 bg-green-100 hover:bg-green-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-all duration-300">
+                    Voir tous les produits B2B
+                    <svg class="ml-2 w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8l4 4m0 0l-4 4m4-4H3" />
+                    </svg>
+                </a>
+            </div>
+
+            <!-- Swiper sur mobile, grille sur desktop -->
+            <div class="mt-12 relative">
+                <!-- Swiper container - Visible uniquement sur mobile -->
+                <div class="swiper b2bProductsSwiper block sm:hidden">
+                    <div class="swiper-wrapper">
+                        {% for product in b2b_products|slice:":8" %}
+                            <div class="swiper-slide">
+                                {% if product.phone %}
+                                    {% render_phone_card product %}
+                                {% elif product.clothing_product %}
+                                    {% render_clothing_card product %}
+                                {% elif product.fabric_product %}
+                                    {% render_fabric_card product %}
+                                {% elif product.cultural_product %}
+                                    {% render_cultural_card product %}
+                                {% else %}
+                                    {% render_product_card product %}
+                                {% endif %}
+                            </div>
+                        {% empty %}
+                            <div class="swiper-slide">
+                                <div class="text-center py-12">
+                                    <p class="text-gray-500 text-xl">Aucun produit B2B disponible pour le moment.</p>
+                                </div>
+                            </div>
+                        {% endfor %}
+                    </div>
+                    <!-- Navigation -->
+                    <div class="swiper-button-next"></div>
+                    <div class="swiper-button-prev"></div>
+                    <!-- Pagination -->
+                    <div class="swiper-pagination"></div>
+                </div>
+
+                <!-- Grille pour desktop - Visible uniquement sur desktop -->
+                <div class="hidden sm:grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 grid-4-cols b2b-products-desktop-grid">
+                {% for product in b2b_products|slice:":8" %}
+                    {% if product.phone %}
+                        {% render_phone_card product %}
+                    {% elif product.clothing_product %}
+                        {% render_clothing_card product %}
+                    {% elif product.fabric_product %}
+                        {% render_fabric_card product %}
+                    {% elif product.cultural_product %}
+                        {% render_cultural_card product %}
+                    {% else %}
+                        {% render_product_card product %}
+                    {% endif %}
+                {% empty %}
+                    <div class="col-span-full text-center py-12">
+                        <p class="text-gray-500 text-xl">Aucun produit B2B disponible pour le moment.</p>
+                        <a href="{% url 'inventory:category_list_synced' %}" class="mt-4 inline-flex items-center px-6 py-3 text-sm text-green-700 bg-green-50 hover:bg-green-100 transition-colors duration-200 rounded-lg">
+                            <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                            </svg>
+                            Découvrir tous nos produits B2B
+                        </a>
+                    </div>
+                {% endfor %}
+                </div>
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Section Téléphones -->
+        <div id="telephones" class="mb-24">
+            <div class="relative px-2 sm:px-0 flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 sm:gap-0">
+                <div class="relative">
+                    <h1 class="text-2xl sm:text-3xl font-bold font-bitter bg-gradient-to-r from-gray-900 to-gray-700 bg-clip-text text-transparent mb-3 sm:mb-4">
+                        Nos téléphones
+                    </h1>
+                    <div class="absolute -bottom-1 left-0 w-24 h-1 bg-gradient-to-r from-green-600 via-yellow-500 to-red-500 rounded-full"></div>
+                </div>
+                <a href="{% url 'suppliers:category_detail' 'telephones' %}" 
+                   class="inline-flex items-center justify-center w-full sm:w-auto px-4 py-2 border border-transparent text-sm font-medium rounded-md text-green-700 bg-green-100 hover:bg-green-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-all duration-300">
+                    Voir tous les téléphones
+                    <svg class="ml-2 w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8l4 4m0 0l-4 4m4-4H3" />
+                    </svg>
+                </a>
+            </div>
+
+            <!-- Swiper sur mobile, grille sur desktop -->
+            <div class="mt-12 relative">
+                <!-- Swiper container - Visible uniquement sur mobile -->
+                <div class="swiper phonesSwiper block sm:hidden">
+                    <div class="swiper-wrapper">
+                        {% for product in products|slice:":5" %}
+                            {% if product.phone %}
+                                <div class="swiper-slide">
+                                    {% render_phone_card product %}
+                                </div>
+                            {% endif %}
+                        {% endfor %}
+                    </div>
+                    <!-- Add Pagination -->
+                    <div class="swiper-pagination"></div>
+                    <!-- Add Navigation -->
+                    <div class="swiper-button-prev"></div>
+                    <div class="swiper-button-next"></div>
+                </div>
+
+                <!-- Grille pour desktop - Visible uniquement sur desktop -->
+                <div class="hidden sm:grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4 grid-5-cols phones-desktop-grid">
+                {% for product in products|slice:":5" %}
+                    {% if product.phone %}
+                        {% render_phone_card product %}
+                    {% endif %}
+                {% endfor %}
+                {% if not products %}
+                <div class="col-span-full text-center py-12">
+                    <p class="text-gray-500 text-xl">Aucun téléphone disponible pour le moment.</p>
+                    <a href="{% url 'suppliers:category_detail' 'tous-les-produits' %}" class="mt-4 inline-flex items-center px-6 py-3 text-sm text-green-700 bg-green-50 hover:bg-green-100 transition-colors duration-200 rounded-lg">
+                        <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                        </svg>
+                        Découvrir tous nos produits
+                    </a>
+                </div>
+                {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Section Vêtements -->
+        <div id="vetements" class="mb-24">
+            <div class="relative px-2 sm:px-0 flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 sm:gap-0">
+                <div class="relative">
+                    <h1 class="text-2xl sm:text-3xl font-bold font-bitter bg-gradient-to-r from-gray-900 to-gray-700 bg-clip-text text-transparent mb-3 sm:mb-4">
+                        Nos vêtements
+                    </h1>
+                    <div class="absolute -bottom-1 left-0 w-24 h-1 bg-gradient-to-r from-green-600 via-yellow-500 to-red-500 rounded-full"></div>
+                </div>
+                <a href="{% url 'suppliers:category_detail' 'vetements' %}" 
+                   class="inline-flex items-center justify-center w-full sm:w-auto px-4 py-2 border border-transparent text-sm font-medium rounded-md text-green-700 bg-green-100 hover:bg-green-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-all duration-300">
+                    Voir tous les vêtements
+                    <svg class="ml-2 w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8l4 4m0 0l-4 4m4-4H3" />
+                    </svg>
+                </a>
+            </div>
+
+            <!-- Swiper sur mobile, grille sur desktop -->
+            <div class="mt-12 relative">
+                <!-- Swiper container - Visible uniquement sur mobile -->
+                <div class="swiper clothingSwiper block sm:hidden">
+                    <div class="swiper-wrapper">
+                        {% for product in clothing_products|slice:":5" %}
+                            <div class="swiper-slide">
+                                {% render_clothing_card product %}
+                            </div>
+                        {% empty %}
+                            <div class="swiper-slide">
+                                <div class="text-center py-12">
+                                    <p class="text-gray-500 text-xl">Aucun vêtement disponible pour le moment.</p>
+                                </div>
+                            </div>
+                        {% endfor %}
+                    </div>
+                    <!-- Add Pagination -->
+                    <div class="swiper-pagination"></div>
+                    <!-- Add Navigation -->
+                    <div class="swiper-button-prev"></div>
+                    <div class="swiper-button-next"></div>
+                </div>
+
+                <!-- Grille pour desktop - Visible uniquement sur desktop -->
+                <div class="hidden sm:grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4 grid-5-cols clothing-desktop-grid">
+                {% for product in clothing_products|slice:":5" %}
+                    {% render_clothing_card product %}
+                {% endfor %}
+                {% if not clothing_products %}
+                <div class="col-span-full text-center py-12">
+                    <p class="text-gray-500 text-xl">Aucun vêtement disponible pour le moment.</p>
+                    <a href="{% url 'suppliers:category_detail' 'tous-les-produits' %}" class="mt-4 inline-flex items-center px-6 py-3 text-sm text-green-700 bg-green-50 hover:bg-green-100 transition-colors duration-200 rounded-lg">
+                        <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                        </svg>
+                        Découvrir tous nos produits
+                    </a>
+                </div>
+                {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Section Tissus -->
+        <div id="tissus" class="mb-24">
+            <div class="relative px-2 sm:px-0 flex justify-between items-center">
+                <div>
+                    <h1 class="text-2xl sm:text-3xl font-bold font-bitter bg-gradient-to-r from-gray-900 to-gray-700 bg-clip-text text-transparent mb-3 sm:mb-4">
+                        Nos tissus
+                    </h1>
+                    <div class="absolute -bottom-1 left-2 sm:left-0 w-24 h-1 bg-gradient-to-r from-green-600 via-yellow-500 to-red-500 rounded-full"></div>
+                </div>
+                <a href="{% url 'suppliers:category_detail' 'tissus' %}" 
+                   class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-purple-700 bg-purple-100 hover:bg-purple-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500 transition-all duration-300">
+                    Voir tous les tissus
+                    <svg class="ml-2 -mr-1 w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8l4 4m0 0l-4 4m4-4H3" />
+                    </svg>
+                </a>
+            </div>
+
+            <!-- Swiper sur mobile, grille sur desktop -->
+            <div class="mt-12 relative">
+                <!-- Swiper container - Visible uniquement sur mobile -->
+                <div class="swiper fabricSwiper block sm:hidden">
+                    <div class="swiper-wrapper">
+                        {% for product in fabric_products|slice:":5" %}
+                            <div class="swiper-slide">
+                                {% render_fabric_card product %}
+                            </div>
+                        {% endfor %}
+                    </div>
+                    <!-- Add Pagination -->
+                    <div class="swiper-pagination"></div>
+                    <!-- Add Navigation -->
+                    <div class="swiper-button-prev"></div>
+                    <div class="swiper-button-next"></div>
+                </div>
+
+                <!-- Grille pour desktop - Visible uniquement sur desktop -->
+                <div class="hidden sm:grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4 grid-5-cols fabric-desktop-grid">
+                {% for product in fabric_products|slice:":5" %}
+                    {% render_fabric_card product %}
+                {% endfor %}
+                {% if not fabric_products %}
+                <div class="col-span-full text-center py-12">
+                    <p class="text-gray-500 text-xl">Aucun tissu disponible pour le moment.</p>
+                    <a href="{% url 'suppliers:category_detail' 'tous-les-produits' %}" class="mt-4 inline-flex items-center px-6 py-3 text-sm text-green-700 bg-green-50 hover:bg-green-100 transition-colors duration-200 rounded-lg">
+                        <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                        </svg>
+                        Découvrir tous nos produits
+                    </a>
+                </div>
+                {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Section Articles Culturels -->
+        <div id="articles-culturels" class="mb-24">
+            <div class="relative px-2 sm:px-0 flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 sm:gap-0">
+                <div class="relative">
+                    <h1 class="text-2xl sm:text-3xl font-bold font-bitter bg-gradient-to-r from-gray-900 to-gray-700 bg-clip-text text-transparent mb-3 sm:mb-4">
+                        Livres et Culture
+                    </h1>
+                    <div class="absolute -bottom-1 left-0 w-24 h-1 bg-gradient-to-r from-green-600 via-yellow-500 to-red-500 rounded-full"></div>
+                </div>
+                <a href="{% url 'suppliers:category_detail' 'articles-culturels' %}" 
+                   class="inline-flex items-center justify-center w-full sm:w-auto px-4 py-2 border border-transparent text-sm font-medium rounded-md text-yellow-700 bg-yellow-100 hover:bg-yellow-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-yellow-500 transition-all duration-300">
+                    Voir tous les livres
+                    <svg class="ml-2 w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8l4 4m0 0l-4 4m4-4H3" />
+                    </svg>
+                </a>
+            </div>
+
+            <!-- Swiper sur mobile, grille sur desktop -->
+            <div class="mt-12 relative">
+                <!-- Swiper container - Visible uniquement sur mobile -->
+                <div class="swiper culturalSwiper block sm:hidden">
+                    <div class="swiper-wrapper">
+                        {% for product in cultural_products|slice:":5" %}
+                            <div class="swiper-slide">
+                                {% render_cultural_card product %}
+                            </div>
+                        {% endfor %}
+                    </div>
+                    <!-- Add Pagination -->
+                    <div class="swiper-pagination"></div>
+                    <!-- Add Navigation -->
+                    <div class="swiper-button-prev"></div>
+                    <div class="swiper-button-next"></div>
+                </div>
+
+                <!-- Grille pour desktop - Visible uniquement sur desktop -->
+                <div class="hidden sm:grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4 grid-5-cols cultural-desktop-grid">
+                {% for product in cultural_products|slice:":5" %}
+                    {% render_cultural_card product %}
+                {% endfor %}
+                {% if not cultural_products %}
+                <div class="col-span-full text-center py-12">
+                    <p class="text-gray-500 text-xl">Aucun article culturel disponible pour le moment.</p>
+                    <a href="{% url 'suppliers:category_detail' 'tous-les-produits' %}" class="mt-4 inline-flex items-center px-6 py-3 text-sm text-green-700 bg-green-50 hover:bg-green-100 transition-colors duration-200 rounded-lg">
+                        <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                        </svg>
+                        Découvrir tous nos produits
+                    </a>
+                </div>
+                {% endif %}
+                </div>
+            </div>
+        </div>
+
+
+
+
+    </div>
+</div>
+
+
+
+{% endblock %}

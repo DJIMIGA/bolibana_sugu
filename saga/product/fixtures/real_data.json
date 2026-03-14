@@ -1,0 +1,161 @@
+[
+{
+  "model": "suppliers.supplier",
+  "pk": 1,
+  "fields": {
+    "phone": "+22395187176",
+    "email": "djimigakonis@gamil.com",
+    "address": "37 rue Daniel mayer",
+    "slug": null,
+    "name": "Tecno",
+    "description": "Tecno",
+    "image": null,
+    "specialty": "Fournisseur de TELEPHONE"
+  }
+},
+{
+  "model": "product.category",
+  "pk": 1,
+  "fields": {
+    "name": "Téléphones",
+    "slug": null,
+    "parent": null,
+    "image": null
+  }
+},
+{
+  "model": "product.category",
+  "pk": 2,
+  "fields": {
+    "name": "Samsung",
+    "slug": null,
+    "parent": 1,
+    "image": null
+  }
+},
+{
+  "model": "product.category",
+  "pk": 3,
+  "fields": {
+    "name": "Apple",
+    "slug": null,
+    "parent": 1,
+    "image": null
+  }
+},
+{
+  "model": "product.category",
+  "pk": 4,
+  "fields": {
+    "name": "Huawei",
+    "slug": null,
+    "parent": 1,
+    "image": null
+  }
+},
+{
+  "model": "product.category",
+  "pk": 5,
+  "fields": {
+    "name": "Tecno",
+    "slug": "tecno",
+    "parent": 1,
+    "image": null
+  }
+},
+  {
+    "model": "product.color",
+    "pk": 1,
+    "fields": {
+      "name": "Noir",
+      "code": "#000000"
+    }
+  },
+  {
+    "model": "product.color",
+    "pk": 2,
+    "fields": {
+      "name": "Bleu",
+      "code": "#0000FF"
+    }
+  },
+  {
+    "model": "product.color",
+    "pk": 3,
+    "fields": {
+      "name": "Vert",
+      "code": "#00FF00"
+    }
+  },
+{
+  "model": "product.product",
+  "pk": 10,
+  "fields": {
+    "title": "Pop 8",
+    "category": 1,
+    "price": "0",
+    "description": "Le POP 8 est un smartphone économique avec un design moderne et des fonctionnalités essentielles.\n                    \nCaractéristiques principales :\n- Écran 6.6\" HD+ Hole\n- Processeur T606\n- Double caméra arrière 13MP + AI-CAM\n- Charge 10W\n- Haut-parleurs stéréo\n\nSpécifications détaillées :\n- Système d'exploitation : Android T-Go\n- Processeur : T606\n- Réseaux : 4G\n- Dimensions : \n  * Matériau composite : 163.69 x 75.6 x 8.55 mm\n  * Magic Skin : 163.69 x 75.6 x 8.75 mm\n- Écran : 6.6\" HD+ Hole\n- Résolution : 720 x 1612\n- Caméra avant : 8MP avec Double Flash\n- Caméra arrière : 13MP + AI-CAM avec Double Flash\n- Connectivité : GPS, WiFi, FM, OTG\n- Capteurs : Gyroscope Logiciel, Capteur d'empreintes latéral\n- Batterie : 5000 mAh avec charge 10W Type-C",
+    "highlight": "Écran 6.6\" HD+ Hole\nProcesseur T606\nDouble caméra 13MP + AI-CAM\nCharge 10W\nHaut-parleurs stéréo",
+    "image": null,
+    "supplier": 1,
+    "stripe_product_id": null,
+    "is_active": true,
+    "created_at": "2025-04-27T15:19:03.265Z",
+    "updated_at": "2025-04-27T15:19:03.265Z"
+  }
+},
+{
+    "model": "product.phone",
+    "pk": 1,
+  "fields": {
+      "product": 10,
+      "model": "Pop 8",
+      "brand": "Tecno",
+      "operating_system": "Android T-Go",
+      "screen_size": "6.6",
+      "resolution": "720 x 1612",
+      "processor": "T606",
+      "battery_capacity": 5000,
+      "camera_main": "13MP + AI-CAM",
+      "camera_front": "8MP",
+      "network": "4G",
+      "warranty": "12 mois",
+      "imei": null,
+      "is_new": true,
+      "box_included": true,
+      "accessories": "Chargeur, Câble USB, Manuel d'utilisation"
+    }
+  },
+  {
+    "model": "product.phonevariant",
+    "pk": 1,
+  "fields": {
+      "phone": 1,
+      "color": 1,
+      "storage": 64,
+      "ram": 4,
+      "price": "129900",
+      "stock": 10,
+      "sku": "TEC-POP8-64-4-NOIR",
+      "disponible_salam": true,
+      "created_at": "2025-04-27T15:19:03.265Z",
+      "updated_at": "2025-04-27T15:19:03.265Z"
+    }
+  },
+  {
+    "model": "product.phonevariant",
+    "pk": 2,
+  "fields": {
+      "phone": 1,
+      "color": 2,
+      "storage": 128,
+      "ram": 6,
+      "price": "149900",
+      "stock": 5,
+      "sku": "TEC-POP8-128-6-BLEU",
+      "disponible_salam": true,
+      "created_at": "2025-04-27T15:19:03.265Z",
+      "updated_at": "2025-04-27T15:19:03.265Z"
+    }
+  }
+] 

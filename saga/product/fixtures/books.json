@@ -1,0 +1,164 @@
+[
+    {
+        "model": "product.product",
+        "pk": 100,
+        "fields": {
+            "title": "Comment décrocher un emploi",
+            "slug": "comment-decrocher-un-emploi",
+            "description": "Un guide pratique pour réussir votre recherche d'emploi et décrocher le poste de vos rêves.",
+            "price": "2000.00",
+            "category": 10,
+            "is_available": true,
+            "is_salam": true,
+            "stock": 178,
+            "created_at": "2024-03-20T10:00:00Z",
+            "updated_at": "2024-03-20T10:00:00Z",
+            "sku": "BOOK-2024-001"
+        }
+    },
+    {
+        "model": "product.culturalitem",
+        "pk": 100,
+        "fields": {
+            "product": 100,
+            "author": "Moussa H OUOLOGUEM",
+            "isbn": "978-2-07-040922-8",
+            "date": "2019-01-01"
+        }
+    },
+    {
+        "model": "product.product",
+        "pk": 101,
+        "fields": {
+            "title": "Les 365 versets du DV",
+            "slug": "les-365-versets-du-dv",
+            "description": "Une collection quotidienne de versets inspirants pour votre développement personnel et spirituel.",
+            "price": "6000.00",
+            "category": 10,
+            "is_available": true,
+            "is_salam": true,
+            "stock": 1693,
+            "created_at": "2024-03-20T10:00:00Z",
+            "updated_at": "2024-03-20T10:00:00Z",
+            "sku": "BOOK-2024-002"
+        }
+    },
+    {
+        "model": "product.culturalitem",
+        "pk": 101,
+        "fields": {
+            "product": 101,
+            "author": "Moussa H OUOLOGUEM",
+            "isbn": "978-2-07-061275-8",
+            "date": "2021-01-01"
+        }
+    },
+    {
+        "model": "product.product",
+        "pk": 102,
+        "fields": {
+            "title": "Plan D'action",
+            "slug": "plan-d-action",
+            "description": "Un guide stratégique pour mettre en place un plan d'action efficace et atteindre vos objectifs.",
+            "price": "1000.00",
+            "category": 10,
+            "is_available": true,
+            "is_salam": true,
+            "stock": 226,
+            "created_at": "2024-03-20T10:00:00Z",
+            "updated_at": "2024-03-20T10:00:00Z",
+            "sku": "BOOK-2024-003"
+        }
+    },
+    {
+        "model": "product.culturalitem",
+        "pk": 102,
+        "fields": {
+            "product": 102,
+            "author": "Moussa H OUOLOGUEM",
+            "isbn": "978-2-07-040602-9",
+            "date": "2021-01-01"
+        }
+    },
+    {
+        "model": "product.product",
+        "pk": 103,
+        "fields": {
+            "title": "Les 5 piliers de l'éducation financière",
+            "slug": "les-5-piliers-de-l-education-financiere",
+            "description": "Découvrez les fondamentaux de l'éducation financière pour prendre le contrôle de vos finances personnelles.",
+            "price": "8000.00",
+            "category": 10,
+            "is_available": true,
+            "is_salam": true,
+            "stock": 2210,
+            "created_at": "2024-03-20T10:00:00Z",
+            "updated_at": "2024-03-20T10:00:00Z",
+            "sku": "BOOK-2024-004"
+        }
+    },
+    {
+        "model": "product.culturalitem",
+        "pk": 103,
+        "fields": {
+            "product": 103,
+            "author": "Moussa H OUOLOGUEM",
+            "isbn": "978-2-07-040394-3",
+            "date": "2022-01-01"
+        }
+    },
+    {
+        "model": "product.product",
+        "pk": 104,
+        "fields": {
+            "title": "Le pelerinage de l'entrepreneur africain",
+            "slug": "le-pelerinage-de-l-entrepreneur-africain",
+            "description": "Un voyage inspirant à travers les défis et les opportunités de l'entrepreneuriat en Afrique.",
+            "price": "10000.00",
+            "category": 10,
+            "is_available": true,
+            "is_salam": true,
+            "stock": 336,
+            "created_at": "2024-03-20T10:00:00Z",
+            "updated_at": "2024-03-20T10:00:00Z",
+            "sku": "BOOK-2024-005"
+        }
+    },
+    {
+        "model": "product.culturalitem",
+        "pk": 104,
+        "fields": {
+            "product": 104,
+            "author": "Coach Moussa H OUOLOGUEM",
+            "isbn": "978-2-07-040822-1",
+            "date": "2023-01-01"
+        }
+    },
+    {
+        "model": "product.product",
+        "pk": 105,
+        "fields": {
+            "title": "Les bénédiction du marketing et de la vente",
+            "slug": "les-benedictions-du-marketing-et-de-la-vente",
+            "description": "Un guide complet sur les stratégies de marketing et de vente pour développer votre entreprise.",
+            "price": "12000.00",
+            "category": 10,
+            "is_available": true,
+            "is_salam": true,
+            "stock": 22,
+            "created_at": "2024-03-20T10:00:00Z",
+            "updated_at": "2024-03-20T10:00:00Z",
+            "sku": "BOOK-2024-006"
+        }
+    },
+    {
+        "model": "product.culturalitem",
+        "pk": 105,
+        "fields": {
+            "product": 105,
+            "author": "Moussa Hubert OUOLOGUEM",
+            "isbn": "978-2-07-040823-8",
+            "date": "2024-01-01"
+        }
+    }
+] 

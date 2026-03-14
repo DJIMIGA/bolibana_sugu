@@ -1,0 +1,171 @@
+{% load static %}
+{% load cart_tags %}
+{% load cookie_tags %}
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}{{ site_name|default:"BoliBana" }} - {{ brand_short_tagline|default:"SuGu" }}{% endblock %}</title>
+
+    <!-- Métadonnées SEO -->
+    {% if site_meta_description %}
+        <meta name="description" content="{{ site_meta_description }}">
+    {% endif %}
+    {% if site_meta_keywords %}
+        <meta name="keywords" content="{{ site_meta_keywords }}">
+    {% endif %}
+    
+    <!-- Open Graph / Facebook -->
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="{{ request.build_absolute_uri }}">
+    <meta property="og:title" content="{% block og_title %}{{ site_name }}{% endblock %}">
+    {% if site_meta_description %}
+        <meta property="og:description" content="{{ site_meta_description }}">
+    {% endif %}
+    {% if site_logo_url %}
+        <meta property="og:image" content="{{ site_logo_url }}">
+    {% endif %}
+
+    <!-- Twitter -->
+    <meta property="twitter:card" content="summary_large_image">
+    <meta property="twitter:url" content="{{ request.build_absolute_uri }}">
+    <meta property="twitter:title" content="{% block twitter_title %}{{ site_name }}{% endblock %}">
+    {% if site_meta_description %}
+        <meta property="twitter:description" content="{{ site_meta_description }}">
+    {% endif %}
+    {% if site_logo_url %}
+        <meta property="twitter:image" content="{{ site_logo_url }}">
+    {% endif %}
+
+    <!-- Favicon BoliBana -->
+    {% if site_favicon_url %}
+        <link rel="icon" href="{{ site_favicon_url }}">
+    {% else %}
+        <link rel="icon" type="image/svg+xml" href="{% static 'icons/bolibana_favicon_32.svg' %}">
+        <link rel="icon" type="image/x-icon" href="{% static 'src/images/favicon.ico' %}">
+    {% endif %}
+    <link rel="icon" type="image/png" sizes="32x32" href="{% static 'src/images/favicon-32x32.png' %}">
+    <link rel="icon" type="image/png" sizes="16x16" href="{% static 'src/images/favicon-16x16.png' %}">
+    <link rel="apple-touch-icon" sizes="180x180" href="{% static 'src/images/apple-touch-icon.png' %}">
+    <link rel="manifest" href="{% static 'src/images/site.webmanifest' %}">
+    <meta name="theme-color" content="{{ brand_primary_color|default:'#008000' }}">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Bitter:ital,wght@0,100..900;1,100..900&display=swap" rel="stylesheet">
+    
+    <!-- CSS -->
+    <link rel="stylesheet" href="{% static 'src/output.css' %}">
+    <link rel="stylesheet" href="{% static 'search/css/search-results.css' %}">
+
+    <!-- GSAP -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+
+    <!-- HTMX -->
+    <script src="https://unpkg.com/htmx.org@1.9.10"></script>
+
+    <!-- Hyperscript animation  apres ajout au panier-->
+    <script src="https://unpkg.com/hyperscript.org@0.9.12"></script>
+
+    <!-- Notifications -->
+    {% include "suppliers/components/_notyf.html" %}
+
+    <!-- BoliBana Brand Colors (dynamiques depuis la config) -->
+    <style>
+        :root {
+            --brand-primary: {{ brand_primary_color|default:"#008000" }};
+            --brand-secondary: {{ brand_secondary_color|default:"#FFD700" }};
+            --brand-accent: {{ brand_accent_color|default:"#EF4444" }};
+        }
+    </style>
+
+    {% block extra_head %}{% endblock %}
+    
+    <!-- Scripts conditionnels selon le consentement cookies -->
+    {% render_cookie_conditional_scripts as cookie_scripts %}
+    {{ cookie_scripts|safe }}
+    
+    <!-- Test Google Analytics (développement uniquement) -->
+    {% if debug %}
+        <script src="{% static 'js/test-ga.js' %}"></script>
+    {% endif %}
+    
+    <!-- Événements d'engagement Google Analytics -->
+    <script src="{% static 'js/analytics-events.js' %}"></script>
+    
+    <!-- Script de test complet (développement uniquement) -->
+    {% if debug %}
+        <script src="{% static 'js/test-all-events.js' %}"></script>
+        <script src="{% static 'js/quick-test-events.js' %}"></script>
+    {% endif %}
+    
+    <!-- Scripts de diagnostic (toujours disponibles) -->
+    <script src="{% static 'js/pixel-diagnostic.js' %}"></script>
+    <script src="{% static 'js/quick-pixel-check.js' %}"></script>
+    <script src="{% static 'js/force-pixel-test.js' %}"></script>
+    <script src="{% static 'js/always-available-diagnostic.js' %}"></script>
+    <script src="{% static 'js/meta-pixel-test-events.js' %}"></script>
+    <script src="{% static 'js/pixel-persistence-diagnostic.js' %}"></script>
+    <script src="{% static 'js/test-existing-events.js' %}"></script>
+    
+    <!-- 
+    💡 Pour vérifier les événements Facebook Pixel en temps réel :
+    1. Installer l'extension "Facebook Pixel Helper" sur Chrome
+    2. Ouvrir les DevTools (F12)
+    3. Aller dans l'onglet "Facebook Pixel Helper"
+    4. Les événements apparaissent instantanément dans l'extension
+    5. Dans l'Event Manager Facebook : délai de 15-30 minutes
+    
+    🧪 TEST OFFICIEL FACEBOOK :
+    - Ouvrir Facebook Events Manager
+    - Aller dans la page de test d'événements
+    - Taper dans la console : testAllFacebookEvents()
+    - Les événements apparaissent instantanément avec le code TEST91163
+    -->
+</head>
+<body>
+    {% include 'includes/_splash_loader.html' %}
+    {% include 'header.html' %}
+    
+    <main class="min-h-screen">
+        <!-- Messages Django -->
+        {% include 'includes/_messages.html' %}
+
+        {% block content %}{% endblock %}
+    </main>
+    
+    {% include 'footer.html' %}
+
+    <!-- Sidebars -->
+    {% include 'cart/sidebars/cart_sidebar.html' %}
+
+    {% include 'cart/sidebars/product_options_sidebar.html' %}  
+
+    <!-- Scripts des applications -->
+    {% include 'cart/scripts/_cart_scripts.html' %}
+    <script src="{% static 'accounts/js/main.js' %}"></script>
+    <script src="{% static 'search/js/search-utils.js' %}"></script>
+    <script src="{% static 'search/js/search-error-handler.js' %}"></script>
+    <script src="{% static 'search/js/search-pagination.js' %}"></script>
+    <script src="{% static 'search/js/search-suggestions.js' %}"></script>
+    
+
+
+    <!-- Script de test (développement uniquement) -->
+    {% if debug %}
+        <script src="{% static 'search/js/search-test.js' %}"></script>
+    {% endif %}
+
+    <!-- Configuration HTMX -->
+    {% csrf_token %}
+    <script>
+        document.body.addEventListener('htmx:configRequest', (event) => {
+            event.detail.headers['X-CSRFToken'] = '{{ csrf_token }}';
+        });
+    </script>
+
+    {% block extra_scripts %}{% endblock %}
+    {% include "components/_cookie_banner.html" %}
+    <script src="/static/js/cookie-banner.js"></script>
+</body>
+</html>

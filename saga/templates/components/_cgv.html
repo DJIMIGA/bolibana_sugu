@@ -1,0 +1,243 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block content %}
+<div class="min-h-screen bg-gray-50 flex items-center justify-center py-8">
+    <div class="max-w-4xl w-full mx-auto px-4">
+        <div class="bg-white rounded-xl shadow-lg p-8">
+            <h1 class="text-3xl font-bold text-gray-900 mb-8 text-center">Conditions Générales de Vente</h1>
+            
+            <div class="space-y-12 max-w-3xl mx-auto">
+                <!-- Article 1 -->
+                <div class="border-l-4 border-green-500 pl-6">
+                    <h2 class="text-xl font-semibold text-gray-900 mb-4">1. Types de produits et transactions</h2>
+                    <p class="text-gray-600 mb-6">Nous proposons deux types de produits avec des conditions spécifiques :</p>
+                    
+                    <div class="grid md:grid-cols-2 gap-6">
+                        <!-- Produits Salam -->
+                        <div class="bg-gray-50 rounded-lg p-4 border border-gray-200">
+                            <h3 class="font-semibold text-gray-900 mb-3 flex items-center">
+                                <span class="text-yellow-600 mr-2">🕒</span>
+                                Produits Salam
+                            </h3>
+                            <ul class="text-sm text-gray-700 space-y-2">
+                                <li>• <strong>Bai' salam</strong> : Paiement immédiat obligatoire</li>
+                                <li>• Livraison selon méthode configurée</li>
+                                <li>• Méthodes : Carte bancaire, Mobile Money</li>
+                            </ul>
+                        </div>
+                        
+                        <!-- Produits Classiques -->
+                        <div class="bg-gray-50 rounded-lg p-4 border border-gray-200">
+                            <h3 class="font-semibold text-gray-900 mb-3 flex items-center">
+                                <span class="text-green-600 mr-2">📦</span>
+                                Produits Classiques
+                            </h3>
+                            <ul class="text-sm text-gray-700 space-y-2">
+                                <li>• <strong>Vente classique</strong> : Paiement flexible</li>
+                                <li>• Livraison selon méthode choisie</li>
+                                <li>• Vérification de stock obligatoire</li>
+                                <li>• Méthodes : Carte, Mobile Money, Paiement à la livraison</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Article 2 -->
+                <div class="border-l-4 border-yellow-500 pl-6">
+                    <h2 class="text-xl font-semibold text-gray-900 mb-4">2. Prix et devises</h2>
+                    <div class="space-y-3">
+                        <p class="text-gray-600">Tous les prix affichés sont exprimés en <strong>Francs CFA (FCFA)</strong> et incluent la TVA applicable.</p>
+                        <p class="text-sm text-gray-600">Les prix peuvent être modifiés à tout moment. Le prix applicable est celui en vigueur au moment de la validation de la commande.</p>
+                        <p class="text-sm text-gray-600">Les frais de livraison sont calculés selon la méthode choisie et ajoutés au prix des produits.</p>
+                    </div>
+                </div>
+
+                <!-- Article 3 -->
+                <div class="border-l-4 border-red-500 pl-6">
+                    <h2 class="text-xl font-semibold text-gray-900 mb-4">3. Conditions de commande</h2>
+                    <div class="space-y-3">
+                        <p class="text-gray-600">La commande est validée après :</p>
+                        <ul class="text-sm text-gray-600 space-y-2 ml-4">
+                            <li>• Remplissage du formulaire de commande</li>
+                            <li>• Validation du panier</li>
+                            <li>• Acceptation des présentes CGV</li>
+                            <li>• Paiement (selon le type de produit)</li>
+                        </ul>
+                        <p class="text-sm text-gray-600">Un email de confirmation sera envoyé après validation de la commande.</p>
+                    </div>
+                </div>
+
+                <!-- Article 4 -->
+                <div class="border-l-4 border-green-500 pl-6">
+                    <h2 class="text-xl font-semibold text-gray-900 mb-4">4. Produits et transparence</h2>
+                    <p class="text-gray-600">Tous les produits sont décrits avec soin. Origine, taille, composition, et usage sont spécifiés. Les photos sont non contractuelles mais représentatives.</p>
+                </div>
+
+                <!-- Article 5 -->
+                <div class="border-l-4 border-yellow-500 pl-6">
+                    <h2 class="text-xl font-semibold text-gray-900 mb-4">5. Méthodes de livraison</h2>
+                    <div class="space-y-6">
+                        <div class="bg-gray-50 rounded-lg p-4 border border-gray-200">
+                            <h4 class="font-semibold text-gray-900 mb-3 flex items-center">
+                                <span class="text-blue-600 mr-2">🚚</span>
+                                Méthodes disponibles
+                            </h4>
+                            <div class="grid md:grid-cols-3 gap-4">
+                                <div class="bg-white rounded p-3 border border-gray-200">
+                                    <h5 class="font-semibold text-gray-900 text-sm mb-2">Livraison Gratuite</h5>
+                                    <p class="text-xs text-gray-600">Livraison standard sans frais supplémentaires</p>
+                                </div>
+                                <div class="bg-white rounded p-3 border border-gray-200">
+                                    <h5 class="font-semibold text-gray-900 text-sm mb-2">Livraison Express</h5>
+                                    <p class="text-xs text-gray-600">Livraison rapide avec frais supplémentaires</p>
+                                </div>
+                                <div class="bg-white rounded p-3 border border-gray-200">
+                                    <h5 class="font-semibold text-gray-900 text-sm mb-2">Livraison Standard</h5>
+                                    <p class="text-xs text-gray-600">Livraison classique avec frais modérés</p>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="bg-gray-50 rounded-lg p-4 border border-gray-200">
+                            <h4 class="font-semibold text-gray-900 mb-3 flex items-center">
+                                <span class="text-yellow-600 mr-2">🕒</span>
+                                Produits Salam
+                            </h4>
+                            <p class="text-sm text-gray-700">Les délais de livraison varient selon la méthode choisie. Les détails sont visibles dans la fiche produit et lors de la commande. Un retard raisonnable peut survenir selon les conditions de transport.</p>
+                        </div>
+                        
+                        <div class="bg-gray-50 rounded-lg p-4 border border-gray-200">
+                            <h4 class="font-semibold text-gray-900 mb-3 flex items-center">
+                                <span class="text-green-600 mr-2">📦</span>
+                                Produits Classiques
+                            </h4>
+                            <p class="text-sm text-gray-700">Les délais de livraison dépendent de la méthode sélectionnée et de la disponibilité du stock. En cas de rupture de stock, le client sera informé immédiatement.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Article 6 -->
+                <div class="border-l-4 border-red-500 pl-6">
+                    <h2 class="text-xl font-semibold text-gray-900 mb-4">6. Modalités de paiement</h2>
+                    <div class="space-y-4">
+                        <div class="bg-gray-50 rounded-lg p-4 border border-gray-200">
+                            <h4 class="font-semibold text-gray-900 mb-3 flex items-center">
+                                <span class="text-yellow-600 mr-2">🕒</span>
+                                Produits Salam
+                            </h4>
+                            <p class="text-sm text-gray-700">Le paiement s'effectue <strong>obligatoirement au moment de la commande</strong>, par carte bancaire ou Mobile Money. <span class="text-red-600 font-semibold">Le paiement à la livraison n'est pas proposé</span> pour respecter le principe de la vente Salam.</p>
+                        </div>
+                        
+                        <div class="bg-gray-50 rounded-lg p-4 border border-gray-200">
+                            <h4 class="font-semibold text-gray-900 mb-3 flex items-center">
+                                <span class="text-green-600 mr-2">📦</span>
+                                Produits Classiques
+                            </h4>
+                            <p class="text-sm text-gray-700">Le paiement peut s'effectuer <strong>immédiatement</strong> ou <strong>à la livraison</strong>. Toutes les méthodes de paiement sont acceptées : carte bancaire, Mobile Money, et paiement en espèces à la livraison.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Article 7 -->
+                <div class="border-l-4 border-green-500 pl-6">
+                    <h2 class="text-xl font-semibold text-gray-900 mb-4">7. Garanties légales</h2>
+                    <div class="space-y-4">
+                        <p class="text-gray-600">Tous nos produits bénéficient des garanties légales de conformité et de vices cachés.</p>
+                        <div class="grid md:grid-cols-2 gap-4">
+                            <div class="bg-gray-50 rounded p-3 border border-gray-200">
+                                <h5 class="font-semibold text-gray-900 text-sm mb-2">Conformité</h5>
+                                <p class="text-xs text-gray-700">Le produit doit être conforme à sa description et aux attentes légitimes du client.</p>
+                            </div>
+                            <div class="bg-gray-50 rounded p-3 border border-gray-200">
+                                <h5 class="font-semibold text-gray-900 text-sm mb-2">Vices cachés</h5>
+                                <p class="text-xs text-gray-700">Le vendeur garantit l'absence de défauts cachés rendant le produit impropre à son usage.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Article 8 -->
+                <div class="border-l-4 border-yellow-500 pl-6">
+                    <h2 class="text-xl font-semibold text-gray-900 mb-4">8. Remboursements et retours</h2>
+                    <div class="space-y-4">
+                        <div class="bg-gray-50 rounded-lg p-4 border border-gray-200">
+                            <h4 class="font-semibold text-gray-900 mb-3 flex items-center">
+                                <span class="text-yellow-600 mr-2">🕒</span>
+                                Produits Salam
+                            </h4>
+                            <p class="text-sm text-gray-700">En cas d'indisponibilité ou de non livraison, le client sera <span class="text-yellow-700 font-medium">intégralement remboursé</span>. Aucun retour n'est possible sauf en cas de produit non conforme.</p>
+                        </div>
+                        
+                        <div class="bg-gray-50 rounded-lg p-4 border border-gray-200">
+                            <h4 class="font-semibold text-gray-900 mb-3 flex items-center">
+                                <span class="text-green-600 mr-2">📦</span>
+                                Produits Classiques
+                            </h4>
+                            <p class="text-sm text-gray-700">Retours acceptés sous 14 jours pour les produits non utilisés et dans leur emballage d'origine. Remboursement intégral en cas de produit défectueux ou non conforme.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Article 9 -->
+                <div class="border-l-4 border-red-500 pl-6">
+                    <h2 class="text-xl font-semibold text-gray-900 mb-4">9. Engagement éthique</h2>
+                    <p class="text-gray-600">Aucun produit haram, contrefait ou trompeur n'est proposé. Les promotions, urgences ou compteurs de stock sont <span class="text-red-600 font-medium">strictement réels</span> et jamais manipulés.</p>
+                </div>
+
+                <!-- Article 10 -->
+                <div class="border-l-4 border-green-500 pl-6">
+                    <h2 class="text-xl font-semibold text-gray-900 mb-4">10. Force majeure</h2>
+                    <p class="text-gray-600">En cas de force majeure (grèves, intempéries, pandémies, etc.), les délais de livraison peuvent être prolongés. Le client sera informé dans les plus brefs délais de tout retard ou annulation.</p>
+                </div>
+
+                <!-- Article 11 -->
+                <div class="border-l-4 border-yellow-500 pl-6">
+                    <h2 class="text-xl font-semibold text-gray-900 mb-4">11. Responsabilité du vendeur</h2>
+                    <div class="space-y-4">
+                        <div class="bg-gray-50 rounded-lg p-4 border border-gray-200">
+                            <h4 class="font-semibold text-gray-900 mb-3 flex items-center">
+                                <span class="text-yellow-600 mr-2">🕒</span>
+                                Produits Salam
+                            </h4>
+                            <p class="text-sm text-gray-700">Le vendeur s'engage à fournir un produit conforme, livré dans les temps annoncés et sans vice caché. <span class="text-green-600">Le client n'est pas responsable</span> de la logistique ou des démarches de commande du fournisseur.</p>
+                        </div>
+                        
+                        <div class="bg-gray-50 rounded-lg p-4 border border-gray-200">
+                            <h4 class="font-semibold text-gray-900 mb-3 flex items-center">
+                                <span class="text-green-600 mr-2">📦</span>
+                                Produits Classiques
+                            </h4>
+                            <p class="text-sm text-gray-700">Le vendeur garantit la disponibilité du stock et la livraison dans les délais annoncés. En cas de rupture de stock, le client sera remboursé ou proposé un produit équivalent.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Article 12 -->
+                <div class="border-l-4 border-red-500 pl-6">
+                    <h2 class="text-xl font-semibold text-gray-900 mb-4">12. Service client</h2>
+                    <p class="text-gray-600">Le service client est joignable à tout moment via <a href="mailto:{{ site_email }}" class="text-green-700 underline">{{ site_email }}</a>. Chaque demande est traitée dans les 48h.</p>
+                </div>
+
+                <!-- Article 13 -->
+                <div class="border-l-4 border-green-500 pl-6">
+                    <h2 class="text-xl font-semibold text-gray-900 mb-4">13. Litiges et médiation</h2>
+                    <div class="space-y-3">
+                        <p class="text-gray-600">En cas de litige, le client peut :</p>
+                        <ul class="text-sm text-gray-600 space-y-2 ml-4">
+                            <li>• Contacter notre service client en priorité</li>
+                            <li>• Saisir les tribunaux compétents du Mali</li>
+                            <li>• Recourir à la médiation si disponible</li>
+                        </ul>
+                        <p class="text-sm text-gray-600">Le droit malien est applicable à ces conditions de vente.</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="mt-12 text-center border-t border-gray-200 pt-8">
+                <p class="text-sm text-gray-500">Dernière mise à jour : {% now "d F Y" %}</p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

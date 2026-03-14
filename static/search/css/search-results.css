@@ -1,0 +1,215 @@
+/* Styles pour les résultats de recherche */
+
+/* Scrollbar personnalisée pour les résultats de recherche */
+.search-results-container::-webkit-scrollbar,
+.overflow-y-auto::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+}
+
+.search-results-container::-webkit-scrollbar-track,
+.overflow-y-auto::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 4px;
+}
+
+.search-results-container::-webkit-scrollbar-thumb,
+.overflow-y-auto::-webkit-scrollbar-thumb {
+    background: #c1c1c1;
+    border-radius: 4px;
+    transition: background-color 0.2s ease;
+}
+
+.search-results-container::-webkit-scrollbar-thumb:hover,
+.overflow-y-auto::-webkit-scrollbar-thumb:hover {
+    background: #a8a8a8;
+}
+
+.search-results-container::-webkit-scrollbar-corner,
+.overflow-y-auto::-webkit-scrollbar-corner {
+    background: #f1f1f1;
+}
+
+/* Amélioration du scroll sur mobile */
+@media (max-width: 768px) {
+    .search-results-container::-webkit-scrollbar,
+    .overflow-y-auto::-webkit-scrollbar {
+        width: 6px;
+        height: 6px;
+    }
+}
+
+/* Animation de transition pour l'apparition des résultats */
+.search-results-grid {
+    animation: fadeInUp 0.3s ease-out;
+}
+
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Amélioration de l'apparence des cartes de produits */
+.search-product-card {
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.search-product-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+/* Indicateur de chargement */
+.htmx-indicator {
+    opacity: 0;
+    transition: opacity 0.2s ease;
+}
+
+.htmx-request .htmx-indicator {
+    opacity: 1;
+}
+
+/* Amélioration de l'accessibilité */
+.search-results-container:focus-within {
+    outline: 2px solid #10b981;
+    outline-offset: 2px;
+}
+
+/* Scroll fluide */
+.search-results-container,
+.overflow-y-auto {
+    scroll-behavior: smooth;
+}
+
+/* Optimisation pour les écrans tactiles */
+@media (hover: none) and (pointer: coarse) {
+    .search-results-container::-webkit-scrollbar,
+    .overflow-y-auto::-webkit-scrollbar {
+        width: 12px;
+        height: 12px;
+    }
+    
+    .search-results-container::-webkit-scrollbar-thumb,
+    .overflow-y-auto::-webkit-scrollbar-thumb {
+        background: #888;
+        border: 2px solid #f1f1f1;
+    }
+}
+
+/* Styles pour les suggestions de recherche */
+.search-suggestions-container {
+    max-height: 400px;
+    overflow-y: auto;
+}
+
+.suggestion-item {
+    transition: all 0.2s ease;
+}
+
+.suggestion-item:hover {
+    transform: translateX(4px);
+}
+
+.suggestion-item:active {
+    transform: scale(0.98);
+}
+
+.suggestion-item.focused {
+    background-color: #f0fdf4;
+    border-color: #22c55e;
+    box-shadow: 0 0 0 2px rgba(34, 197, 94, 0.2);
+}
+
+/* Animation d'apparition des suggestions */
+.search-suggestions-container {
+    animation: slideInUp 0.3s ease-out;
+}
+
+@keyframes slideInUp {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Styles pour les icônes de suggestions */
+.suggestion-item .w-8.h-8 {
+    transition: transform 0.2s ease;
+}
+
+.suggestion-item:hover .w-8.h-8 {
+    transform: scale(1.1);
+}
+
+/* Responsive pour les suggestions */
+@media (max-width: 640px) {
+    .search-suggestions-container {
+        max-height: 300px;
+    }
+    
+    .suggestion-item {
+        padding: 0.75rem;
+    }
+    
+    .suggestion-item .text-sm {
+        font-size: 0.875rem;
+    }
+}
+
+/* Styles pour les résultats de recherche */
+.search-results-grid {
+    width: 100%;
+    max-width: 100%;
+}
+
+.product-card-wrapper {
+    width: 100%;
+    max-width: 100%;
+    overflow: hidden;
+}
+
+/* Assurer que les cartes de produits ne débordent pas */
+.product-card-wrapper > div {
+    width: 100%;
+    max-width: 100%;
+    overflow: hidden;
+}
+
+/* Responsive design pour éviter le débordement */
+@media (max-width: 640px) {
+    .search-results-grid {
+        grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+        gap: 1rem;
+    }
+}
+
+@media (min-width: 641px) and (max-width: 1023px) {
+    .search-results-grid {
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        gap: 1.5rem;
+    }
+}
+
+@media (min-width: 1024px) {
+    .search-results-grid {
+        grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+        gap: 2rem;
+    }
+}
+
+@media (min-width: 1280px) {
+    .search-results-grid {
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 2rem;
+    }
+} 

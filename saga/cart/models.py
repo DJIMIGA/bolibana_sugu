@@ -1,0 +1,460 @@
+import logging
+
+from django.contrib.auth import get_user_model
+from django.db import models
+from django.db.models import Sum, F
+from product.models import Product, Color, Size, ShippingMethod
+from django.conf import settings
+from django.core.exceptions import ValidationError
+from django.core.validators import MinValueValidator
+from django.utils import timezone
+from decimal import Decimal
+
+User = get_user_model()
+
+
+class Cart(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE, null=True, blank=True)
+    session_key = models.CharField(max_length=40, null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        if self.user:
+            return f"Panier de {self.user.email}"
+        return f"Panier anonyme ({self.session_key})"
+
+    def get_total_price(self):
+        return sum(item.get_total_price() for item in self.cart_items.all())
+
+    def get_classic_products_total(self):
+        """Calcule le total des produits classiques (non Salam)"""
+        return sum(item.get_total_price() for item in self.cart_items.all() if not item.product.is_salam)
+
+    def get_salam_products_total(self):
+        """Calcule le total des produits Salam"""
+        return sum(item.get_total_price() for item in self.cart_items.all() if item.product.is_salam)
+
+    def get_classic_items(self):
+        """Retourne les items de produits classiques"""
+        return [item for item in self.cart_items.all() if not item.product.is_salam]
+
+    def get_salam_items(self):
+        """Retourne les items de produits Salam"""
+        return [item for item in self.cart_items.all() if item.product.is_salam]
+
+    def validate_classic_products(self):
+        """Valide les produits classiques (vérification du stock)"""
+        errors = []
+        for item in self.get_classic_items():
+            if not item.product.has_stock():
+                errors.append(f"Le produit '{item.product.title}' n'est plus en stock")
+            else:
+                # Pour les produits au poids, vérifier le poids disponible
+                if hasattr(item.product, 'specifications') and item.product.specifications:
+                    specs = item.product.specifications
+                    sold_by_weight = specs.get('sold_by_weight')
+                    unit_type = specs.get('unit_type')
+                    unit_raw = specs.get('weight_unit') or specs.get('unit_display') or unit_type
+                    unit = str(unit_raw).lower() if unit_raw is not None else 'kg'
+                    is_weighted = sold_by_weight or unit in ['weight', 'kg', 'kilogram', 'g', 'gram', 'gramme']
+                    if is_weighted:
+                        available_weight = specs.get('available_weight_g') if unit in ['g', 'gram', 'gramme'] else specs.get('available_weight_kg')
+                        from decimal import Decimal
+                        available_value = Decimal(str(available_weight or 0))
+                        if available_value < Decimal(str(item.quantity)):
+                            unit_label = 'g' if unit in ['g', 'gram', 'gramme'] else 'kg'
+                            errors.append(
+                                f"Poids insuffisant pour '{item.product.title}' "
+                                f"(disponible: {available_value} {unit_label}, demandé: {item.quantity} {unit_label})"
+                            )
+                    else:
+                        # Produit normal : vérifier le stock en unités
+                        if item.product.stock < float(item.quantity):
+                            errors.append(f"Stock insuffisant pour '{item.product.title}' (disponible: {item.product.stock}, demandé: {int(item.quantity)})")
+                else:
+                    # Pas de spécifications, vérifier le stock normal
+                    if item.product.stock < float(item.quantity):
+                        errors.append(f"Stock insuffisant pour '{item.product.title}' (disponible: {item.product.stock}, demandé: {int(item.quantity)})")
+        return errors
+
+    def validate_salam_products(self):
+        """Valide les produits Salam (pas de vérification de stock)"""
+        errors = []
+        for item in self.get_salam_items():
+            if not item.product.is_available:
+                errors.append(f"Le produit Salam '{item.product.title}' n'est plus disponible")
+        return errors
+
+    def can_checkout(self):
+        """Vérifie si le panier peut être commandé"""
+        classic_errors = self.validate_classic_products()
+        salam_errors = self.validate_salam_products()
+        return len(classic_errors) == 0 and len(salam_errors) == 0
+
+    def get_validation_errors(self):
+        """Retourne toutes les erreurs de validation"""
+        return {
+            'classic_errors': self.validate_classic_products(),
+            'salam_errors': self.validate_salam_products()
+        }
+
+    @classmethod
+    def get_or_create_cart(cls, request):
+        if request.user.is_authenticated:
+            cart, created = cls.objects.get_or_create(user=request.user)
+        else:
+            # S'assurer que la session existe et est sauvegardée
+            if not request.session.session_key:
+                request.session.create()
+                request.session.save()  # Force la sauvegarde de la session
+            
+            session_key = request.session.session_key
+            
+            # Rechercher un panier existant
+            cart = cls.objects.filter(session_key=session_key).first()
+            
+            if not cart:
+                # Vérifier qu'il n'y a pas trop de paniers anonymes (protection anti-spam)
+                anonymous_carts_count = cls.objects.filter(session_key__isnull=False).count()
+                if anonymous_carts_count > 1000:  # Limite arbitraire
+                    # Supprimer les anciens paniers anonymes
+                    old_carts = cls.objects.filter(
+                        session_key__isnull=False,
+                        created_at__lt=timezone.now() - timezone.timedelta(hours=24)
+                    )
+                    old_carts.delete()
+                
+                cart = cls.objects.create(session_key=session_key)
+        
+        return cart
+
+
+class CartItem(models.Model):
+    cart = models.ForeignKey(Cart, related_name='cart_items', on_delete=models.CASCADE)
+    product = models.ForeignKey(Product, on_delete=models.CASCADE, null=True, blank=True)
+    variant = models.ForeignKey('product.Phone', on_delete=models.CASCADE, null=True, blank=True)
+    quantity = models.DecimalField(max_digits=10, decimal_places=3, default=1, validators=[MinValueValidator(0.001)])
+    colors = models.ManyToManyField(Color, blank=True)
+    sizes = models.ManyToManyField(Size, blank=True)
+
+    def __str__(self):
+        if self.variant:
+            return f"{self.quantity} de {self.product.title} - {self.variant.color.name} {self.variant.storage}Go/{self.variant.ram}Go RAM dans le panier {self.cart.id}"
+        return f"{self.quantity} de {self.product.title} dans le panier {self.cart.id}"
+    
+    def get_weight_unit(self):
+        if not self.product or not self.product.specifications:
+            return 'kg'
+        specs = self.product.specifications
+        unit_raw = specs.get('weight_unit') or specs.get('unit_display') or specs.get('unit_type')
+        if not unit_raw:
+            if specs.get('available_weight_g') is not None or specs.get('price_per_g') is not None or specs.get('discount_price_per_g') is not None:
+                return 'g'
+            return 'kg'
+        unit = str(unit_raw).lower()
+        if unit in ['weight', 'kg', 'kilogram']:
+            return 'kg'
+        if unit in ['g', 'gram', 'gramme']:
+            return 'g'
+        return unit
+    
+    def get_total_price(self):
+        # Pour les produits au poids, utiliser le prix au kg/g depuis les spécifications
+        if self.product and hasattr(self.product, 'specifications') and self.product.specifications:
+            specs = self.product.specifications
+            unit = self.get_weight_unit()
+            sold_by_weight = specs.get('sold_by_weight') is True or unit in ['kg', 'g']
+            if sold_by_weight:
+                if unit == 'g':
+                    price_per_g = specs.get('discount_price_per_g') or specs.get('price_per_g')
+                    if price_per_g:
+                        from decimal import Decimal
+                        return Decimal(str(price_per_g)) * Decimal(str(self.quantity))
+                # Produit au poids : utiliser price_per_kg
+                price_per_kg = specs.get('discount_price_per_kg') or specs.get('price_per_kg')
+                if price_per_kg:
+                    from decimal import Decimal
+                    return Decimal(str(price_per_kg)) * Decimal(str(self.quantity))
+        
+        if self.variant:
+            # Utiliser le prix promotionnel si disponible, sinon le prix normal
+            price = self.variant.discount_price if hasattr(self.variant, 'discount_price') and self.variant.discount_price else self.variant.price
+            from decimal import Decimal
+            return Decimal(str(price)) * Decimal(str(self.quantity))
+        # Utiliser le prix promotionnel si disponible, sinon le prix normal
+        price = self.product.discount_price if hasattr(self.product, 'discount_price') and self.product.discount_price else self.product.price
+        from decimal import Decimal
+        return Decimal(str(price)) * Decimal(str(self.quantity))
+    
+    def get_unit_price(self):
+        """Retourne le prix unitaire (promo si disponible)"""
+        # Pour les produits au poids, utiliser le prix au kg/g depuis les spécifications
+        if self.product and hasattr(self.product, 'specifications') and self.product.specifications:
+            specs = self.product.specifications
+            unit = self.get_weight_unit()
+            sold_by_weight = specs.get('sold_by_weight') is True or unit in ['kg', 'g']
+            if sold_by_weight:
+                if unit == 'g':
+                    price_per_g = specs.get('discount_price_per_g') or specs.get('price_per_g')
+                    if price_per_g:
+                        from decimal import Decimal
+                        return Decimal(str(price_per_g))
+                # Produit au poids : utiliser price_per_kg
+                price_per_kg = specs.get('discount_price_per_kg') or specs.get('price_per_kg')
+                if price_per_kg:
+                    from decimal import Decimal
+                    return Decimal(str(price_per_kg))
+        
+        if self.variant:
+            from decimal import Decimal
+            price = self.variant.discount_price if hasattr(self.variant, 'discount_price') and self.variant.discount_price else self.variant.price
+            return Decimal(str(price))
+        from decimal import Decimal
+        price = self.product.discount_price if hasattr(self.product, 'discount_price') and self.product.discount_price else self.product.price
+        return Decimal(str(price))
+    
+
+
+
+class Order(models.Model):
+    # Statuts de commande (alignés avec B2B)
+    DRAFT = 'draft'
+    CONFIRMED = 'confirmed'
+    SHIPPED = 'shipped'
+    DELIVERED = 'delivered'
+    CANCELLED = 'cancelled'
+    
+    STATUS_CHOICES = [
+        (DRAFT, 'Brouillon'),
+        (CONFIRMED, 'Confirmée'),
+        (SHIPPED, 'Expédiée'),
+        (DELIVERED, 'Livrée'),
+        (CANCELLED, 'Annulée'),
+    ]
+
+    # Méthodes de paiement
+    CASH_ON_DELIVERY = 'cash_on_delivery'
+    ONLINE_PAYMENT = 'online_payment'
+    MOBILE_MONEY = 'mobile_money'
+
+    PAYMENT_CHOICES = [
+        (CASH_ON_DELIVERY, 'Paiement à la livraison'),
+        (ONLINE_PAYMENT, 'Paiement en ligne'),
+        (MOBILE_MONEY, 'Mobile Money'),
+    ]
+
+    # Informations de base
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.PROTECT, related_name='orders', null=True, blank=True)
+    order_number = models.CharField(max_length=20, unique=True, editable=False)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    
+    # Statut et paiement
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default=DRAFT)
+    payment_method = models.CharField(max_length=20, choices=PAYMENT_CHOICES, default=CASH_ON_DELIVERY)
+    is_paid = models.BooleanField(default=False)
+    paid_at = models.DateTimeField(null=True, blank=True)
+    
+    # Livraison
+    shipping_address = models.ForeignKey('accounts.ShippingAddress', on_delete=models.PROTECT, null=True, blank=True)
+    shipping_method = models.ForeignKey('product.ShippingMethod', on_delete=models.PROTECT, null=True, blank=True)
+    tracking_number = models.CharField(max_length=100, blank=True)
+    shipped_at = models.DateTimeField(null=True, blank=True)
+    delivered_at = models.DateTimeField(null=True, blank=True)
+    
+    # Montants
+    subtotal = models.DecimalField(max_digits=10, decimal_places=2)  # Total des articles
+    shipping_cost = models.DecimalField(max_digits=10, decimal_places=2)  # Frais de livraison
+    tax = models.DecimalField(max_digits=10, decimal_places=2, default=0)  # TVA ou autres taxes
+    discount = models.DecimalField(max_digits=10, decimal_places=2, default=0)  # Réductions
+    total = models.DecimalField(max_digits=10, decimal_places=2)  # Montant final
+    
+    # Notes et métadonnées
+    notes = models.TextField(blank=True)
+    cancellation_reason = models.TextField(blank=True)
+    metadata = models.JSONField(default=dict, blank=True)  # Pour stocker des données supplémentaires
+    stripe_session_id = models.CharField(max_length=255, blank=True, null=True)
+    stripe_payment_status = models.CharField(max_length=50, blank=True, null=True)
+
+    class Meta:
+        ordering = ['-created_at']
+        indexes = [
+            models.Index(fields=['order_number']),
+            models.Index(fields=['user', '-created_at']),
+            models.Index(fields=['status', '-created_at']),
+        ]
+
+    def __str__(self):
+        return f"Commande #{self.order_number} - {self.get_status_display()}"
+
+    def _log_time_event(self, event_label):
+        logger = logging.getLogger('saga.cart')
+        default_tz = timezone.get_default_timezone()
+        def _format_dt(value):
+            if not value:
+                return None
+            try:
+                local_value = timezone.localtime(value, default_tz)
+            except Exception:
+                local_value = value
+            return {
+                'utc': value.isoformat(),
+                'local': local_value.isoformat(),
+            }
+
+        logger.info(
+            "[order_time] event=%s order_id=%s order_number=%s tz=%s use_tz=%s created_at=%s updated_at=%s paid_at=%s now=%s now_local=%s",
+            event_label,
+            self.id,
+            self.order_number,
+            settings.TIME_ZONE,
+            settings.USE_TZ,
+            _format_dt(self.created_at),
+            _format_dt(self.updated_at),
+            _format_dt(self.paid_at),
+            timezone.now().isoformat(),
+            timezone.localtime(timezone.now()).isoformat(),
+        )
+
+    def _log_status_change(self, old_status, new_status, source='system', note=''):
+        try:
+            OrderStatusHistory.objects.create(
+                order=self,
+                old_status=old_status,
+                new_status=new_status,
+                source=source,
+                note=note
+            )
+        except Exception as e:
+            logger = logging.getLogger('saga.cart')
+            logger.warning(
+                "Order status history log failed: order=%s old=%s new=%s error=%s",
+                self.id,
+                old_status,
+                new_status,
+                str(e),
+            )
+
+    def save(self, *args, **kwargs):
+        is_new = self.pk is None
+        previous_status = None
+        if not is_new:
+            previous_status = Order.objects.filter(pk=self.pk).values_list('status', flat=True).first()
+        if not self.order_number:
+            # Sauvegarder d'abord pour avoir un ID
+            super().save(*args, **kwargs)
+            # Générer le numéro de commande
+            self.order_number = f"CMD-{self.created_at.strftime('%Y%m%d')}-{self.id:04d}"
+            # Sauvegarder à nouveau avec le numéro de commande
+            kwargs['force_insert'] = False
+            super().save(*args, **kwargs)
+            if is_new:
+                self._log_time_event('order_created')
+                self._log_status_change(previous_status, self.status, note='initial')
+            elif previous_status and previous_status != self.status:
+                self._log_status_change(previous_status, self.status)
+        else:
+            super().save(*args, **kwargs)
+            if previous_status and previous_status != self.status:
+                self._log_status_change(previous_status, self.status)
+
+    def get_total_items(self):
+        return self.items.aggregate(total=models.Sum('quantity'))['total'] or 0
+
+    def calculate_total(self):
+        """Calcule le montant total de la commande"""
+        return self.subtotal + self.shipping_cost + self.tax - self.discount
+
+    def mark_as_paid(self):
+        """Marque la commande comme payée"""
+        from django.utils import timezone
+        self.is_paid = True
+        self.paid_at = timezone.now()
+        self.status = self.CONFIRMED
+        self.save()
+        self._log_time_event('order_paid')
+
+    def mark_as_shipped(self, tracking_number=None):
+        """Marque la commande comme expédiée"""
+        from django.utils import timezone
+        self.status = self.SHIPPED
+        self.shipped_at = timezone.now()
+        if tracking_number:
+            self.tracking_number = tracking_number
+        self.save()
+
+    def mark_as_delivered(self):
+        """Marque la commande comme livrée"""
+        from django.utils import timezone
+        self.status = self.DELIVERED
+        self.delivered_at = timezone.now()
+        self.save()
+
+    def cancel(self, reason=''):
+        """Annule la commande"""
+        self.status = self.CANCELLED
+        self.cancellation_reason = reason
+        self.save()
+
+    def clean(self):
+        if not self.user:
+            raise ValidationError("Un utilisateur est requis pour la commande.")
+        if not self.user.is_active:
+            raise ValidationError("L'utilisateur doit être actif pour créer une commande.")
+
+
+class OrderItem(models.Model):
+    order = models.ForeignKey(Order, related_name='items', on_delete=models.CASCADE, null=True, blank=True)
+    product = models.ForeignKey('product.Product', on_delete=models.PROTECT, null=True, blank=True)
+    quantity = models.DecimalField(max_digits=10, decimal_places=3, validators=[MinValueValidator(Decimal('0.001'))])
+    price = models.DecimalField(max_digits=10, decimal_places=2)
+    colors = models.ManyToManyField('product.Color', blank=True)
+    sizes = models.ManyToManyField('product.Size', blank=True)
+
+    def get_weight_unit(self):
+        if not self.product or not self.product.specifications:
+            return 'kg'
+        specs = self.product.specifications
+        unit_raw = specs.get('weight_unit') or specs.get('unit_display') or specs.get('unit_type')
+        if not unit_raw:
+            if specs.get('available_weight_g') is not None or specs.get('price_per_g') is not None or specs.get('discount_price_per_g') is not None:
+                return 'g'
+            return 'kg'
+        unit = str(unit_raw).lower()
+        if unit in ['weight', 'kg', 'kilogram']:
+            return 'kg'
+        if unit in ['g', 'gram', 'gramme']:
+            return 'g'
+        return unit
+
+    def get_total_price(self):
+        # Pour les produits au poids, utiliser le prix au kg/g depuis les spécifications
+        if self.product and hasattr(self.product, 'specifications') and self.product.specifications:
+            specs = self.product.specifications
+            unit = self.get_weight_unit()
+            sold_by_weight = specs.get('sold_by_weight') is True or unit in ['kg', 'g']
+            if sold_by_weight:
+                if unit == 'g':
+                    price_per_g = specs.get('discount_price_per_g') or specs.get('price_per_g')
+                    if price_per_g:
+                        return Decimal(str(price_per_g)) * Decimal(str(self.quantity))
+                price_per_kg = specs.get('discount_price_per_kg') or specs.get('price_per_kg')
+                if price_per_kg:
+                    return Decimal(str(price_per_kg)) * Decimal(str(self.quantity))
+        return Decimal(str(self.price)) * Decimal(str(self.quantity))
+
+    def __str__(self):
+        return f"{self.quantity} of {self.product.title} in Order {self.order.id}"
+
+
+class OrderStatusHistory(models.Model):
+    order = models.ForeignKey(Order, related_name='status_history', on_delete=models.CASCADE)
+    old_status = models.CharField(max_length=20, choices=Order.STATUS_CHOICES, null=True, blank=True)
+    new_status = models.CharField(max_length=20, choices=Order.STATUS_CHOICES)
+    changed_at = models.DateTimeField(auto_now_add=True)
+    source = models.CharField(max_length=50, blank=True)
+    note = models.CharField(max_length=255, blank=True)
+
+    class Meta:
+        ordering = ['-changed_at']

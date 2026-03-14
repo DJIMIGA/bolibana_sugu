@@ -1,0 +1,68 @@
+<!-- Résumé de la commande -->
+<div class="mt-0">
+    <div class="mt-0 bg-transparent">
+        <h3 class="sr-only">Articles dans votre panier</h3>
+        
+        <!-- Liste des articles -->
+        <ul class="divide-y divide-gray-100">
+            {% for item in cart_items %}
+            <li class="py-2 px-1 flex items-center">
+                <!-- Image -->
+                {% load cart_tags %}
+                {% product_image item.product size_class="w-12 h-12 sm:w-20 sm:h-20 rounded-lg flex-shrink-0 object-cover" alt_text=item.product.title %}
+
+                <!-- Détails du produit -->
+                <div class="ml-3 flex-1 min-w-0">
+                    <div class="flex justify-between items-start">
+                        <h4 class="text-[11px] sm:text-sm font-medium text-gray-900 truncate pr-2">{{ item.product.title }}</h4>
+                        <p class="text-[11px] sm:text-sm font-bold text-gray-900 whitespace-nowrap">{{ item.get_total_price|format_price }}</p>
+                    </div>
+                    
+                    <div class="flex justify-between items-center mt-0.5">
+                        <p class="text-[10px] sm:text-xs text-gray-500">
+                            <span class="font-medium text-gray-700">{{ item.quantity }}</span> × {{ item.get_unit_price|format_price }}
+                        </p>
+                        
+                        <!-- Options (couleur, taille) - Version ultra compacte -->
+                        {% if item.colors.exists or item.sizes.exists %}
+                        <div class="flex gap-1">
+                            {% if item.colors.exists %}
+                                {% for color in item.colors.all %}
+                                <div class="w-2 h-2 rounded-full border border-gray-200" style="background-color: {{ color.color_code }}" title="{{ color.name }}"></div>
+                                {% endfor %}
+                            {% endif %}
+                            {% if item.sizes.exists %}
+                                {% for size in item.sizes.all %}
+                                <span class="text-[9px] text-gray-500 font-medium">T:{{ size.name }}</span>
+                                {% endfor %}
+                            {% endif %}
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </li>
+            {% endfor %}
+        </ul>
+
+        <!-- Résumé des totaux -->
+        <div class="border-t border-gray-100 mt-2 pt-2 px-1">
+            <div class="flex justify-between text-[11px] sm:text-sm text-gray-600 mb-1">
+                <p>Sous-total</p>
+                <p>{{ order_total|format_price }}</p>
+            </div>
+            <div class="flex justify-between text-[11px] sm:text-sm text-gray-600 mb-1" id="shipping-cost-display">
+                <p>Livraison</p>
+                <p>{% if selected_shipping_method %}
+                    {{ selected_shipping_method.price|format_price }}
+                {% else %}
+                    {{ shipping_cost|format_price }}
+                {% endif %}</p>
+            </div>
+        
+            <div class="flex justify-between text-xs sm:text-base font-bold text-gray-900 border-t border-gray-50 pt-1 mt-1" id="total-with-shipping">
+                <p>Total</p>
+                <p class="text-green-600">{{ total_with_shipping|format_price }}</p>
+            </div>
+        </div>
+    </div>
+</div> 

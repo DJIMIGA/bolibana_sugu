@@ -1,0 +1,281 @@
+{% extends 'base.html' %}
+{% load static %}
+{# {% load loyalty_tags %} #}
+
+{% block title %}Fidélité Bolibana - {{ config.site_name }}{% endblock %}
+
+{% block content %}
+<div class="bg-gray-50 py-12">
+    <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+        <!-- En-tête de la page -->
+        <div class="text-center mb-12">
+            <h1 class="text-4xl font-bold font-bitter text-gray-900 mb-4">
+                Programme Fidélité Bolibana
+            </h1>
+            <p class="text-xl text-gray-600 max-w-2xl mx-auto">
+                Rejoignez notre programme de fidélité et bénéficiez d'avantages exclusifs
+            </p>
+        </div>
+
+        <!-- Statut de fidélité pour utilisateurs connectés -->
+        {% if user.is_authenticated %}
+        <div class="bg-gradient-to-r from-green-50 to-yellow-50 rounded-lg shadow-lg p-8 mb-8">
+            <div class="text-center">
+                <div class="w-20 h-20 bg-green-600 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <svg class="w-10 h-10 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"></path>
+                    </svg>
+                </div>
+                <h2 class="text-2xl font-semibold font-bitter text-green-700 mb-2">
+                    Bienvenue dans le programme fidélité !
+                </h2>
+                <p class="text-green-800 mb-4">
+                    Votre numéro fidélité : <span class="font-bold">{{ user.fidelys_number }}</span>
+                </p>
+                
+                <!-- Carte de fidélité -->
+                <div class="w-full max-w-sm sm:w-96 h-40 sm:h-48 mx-auto mb-8">
+                    <div class="bg-gradient-to-br from-green-600 via-yellow-500 to-red-500 rounded-xl shadow-2xl text-white relative overflow-hidden w-full h-full flex flex-col border-2 border-green-500 hover:shadow-3xl transition-shadow duration-300">
+                        <!-- Motif de fond amélioré -->
+                        <div class="absolute top-0 right-0 w-32 h-32 bg-white opacity-10 rounded-full -mr-16 -mt-16 animate-pulse"></div>
+                        <div class="absolute bottom-0 left-0 w-24 h-24 bg-white opacity-10 rounded-full -ml-12 -mb-12 animate-pulse"></div>
+                        <div class="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-16 h-16 bg-white opacity-5 rounded-full"></div>
+                        
+                        <!-- En-tête avec logo et titre sur toute la largeur -->
+                        <div class="bg-white shadow-lg border-b border-gray-100">
+                            <div class="flex items-center justify-between px-2 sm:px-4 py-1">
+                                <!-- Logo du site -->
+                                <div class="w-20 h-12 sm:w-32 sm:h-18 flex items-center justify-center hover:scale-105 transition-transform duration-200">
+                                    {% if site_logo_url %}
+                                    <img class="h-full w-auto object-contain" src="{{ site_logo_url }}" alt="Logo {{ company_name }}">
+                                    {% else %}
+                                    <img class="h-full w-auto object-contain" src="{% static 'icons/bolibana.png' %}" alt="Logo {{ company_name }}">
+                                    {% endif %}
+                                </div>
+                                <div class="text-right">
+                                    <div class="text-xs sm:text-sm font-bold text-gray-900 tracking-wide">Carte Membre</div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Contenu principal avec padding -->
+                        <div class="p-3 sm:p-6 flex-1 flex flex-col">
+                        
+                        <!-- Informations client -->
+                        <div class="mb-1">
+                            <div class="text-xs opacity-80 mb-0.5 flex items-center">
+                                <svg class="w-2 h-2 sm:w-3 sm:h-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                                    <path fill-rule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clip-rule="evenodd"></path>
+                                </svg>
+                                <span class="hidden sm:inline">Nom du client</span>
+                                <span class="sm:hidden">Client</span>
+                            </div>
+                            <div class="text-sm sm:text-base font-bold mb-1 text-white truncate">
+                                {% if user.first_name and user.last_name %}
+                                    {{ user.first_name }} {{ user.last_name }}
+                                {% elif user.first_name %}
+                                    {{ user.first_name }}
+                                {% else %}
+                                    {% with username=user.email|slice:":@" %}
+                                        {{ username|title }}
+                                    {% endwith %}
+                                {% endif %}
+                            </div>
+                        </div>
+                        
+                        <!-- Numéro de fidélité -->
+                        <div class="mb-2">
+                            <div class="text-xs opacity-80 mb-0.5 flex items-center">
+                                <svg class="w-2 h-2 sm:w-3 sm:h-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                                    <path fill-rule="evenodd" d="M4 4a2 2 0 00-2 2v4a2 2 0 002 2V6h10a2 2 0 00-2-2H4zm2 6a2 2 0 012-2h8a2 2 0 012 2v4a2 2 0 01-2 2H8a2 2 0 01-2-2v-4zm6 4a2 2 0 100-4 2 2 0 000 4z" clip-rule="evenodd"></path>
+                                </svg>
+                                <span class="hidden sm:inline">Numéro de fidélité</span>
+                                <span class="sm:hidden">N° Fidélité</span>
+                            </div>
+                            <div class="text-sm sm:text-base font-mono font-bold tracking-wider text-white truncate">
+                                {{ user.fidelys_number }}
+                            </div>
+                        </div>
+                        
+                        <!-- Niveau et points -->
+                        <div class="flex items-center justify-between mt-auto pt-2">
+                            <div class="flex items-center">
+                                <div class="w-1.5 h-1.5 sm:w-2 sm:h-2 bg-yellow-400 rounded-full mr-1 sm:mr-2"></div>
+                                <div>
+                                    <div class="text-xs opacity-80">Niveau</div>
+                                    <div class="text-xs font-bold text-white truncate">{{ loyalty_level|default:"Bronze" }}</div>
+                                </div>
+                            </div>
+                            <div class="text-right flex items-center">
+                                <div>
+                                    <div class="text-xs opacity-80">Points</div>
+                                    <div class="text-xs font-bold text-white">{{ loyalty_points|default:"0" }}</div>
+                                </div>
+                                <div class="w-1.5 h-1.5 sm:w-2 sm:h-2 bg-green-400 rounded-full ml-1 sm:ml-2"></div>
+                            </div>
+                        </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Statistiques de fidélité -->
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mt-6">
+                    <div class="bg-white p-4 rounded-lg shadow">
+                        <div class="text-2xl font-bold text-green-600">{{ total_orders|default:"0" }}</div>
+                        <div class="text-sm text-gray-600">Commandes</div>
+                    </div>
+                    <div class="bg-white p-4 rounded-lg shadow">
+                        <div class="text-2xl font-bold text-yellow-600">{{ loyalty_points|default:"0" }}</div>
+                        <div class="text-sm text-gray-600">Points fidélité</div>
+                    </div>
+                    <div class="bg-white p-4 rounded-lg shadow">
+                        <div class="text-2xl font-bold text-red-600">{{ loyalty_level|default:"Bronze" }}</div>
+                        <div class="text-sm text-gray-600">Niveau</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Avantages du programme -->
+        <div class="bg-white rounded-lg shadow-lg p-8 mb-8">
+            <h2 class="text-2xl font-semibold font-bitter text-green-600 mb-6">
+                Vos avantages exclusifs
+            </h2>
+            
+            {% if service_loyalty_content %}
+            <div class="prose prose-lg max-w-none mb-8">
+                {{ service_loyalty_content|safe }}
+            </div>
+            {% else %}
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                <div class="flex items-start space-x-4">
+                    <div class="flex-shrink-0">
+                        <div class="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center">
+                            <svg class="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1"></path>
+                            </svg>
+                        </div>
+                    </div>
+                    <div>
+                        <h3 class="text-lg font-semibold font-bitter text-gray-900 mb-2">
+                            Points de fidélité
+                        </h3>
+                        <p class="text-gray-600">
+                            Gagnez des points à chaque achat et convertissez-les en réductions 
+                            sur vos prochaines commandes.
+                        </p>
+                    </div>
+                </div>
+
+                <div class="flex items-start space-x-4">
+                    <div class="flex-shrink-0">
+                        <div class="w-12 h-12 bg-yellow-100 rounded-full flex items-center justify-center">
+                            <svg class="w-6 h-6 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z"></path>
+                            </svg>
+                        </div>
+                    </div>
+                    <div>
+                        <h3 class="text-lg font-semibold font-bitter text-gray-900 mb-2">
+                            Offres exclusives
+                        </h3>
+                        <p class="text-gray-600">
+                            Accédez en priorité aux promotions et offres spéciales réservées 
+                            aux membres fidèles.
+                        </p>
+                    </div>
+                </div>
+
+                <div class="flex items-start space-x-4">
+                    <div class="flex-shrink-0">
+                        <div class="w-12 h-12 bg-red-100 rounded-full flex items-center justify-center">
+                            <svg class="w-6 h-6 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
+                            </svg>
+                        </div>
+                    </div>
+                    <div>
+                        <h3 class="text-lg font-semibold font-bitter text-gray-900 mb-2">
+                            Livraison gratuite
+                        </h3>
+                        <p class="text-gray-600">
+                            Bénéficiez de la livraison gratuite sur toutes vos commandes 
+                            dès votre adhésion au programme.
+                        </p>
+                    </div>
+                </div>
+
+                <div class="flex items-start space-x-4">
+                    <div class="flex-shrink-0">
+                        <div class="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center">
+                            <svg class="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 5.636l-3.536 3.536m0 5.656l3.536 3.536M9.172 9.172L5.636 5.636m3.536 9.192L5.636 18.364M12 2.25a9.75 9.75 0 109.75 9.75A9.75 9.75 0 0012 2.25z"></path>
+                            </svg>
+                        </div>
+                    </div>
+                    <div>
+                        <h3 class="text-lg font-semibold font-bitter text-gray-900 mb-2">
+                            Support prioritaire
+                        </h3>
+                        <p class="text-gray-600">
+                            Profitez d'un support client prioritaire et d'une assistance 
+                            personnalisée pour tous vos besoins.
+                        </p>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- Comment rejoindre -->
+        <div class="bg-gradient-to-r from-green-50 to-yellow-50 rounded-lg shadow-lg p-8">
+            <h2 class="text-2xl font-semibold font-bitter text-green-700 mb-6 text-center">
+                Comment rejoindre le programme ?
+            </h2>
+            
+            <div class="text-center">
+                <p class="text-green-800 mb-6 text-lg">
+                    Rejoindre notre programme de fidélité est simple et gratuit !
+                </p>
+                
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+                    <div class="text-center">
+                        <div class="w-16 h-16 bg-green-600 rounded-full flex items-center justify-center mx-auto mb-4">
+                            <span class="text-white font-bold text-xl">1</span>
+                        </div>
+                        <h3 class="font-semibold text-green-700 mb-2">Créez votre compte</h3>
+                        <p class="text-green-800">Inscrivez-vous gratuitement sur notre plateforme</p>
+                    </div>
+                    
+                    <div class="text-center">
+                        <div class="w-16 h-16 bg-yellow-600 rounded-full flex items-center justify-center mx-auto mb-4">
+                            <span class="text-white font-bold text-xl">2</span>
+                        </div>
+                        <h3 class="font-semibold text-yellow-700 mb-2">Faites vos achats</h3>
+                        <p class="text-yellow-800">Gagnez des points à chaque commande</p>
+                    </div>
+                    
+                    <div class="text-center">
+                        <div class="w-16 h-16 bg-red-600 rounded-full flex items-center justify-center mx-auto mb-4">
+                            <span class="text-white font-bold text-xl">3</span>
+                        </div>
+                        <h3 class="font-semibold text-red-700 mb-2">Profitez des avantages</h3>
+                        <p class="text-red-800">Utilisez vos points pour des réductions</p>
+                    </div>
+                </div>
+                
+                {% if user.is_authenticated %}
+                <a href="{% url 'suppliers:supplier_index' %}" class="inline-flex items-center px-8 py-4 border border-transparent text-lg font-medium rounded-md text-white bg-green-600 hover:bg-green-700 transition-colors duration-300">
+                    Commencer mes achats
+                </a>
+                {% else %}
+                <a href="{% url 'accounts:login' %}" class="inline-flex items-center px-8 py-4 border border-transparent text-lg font-medium rounded-md text-white bg-green-600 hover:bg-green-700 transition-colors duration-300">
+                    Rejoindre le programme
+                </a>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

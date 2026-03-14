@@ -1,0 +1,186 @@
+{% load static %}
+{% load cart_tags %}
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <style>
+        body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; background-color: #f8f9fa; }
+        .container { max-width: 600px; margin: 0 auto; padding: 20px; background-color: white; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+        .header { text-align: center; padding: 20px 0; border-bottom: 2px solid #e9ecef; }
+        .order-info { background: #f8f9fa; padding: 15px; margin: 20px 0; border-radius: 5px; border-left: 4px solid #28a745; }
+        .items { margin: 20px 0; }
+        .item { padding: 15px 0; border-bottom: 1px solid #eee; display: flex; align-items: flex-start; }
+        .item-image { 
+            width: 100px; 
+            height: 100px; 
+            margin-right: 15px; 
+            display: flex; 
+            align-items: center; 
+            justify-content: center; 
+            background-color: #f8f9fa; 
+            border-radius: 8px; 
+            overflow: hidden; 
+            border: 1px solid #e9ecef; 
+        }
+        .item-image img { 
+            width: 100%; 
+            height: 100%; 
+            object-fit: cover; 
+            border-radius: 4px; 
+        }
+        .item-image .no-image { 
+            width: 60px; 
+            height: 60px; 
+            opacity: 0.5; 
+        }
+        .item-details { flex: 1; }
+        .total { margin-top: 20px; text-align: right; background: #f8f9fa; padding: 15px; border-radius: 5px; }
+        .footer { margin-top: 0; font-size: 0.9em; color: #666; }
+        .logo { max-width: 200px; height: auto; margin: 20px auto; }
+        .delivery-info { background: #e3f2fd; padding: 15px; margin: 20px 0; border-radius: 5px; border-left: 4px solid #2196f3; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <img src="{{ domain_url }}/static/icons/bolibana.png" 
+                 alt="Logo de Boli Bana Sugu" 
+                 class="logo">
+            <h1>Confirmation de commande</h1>
+            <p>Merci pour votre commande !</p>
+        </div>
+
+        <div class="order-info">
+            <h2>Commande #{{ order.order_number }}</h2>
+            <p>Date : {{ order.created_at|date:"d/m/Y H:i" }}</p>
+            <p>Statut : {{ order.get_status_display }}</p>
+        </div>
+
+        <div class="delivery-info">
+            <h3 style="margin-top: 0; color: #2196f3;">📦 Informations de livraison</h3>
+            <p style="margin: 5px 0;"><strong>{{ order.shipping_address.full_name }}</strong></p>
+            <p style="margin: 5px 0;">{{ order.shipping_address.street_address }}</p>
+            {% if order.shipping_address.quarter %}
+            <p style="margin: 5px 0;">{{ order.shipping_address.quarter }}</p>
+            {% endif %}
+            <p style="margin: 5px 0;">{{ order.shipping_address.city }}</p>
+            <p style="margin: 10px 0 0 0;"><strong>Méthode de livraison :</strong> {{ order.shipping_method.name }}</p>
+            {% if order.shipping_method.description %}
+            <p style="margin: 5px 0 0 0; color: #666; font-size: 14px;">{{ order.shipping_method.description }}</p>
+            {% endif %}
+            <p style="margin: 5px 0 0 0; color: #28a745; font-weight: bold; font-size: 14px;">
+                Délai estimé : {{ order.shipping_method.min_delivery_days }}-{{ order.shipping_method.max_delivery_days }} jours ouvrés
+            </p>
+        </div>
+
+        <div class="items">
+            <h3 style="color: #28a745; border-bottom: 2px solid #28a745; padding-bottom: 10px;">🛍️ Articles commandés</h3>
+            {% for item in order.items.all %}
+            <div class="item">
+                <div class="item-image">
+                    {% if item.product.get_main_image_url %}
+                    <img src="{{ item.product.get_main_image_url }}" alt="{{ item.product.title }}">
+                    {% else %}
+                    <img src="{{ domain_url }}/static/images/no-image.svg" alt="Image non disponible" class="no-image">
+                    {% endif %}
+                </div>
+                <div class="item-details">
+                    <h4 style="margin: 0 0 10px 0; color: #333;">{{ item.product.title }}</h4>
+                    <p style="margin: 5px 0; color: #666;">
+                        <strong>Quantité :</strong> {{ item.quantity }}<br>
+                        <strong>Prix unitaire :</strong> 
+                        {% if item.product.discount_price %}
+                            <span style="text-decoration: line-through; color: #999;">{{ item.product.price|format_price }}</span>
+                            <span style="color: #dc3545; font-weight: bold;">{{ item.product.discount_price|format_price }}</span>
+                        {% else %}
+                            {{ item.product.price|format_price }}
+                        {% endif %}
+                        {% if item.colors.exists or item.sizes.exists %}
+                        <br>
+                        {% if item.colors.exists %}
+                        <strong>Couleur :</strong> {% for color in item.colors.all %}{{ color.name }}{% if not forloop.last %}, {% endif %}{% endfor %}
+                        {% endif %}
+                        {% if item.sizes.exists %}
+                        <br><strong>Taille :</strong> {% for size in item.sizes.all %}{{ size.name }}{% if not forloop.last %}, {% endif %}{% endfor %}
+                        {% endif %}
+                        {% endif %}
+                    </p>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+
+        <div class="total">
+            <h3 style="margin-top: 0; color: #28a745; border-bottom: 1px solid #28a745; padding-bottom: 10px;">💰 Récapitulatif</h3>
+            <p style="margin: 8px 0; font-size: 14px;"><strong>Sous-total :</strong> {{ order.subtotal|format_price }}</p>
+            <p style="margin: 8px 0; font-size: 14px;"><strong>Frais de livraison :</strong> {{ order.shipping_cost|format_price }}</p>
+            {% if order.discount > 0 %}
+            <p style="margin: 8px 0; font-size: 14px; color: #28a745;"><strong>Réduction :</strong> -{{ order.discount|format_price }}</p>
+            {% endif %}
+            <h3 style="margin: 15px 0 0 0; color: #dc3545; font-size: 18px;">Total : {{ order.total|format_price }}</h3>
+        </div>
+
+        <!-- Séparateur principal -->
+        <div style="margin: 30px 0; height: 2px; background: linear-gradient(90deg, #28a745, #20c997, #28a745); border-radius: 1px;"></div>
+        
+        <div class="footer">
+            <!-- Message principal -->
+            <div style="text-align: center; margin-bottom: 25px; padding: 20px; background: linear-gradient(135deg, #f8f9fa, #e9ecef); border-radius: 8px; border: 1px solid #dee2e6;">
+                <h3 style="color: #28a745; margin: 0 0 10px 0; font-size: 18px; font-weight: bold;">🎉 Merci pour votre confiance !</h3>
+                <p style="margin: 8px 0; color: #495057; font-size: 16px; line-height: 1.5;">Pour toute question concernant votre commande, n'hésitez pas à nous contacter.</p>
+                <p style="margin: 8px 0 0 0; color: #28a745; font-weight: bold; font-size: 16px;">L'équipe Boli Bana Sugu</p>
+            </div>
+            
+            <!-- Informations de contact -->
+            <div style="background: #ffffff; border: 2px solid #28a745; border-radius: 12px; padding: 25px; margin-top: 20px; box-shadow: 0 4px 12px rgba(40, 167, 69, 0.1);">
+                <div style="text-align: center; margin-bottom: 20px;">
+                    <h4 style="color: #28a745; margin: 0; font-size: 20px; font-weight: bold; display: inline-flex; align-items: center; gap: 8px;">
+                        <span style="background: #28a745; color: white; padding: 8px; border-radius: 50%; font-size: 16px;">📞</span>
+                        Contactez-nous
+                    </h4>
+                </div>
+                
+                <div style="display: grid; grid-template-columns: 1fr; gap: 15px; font-size: 15px;">
+                    {% if site_phone %}
+                    <div style="display: flex; align-items: center; gap: 12px; padding: 12px; background: #f8f9fa; border-radius: 8px; border-left: 4px solid #28a745;">
+                        <span style="color: #28a745; font-size: 18px; min-width: 24px;">📞</span>
+                        <div>
+                            <strong style="color: #495057; display: block; margin-bottom: 2px;">Téléphone</strong>
+                            <span style="color: #28a745; font-weight: bold; font-size: 16px;">{{ site_phone }}</span>
+                        </div>
+                    </div>
+                    {% endif %}
+                    
+                    {% if site_email %}
+                    <div style="display: flex; align-items: center; gap: 12px; padding: 12px; background: #f8f9fa; border-radius: 8px; border-left: 4px solid #28a745;">
+                        <span style="color: #28a745; font-size: 18px; min-width: 24px;">📧</span>
+                        <div>
+                            <strong style="color: #495057; display: block; margin-bottom: 2px;">Email</strong>
+                            <a href="mailto:{{ site_email }}" style="color: #28a745; text-decoration: none; font-weight: bold; font-size: 16px;">{{ site_email }}</a>
+                        </div>
+                    </div>
+                    {% endif %}
+                    
+                    {% if site_address %}
+                    <div style="display: flex; align-items: flex-start; gap: 12px; padding: 12px; background: #f8f9fa; border-radius: 8px; border-left: 4px solid #28a745;">
+                        <span style="color: #28a745; font-size: 18px; min-width: 24px; margin-top: 2px;">📍</span>
+                        <div>
+                            <strong style="color: #495057; display: block; margin-bottom: 2px;">Adresse</strong>
+                            <span style="color: #28a745; font-weight: bold; font-size: 16px; line-height: 1.4;">{{ site_address }}</span>
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+            
+            <!-- Footer final -->
+            <div style="text-align: center; margin-top: 25px; padding: 15px; background: #f8f9fa; border-radius: 8px; border-top: 3px solid #28a745;">
+                <p style="margin: 0; color: #6c757d; font-size: 14px; font-style: italic;">
+                    © 2025 Boli Bana Sugu - Votre partenaire de confiance pour l'électronique
+                </p>
+            </div>
+        </div>
+    </div>
+</body>
+</html> 

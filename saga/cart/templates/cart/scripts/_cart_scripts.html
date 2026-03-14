@@ -1,0 +1,24 @@
+{% load static %}
+
+<!-- CSS -->
+<link rel="stylesheet" href="{% static 'cart/css/cart.css' %}">
+<link rel="stylesheet" href="{% static 'cart/css/sidebar.css' %}">
+
+<!-- JavaScript -->
+<script type="module">
+    import CartSidebar from "{% static 'cart/js/cart-sidebar.js' %}";
+    import "{% static 'cart/js/product-options.js' %}";
+
+    document.addEventListener('DOMContentLoaded', () => {
+        try {
+            new CartSidebar();
+        } catch (error) {
+            console.error('[Cart] ❌ Erreur d\'initialisation:', error.message || 'Erreur inconnue');
+        }
+    });
+</script>
+
+<!-- Script de debug (uniquement en développement) -->
+{% if debug %}
+<script type="module" src="{% static 'cart/js/cart-debug.js' %}"></script>
+{% endif %} 

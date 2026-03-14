@@ -1,0 +1,43 @@
+# Python
+*.pyc
+__pycache__/
+*.pyo
+*.egg-info/
+dist/
+build/
+.eggs/
+
+# Django
+staticfiles/
+media/
+*.sqlite3
+db.sqlite3
+
+# Environment
+.env
+*.env
+venv/
+.venv/
+
+# Node
+node_modules/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Backups & dumps
+*.backup
+*.dump
+*.zip
+*.csv
+
+# Debug scripts
+bash.exe.stackdump
+*.ps1

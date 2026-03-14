@@ -1,0 +1,42 @@
+[
+    {
+        "model": "product.color",
+        "pk": 1,
+        "fields": {
+            "name": "Noir",
+            "code": "#000000"
+        }
+    },
+    {
+        "model": "product.color",
+        "pk": 2,
+        "fields": {
+            "name": "Blanc",
+            "code": "#FFFFFF"
+        }
+    },
+    {
+        "model": "product.color",
+        "pk": 3,
+        "fields": {
+            "name": "Rouge",
+            "code": "#FF0000"
+        }
+    },
+    {
+        "model": "product.color",
+        "pk": 4,
+        "fields": {
+            "name": "Bleu",
+            "code": "#0000FF"
+        }
+    },
+    {
+        "model": "product.color",
+        "pk": 5,
+        "fields": {
+            "name": "Vert",
+            "code": "#00FF00"
+        }
+    }
+] 

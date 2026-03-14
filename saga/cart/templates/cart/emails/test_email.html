@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <style>
+        body { 
+            font-family: Arial, sans-serif; 
+            line-height: 1.6; 
+            color: #333; 
+            max-width: 600px; 
+            margin: 0 auto; 
+            padding: 20px; 
+        }
+        .header { 
+            text-align: center; 
+            padding: 20px 0; 
+            background: linear-gradient(135deg, #10B981, #059669);
+            color: white;
+            border-radius: 10px;
+            margin-bottom: 20px;
+        }
+        .content { 
+            background: #f9f9f9; 
+            padding: 20px; 
+            border-radius: 10px; 
+            margin: 20px 0; 
+        }
+        .footer { 
+            text-align: center; 
+            margin-top: 30px; 
+            font-size: 0.9em; 
+            color: #666; 
+        }
+        .success { 
+            color: #059669; 
+            font-weight: bold; 
+        }
+        .info { 
+            background: #EFF6FF; 
+            padding: 15px; 
+            border-left: 4px solid #3B82F6; 
+            margin: 15px 0; 
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>🧪 Test de Configuration Email</h1>
+        <p>SagaKore - Système de Commerce en Ligne</p>
+    </div>
+
+    <div class="content">
+        <h2>✅ Configuration Email Fonctionnelle !</h2>
+        
+        <p>Félicitations ! Si vous recevez cet email, cela signifie que la configuration email de SagaKore fonctionne correctement.</p>
+        
+        <div class="info">
+            <h3>📋 Détails de la Configuration :</h3>
+            <ul>
+                <li><strong>Backend :</strong> {{ backend }}</li>
+                <li><strong>Serveur SMTP :</strong> {{ host }}:{{ port }}</li>
+                <li><strong>TLS :</strong> {{ tls }}</li>
+                <li><strong>Expéditeur :</strong> {{ from_email }}</li>
+                <li><strong>Date du test :</strong> {{ test_date }}</li>
+            </ul>
+        </div>
+        
+        <p class="success">🎉 Votre système est maintenant prêt à envoyer des emails de confirmation de commande !</p>
+    </div>
+
+    <div class="footer">
+        <p>Ceci est un email de test automatique généré par SagaKore</p>
+        <p>L'équipe SagaKore - Votre partenaire de confiance</p>
+    </div>
+</body>
+</html> 

@@ -1,0 +1,1 @@
+# Application core pour la configuration globale du site 

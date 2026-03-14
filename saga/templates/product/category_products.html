@@ -1,0 +1,65 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block content %}
+<div class="bg-white">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <!-- En-tête de la catégorie -->
+        <div class="py-8">
+            <h1 class="text-3xl font-extrabold tracking-tight text-gray-900">
+                {{ category.name }}
+            </h1>
+            {% if category.description %}
+            <p class="mt-4 text-gray-500">{{ category.description }}</p>
+            {% endif %}
+        </div>
+
+        <!-- Filtres et tri -->
+        <div class="border-t border-gray-200 py-4">
+            <div class="flex items-center justify-between">
+                <div class="flex space-x-4">
+                    <!-- Filtres -->
+                    <div class="relative">
+                        <button type="button" 
+                                class="group inline-flex items-center justify-center text-sm font-medium text-gray-700 hover:text-gray-900"
+                                id="filter-button">
+                            <span>Filtres</span>
+                            <svg class="flex-shrink-0 -mr-1 ml-1 h-5 w-5 text-gray-400 group-hover:text-gray-500" 
+                                 xmlns="http://www.w3.org/2000/svg" 
+                                 viewBox="0 0 20 20" 
+                                 fill="currentColor">
+                                <path fill-rule="evenodd" 
+                                      d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" 
+                                      clip-rule="evenodd" />
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Tri -->
+                <div class="flex items-center">
+                    <label for="sort" class="text-sm font-medium text-gray-700 mr-2">Trier par :</label>
+                    <select id="sort" 
+                            name="sort" 
+                            class="block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-green-500 focus:border-green-500 sm:text-sm rounded-md"
+                            hx-get="{% url 'category_products' category.id %}"
+                            hx-target="#products-grid"
+                            hx-trigger="change"
+                            hx-include="[name='sort']">
+                        <option value="price_asc">Prix : croissant</option>
+                        <option value="price_desc">Prix : décroissant</option>
+                        <option value="name_asc">Nom : A-Z</option>
+                        <option value="name_desc">Nom : Z-A</option>
+                        <option value="newest">Plus récent</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+
+        <!-- Grille de produits -->
+        <div id="products-grid" class="mt-6 grid grid-cols-1 gap-y-10 gap-x-6 sm:grid-cols-2 lg:grid-cols-4 xl:gap-x-8">
+            {% include "product/_product_grid.html" %}
+        </div>
+    </div>
+</div>
+{% endblock %} 

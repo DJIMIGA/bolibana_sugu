@@ -1,0 +1,11 @@
+{% load cart_tags %}
+{% load static %}
+
+<div class="sticky top-0 z-30 w-full">
+    {% include 'header/_mobile_top_bar.html' %}
+    <div class="border-t border-gray-200">
+        {% include 'header/_desktop_nav.html' %}
+        {% include 'header/_mobile_nav.html' %}
+    </div>
+</div>
+{% include 'cart/scripts/_cart_scripts.html' %}
