@@ -3,6 +3,7 @@
       hx-target="#cart-count"
       hx-swap="none"
       class="space-y-6">
+    {% csrf_token %}
     
     {% if colors %}
     <div class="mt-4">

@@ -155,7 +155,7 @@ const LoyaltyScreen: React.FC = () => {
             )}
 
             {/* QR Code */}
-            {loyaltyInfo.qr_payload && (
+            {loyaltyInfo.qr_payload && /^[\w\-]{8,128}$/.test(loyaltyInfo.qr_payload) && (
               <View style={styles.qrContainer}>
                 <QRCode
                   value={loyaltyInfo.qr_payload}

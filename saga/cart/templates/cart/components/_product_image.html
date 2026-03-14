@@ -1,6 +1,6 @@
 <div class="bg-gradient-to-br from-gray-50 to-gray-100 rounded-lg overflow-hidden flex items-center justify-center">
     {% if has_image %}
-        <img src="{{ product.image.url }}" 
+        <img src="{{ display_image_url }}" 
              alt="{{ alt_text }}" 
              class="{{ size_class }} object-cover"
              onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">

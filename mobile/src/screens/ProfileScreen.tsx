@@ -468,7 +468,7 @@ const ProfileScreen: React.FC = () => {
               <Text style={styles.loyaltyMessage}>{loyaltyInfo.messages[0]}</Text>
             )}
 
-            {loyaltyInfo.qr_payload && (
+            {loyaltyInfo.qr_payload && /^[\w\-]{8,128}$/.test(loyaltyInfo.qr_payload) && (
               <View style={styles.qrContainer}>
                 <QRCode
                   value={loyaltyInfo.qr_payload}

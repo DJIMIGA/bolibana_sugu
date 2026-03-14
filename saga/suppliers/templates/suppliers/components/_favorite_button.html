@@ -11,6 +11,7 @@
                 aria-label="{% if user|is_favorite:product %}Retirer des favoris{% else %}Ajouter aux favoris{% endif %}"
                 role="button"
                 tabindex="0">
+            {% csrf_token %}
             <svg class="h-5 w-5 {% if user|is_favorite:product %}text-red-500{% else %}text-gray-500 group-hover:text-red-500{% endif %}" 
                  xmlns="http://www.w3.org/2000/svg" 
                  fill="{% if user|is_favorite:product %}currentColor{% else %}none{% endif %}" 

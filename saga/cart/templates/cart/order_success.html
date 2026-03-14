@@ -65,8 +65,9 @@
                 <div class="space-y-4">
                     {% for item in order_items %}
                     <div class="flex items-center space-x-4 p-4 bg-gray-50 rounded-lg">
-                        {% if item.product.image %}
-                            <img src="{{ item.product.image.url }}" alt="{{ item.product.title }}" 
+                        {% with display_image_url=item.product.get_display_image_url %}
+                        {% if display_image_url %}
+                            <img src="{{ display_image_url }}" alt="{{ item.product.title }}" 
                                  class="w-16 h-16 object-cover rounded-lg">
                         {% else %}
                             <div class="w-16 h-16 bg-gray-200 rounded-lg flex items-center justify-center">
@@ -75,6 +76,7 @@
                                 </svg>
                             </div>
                         {% endif %}
+                        {% endwith %}
                         <div class="flex-1">
                             <h4 class="font-medium text-gray-900">{{ item.product.title }}</h4>
                             <p class="text-sm text-gray-600">Quantité : {{ item.quantity }}</p>

@@ -21,7 +21,8 @@ const encryptedStorage = createEncryptedStorage();
 const authPersistConfig = {
   key: 'auth',
   storage: encryptedStorage,
-  blacklist: ['isLoading', 'isLoggingIn', 'error', 'isLoadingLoyalty', 'sessionExpired'],
+  // token et refreshToken exclus : ils vivent uniquement dans expo-secure-store (hardware-backed)
+  blacklist: ['isLoading', 'isLoggingIn', 'error', 'isLoadingLoyalty', 'sessionExpired', 'token', 'refreshToken'],
 };
 
 // Configuration pour la slice cart

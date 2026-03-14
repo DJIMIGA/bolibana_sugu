@@ -11,17 +11,31 @@ interface WebViewScreenParams {
   title: string;
 }
 
+const ALLOWED_DOMAINS = ['bolibana.com', 'www.bolibana.com'];
+
+const isTrustedUrl = (rawUrl: string): boolean => {
+  if (!rawUrl) return false;
+  try {
+    const parsed = new URL(rawUrl);
+    return parsed.protocol === 'https:' && ALLOWED_DOMAINS.includes(parsed.hostname);
+  } catch {
+    return false;
+  }
+};
+
 const WebViewScreen: React.FC = () => {
   const route = useRoute();
   const navigation = useNavigation();
   const { url, title } = (route.params as WebViewScreenParams) || { url: '', title: '' };
 
   useEffect(() => {
-    if (url) {
+    if (url && isTrustedUrl(url)) {
       WebBrowser.openBrowserAsync(url, {
         presentationStyle: WebBrowser.WebBrowserPresentationStyle.FULL_SCREEN,
         controlsColor: COLORS.PRIMARY,
       });
+    } else if (url) {
+      if (__DEV__) console.warn('[WebViewScreen] URL refusée (domaine non autorisé):', url);
     }
   }, [url]);
 

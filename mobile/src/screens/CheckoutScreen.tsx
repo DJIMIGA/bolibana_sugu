@@ -20,6 +20,17 @@ import * as WebBrowser from 'expo-web-browser';
 import LoadingSpinner from '../components/LoadingSpinner';
 import { fetchCart } from '../store/slices/cartSlice';
 
+const PAYMENT_ALLOWED_DOMAINS = ['bolibana.com', 'www.bolibana.com', 'checkout.stripe.com', 'js.stripe.com'];
+
+const isValidPaymentUrl = (rawUrl: string): boolean => {
+  try {
+    const parsed = new URL(rawUrl);
+    return parsed.protocol === 'https:' && PAYMENT_ALLOWED_DOMAINS.includes(parsed.hostname);
+  } catch {
+    return false;
+  }
+};
+
 const CheckoutScreen: React.FC = () => {
   const navigation = useNavigation();
   const dispatch = useAppDispatch();
@@ -458,6 +469,10 @@ const CheckoutScreen: React.FC = () => {
           .filter((url: string | undefined) => !!url);
 
         for (const url of checkoutUrls) {
+          if (!isValidPaymentUrl(url)) {
+            if (__DEV__) console.warn('[CheckoutScreen] URL de paiement refusée:', url);
+            continue;
+          }
           const result = await WebBrowser.openBrowserAsync(url, {
             presentationStyle: WebBrowser.WebBrowserPresentationStyle.FULL_SCREEN,
             controlsColor: COLORS.PRIMARY,
@@ -493,7 +508,7 @@ const CheckoutScreen: React.FC = () => {
         return;
       }
 
-      if (checkout_url) {
+      if (checkout_url && isValidPaymentUrl(checkout_url)) {
         const result = await WebBrowser.openBrowserAsync(checkout_url, {
           presentationStyle: WebBrowser.WebBrowserPresentationStyle.FULL_SCREEN,
           controlsColor: COLORS.PRIMARY,

@@ -26,8 +26,7 @@
       },
       "package": "com.bolibana.sugu",
       "permissions": [
-        "android.permission.CAMERA",
-        "android.permission.RECORD_AUDIO"
+        "android.permission.CAMERA"
       ],
       "intentFilters": [
         {

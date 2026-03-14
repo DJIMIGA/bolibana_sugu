@@ -4,6 +4,8 @@ import * as SecureStore from 'expo-secure-store';
 import apiClient, { setSessionExpiredCallback } from '../../services/api';
 import { STORAGE_KEYS, API_ENDPOINTS, SESSION_EXPIRY, CACHE_TTL } from '../../utils/constants';
 import { User, LoyaltyInfo, CacheItem } from '../../types';
+import { encryptAndStore, decryptAndGet } from '../encryptedStorage';
+import { cleanErrorForLog } from '../../utils/helpers';
 
 interface AuthState {
   user: User | null;
@@ -60,7 +62,7 @@ export const loginAsync = createAsyncThunk(
       const { mapUserFromBackend } = await import('../../utils/mappers');
       const user = mapUserFromBackend(profileResponse.data);
 
-      await AsyncStorage.setItem(STORAGE_KEYS.AUTH_USER, JSON.stringify(user));
+      await encryptAndStore(STORAGE_KEYS.AUTH_USER, JSON.stringify(user));
 
       return { access, refresh, user };
     } catch (error: any) {
@@ -146,6 +148,15 @@ export const refreshTokenAsync = createAsyncThunk(
   }
 );
 
+const isJwtExpired = (token: string): boolean => {
+  try {
+    const payload = JSON.parse(atob(token.split('.')[1]));
+    return payload.exp ? payload.exp * 1000 < Date.now() : false;
+  } catch {
+    return false;
+  }
+};
+
 // Thunk pour charger l'utilisateur au démarrage
 export const loadUserAsync = createAsyncThunk(
   'auth/loadUser',
@@ -153,11 +164,34 @@ export const loadUserAsync = createAsyncThunk(
     try {
       const [token, userJson] = await Promise.all([
         SecureStore.getItemAsync(STORAGE_KEYS.AUTH_TOKEN),
-        AsyncStorage.getItem(STORAGE_KEYS.AUTH_USER),
+        decryptAndGet(STORAGE_KEYS.AUTH_USER),
       ]);
 
       if (!token || !userJson) {
         return null;
+      }
+
+      // Vérifier l'expiration du token localement avant tout appel réseau
+      if (isJwtExpired(token)) {
+        // Tenter un refresh silencieux
+        try {
+          const refreshToken = await SecureStore.getItemAsync(STORAGE_KEYS.AUTH_REFRESH_TOKEN);
+          if (!refreshToken || isJwtExpired(refreshToken)) {
+            await Promise.all([
+              SecureStore.deleteItemAsync(STORAGE_KEYS.AUTH_TOKEN),
+              SecureStore.deleteItemAsync(STORAGE_KEYS.AUTH_REFRESH_TOKEN),
+            ]);
+            return null;
+          }
+          const { default: axios } = await import('axios');
+          const { API_ENDPOINTS: EP } = await import('../../utils/constants');
+          const apiBase = (await import('../../services/api')).default.defaults.baseURL;
+          const res = await axios.post(`${apiBase}${EP.AUTH.REFRESH}`, { refresh: refreshToken });
+          const newToken = res.data.access;
+          await SecureStore.setItemAsync(STORAGE_KEYS.AUTH_TOKEN, newToken);
+        } catch {
+          return null;
+        }
       }
 
       const user = JSON.parse(userJson);
@@ -171,7 +205,7 @@ export const loadUserAsync = createAsyncThunk(
         const response = await apiClient.get(API_ENDPOINTS.PROFILE);
         const { mapUserFromBackend } = await import('../../utils/mappers');
           const freshUser = mapUserFromBackend(response.data);
-          await AsyncStorage.setItem(STORAGE_KEYS.AUTH_USER, JSON.stringify(freshUser));
+          await encryptAndStore(STORAGE_KEYS.AUTH_USER, JSON.stringify(freshUser));
           return { token, user: freshUser, isReadOnly: false };
       } catch (error) {
           return { token, user, isReadOnly: true, expired: true };
@@ -199,16 +233,15 @@ export const updateProfileAsync = createAsyncThunk(
       const { mapUserFromBackend } = await import('../../utils/mappers');
       const user = mapUserFromBackend(response.data);
       
-      await AsyncStorage.setItem(STORAGE_KEYS.AUTH_USER, JSON.stringify(user));
-      
+      await encryptAndStore(STORAGE_KEYS.AUTH_USER, JSON.stringify(user));
+
       return user;
     } catch (error: any) {
-      const errorMsg = cleanErrorForLog(error);
-      console.error('[authSlice] updateProfileAsync - Erreur:', errorMsg);
-      if (error.response?.status) {
-        console.error('[authSlice] Status:', error.response.status);
+      if (__DEV__) {
+        const errorMsg = cleanErrorForLog(error);
+        console.error('[authSlice] updateProfileAsync - Erreur:', errorMsg, error.response?.status);
       }
-      
+
       const errorMessage = error.response?.data?.detail 
         || error.response?.data?.password?.[0] 
         || error.response?.data?.non_field_errors?.[0]
@@ -229,8 +262,8 @@ export const fetchProfileAsync = createAsyncThunk(
       const { mapUserFromBackend } = await import('../../utils/mappers');
       const user = mapUserFromBackend(response.data);
       
-      await AsyncStorage.setItem(STORAGE_KEYS.AUTH_USER, JSON.stringify(user));
-      
+      await encryptAndStore(STORAGE_KEYS.AUTH_USER, JSON.stringify(user));
+
       return user;
     } catch (error: any) {
       return rejectWithValue(error.response?.data?.detail || 'Erreur de chargement du profil');
@@ -247,7 +280,7 @@ export const fetchLoyaltyInfoAsync = createAsyncThunk(
       const isOnline = connectivityService.getIsOnline();
 
       if (!isOnline) {
-        const cached = await AsyncStorage.getItem(STORAGE_KEYS.LOYALTY_INFO);
+        const cached = await decryptAndGet(STORAGE_KEYS.LOYALTY_INFO);
         if (cached) {
           const cacheItem = JSON.parse(cached) as CacheItem<LoyaltyInfo>;
           const isStale = Date.now() - cacheItem.timestamp > CACHE_TTL;
@@ -262,7 +295,7 @@ export const fetchLoyaltyInfoAsync = createAsyncThunk(
         timestamp: Date.now(),
         version: '1',
       };
-      await AsyncStorage.setItem(STORAGE_KEYS.LOYALTY_INFO, JSON.stringify(cacheItem));
+      await encryptAndStore(STORAGE_KEYS.LOYALTY_INFO, JSON.stringify(cacheItem));
       return { loyaltyInfo, isStale: false, lastUpdated: cacheItem.timestamp };
     } catch (error: any) {
       return rejectWithValue(error.response?.data?.detail || 'Erreur de chargement des informations de fidélité');
@@ -322,22 +355,15 @@ const authSlice = createSlice({
         state.error = null;
       })
       .addCase(loginAsync.fulfilled, (state, action) => {
-        console.log('[authSlice] loginAsync.fulfilled - user:', !!action.payload.user, 'token:', !!action.payload.access);
         state.isLoggingIn = false;
         state.isAuthenticated = true;
-        state.isReadOnly = false; // Reset read-only on login
+        state.isReadOnly = false;
         state.token = action.payload.access;
         state.refreshToken = action.payload.refresh;
         state.user = action.payload.user;
         state.error = null;
         state.sessionExpired = false;
-        state.isLoading = false; // S'assurer que isLoading est false après connexion
-        console.log('[authSlice] loginAsync.fulfilled - État mis à jour:', {
-          isAuthenticated: state.isAuthenticated,
-          hasToken: !!state.token,
-          hasUser: !!state.user,
-          isLoading: state.isLoading
-        });
+        state.isLoading = false;
       })
       .addCase(loginAsync.rejected, (state, action) => {
         state.isLoggingIn = false;
@@ -404,11 +430,10 @@ const authSlice = createSlice({
       })
       // Fetch profile
       .addCase(fetchProfileAsync.pending, (state) => {
-        console.log('[authSlice] fetchProfileAsync.pending');
         state.error = null;
       })
       .addCase(fetchProfileAsync.fulfilled, (state, action) => {
-        console.log('[authSlice] fetchProfileAsync.fulfilled - user:', !!action.payload, 'email:', action.payload?.email);
+        if (__DEV__) console.log('[authSlice] fetchProfileAsync.fulfilled - user:', !!action.payload);
         state.user = action.payload;
         state.error = null;
       })

@@ -316,78 +316,63 @@ const AppNavigator: React.FC = () => {
     console.log('[AppNavigator] Prefixes configurés:', ['bolibana://', 'https://www.bolibana.com', 'https://bolibana.com']);
     console.log('[AppNavigator] Pour payment-callback: Linking reçoit l\'URL seulement si elle est ouverte DEPUIS L\'EXTÉRIEUR de l\'app (pas depuis le WebBrowser in-app)');
     
-    const handleDeepLink = async (event: { url: string }) => {
-      const { url } = event;
-      console.log('[AppNavigator] ========== URL INTERCEPTÉE VIA LINKING ==========');
-      console.log('[AppNavigator] OUI - L\'app a reçu une URL via Linking.getInitialURL() ou addEventListener(\'url\')');
-      console.log('[AppNavigator] URL complète:', url);
-      console.log('[AppNavigator] Type:', typeof url);
-      console.log('[AppNavigator] Contient payment-success:', url.includes('payment-success'));
-      console.log('[AppNavigator] Contient payment_success:', url.includes('payment_success'));
-      console.log('[AppNavigator] Contient payment-callback:', url.includes('payment-callback'));
-      console.log('[AppNavigator] Contient /api/cart/payment-callback/:', url.includes('/api/cart/payment-callback/'));
-      
-      // Si c'est un retour de paiement (deep link bolibana:// ou URL HTTPS payment-callback)
-      if (url.includes('payment-success') || url.includes('payment_success') || url.includes('/api/cart/payment-callback/')) {
-        console.log('[AppNavigator] ✅ Retour de paiement détecté, fermeture du WebBrowser');
-        
-        // Fermer le WebBrowser si ouvert
-        try {
-          await WebBrowser.dismissBrowser();
-          console.log('[AppNavigator] WebBrowser fermé après deep link');
-        } catch (e) {
-          console.log('[AppNavigator] WebBrowser déjà fermé ou non ouvert:', e);
-        }
-        
-        // Extraire les paramètres de l'URL si disponibles
-        let orderId: string | undefined;
-        let orderNumber: string | undefined;
-        
-        try {
-          const parsed = Linking.parse(url);
-          orderId = parsed.queryParams?.order_id as string | undefined;
-          orderNumber = parsed.queryParams?.order_number as string | undefined;
-          console.log('[AppNavigator] Paramètres extraits - orderId:', orderId, 'orderNumber:', orderNumber);
-        } catch (e) {
-          console.log('[AppNavigator] Erreur lors de l\'extraction des paramètres:', e);
-        }
-        
-        // Naviguer vers les commandes
-        const nav = navigationRef.current;
-        if (nav) {
-          nav.navigate('Profile', { 
-            screen: 'Orders',
-            params: orderId ? { orderId, orderNumber } : undefined
-          });
-          console.log('[AppNavigator] Navigation vers Profile > Orders');
-        }
+    // Domaines autorisés pour les deep links de paiement
+    const TRUSTED_HOSTS = ['www.bolibana.com', 'bolibana.com'];
+
+    const isPaymentCallback = (url: string): boolean => {
+      // Accepter le scheme bolibana:// natif
+      if (url.startsWith('bolibana://')) {
+        return url.includes('payment-success') || url.includes('payment_success');
+      }
+      // Pour les URLs HTTPS, vérifier le domaine avant tout
+      try {
+        const parsed = new URL(url);
+        if (!TRUSTED_HOSTS.includes(parsed.hostname)) return false;
+        return parsed.pathname.includes('/api/cart/payment-callback/');
+      } catch {
+        return false;
       }
     };
 
-    // Écouter les deep links au démarrage
-    console.log('[AppNavigator] Vérification de l\'URL initiale (getInitialURL)...');
-    Linking.getInitialURL()
-      .then((url) => {
-        if (url) {
-          console.log('[AppNavigator] URL initiale trouvée (app lancée via lien):', url);
-          handleDeepLink({ url });
-        } else {
-          console.log('[AppNavigator] Aucune URL initiale (app non lancée via lien)');
-        }
-      })
-      .catch((error) => {
-        console.error('[AppNavigator] Erreur getInitialURL:', error);
-      });
+    const handleDeepLink = async (event: { url: string }) => {
+      const { url } = event;
+      if (__DEV__) console.log('[AppNavigator] Deep link reçu:', url);
 
-    // Écouter les deep links pendant l'exécution (URL ouverte pendant que l'app est au premier plan)
-    console.log('[AppNavigator] Listener addEventListener(\'url\') actif - en attente d\'URL...');
-    const subscription = Linking.addEventListener('url', (event) => {
-      console.log('[AppNavigator] >>> Événement "url" déclenché - Linking a reçu une URL:', event.url);
-      handleDeepLink(event);
-    });
+      if (!isPaymentCallback(url)) return;
+
+      try {
+        await WebBrowser.dismissBrowser();
+      } catch {
+        // déjà fermé
+      }
+
+      let orderId: string | undefined;
+      let orderNumber: string | undefined;
+
+      try {
+        const parsed = Linking.parse(url);
+        orderId = parsed.queryParams?.order_id as string | undefined;
+        orderNumber = parsed.queryParams?.order_number as string | undefined;
+      } catch {
+        // paramètres non disponibles
+      }
+
+      const nav = navigationRef.current;
+      if (nav) {
+        nav.navigate('Profile', {
+          screen: 'Orders',
+          params: orderId ? { orderId, orderNumber } : undefined
+        });
+      }
+    };
+
+    Linking.getInitialURL()
+      .then((url) => { if (url) handleDeepLink({ url }); })
+      .catch(() => {});
+
+    const subscription = Linking.addEventListener('url', handleDeepLink);
 
     return () => {
-      console.log('[AppNavigator] Nettoyage du listener de deep links');
       subscription.remove();
     };
   }, []);

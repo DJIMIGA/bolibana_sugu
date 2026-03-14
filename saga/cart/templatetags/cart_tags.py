@@ -37,10 +37,11 @@ def product_image(product, size_class="w-full h-full", alt_text=None, fallback_i
     Usage:
     {% product_image product size_class="w-20 h-20" alt_text="Nom du produit" %}
     """
-    has_image = product.image and product.image.url
+    display_image_url = product.get_display_image_url()
     return {
         'product': product,
-        'has_image': has_image,
+        'has_image': bool(display_image_url),
+        'display_image_url': display_image_url,
         'size_class': size_class,
         'alt_text': alt_text or product.title,
         'fallback_icon_size': fallback_icon_size,

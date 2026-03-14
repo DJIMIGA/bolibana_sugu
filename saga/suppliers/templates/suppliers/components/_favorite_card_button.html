@@ -8,6 +8,7 @@
         hx-swap="outerHTML"
         class="relative inline-flex items-center justify-center w-10 h-10 rounded-full border border-gray-300 bg-white text-gray-700 hover:bg-gray-50 hover:border-gray-400 transition-all duration-300 group"
         title="{% if user|is_favorite:product %}Retirer des favoris{% else %}Ajouter aux favoris{% endif %}">
+    {% csrf_token %}
     <svg class="w-6 h-6 {% if user|is_favorite:product %}text-red-500{% else %}text-gray-400 group-hover:text-gray-500{% endif %}" 
          xmlns="http://www.w3.org/2000/svg" 
          fill="{% if user|is_favorite:product %}currentColor{% else %}none{% endif %}" 

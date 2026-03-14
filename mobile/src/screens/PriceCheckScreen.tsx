@@ -26,13 +26,20 @@ const PriceCheckScreen: React.FC = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
 
+  const sanitizeSearchInput = (input: string): string => {
+    // Garder uniquement les caractères alphanumériques, tirets, espaces et points
+    return input.replace(/[^\w\s\-\.]/g, '').trim().slice(0, 100);
+  };
+
   const searchProductsByBarcode = async (barcode: string) => {
+    const safe = sanitizeSearchInput(barcode);
+    if (!safe) return;
     setIsLoading(true);
     try {
       // Rechercher les produits par code-barres
       const response = await apiClient.get('/products/', {
         params: {
-          search: barcode,
+          search: safe,
         },
       });
       
@@ -57,14 +64,15 @@ const PriceCheckScreen: React.FC = () => {
   };
 
   const handleSearch = async () => {
-    if (!searchQuery.trim()) {
-      Alert.alert('Erreur', 'Veuillez entrer un terme de recherche');
+    const safe = sanitizeSearchInput(searchQuery);
+    if (!safe) {
+      Alert.alert('Erreur', 'Veuillez entrer un terme de recherche valide');
       return;
     }
 
     setIsLoading(true);
-    setScannedBarcode(searchQuery.trim());
-    await searchProductsByBarcode(searchQuery.trim());
+    setScannedBarcode(safe);
+    await searchProductsByBarcode(safe);
   };
 
   const resetSearch = () => {

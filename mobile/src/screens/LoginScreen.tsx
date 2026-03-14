@@ -21,6 +21,9 @@ import Logo from '../components/Logo';
 import { Ionicons } from '@expo/vector-icons';
 import LoadingSpinner from '../components/LoadingSpinner';
 
+const MAX_ATTEMPTS = 5;
+const LOCKOUT_SECONDS = 30;
+
 const LoginScreen: React.FC = () => {
   const dispatch = useAppDispatch();
   const insets = useSafeAreaInsets();
@@ -32,9 +35,32 @@ const LoginScreen: React.FC = () => {
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [loginError, setLoginError] = useState<string | null>(null);
-  const [isHandlingLogin, setIsHandlingLogin] = useState(false); // Flag pour indiquer qu'on est en train de gérer la connexion
+  const [isHandlingLogin, setIsHandlingLogin] = useState(false);
+  const [failedAttempts, setFailedAttempts] = useState(0);
+  const [lockoutRemaining, setLockoutRemaining] = useState(0);
+  const lockoutTimer = useRef<ReturnType<typeof setInterval> | null>(null);
   const passwordInputRef = useRef<TextInput>(null);
   const redirectTo = route?.params?.redirectTo;
+
+  const isLockedOut = lockoutRemaining > 0;
+
+  const startLockout = () => {
+    setLockoutRemaining(LOCKOUT_SECONDS);
+    lockoutTimer.current = setInterval(() => {
+      setLockoutRemaining((prev) => {
+        if (prev <= 1) {
+          clearInterval(lockoutTimer.current!);
+          lockoutTimer.current = null;
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+  };
+
+  useEffect(() => {
+    return () => { if (lockoutTimer.current) clearInterval(lockoutTimer.current); };
+  }, []);
 
   const redirectAfterLogin = () => {
     const nav = navigation as any;
@@ -63,17 +89,6 @@ const LoginScreen: React.FC = () => {
     }
   };
 
-  // Log à l'affichage de l'écran de connexion
-  useEffect(() => {
-    console.log('[LoginScreen] 🟢 ECRAN DE CONNEXION AFFICHE - État:', {
-      isLoggingIn,
-      isAuthenticated,
-      hasUser: !!user,
-      hasToken: !!token,
-      sessionExpired,
-      hasError: !!error
-    });
-  }, []);
 
   useEffect(() => {
     if (sessionExpired) {
@@ -95,16 +110,15 @@ const LoginScreen: React.FC = () => {
     }
     
     if (isAuthenticated && user && token) {
-      console.log('[LoginScreen] Utilisateur déjà connecté (useEffect), redirection après login...');
       redirectAfterLogin();
     }
   }, [isAuthenticated, user, token, navigation, isHandlingLogin, isLoggingIn, redirectTo]);
 
   const handleLogin = async () => {
-    console.log('[LoginScreen] handleLogin appelé');
+    if (isLockedOut) return;
     setLoginError(null);
-    setIsHandlingLogin(true); // Marquer qu'on gère la connexion manuellement
-    
+    setIsHandlingLogin(true);
+
     if (!email || !password) {
       setLoginError('Veuillez remplir tous les champs');
       setIsHandlingLogin(false);
@@ -112,64 +126,37 @@ const LoginScreen: React.FC = () => {
     }
 
     try {
-      console.log('[LoginScreen] Début de la connexion...');
-      setLoginError(null);
-      
       const result = await dispatch(loginAsync({ email, password })).unwrap();
-      console.log('[LoginScreen] Connexion réussie, result:', {
-        hasUser: !!result?.user,
-        hasAccess: !!result?.access,
-        userEmail: result?.user?.email
-      });
-      
-      // Vérifier explicitement que la connexion a réussi avec tous les éléments nécessaires
       if (result && result.user && result.access) {
-        console.log('[LoginScreen] Tous les éléments présents, navigation immédiate...');
+        setFailedAttempts(0);
         setLoginError(null);
-        
-        // Navigation immédiate sans délai pour éviter l'affichage du profil
-        // Le state Redux est déjà mis à jour par loginAsync.fulfilled
         redirectAfterLogin();
-        console.log('[LoginScreen] Navigation effectuée');
-        // Ne pas réinitialiser ici : l'écran va se démonter après la navigation
-      } else {
-        console.warn('[LoginScreen] Connexion réussie mais éléments manquants:', {
-          hasResult: !!result,
-          hasUser: !!result?.user,
-          hasAccess: !!result?.access
-        });
       }
     } catch (err: any) {
-      console.error('[LoginScreen] Erreur de connexion:', err);
-      setIsHandlingLogin(false); // Réinitialiser le flag en cas d'erreur
-      // En cas d'erreur avec unwrap(), err est directement le message d'erreur (string)
-      // renvoyé par rejectWithValue dans authSlice.ts
+      setIsHandlingLogin(false);
+      const newAttempts = failedAttempts + 1;
+      setFailedAttempts(newAttempts);
+
+      if (newAttempts >= MAX_ATTEMPTS) {
+        setFailedAttempts(0);
+        startLockout();
+        setLoginError(`Trop de tentatives. Réessayez dans ${LOCKOUT_SECONDS}s.`);
+        return;
+      }
+
       const errorMessage = typeof err === 'string' ? err : getUserMessage(err);
-      
       setLoginError(errorMessage);
-      // Afficher aussi une alerte pour attirer l'attention
       Alert.alert('Erreur', errorMessage);
-      
-      // L'utilisateur reste sur l'écran de connexion pour voir l'erreur
     }
   };
 
-  // Log à chaque render
-  console.log('[LoginScreen] RENDER - isLoggingIn:', isLoggingIn, 'isAuthenticated:', isAuthenticated, 'hasUser:', !!user, 'hasToken:', !!token);
-
-  // Si l'utilisateur est déjà connecté, ne pas afficher le formulaire
-  // (la redirection sera gérée par le useEffect ci-dessus)
   if (isAuthenticated && user && token) {
-    console.log('[LoginScreen] Utilisateur connecté, affichage LoadingScreen en attendant redirection');
     return <LoadingSpinner />;
   }
 
   if (isLoggingIn) {
-    console.log('[LoginScreen] Affichage LoadingScreen (isLoggingIn)');
     return <LoadingSpinner />;
   }
-
-  console.log('[LoginScreen] Affichage formulaire de connexion');
   return (
     <KeyboardAvoidingView
       style={styles.container}
@@ -202,6 +189,7 @@ const LoginScreen: React.FC = () => {
             autoCapitalize="none"
             autoCorrect={false}
             returnKeyType="next"
+            maxLength={254}
             onSubmitEditing={() => passwordInputRef.current?.focus()}
           />
 
@@ -222,6 +210,7 @@ const LoginScreen: React.FC = () => {
               secureTextEntry={!showPassword}
               autoCapitalize="none"
               returnKeyType="done"
+              maxLength={128}
               blurOnSubmit={true}
               onSubmitEditing={Keyboard.dismiss}
             />
@@ -245,11 +234,13 @@ const LoginScreen: React.FC = () => {
           )}
 
           <TouchableOpacity
-            style={[styles.button, isLoggingIn && styles.buttonDisabled]}
+            style={[styles.button, (isLoggingIn || isLockedOut) && styles.buttonDisabled]}
             onPress={handleLogin}
-            disabled={isLoggingIn}
+            disabled={isLoggingIn || isLockedOut}
           >
-            <Text style={styles.buttonText}>Se connecter</Text>
+            <Text style={styles.buttonText}>
+              {isLockedOut ? `Réessayer dans ${lockoutRemaining}s` : 'Se connecter'}
+            </Text>
           </TouchableOpacity>
 
           <View style={styles.legalTextContainer}>

@@ -81,10 +81,13 @@ class SecurityMiddleware:
     
     def _is_blacklisted_ip(self, ip):
         """Vérifie si l'IP est blacklistée"""
-        # Liste d'IPs blacklistées (à étendre selon vos besoins)
-        blacklisted_ips = [
-            '194.26.192.144',  # IP malveillante détectée le 17/07/2025 - tentative d'accès à .env
-        ]
+        # On lit la liste depuis les settings s'ils sont définis, sinon on garde une liste vide.
+        # Vous pouvez également la stocker en base de données ou en cache pour plus de flexibilité.
+        blacklisted_ips = getattr(settings, 'BLACKLISTED_IPS', [])
+        # Garder l'IP malveillante historique ou la retirer si géré par les settings
+        if '194.26.192.144' not in blacklisted_ips:
+            blacklisted_ips.append('194.26.192.144') # Historique: tentative d'accès à .env
+            
         return ip in blacklisted_ips
     
     def _is_sensitive_path(self, path):

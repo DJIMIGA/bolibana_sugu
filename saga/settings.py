@@ -59,7 +59,11 @@ print(f"\nDEBUG est {'activé' if DEBUG else 'désactivé'}")
 print(f"Valeur de DEBUG dans l'environnement : {os.getenv('DEBUG')}")
 
 # Configuration de base
-SECRET_KEY = os.getenv('SECRET_KEY', 'django-insecure-default-key-for-dev')
+SECRET_KEY = os.getenv('SECRET_KEY')
+if not DEBUG and not SECRET_KEY:
+    raise ValueError("La variable d'environnement SECRET_KEY est obligatoire en production pour des raisons de sécurité.")
+if not SECRET_KEY:
+    SECRET_KEY = 'django-insecure-default-key-for-dev'
 
 # Configuration des hôtes autorisés
 ALLOWED_HOSTS = os.getenv('ALLOWED_HOSTS', 'localhost,127.0.0.1').split(',')
@@ -701,7 +705,21 @@ WSGI_APPLICATION = 'saga.wsgi.application'
 
 # Configuration des validateurs de mot de passe
 AUTH_PASSWORD_VALIDATORS = [
-# ... existing code ...
+    {
+        'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator',
+    },
+    {
+        'NAME': 'django.contrib.auth.password_validation.MinimumLengthValidator',
+        'OPTIONS': {
+            'min_length': 8,
+        }
+    },
+    {
+        'NAME': 'django.contrib.auth.password_validation.CommonPasswordValidator',
+    },
+    {
+        'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator',
+    },
 ]
 
 # Configuration d'Axes (Protection Brute-Force)
@@ -774,13 +792,13 @@ LOGGING = {
         'file': {
             'level': 'INFO',
             'class': 'logging.FileHandler',
-            'filename': 'django.log',
+            'filename': os.path.join(BASE_DIR, 'logs', 'django.log'),
             'formatter': 'verbose',
         },
         'security_file': {
             'level': 'WARNING',
             'class': 'logging.FileHandler',
-            'filename': 'security.log',
+            'filename': os.path.join(BASE_DIR, 'logs', 'security.log'),
             'formatter': 'verbose',
         },
         'console': {

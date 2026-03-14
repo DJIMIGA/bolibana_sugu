@@ -24,19 +24,12 @@
     {% else %}
         <div class="block h-56 sm:h-72 rounded-lg w-full overflow-hidden bg-gray-100 relative" aria-label="Produit sans lien (slug manquant)">
     {% endif %}
-        {% with display_image=product.get_display_image %}
-        {% if display_image %}
-            {% if display_image|slice:":4" == "http" %}
-                <img src="{{ display_image }}" 
-                     alt="Photo de {{ product.title }}" 
-                     class="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105 rounded-lg"
-                     loading="lazy">
-            {% else %}
-                <img src="{{ display_image.url }}" 
-                     alt="Photo de {{ product.title }}" 
-                     class="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105 rounded-lg"
-                     loading="lazy">
-            {% endif %}
+        {% with display_image_url=product.get_display_image_url %}
+        {% if display_image_url %}
+            <img src="{{ display_image_url }}" 
+                 alt="Photo de {{ product.title }}" 
+                 class="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105 rounded-lg"
+                 loading="lazy">
         {% else %}
             <div class="h-full w-full flex items-center justify-center rounded-lg">
                 <svg class="h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
