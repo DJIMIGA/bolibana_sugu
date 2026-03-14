@@ -464,6 +464,11 @@ class Product(models.Model):
 
     def get_display_image_url(self):
         """Retourne l'URL de l'image à afficher (compatible avec les templates)"""
+        # Utiliser get_main_image_url() qui gère correctement les URLs S3 et B2B
+        main_url = self.get_main_image_url()
+        if main_url:
+            return main_url
+            
         display_image = self.get_display_image()
         if not display_image:
             return None
