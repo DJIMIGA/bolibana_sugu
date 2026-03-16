@@ -15,6 +15,7 @@ import { Ionicons, MaterialIcons } from '@expo/vector-icons';
 import { useAppDispatch, useAppSelector } from '../store/hooks';
 import { fetchProductDetail, fetchSimilarProducts } from '../store/slices/productSlice';
 import { addToCart } from '../store/slices/cartSlice';
+import { toggleFavorite } from '../store/slices/favoritesSlice';
 import { useRoute, useNavigation } from '@react-navigation/native';
 import { formatPrice } from '../utils/helpers';
 import { COLORS } from '../utils/constants';
@@ -28,8 +29,9 @@ const ProductDetailScreen: React.FC = () => {
   const route = useRoute();
   const insets = useSafeAreaInsets();
   const { selectedProduct, isLoading, similarProducts, isFetchingSimilarProducts, categories } = useAppSelector((state) => state.product);
-  const { isReadOnly } = useAppSelector((state) => state.auth);
+  const { isReadOnly, isAuthenticated } = useAppSelector((state) => state.auth);
   const { items, isLoading: isAddingToCart } = useAppSelector((state) => state.cart);
+  const { favoriteProductIds } = useAppSelector((state) => state.favorites);
   const [quantity, setQuantity] = useState(1);
   const [activeImageIndex, setActiveImageIndex] = useState(0);
   const slug = (route.params as any)?.slug;
@@ -309,7 +311,23 @@ const ProductDetailScreen: React.FC = () => {
           <Ionicons name="arrow-back" size={24} color={COLORS.TEXT} />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Détails du produit</Text>
-        <View style={styles.headerSpacer} />
+        <TouchableOpacity
+          style={styles.favoriteHeaderButton}
+          onPress={() => {
+            if (!isAuthenticated) {
+              navigation.navigate('Profile' as never, { screen: 'Login' } as never);
+              return;
+            }
+            if (selectedProduct) dispatch(toggleFavorite(selectedProduct.id));
+          }}
+          activeOpacity={0.8}
+        >
+          <Ionicons
+            name={selectedProduct && favoriteProductIds.includes(selectedProduct.id) ? 'heart' : 'heart-outline'}
+            size={22}
+            color={selectedProduct && favoriteProductIds.includes(selectedProduct.id) ? COLORS.DANGER : COLORS.TEXT}
+          />
+        </TouchableOpacity>
       </View>
 
       <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
@@ -739,6 +757,12 @@ const styles = StyleSheet.create({
   },
   headerSpacer: {
     width: 40,
+  },
+  favoriteHeaderButton: {
+    width: 40,
+    height: 40,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   scrollView: {
     flex: 1,

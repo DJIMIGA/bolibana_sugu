@@ -8,6 +8,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useAppSelector, useAppDispatch } from '../store/hooks';
 import { loadUserAsync } from '../store/slices/authSlice';
+import { fetchFavorites } from '../store/slices/favoritesSlice';
 import { LoadingScreen } from '../components/LoadingScreen';
 import { COLORS } from '../utils/constants';
 import Logo from '../components/Logo';
@@ -31,6 +32,7 @@ import OrdersScreen from '../screens/OrdersScreen';
 import OrderDetailScreen from '../screens/OrderDetailScreen';
 import SettingsScreen from '../screens/SettingsScreen';
 import LoyaltyScreen from '../screens/LoyaltyScreen';
+import FavoritesScreen from '../screens/FavoritesScreen';
 
 const Stack = createStackNavigator();
 const Tab = createBottomTabNavigator();
@@ -95,6 +97,7 @@ const ProfileStack = () => (
     <Stack.Screen name="OrderDetail" component={OrderDetailScreen} />
     <Stack.Screen name="Settings" component={SettingsScreen} />
     <Stack.Screen name="Loyalty" component={LoyaltyScreen} />
+    <Stack.Screen name="Favorites" component={FavoritesScreen} />
   </Stack.Navigator>
 );
 
@@ -262,8 +265,13 @@ const AppNavigator: React.FC = () => {
   useEffect(() => {
     if (isAuthenticated) {
       setHasDismissedAuthModal(false);
+      // Charger les favoris seulement après que loadUserAsync a fini (isLoading === false)
+      // pour éviter un appel sans token valide au rehydrate de l'état persisté
+      if (isLoading === false) {
+        dispatch(fetchFavorites());
+      }
     }
-  }, [isAuthenticated]);
+  }, [isAuthenticated, isLoading]);
 
   useEffect(() => {
     if (authModalTimerRef.current) {

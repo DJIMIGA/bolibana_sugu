@@ -26,7 +26,7 @@
         "simulator": false
       },
       "env": {
-        "EXPO_PUBLIC_API_BASE_URL": "https://your-staging-api.com/api"
+        "EXPO_PUBLIC_API_BASE_URL": "https://www.bolibana.com/api"
       }
     },
     "production": {
@@ -38,7 +38,7 @@
         "simulator": false
       },
       "env": {
-        "EXPO_PUBLIC_API_BASE_URL": "https://your-production-api.com/api"
+        "EXPO_PUBLIC_API_BASE_URL": "https://www.bolibana.com/api"
       }
     }
   },

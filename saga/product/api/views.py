@@ -1,13 +1,13 @@
-from rest_framework import viewsets, permissions, filters
+from rest_framework import viewsets, permissions, filters, status
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from django_filters.rest_framework import DjangoFilterBackend
 from django.db.models import Q, F
 from .serializers import (
     ProductListSerializer, ProductDetailSerializer,
-    CategorySerializer, PhoneSerializer
+    CategorySerializer, PhoneSerializer, FavoriteSerializer
 )
-from product.models import Product, Category
+from product.models import Product, Category, Favorite
 from inventory.models import ExternalCategory
 from inventory.utils import get_synced_categories
 
@@ -272,3 +272,48 @@ class ProductViewSet(viewsets.ModelViewSet):
         serializer = ProductListSerializer(similar_products, many=True, context={'request': request})
         return Response(serializer.data)
 
+
+class FavoriteViewSet(viewsets.ModelViewSet):
+    serializer_class = FavoriteSerializer
+    permission_classes = [permissions.IsAuthenticated]
+    http_method_names = ['get', 'post', 'delete']
+
+    def get_queryset(self):
+        return Favorite.objects.filter(user=self.request.user).select_related(
+            'product', 'product__category', 'product__phone',
+            'product__clothing_product', 'product__fabric_product',
+            'product__cultural_product', 'product__external_product'
+        ).prefetch_related('product__images')
+
+    def perform_create(self, serializer):
+        serializer.save(user=self.request.user)
+
+    def create(self, request, *args, **kwargs):
+        # Empêcher les doublons, retourner l'existant si déjà en favori
+        product = request.data.get('product_id')
+        existing = Favorite.objects.filter(user=request.user, product_id=product).first()
+        if existing:
+            serializer = self.get_serializer(existing)
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        return super().create(request, *args, **kwargs)
+
+    @action(detail=False, methods=['post'], url_path='toggle')
+    def toggle(self, request):
+        product_id = request.data.get('product_id')
+        if not product_id:
+            return Response({'detail': 'product_id requis'}, status=status.HTTP_400_BAD_REQUEST)
+        try:
+            product = Product.objects.get(pk=product_id)
+        except Product.DoesNotExist:
+            return Response({'detail': 'Produit introuvable'}, status=status.HTTP_404_NOT_FOUND)
+
+        favorite, created = Favorite.objects.get_or_create(user=request.user, product=product)
+        if not created:
+            favorite.delete()
+            return Response({'is_favorite': False}, status=status.HTTP_200_OK)
+        return Response({'is_favorite': True, 'id': favorite.id}, status=status.HTTP_201_CREATED)
+
+    def get_serializer_context(self):
+        context = super().get_serializer_context()
+        context['request'] = self.request
+        return context

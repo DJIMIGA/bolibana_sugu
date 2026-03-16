@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from product.models import Product, Category, ImageProduct, Phone
+from product.models import Product, Category, ImageProduct, Phone, Favorite
 import logging
 
 logger = logging.getLogger(__name__)
@@ -530,6 +530,18 @@ class ProductDetailSerializer(serializers.ModelSerializer):
         except Exception:
             pass
         return None
+
+class FavoriteSerializer(serializers.ModelSerializer):
+    product = ProductListSerializer(read_only=True)
+    product_id = serializers.PrimaryKeyRelatedField(
+        queryset=Product.objects.all(), source='product', write_only=True
+    )
+
+    class Meta:
+        model = Favorite
+        fields = ['id', 'product', 'product_id', 'created_at']
+        read_only_fields = ['id', 'created_at']
+
 
 class PhoneSerializer(serializers.ModelSerializer):
     color_name = serializers.SerializerMethodField()

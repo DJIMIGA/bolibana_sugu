@@ -39,6 +39,8 @@ export const API_ENDPOINTS = {
   ORDERS: '/orders/',
   CART_ORDERS: '/cart/orders/',
   CART_ORDER_DETAIL: (orderId: number) => `/cart/orders/${orderId}/`,
+  FAVORITES: '/favorites/',
+  FAVORITES_TOGGLE: '/favorites/toggle/',
   LOYALTY: '/loyalty/',
   CHANGE_PASSWORD: '/change-password/',
   DELETE_ACCOUNT: '/delete-account/',

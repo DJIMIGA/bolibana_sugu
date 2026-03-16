@@ -494,6 +494,13 @@ const ProfileScreen: React.FC = () => {
       <View style={styles.section}>
         <TouchableOpacity
           style={styles.menuItem}
+          onPress={() => (navigation as any).navigate('Favorites')}
+        >
+          <Text style={styles.menuItemText}>Mes favoris</Text>
+          <Text style={styles.menuItemArrow}>›</Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={styles.menuItem}
           onPress={() => (navigation as any).navigate('Addresses')}
         >
           <Text style={styles.menuItemText}>Mes adresses</Text>

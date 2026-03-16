@@ -6,6 +6,7 @@ import * as SecureStore from 'expo-secure-store';
 // Clé SecureStore où la clé de chiffrement est stockée (hardware-backed sur iOS/Android)
 const ENC_KEY_STORE = 'bb_redux_enc_key';
 let _cachedKey: string | null = null;
+let _keyPromise: Promise<string> | null = null;
 
 /**
  * Récupère (ou génère) la clé de chiffrement unique par installation.
@@ -14,18 +15,31 @@ let _cachedKey: string | null = null;
 async function getEncryptionKey(): Promise<string> {
   if (_cachedKey) return _cachedKey;
 
-  let key = await SecureStore.getItemAsync(ENC_KEY_STORE);
-  if (!key) {
-    // Générer une clé aléatoire 256 bits à la première installation
-    const bytes = new Uint8Array(32);
-    global.crypto.getRandomValues(bytes);
-    key = Array.from(bytes).map(b => b.toString(16).padStart(2, '0')).join('');
-    await SecureStore.setItemAsync(ENC_KEY_STORE, key);
+  // Partager la même promesse entre tous les appelants simultanés
+  if (!_keyPromise) {
+    _keyPromise = (async () => {
+      let key = await SecureStore.getItemAsync(ENC_KEY_STORE);
+      if (!key) {
+        const bytes = new Uint8Array(32);
+        global.crypto.getRandomValues(bytes);
+        key = Array.from(bytes).map(b => b.toString(16).padStart(2, '0')).join('');
+        await SecureStore.setItemAsync(ENC_KEY_STORE, key);
+      }
+      _cachedKey = key;
+      _keyPromise = null;
+      return key;
+    })();
   }
 
-  _cachedKey = key;
-  return key;
+  return _keyPromise;
 }
+
+/**
+ * Pré-charge la clé de chiffrement en cache.
+ * À appeler avant la création du store pour éviter les appels SecureStore concurrents
+ * lors de la réhydratation simultanée de plusieurs slices Redux.
+ */
+export const warmEncryptionKey = (): Promise<void> => getEncryptionKey().then(() => {});
 
 /**
  * Chiffre une valeur et la stocke dans AsyncStorage.

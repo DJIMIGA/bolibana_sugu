@@ -11,7 +11,8 @@ import { Product } from '../types';
 import { formatPrice, getProductImageUrl, getCartQuantityLabel } from '../utils/helpers';
 import { COLORS } from '../utils/constants';
 import { useNavigation } from '@react-navigation/native';
-import { useAppSelector } from '../store/hooks';
+import { useAppSelector, useAppDispatch } from '../store/hooks';
+import { toggleFavorite } from '../store/slices/favoritesSlice';
 import ProductCardInfo from './ProductCardInfo';
 import ProductImage from './ProductImage';
 
@@ -24,7 +25,20 @@ const CARD_WIDTH = (width - 48) / 2; // 16px padding on each side, 16px gap in b
 
 const ProductCardDefault: React.FC<ProductCardDefaultProps> = ({ product }) => {
   const navigation = useNavigation();
+  const dispatch = useAppDispatch();
   const { items } = useAppSelector((state) => state.cart);
+  const { favoriteProductIds } = useAppSelector((state) => state.favorites);
+  const { isAuthenticated } = useAppSelector((state) => state.auth);
+  const isFavorite = favoriteProductIds.includes(product.id);
+
+  const handleToggleFavorite = (e: any) => {
+    e.stopPropagation();
+    if (!isAuthenticated) {
+      navigation.navigate('Profile' as never, { screen: 'Login' } as never);
+      return;
+    }
+    dispatch(toggleFavorite(product.id));
+  };
   
   // Vérifier si le produit est dans le panier
   const itemInCart = items.find(item => item.product.id === product.id);
@@ -83,6 +97,11 @@ const ProductCardDefault: React.FC<ProductCardDefaultProps> = ({ product }) => {
             <Text style={styles.unavailableBadgeText}>Indisponible</Text>
           </View>
         )}
+
+        {/* Bouton favori */}
+        <TouchableOpacity style={styles.favoriteButton} onPress={handleToggleFavorite} activeOpacity={0.8}>
+          <Ionicons name={isFavorite ? 'heart' : 'heart-outline'} size={18} color={isFavorite ? COLORS.DANGER : '#FFFFFF'} />
+        </TouchableOpacity>
       </View>
 
       <View style={styles.infoContainer}>
@@ -209,6 +228,17 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
     fontSize: 10,
     fontWeight: '700',
+  },
+  favoriteButton: {
+    position: 'absolute',
+    bottom: 8,
+    left: 8,
+    backgroundColor: 'rgba(0,0,0,0.35)',
+    borderRadius: 14,
+    width: 28,
+    height: 28,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   infoContainer: {
     padding: 12,

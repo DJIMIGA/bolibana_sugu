@@ -9,18 +9,28 @@ import {
   PURGE,
   REGISTER,
 } from 'redux-persist';
-import { createEncryptedStorage } from './encryptedStorage';
+import { createEncryptedStorage, warmEncryptionKey } from './encryptedStorage';
+
+// Pré-charger la clé avant la réhydratation des slices pour éviter
+// les appels SecureStore concurrents qui déclenchent le timeout redux-persist
+warmEncryptionKey();
 import authReducer from './slices/authSlice';
 import productReducer from './slices/productSlice';
 import cartReducer from './slices/cartSlice';
+import favoritesReducer from './slices/favoritesSlice';
 
 // Créer le storage chiffré personnalisé
 const encryptedStorage = createEncryptedStorage();
+
+// timeout: 0 désactive le timeout redux-persist (évite les warnings quand le
+// storage chiffré prend plus de 5s lors de la réhydratation simultanée des slices)
+const PERSIST_TIMEOUT = 0;
 
 // Configuration pour la slice auth
 const authPersistConfig = {
   key: 'auth',
   storage: encryptedStorage,
+  timeout: PERSIST_TIMEOUT,
   // token et refreshToken exclus : ils vivent uniquement dans expo-secure-store (hardware-backed)
   blacklist: ['isLoading', 'isLoggingIn', 'error', 'isLoadingLoyalty', 'sessionExpired', 'token', 'refreshToken'],
 };
@@ -29,6 +39,7 @@ const authPersistConfig = {
 const cartPersistConfig = {
   key: 'cart',
   storage: encryptedStorage,
+  timeout: PERSIST_TIMEOUT,
   blacklist: ['isLoading', 'error'],
 };
 
@@ -36,7 +47,16 @@ const cartPersistConfig = {
 const productPersistConfig = {
   key: 'product',
   storage: encryptedStorage,
+  timeout: PERSIST_TIMEOUT,
   blacklist: ['isLoading', 'isFetchingMore', 'isFetchingSimilarProducts', 'error'],
+};
+
+// Configuration pour la slice favorites
+const favoritesPersistConfig = {
+  key: 'favorites',
+  storage: encryptedStorage,
+  timeout: PERSIST_TIMEOUT,
+  blacklist: ['isLoading', 'isToggling', 'error'],
 };
 
 // Combinaison des reducers avec persistance individuelle
@@ -44,6 +64,7 @@ const rootReducer = combineReducers({
   auth: persistReducer(authPersistConfig, authReducer),
   product: persistReducer(productPersistConfig, productReducer),
   cart: persistReducer(cartPersistConfig, cartReducer),
+  favorites: persistReducer(favoritesPersistConfig, favoritesReducer),
 });
 
 // Configuration de la persistance racine (optionnelle si tout est géré au niveau slice)
