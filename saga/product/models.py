@@ -464,20 +464,26 @@ class Product(models.Model):
 
     def get_display_image_url(self):
         """Retourne l'URL de l'image à afficher (compatible avec les templates)"""
-        # Utiliser get_main_image_url() qui gère correctement les URLs S3 et B2B
+        # Priorité 1 : URLs B2B dans les spécifications (source principale)
+        if self.specifications and isinstance(self.specifications, dict):
+            b2b_url = self.specifications.get('b2b_image_url')
+            if b2b_url and isinstance(b2b_url, str):
+                return b2b_url
+            b2b_urls = self.specifications.get('b2b_image_urls')
+            if isinstance(b2b_urls, list) and b2b_urls:
+                return b2b_urls[0]
+
+        # Priorité 2 : image locale (S3/stockage)
         main_url = self.get_main_image_url()
         if main_url:
             return main_url
-            
+
+        # Priorité 3 : galerie
         display_image = self.get_display_image()
         if not display_image:
             return None
-        
-        # Si c'est une chaîne (URL B2B), la retourner directement
         if isinstance(display_image, str):
             return display_image
-        
-        # Sinon, c'est un ImageField, retourner son URL
         try:
             return display_image.url
         except (ValueError, AttributeError):
