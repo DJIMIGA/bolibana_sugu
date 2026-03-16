@@ -601,6 +601,8 @@ else:
         'https://www.bolibana.com',
         'https://sagakore-u67346.vm.elestio.app',
         'https://bolibana-sugu-d56937020d1c.herokuapp.com',
+        'http://localhost:3000',
+        'http://localhost:3001',
     ]
 
 # Application definition
