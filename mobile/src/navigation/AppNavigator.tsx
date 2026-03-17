@@ -110,10 +110,10 @@ const TabBarIcon: React.FC<{
 }> = ({ name, color, focused, badge }) => {
   return (
     <View style={styles.iconContainer}>
-      <Ionicons 
-        name={focused ? name : (`${name}-outline` as keyof typeof Ionicons.glyphMap)} 
-        size={24} 
-        color={color} 
+      <Ionicons
+        name={focused ? name : (`${name}-outline` as keyof typeof Ionicons.glyphMap)}
+        size={22}
+        color={color}
       />
       {badge !== undefined && badge > 0 && (
         <View style={styles.badge}>
@@ -137,9 +137,9 @@ const MainTabs = () => {
         tabBarActiveTintColor: '#10B981', // Vert
         tabBarInactiveTintColor: '#9CA3AF',
         tabBarStyle: {
-          height: Platform.OS === 'ios' ? 60 + insets.bottom : 60 + insets.bottom,
-          paddingBottom: insets.bottom > 0 ? insets.bottom : Platform.OS === 'ios' ? 10 : 8,
-          paddingTop: 8,
+          height: 50 + insets.bottom,
+          paddingBottom: insets.bottom > 0 ? insets.bottom : 2,
+          paddingTop: 4,
           backgroundColor: '#FFFFFF',
           borderTopWidth: 1,
           borderTopColor: '#E5E7EB',
@@ -153,12 +153,12 @@ const MainTabs = () => {
           shadowRadius: 8,
         },
         tabBarLabelStyle: {
-          fontSize: 12,
+          fontSize: 11,
           fontWeight: '600',
-          marginTop: 4,
+          marginTop: 0,
         },
         tabBarIconStyle: {
-          marginTop: 4,
+          marginTop: 0,
         },
         tabBarHideOnKeyboard: true,
       }}
@@ -480,21 +480,21 @@ const styles = StyleSheet.create({
   },
   badge: {
     position: 'absolute',
-    top: -6,
-    right: -10,
-    backgroundColor: '#EF4444', // Rouge
-    borderRadius: 10,
-    minWidth: 20,
-    height: 20,
-    paddingHorizontal: 6,
+    top: -4,
+    right: -8,
+    backgroundColor: '#EF4444',
+    borderRadius: 8,
+    minWidth: 16,
+    height: 16,
+    paddingHorizontal: 4,
     alignItems: 'center',
     justifyContent: 'center',
-    borderWidth: 2,
+    borderWidth: 1.5,
     borderColor: '#FFFFFF',
   },
   badgeText: {
     color: '#FFFFFF',
-    fontSize: 10,
+    fontSize: 9,
     fontWeight: '700',
   },
   modalOverlay: {

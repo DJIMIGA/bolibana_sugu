@@ -201,73 +201,15 @@ export const Header: React.FC<HeaderProps> = ({
     <View style={[styles.header, { paddingTop: insets.top + 6 }]}>
       <View style={styles.headerTop}>
         <View style={styles.logoContainer}>
-          <Logo variant="navbar" dimension={34} showText={false} />
+          <Logo variant="navbar" dimension={36} showText={false} />
         </View>
-        <View style={styles.offlineControls}>
-          {/* Bouton combiné : Indicateur + Switch */}
-          <TouchableOpacity
-            style={[styles.offlineIndicator, !isOnline && styles.offlineIndicatorActive]}
-            onPress={() => {
-              const stats = networkMonitor.getStats();
-              const report = networkMonitor.getReport();
-              
-              Alert.alert(
-                'État de connexion',
-                `Statut: ${isOnline ? 'En ligne' : 'Hors ligne'}\n` +
-                `Mode forcé: ${forceOffline ? 'Oui' : 'Non'}\n\n` +
-                `📊 Monitoring réseau:\n` +
-                `Total: ${stats.total}\n` +
-                `✅ Autorisées: ${stats.allowed}\n` +
-                `🚫 Bloquées: ${stats.blocked}\n\n` +
-                `${forceOffline ? '✅ Mode hors ligne actif - Aucune consommation de données' : '⚠️ Mode en ligne - Consommation de données active'}`,
-                [
-                  { text: 'OK' },
-                  {
-                    text: 'Rapport détaillé',
-                    onPress: () => {
-                      Alert.alert('Rapport détaillé', report);
-                    }
-                  }
-                ]
-              );
-            }}
-            activeOpacity={0.7}
-          >
-            <Ionicons 
-              name={isOnline ? "cloud" : "cloud-offline"} 
-              size={18} 
-              color={isOnline ? COLORS.PRIMARY : COLORS.WARNING} 
-            />
-            <Text style={[styles.offlineText, !isOnline && styles.offlineTextActive]}>
-              {isOnline ? 'En ligne' : 'Hors ligne'}
-            </Text>
-            {isDownloading ? (
-              <>
-                <ActivityIndicator size="small" color={isOnline ? COLORS.PRIMARY : COLORS.WARNING} style={{ marginLeft: 6 }} />
-                {downloadProgress > 0 && downloadProgress < 100 && (
-                  <Text style={styles.progressText}>{downloadProgress}%</Text>
-                )}
-              </>
-            ) : (
-              <TouchableOpacity
-                style={[styles.toggleButton, forceOffline && styles.toggleButtonOffline]}
-                onPress={async () => {
-                  if (forceOffline) {
-                    // Actuellement hors ligne → passer en ligne
-                    setForceOffline(false);
-                    await connectivityService.setForceOfflineMode(false);
-                  } else {
-                    // Actuellement en ligne → passer en hors ligne (télécharger puis basculer)
-                    handlePrepareOffline();
-                  }
-                }}
-                activeOpacity={0.7}
-              >
-                <View style={[styles.toggleIndicator, forceOffline && styles.toggleIndicatorOffline]} />
-              </TouchableOpacity>
-            )}
-          </TouchableOpacity>
-        </View>
+        <TouchableOpacity
+          style={styles.favoritesButton}
+          onPress={() => (navigation as any).navigate('Profile', { screen: 'Favorites' })}
+          activeOpacity={0.7}
+        >
+          <Ionicons name="heart-outline" size={22} color={COLORS.ACCENT} />
+        </TouchableOpacity>
       </View>
       {showSearch && (
         <View style={styles.searchContainer}>
@@ -321,6 +263,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 6,
     flex: 1,
+  },
+  favoritesButton: {
+    padding: 6,
   },
   offlineControls: {
     flexDirection: 'row',
