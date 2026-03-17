@@ -365,7 +365,7 @@ const SignupScreen: React.FC = () => {
                     style={styles.cgvLink}
                     onPress={() => {
                       (navigation as any).navigate('WebView', {
-                        url: 'https://www.bolibana.com/core/cgv/',
+                        slug: 'cgv',
                         title: 'Conditions Générales de Vente',
                       });
                     }}
@@ -377,7 +377,7 @@ const SignupScreen: React.FC = () => {
                     style={styles.cgvLink}
                     onPress={() => {
                       (navigation as any).navigate('WebView', {
-                        url: 'https://www.bolibana.com/core/terms-conditions/',
+                        slug: 'terms-conditions',
                         title: 'Mentions Légales',
                       });
                     }}

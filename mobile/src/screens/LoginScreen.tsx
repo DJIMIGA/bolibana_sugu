@@ -252,7 +252,7 @@ const LoginScreen: React.FC = () => {
                   const nav = navigation as any;
                   if (nav.navigate) {
                     nav.navigate('WebView', {
-                      url: 'https://www.bolibana.com/core/cgv/',
+                      slug: 'cgv',
                       title: 'Conditions Générales de Vente',
                     });
                   }
@@ -267,7 +267,7 @@ const LoginScreen: React.FC = () => {
                   const nav = navigation as any;
                   if (nav.navigate) {
                     nav.navigate('WebView', {
-                      url: 'https://www.bolibana.com/core/terms-conditions/',
+                      slug: 'terms-conditions',
                       title: 'Mentions Légales',
                     });
                   }

@@ -16,7 +16,6 @@ import { formatPrice, getProductImageUrl } from '../utils/helpers';
 import ProductImage from '../components/ProductImage';
 import apiClient from '../services/api';
 import type { ShippingAddress, CartItem, Product } from '../types';
-import * as WebBrowser from 'expo-web-browser';
 import LoadingSpinner from '../components/LoadingSpinner';
 import { fetchCart } from '../store/slices/cartSlice';
 

@@ -128,7 +128,7 @@ const SettingsScreen: React.FC = () => {
 
   const openStaticPage = (slug: string, title: string) => {
     (navigation as any).navigate('WebView', {
-      url: `https://www.bolibana.com/page/${slug}`,
+      slug,
       title,
     });
   };
