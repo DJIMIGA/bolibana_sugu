@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from product.models import Product, Category, ImageProduct, Phone, Favorite
+from product.models import Product, Category, ImageProduct, Phone, Favorite, Review
 import logging
 
 logger = logging.getLogger(__name__)
@@ -177,11 +177,12 @@ class ProductListSerializer(serializers.ModelSerializer):
     def get_images(self, obj):
         """Compat B2B: images[] (liste d'URLs)"""
         try:
+            fix = Product._fix_b2b_image_url
             # Priorité B2B: si la synchro a stocké les URLs externes, on les renvoie directement
             if obj.specifications and isinstance(obj.specifications, dict):
                 b2b_urls = obj.specifications.get('b2b_image_urls') or []
                 if isinstance(b2b_urls, list) and len(b2b_urls) > 0:
-                    return [u for u in b2b_urls if isinstance(u, str) and u]
+                    return [fix(u) for u in b2b_urls if isinstance(u, str) and u]
 
             urls = []
             if hasattr(obj, 'get_all_image_urls'):
@@ -387,10 +388,11 @@ class ProductDetailSerializer(serializers.ModelSerializer):
 
     def get_image_url(self, obj):
         try:
+            fix = Product._fix_b2b_image_url
             if obj.specifications and isinstance(obj.specifications, dict):
                 b2b_urls = obj.specifications.get('b2b_image_urls') or []
                 if isinstance(b2b_urls, list) and len(b2b_urls) > 0 and isinstance(b2b_urls[0], str):
-                    return b2b_urls[0]
+                    return fix(b2b_urls[0])
             url = obj.get_display_image_url() if hasattr(obj, 'get_display_image_url') else None
             return self._abs(url) if url else None
         except Exception:
@@ -398,11 +400,12 @@ class ProductDetailSerializer(serializers.ModelSerializer):
 
     def get_image_urls(self, obj):
         try:
+            fix = Product._fix_b2b_image_url
             if obj.specifications and isinstance(obj.specifications, dict):
                 b2b_urls = obj.specifications.get('b2b_image_urls') or []
                 if isinstance(b2b_urls, list) and len(b2b_urls) > 0:
-                    first = b2b_urls[0] if isinstance(b2b_urls[0], str) else None
-                    gallery = [u for u in b2b_urls if isinstance(u, str) and u]
+                    first = fix(b2b_urls[0]) if isinstance(b2b_urls[0], str) else None
+                    gallery = [fix(u) for u in b2b_urls if isinstance(u, str) and u]
                     return {'main': first, 'gallery': gallery}
 
             if hasattr(obj, 'get_all_image_urls'):
@@ -564,4 +567,24 @@ class PhoneSerializer(serializers.ModelSerializer):
     def get_color_code(self, obj):
         if obj.color:
             return obj.color.code
-        return None 
+        return None
+
+
+class ReviewSerializer(serializers.ModelSerializer):
+    user_name = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Review
+        fields = ['id', 'product', 'user', 'user_name', 'rating', 'comment', 'created_at']
+        read_only_fields = ['id', 'user', 'user_name', 'product', 'created_at']
+
+    def get_user_name(self, obj):
+        if obj.user:
+            name = obj.user.get_full_name()
+            return name if name else obj.user.email.split('@')[0]
+        return 'Anonyme'
+
+    def validate_rating(self, value):
+        if value < 1 or value > 5:
+            raise serializers.ValidationError('La note doit être entre 1 et 5.')
+        return value

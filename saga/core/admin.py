@@ -1,6 +1,6 @@
 from django.contrib import admin
 from django.utils.html import format_html
-from .models import SiteConfiguration, CookieConsent
+from .models import SiteConfiguration, CookieConsent, StaticPage
 
 class SiteConfigurationAdmin(admin.ModelAdmin):
     list_display = ['site_name', 'company_name', 'email', 'phone_number', 'maintenance_mode']
@@ -83,9 +83,19 @@ class CookieConsentAdmin(admin.ModelAdmin):
         # Permettre la suppression pour le nettoyage des données
         return True
 
+class StaticPageAdmin(admin.ModelAdmin):
+    list_display = ['title', 'slug', 'is_published', 'updated_at']
+    list_editable = ['is_published']
+    list_filter = ['is_published']
+    search_fields = ['title', 'slug', 'content']
+    prepopulated_fields = {'slug': ('title',)}
+    readonly_fields = ['created_at', 'updated_at']
+
+
 # Enregistrement différé pour éviter les problèmes d'import circulaire
 def register_admin_models(admin_site=None):
     if admin_site is None:
         from accounts.admin import admin_site
-    admin_site.register(SiteConfiguration, SiteConfigurationAdmin) 
-    admin_site.register(CookieConsent, CookieConsentAdmin) 
+    admin_site.register(SiteConfiguration, SiteConfigurationAdmin)
+    admin_site.register(CookieConsent, CookieConsentAdmin)
+    admin_site.register(StaticPage, StaticPageAdmin)

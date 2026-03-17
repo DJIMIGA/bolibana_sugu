@@ -462,16 +462,31 @@ class Product(models.Model):
         
         return None
 
+    @staticmethod
+    def _fix_b2b_image_url(url):
+        """Corrige les URLs B2B qui pointent vers le mauvais domaine S3.
+        Le stockage B2B utilise Minio (s3.bolibanastock.com), pas AWS S3."""
+        if not url or not isinstance(url, str):
+            return url
+        # Réécrire les anciennes URLs AWS vers le bon domaine Minio
+        if 'bolibana-stock.s3.' in url and 'amazonaws.com' in url:
+            import re
+            match = re.match(r'https?://bolibana-stock\.s3\.[^/]+\.amazonaws\.com/(.+)', url)
+            if match:
+                path = match.group(1)
+                url = f'https://s3.bolibanastock.com/bolibana-stock/{path}'
+        return url
+
     def get_display_image_url(self):
         """Retourne l'URL de l'image à afficher (compatible avec les templates)"""
         # Priorité 1 : URLs B2B dans les spécifications (source principale)
         if self.specifications and isinstance(self.specifications, dict):
             b2b_url = self.specifications.get('b2b_image_url')
             if b2b_url and isinstance(b2b_url, str):
-                return b2b_url
+                return self._fix_b2b_image_url(b2b_url)
             b2b_urls = self.specifications.get('b2b_image_urls')
             if isinstance(b2b_urls, list) and b2b_urls:
-                return b2b_urls[0]
+                return self._fix_b2b_image_url(b2b_urls[0])
 
         # Priorité 2 : image locale (S3/stockage)
         main_url = self.get_main_image_url()

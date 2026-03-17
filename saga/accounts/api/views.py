@@ -3,6 +3,8 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework_simplejwt.views import TokenObtainPairView
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
+from rest_framework_simplejwt.tokens import RefreshToken
+from rest_framework_simplejwt.exceptions import TokenError
 from django.shortcuts import get_object_or_404
 from django.contrib.auth import get_user_model
 from django.core import signing
@@ -77,8 +79,21 @@ class CustomTokenObtainPairView(TokenObtainPairView):
     def post(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
-        data = serializer.validated_data
         user = getattr(serializer, 'user', None)
+
+        # Si 2FA activée, ne pas envoyer les tokens tout de suite
+        if user and user.has_2fa_enabled():
+            # Générer un token temporaire signé (valide 5 min)
+            temp_token = signing.dumps(
+                {'user_id': user.id},
+                salt='2fa-login'
+            )
+            return Response({
+                'requires_2fa': True,
+                'temp_token': temp_token,
+            }, status=status.HTTP_200_OK)
+
+        data = serializer.validated_data
         if user:
             self._merge_anonymous_cart(request, user)
         return Response(data, status=status.HTTP_200_OK)
@@ -505,6 +520,29 @@ class ChangePasswordView(APIView):
         )
 
 
+class LogoutView(APIView):
+    """Déconnexion : blackliste le refresh token pour l'invalider."""
+    permission_classes = [permissions.IsAuthenticated]
+
+    def post(self, request):
+        refresh = request.data.get('refresh')
+        if not refresh:
+            return Response(
+                {'error': 'Le champ "refresh" est requis.'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        try:
+            token = RefreshToken(refresh)
+            token.blacklist()
+        except TokenError:
+            # Token déjà expiré ou invalide — on considère le logout réussi
+            pass
+        return Response(
+            {'message': 'Déconnexion réussie.'},
+            status=status.HTTP_200_OK
+        )
+
+
 class DeleteAccountView(APIView):
     """Vue pour supprimer le compte de l'utilisateur"""
     permission_classes = [permissions.IsAuthenticated]
@@ -548,5 +586,218 @@ class DeleteAccountView(APIView):
 
         return Response(
             {'message': 'Votre compte a été supprimé avec succès.'},
+            status=status.HTTP_200_OK
+        )
+
+
+# ========== 2FA API ==========
+
+class TwoFactorVerifyView(APIView):
+    """Vérifie le code TOTP après login et retourne les JWT tokens."""
+    permission_classes = [permissions.AllowAny]
+
+    def post(self, request):
+        temp_token = request.data.get('temp_token')
+        code = request.data.get('code')
+        if not temp_token or not code:
+            return Response(
+                {'error': 'Les champs "temp_token" et "code" sont requis.'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        # Décoder le token temporaire (5 min max)
+        try:
+            data = signing.loads(temp_token, salt='2fa-login', max_age=300)
+        except signing.BadSignature:
+            return Response(
+                {'error': 'Token temporaire invalide ou expiré.'},
+                status=status.HTTP_401_UNAUTHORIZED
+            )
+
+        user = get_object_or_404(Shopper, id=data['user_id'])
+
+        if not user.verify_2fa_code(code):
+            return Response(
+                {'error': 'Code 2FA invalide.'},
+                status=status.HTTP_401_UNAUTHORIZED
+            )
+
+        # Code valide — émettre les JWT
+        refresh = RefreshToken.for_user(user)
+        return Response({
+            'access': str(refresh.access_token),
+            'refresh': str(refresh),
+        }, status=status.HTTP_200_OK)
+
+
+class TwoFactorSetupView(APIView):
+    """Setup 2FA : retourne le secret TOTP et le QR code en base64."""
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request):
+        """Retourne le statut 2FA et le QR code si un device non confirmé existe."""
+        from django_otp.plugins.otp_totp.models import TOTPDevice
+        user = request.user
+
+        confirmed_device = TOTPDevice.objects.filter(user=user, confirmed=True).first()
+        if confirmed_device:
+            return Response({
+                'is_enabled': True,
+                'message': 'La 2FA est déjà activée.',
+            })
+
+        # Créer ou récupérer un device non confirmé
+        device = TOTPDevice.objects.filter(user=user, confirmed=False).first()
+        if not device:
+            device = TOTPDevice.objects.create(user=user, name='default', confirmed=False)
+
+        # Générer le QR code en base64
+        import qrcode, base64
+        from io import BytesIO
+        qr = qrcode.QRCode(version=1, box_size=10, border=4)
+        qr.add_data(device.config_url)
+        qr.make(fit=True)
+        img = qr.make_image(fill_color="black", back_color="white")
+        buffer = BytesIO()
+        img.save(buffer, format='PNG')
+        qr_b64 = base64.b64encode(buffer.getvalue()).decode()
+
+        return Response({
+            'is_enabled': False,
+            'qr_code': f'data:image/png;base64,{qr_b64}',
+            'secret': device.key,
+        })
+
+    def post(self, request):
+        """Confirme l'activation 2FA avec un code TOTP."""
+        from django_otp.plugins.otp_totp.models import TOTPDevice
+        code = request.data.get('code')
+        if not code:
+            return Response(
+                {'error': 'Le champ "code" est requis.'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        device = TOTPDevice.objects.filter(user=request.user, confirmed=False).first()
+        if not device:
+            return Response(
+                {'error': 'Aucun appareil 2FA en attente de confirmation.'},
+                status=status.HTTP_404_NOT_FOUND
+            )
+
+        if device.verify_token(code):
+            device.confirmed = True
+            device.save()
+            return Response({'message': '2FA activée avec succès.', 'is_enabled': True})
+        else:
+            return Response(
+                {'error': 'Code invalide.'},
+                status=status.HTTP_401_UNAUTHORIZED
+            )
+
+
+class TwoFactorDisableView(APIView):
+    """Désactive la 2FA après vérification du code TOTP."""
+    permission_classes = [permissions.IsAuthenticated]
+
+    def post(self, request):
+        from django_otp.plugins.otp_totp.models import TOTPDevice
+        code = request.data.get('code')
+        if not code:
+            return Response(
+                {'error': 'Le champ "code" est requis pour désactiver la 2FA.'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        device = TOTPDevice.objects.filter(user=request.user, confirmed=True).first()
+        if not device:
+            return Response(
+                {'error': 'La 2FA n\'est pas activée.'},
+                status=status.HTTP_404_NOT_FOUND
+            )
+
+        if device.verify_token(code):
+            device.delete()
+            return Response({'message': '2FA désactivée avec succès.', 'is_enabled': False})
+        else:
+            return Response(
+                {'error': 'Code invalide.'},
+                status=status.HTTP_401_UNAUTHORIZED
+            )
+
+
+# ========== PASSWORD RESET API ==========
+
+class PasswordResetRequestView(APIView):
+    """Envoie un email de reset mot de passe."""
+    permission_classes = [permissions.AllowAny]
+
+    def post(self, request):
+        from django.contrib.auth.forms import PasswordResetForm
+        email = request.data.get('email')
+        if not email:
+            return Response(
+                {'error': 'Le champ "email" est requis.'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        # Toujours retourner 200 pour ne pas révéler si l'email existe
+        form = PasswordResetForm(data={'email': email})
+        if form.is_valid():
+            form.save(
+                request=request,
+                use_https=request.is_secure(),
+                email_template_name='password_reset_email.html',
+                subject_template_name='password_reset_subject.txt',
+            )
+        return Response(
+            {'message': 'Si un compte existe avec cet email, un lien de réinitialisation a été envoyé.'},
+            status=status.HTTP_200_OK
+        )
+
+
+class PasswordResetConfirmView(APIView):
+    """Confirme le reset de mot de passe avec uid, token et nouveau mot de passe."""
+    permission_classes = [permissions.AllowAny]
+
+    def post(self, request):
+        from django.contrib.auth.tokens import default_token_generator
+        from django.utils.http import urlsafe_base64_decode
+
+        uid = request.data.get('uid')
+        token = request.data.get('token')
+        new_password = request.data.get('new_password')
+
+        if not uid or not token or not new_password:
+            return Response(
+                {'error': 'Les champs "uid", "token" et "new_password" sont requis.'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        try:
+            user_id = urlsafe_base64_decode(uid).decode()
+            user = User.objects.get(pk=user_id)
+        except (TypeError, ValueError, OverflowError, User.DoesNotExist):
+            return Response(
+                {'error': 'Lien de réinitialisation invalide.'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        if not default_token_generator.check_token(user, token):
+            return Response(
+                {'error': 'Le lien de réinitialisation a expiré ou est invalide.'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        if len(new_password) < 8:
+            return Response(
+                {'error': 'Le mot de passe doit contenir au moins 8 caractères.'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        user.set_password(new_password)
+        user.save()
+        return Response(
+            {'message': 'Votre mot de passe a été réinitialisé avec succès.'},
             status=status.HTTP_200_OK
         )

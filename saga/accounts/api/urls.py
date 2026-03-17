@@ -20,4 +20,11 @@ urlpatterns = [
     path('orders/', views.OrdersListView.as_view(), name='orders_list'),
     path('change-password/', views.ChangePasswordView.as_view(), name='change_password'),
     path('delete-account/', views.DeleteAccountView.as_view(), name='delete_account'),
+    # 2FA
+    path('2fa/verify/', views.TwoFactorVerifyView.as_view(), name='2fa_verify'),
+    path('2fa/setup/', views.TwoFactorSetupView.as_view(), name='2fa_setup'),
+    path('2fa/disable/', views.TwoFactorDisableView.as_view(), name='2fa_disable'),
+    # Password reset
+    path('password-reset/', views.PasswordResetRequestView.as_view(), name='password_reset_request'),
+    path('password-reset/confirm/', views.PasswordResetConfirmView.as_view(), name='password_reset_confirm'),
 ] 

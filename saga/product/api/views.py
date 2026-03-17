@@ -5,9 +5,9 @@ from django_filters.rest_framework import DjangoFilterBackend
 from django.db.models import Q, F
 from .serializers import (
     ProductListSerializer, ProductDetailSerializer,
-    CategorySerializer, PhoneSerializer, FavoriteSerializer
+    CategorySerializer, PhoneSerializer, FavoriteSerializer, ReviewSerializer
 )
-from product.models import Product, Category, Favorite
+from product.models import Product, Category, Favorite, Review
 from inventory.models import ExternalCategory
 from inventory.utils import get_synced_categories
 
@@ -271,6 +271,54 @@ class ProductViewSet(viewsets.ModelViewSet):
         
         serializer = ProductListSerializer(similar_products, many=True, context={'request': request})
         return Response(serializer.data)
+
+    @action(detail=True, methods=['get', 'post'], url_path='reviews')
+    def reviews(self, request, slug=None):
+        product = self.get_object()
+
+        if request.method == 'GET':
+            reviews = product.reviews.select_related('user').all()
+            serializer = ReviewSerializer(reviews, many=True)
+            avg = None
+            if reviews.exists():
+                avg = round(sum(r.rating for r in reviews) / reviews.count(), 1)
+            return Response({
+                'count': reviews.count(),
+                'average_rating': avg,
+                'results': serializer.data,
+            })
+
+        # POST — créer un avis
+        if not request.user.is_authenticated:
+            return Response(
+                {'error': 'Authentification requise.'},
+                status=status.HTTP_401_UNAUTHORIZED
+            )
+
+        # Vérifier achat
+        from cart.models import OrderItem
+        has_purchased = OrderItem.objects.filter(
+            order__user=request.user,
+            product=product,
+            order__is_paid=True
+        ).exists()
+        if not has_purchased:
+            return Response(
+                {'error': 'Vous devez avoir acheté ce produit pour laisser un avis.'},
+                status=status.HTTP_403_FORBIDDEN
+            )
+
+        # Vérifier doublon
+        if Review.objects.filter(user=request.user, product=product).exists():
+            return Response(
+                {'error': 'Vous avez déjà laissé un avis pour ce produit.'},
+                status=status.HTTP_409_CONFLICT
+            )
+
+        serializer = ReviewSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        serializer.save(user=request.user, product=product)
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
 
 
 class FavoriteViewSet(viewsets.ModelViewSet):

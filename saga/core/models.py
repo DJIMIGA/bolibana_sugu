@@ -97,6 +97,24 @@ class SiteConfiguration(models.Model):
         )
         return config 
 
+class StaticPage(models.Model):
+    """Page statique gérée depuis l'admin, exposée via API."""
+    slug = models.SlugField(max_length=100, unique=True, help_text="Identifiant unique (ex: cgv, about, help-center)")
+    title = models.CharField(max_length=200, help_text="Titre de la page")
+    content = models.TextField(blank=True, help_text="Contenu HTML de la page")
+    is_published = models.BooleanField(default=True, help_text="Page visible via l'API")
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        verbose_name = "Page statique"
+        verbose_name_plural = "Pages statiques"
+        ordering = ['title']
+
+    def __str__(self):
+        return self.title
+
+
 class CookieConsent(models.Model):
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, null=True, blank=True)
     session_id = models.CharField(max_length=100, null=True, blank=True)

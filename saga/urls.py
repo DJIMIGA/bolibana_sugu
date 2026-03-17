@@ -6,6 +6,7 @@ from django.conf.urls.static import static
 from django.http import JsonResponse
 from django.urls import path, include
 from rest_framework_simplejwt.views import TokenRefreshView, TokenVerifyView
+from accounts.api.views import LogoutView
 from accounts.admin import admin_site
 
 
@@ -35,7 +36,10 @@ urlpatterns = [
     # JWT endpoints
     path('api/token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
     path('api/token/verify/', TokenVerifyView.as_view(), name='token_verify'),
+    path('api/token/logout/', LogoutView.as_view(), name='token_logout'),
     path('price-checker/', include('price_checker.urls', namespace='price_checker')),
+    path('api/price-checker/', include('price_checker.api.urls')),
+    path('api/core/', include('core.api.urls')),
     path('core/', include('core.urls', namespace='core')),
     path('inventory/', include('inventory.urls', namespace='inventory')),
 ]
