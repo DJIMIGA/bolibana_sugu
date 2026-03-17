@@ -1,9 +1,9 @@
 import 'react-native-get-random-values'; // DOIT être le premier import pour crypto-js
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useEffect, useState } from 'react';
 import * as SplashScreen from 'expo-splash-screen';
 
-// Masquer immédiatement le splash screen natif pour utiliser notre composant personnalisé avec logo réduit
-SplashScreen.hideAsync().catch(() => {
+// Garder le splash screen natif visible jusqu'à ce que l'app soit prête
+SplashScreen.preventAutoHideAsync().catch(() => {
   /* ignore error */
 });
 
@@ -52,21 +52,15 @@ export default function App() {
 
   const isReady = appIsReady && persistBootstrapped;
 
-  const onLayoutRootView = useCallback(async () => {
-    if (isReady) {
-      await SplashScreen.hideAsync();
-    }
-  }, [isReady]);
-
   if (!isReady) {
     return <LoadingScreen />;
   }
 
   return (
-    <SafeAreaProvider onLayout={onLayoutRootView}>
+    <SafeAreaProvider>
       <ErrorBoundary>
         <Provider store={store}>
-          <PersistGate loading={null} persistor={persistor}>
+          <PersistGate loading={<LoadingScreen />} persistor={persistor}>
             <AppNavigator />
             <StatusBar style="dark" />
           </PersistGate>

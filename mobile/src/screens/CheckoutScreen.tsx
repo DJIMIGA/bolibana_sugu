@@ -19,7 +19,11 @@ import type { ShippingAddress, CartItem, Product } from '../types';
 import LoadingSpinner from '../components/LoadingSpinner';
 import { fetchCart } from '../store/slices/cartSlice';
 
-const PAYMENT_ALLOWED_DOMAINS = ['bolibana.com', 'www.bolibana.com', 'checkout.stripe.com', 'js.stripe.com'];
+const PAYMENT_ALLOWED_DOMAINS = [
+  'bolibana.com', 'www.bolibana.com',
+  'checkout.stripe.com', 'js.stripe.com', 'm.stripe.com',
+  'api.sandbox.orange.com', 'api.orange.com',
+];
 
 const isValidPaymentUrl = (rawUrl: string): boolean => {
   try {
@@ -370,21 +374,6 @@ const CheckoutScreen: React.FC = () => {
     }
   };
 
-  const refreshCartUntilEmpty = async (maxAttempts = 3, baseDelayMs = 800) => {
-    for (let attempt = 0; attempt < maxAttempts; attempt += 1) {
-      try {
-        const cart = await dispatch(fetchCart()).unwrap();
-        const itemsCount = Array.isArray(cart?.items) ? cart.items.length : 0;
-        if (itemsCount === 0) {
-          return;
-        }
-      } catch {
-        // Si la synchro échoue, on ne bloque pas le flux utilisateur
-      }
-      await new Promise(resolve => setTimeout(resolve, baseDelayMs * (attempt + 1)));
-    }
-  };
-
   const handlePlaceOrder = async () => {
     // Vérifier l'authentification avant de procéder
     if (!isAuthenticated) {
@@ -463,32 +452,18 @@ const CheckoutScreen: React.FC = () => {
           return;
         }
 
-        const checkoutUrls = orders
-          .map((order: any) => order.checkout_url)
-          .filter((url: string | undefined) => !!url);
-
-        for (const url of checkoutUrls) {
-          if (!isValidPaymentUrl(url)) {
-            if (__DEV__) console.warn('[CheckoutScreen] URL de paiement refusée:', url);
-            continue;
-          }
-          const result = await WebBrowser.openBrowserAsync(url, {
-            presentationStyle: WebBrowser.WebBrowserPresentationStyle.FULL_SCREEN,
-            controlsColor: COLORS.PRIMARY,
+        // Trouver la première URL de paiement valide
+        const firstOrder = orders.find((order: any) => order.checkout_url && isValidPaymentUrl(order.checkout_url));
+        if (firstOrder?.checkout_url) {
+          (navigation as any).navigate('PaymentWebView', {
+            checkout_url: firstOrder.checkout_url,
+            payment_method: paymentMethod,
           });
-          
-          
-          // Fermer explicitement le WebBrowser s'il est encore ouvert (cas result.type === 'opened')
-          try {
-            await WebBrowser.dismissBrowser();
-          } catch (e) {
-            // ignore
-          }
+        } else {
+          // Pas d'URL de paiement, rafraîchir et aller aux commandes
+          await dispatch(fetchCart());
+          (navigation as any).navigate('Profile', { screen: 'Orders' });
         }
-
-        // Rafraîchir le panier (retry pour laisser Stripe vider côté serveur)
-        await refreshCartUntilEmpty();
-        (navigation as any).navigate('Profile', { screen: 'Orders' });
         return;
       }
 
@@ -508,22 +483,10 @@ const CheckoutScreen: React.FC = () => {
       }
 
       if (checkout_url && isValidPaymentUrl(checkout_url)) {
-        const result = await WebBrowser.openBrowserAsync(checkout_url, {
-          presentationStyle: WebBrowser.WebBrowserPresentationStyle.FULL_SCREEN,
-          controlsColor: COLORS.PRIMARY,
+        (navigation as any).navigate('PaymentWebView', {
+          checkout_url,
+          payment_method: payment_method || paymentMethod,
         });
-        
-        
-        // Fermer explicitement le WebBrowser s'il est encore ouvert (cas result.type === 'opened')
-        try {
-          await WebBrowser.dismissBrowser();
-        } catch (e) {
-          // ignore
-        }
-
-        // Rafraîchir le panier (retry pour laisser Stripe vider côté serveur)
-        await refreshCartUntilEmpty();
-        (navigation as any).navigate('Profile', { screen: 'Orders' });
       }
     } catch (error: any) {
       const responseData = error?.response?.data;

@@ -2,6 +2,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { View, Text, StyleSheet, Platform, Modal, TouchableOpacity, Linking } from 'react-native';
 import { NavigationContainer, useNavigationContainerRef } from '@react-navigation/native';
 import * as WebBrowser from 'expo-web-browser';
+import * as SplashScreen from 'expo-splash-screen';
 import { createStackNavigator } from '@react-navigation/stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { Ionicons } from '@expo/vector-icons';
@@ -25,6 +26,7 @@ import ProfileScreen from '../screens/ProfileScreen';
 import CategoryScreen from '../screens/CategoryScreen';
 import SubCategoryScreen from '../screens/SubCategoryScreen';
 import WebViewScreen from '../screens/WebViewScreen';
+import PaymentWebViewScreen from '../screens/PaymentWebViewScreen';
 import PriceCheckScreen from '../screens/PriceCheckScreen';
 import AddressesScreen from '../screens/AddressesScreen';
 import AddAddressScreen from '../screens/AddAddressScreen';
@@ -81,6 +83,7 @@ const CartStack = () => (
   <Stack.Navigator screenOptions={{ headerShown: false }}>
     <Stack.Screen name="CartMain" component={CartScreen} />
     <Stack.Screen name="Checkout" component={CheckoutScreen} />
+    <Stack.Screen name="PaymentWebView" component={PaymentWebViewScreen} />
   </Stack.Navigator>
 );
 
@@ -261,6 +264,13 @@ const AppNavigator: React.FC = () => {
     // Charger l'utilisateur au démarrage
     dispatch(loadUserAsync());
   }, [dispatch]);
+
+  // Masquer le splash screen natif une fois que l'auth est chargée
+  useEffect(() => {
+    if (isLoading === false) {
+      SplashScreen.hideAsync().catch(() => {});
+    }
+  }, [isLoading]);
 
   useEffect(() => {
     if (isAuthenticated) {
