@@ -126,12 +126,11 @@ const SettingsScreen: React.FC = () => {
     );
   };
 
-  const handleAbout = () => {
-    Alert.alert(
-      'À propos',
-      BRAND.FULL_NAME,
-      [{ text: 'OK' }]
-    );
+  const openStaticPage = (slug: string, title: string) => {
+    (navigation as any).navigate('WebView', {
+      url: `https://www.bolibana.com/page/${slug}`,
+      title,
+    });
   };
 
   const handleSupport = () => {
@@ -179,20 +178,56 @@ const SettingsScreen: React.FC = () => {
         </View>
 
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Application</Text>
-          
-          <TouchableOpacity style={styles.menuItem} onPress={handleAbout}>
+          <Text style={styles.sectionTitle}>À propos</Text>
+
+          <TouchableOpacity style={styles.menuItem} onPress={() => openStaticPage('about-story', 'Notre Histoire')}>
             <View style={styles.menuItemLeft}>
-              <Ionicons name="information-circle-outline" size={24} color={COLORS.TEXT} />
-              <Text style={styles.menuItemText}>À propos</Text>
+              <Ionicons name="book-outline" size={24} color={COLORS.TEXT} />
+              <Text style={styles.menuItemText}>Notre histoire</Text>
+            </View>
+            <Ionicons name="chevron-forward" size={20} color={COLORS.TEXT_SECONDARY} />
+          </TouchableOpacity>
+
+          <TouchableOpacity style={styles.menuItem} onPress={() => openStaticPage('about-values', 'Nos Valeurs')}>
+            <View style={styles.menuItemLeft}>
+              <Ionicons name="heart-outline" size={24} color={COLORS.TEXT} />
+              <Text style={styles.menuItemText}>Nos valeurs</Text>
+            </View>
+            <Ionicons name="chevron-forward" size={20} color={COLORS.TEXT_SECONDARY} />
+          </TouchableOpacity>
+        </View>
+
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Aide</Text>
+
+          <TouchableOpacity style={styles.menuItem} onPress={() => openStaticPage('help-center', "Centre d'aide")}>
+            <View style={styles.menuItemLeft}>
+              <Ionicons name="help-circle-outline" size={24} color={COLORS.TEXT} />
+              <Text style={styles.menuItemText}>Centre d'aide</Text>
+            </View>
+            <Ionicons name="chevron-forward" size={20} color={COLORS.TEXT_SECONDARY} />
+          </TouchableOpacity>
+
+          <TouchableOpacity style={styles.menuItem} onPress={() => openStaticPage('help-returns', 'Retours et remboursements')}>
+            <View style={styles.menuItemLeft}>
+              <Ionicons name="swap-horizontal-outline" size={24} color={COLORS.TEXT} />
+              <Text style={styles.menuItemText}>Retours et remboursements</Text>
+            </View>
+            <Ionicons name="chevron-forward" size={20} color={COLORS.TEXT_SECONDARY} />
+          </TouchableOpacity>
+
+          <TouchableOpacity style={styles.menuItem} onPress={() => openStaticPage('help-warranty', 'Garantie qualité')}>
+            <View style={styles.menuItemLeft}>
+              <Ionicons name="shield-checkmark-outline" size={24} color={COLORS.TEXT} />
+              <Text style={styles.menuItemText}>Garantie qualité</Text>
             </View>
             <Ionicons name="chevron-forward" size={20} color={COLORS.TEXT_SECONDARY} />
           </TouchableOpacity>
 
           <TouchableOpacity style={styles.menuItem} onPress={handleSupport}>
             <View style={styles.menuItemLeft}>
-              <Ionicons name="help-circle-outline" size={24} color={COLORS.TEXT} />
-              <Text style={styles.menuItemText}>Aide et support</Text>
+              <Ionicons name="chatbubble-ellipses-outline" size={24} color={COLORS.TEXT} />
+              <Text style={styles.menuItemText}>Contacter le support</Text>
             </View>
             <Ionicons name="chevron-forward" size={20} color={COLORS.TEXT_SECONDARY} />
           </TouchableOpacity>

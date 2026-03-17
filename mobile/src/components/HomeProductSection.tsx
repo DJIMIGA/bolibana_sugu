@@ -81,7 +81,7 @@ const HomeProductSection: React.FC<HomeProductSectionProps> = ({
             <ProductCardInfo product={item} showBrand={true} showSpecs={false} compact={true} />
             <View style={styles.promoPriceContainer}>
               <View style={styles.promoPriceRow}>
-                <Text style={styles.promoNewPrice}>{formatPrice(item.discount_price || item.price)}</Text>
+                <Text style={styles.promoNewPrice} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.7}>{formatPrice(item.discount_price || item.price)}</Text>
                 {item.is_salam && (
                   <View style={styles.salamBadge}>
                     <Text style={styles.salamBadgeText}>SALAM</Text>
@@ -290,10 +290,11 @@ const styles = StyleSheet.create({
     marginBottom: 0,
   },
   promoNewPrice: {
-    fontSize: 17,
+    fontSize: 15,
     fontWeight: '900',
     color: COLORS.DANGER,
     letterSpacing: -0.3,
+    flexShrink: 1,
   },
   promoOldPrice: {
     fontSize: 11,

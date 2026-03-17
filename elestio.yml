@@ -4,6 +4,7 @@ ports:
     listeningPort: "443"
     targetPort: "8080"
     targetIP: "172.17.0.1"
+    # Frontend React (Nginx) sert le port 8080
     public: true
     path: "/"
     isAuth: false

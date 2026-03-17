@@ -529,7 +529,7 @@ const ProfileScreen: React.FC = () => {
           style={styles.menuItem}
           onPress={() => {
             (navigation as any).navigate('WebView', {
-              url: 'https://www.bolibana.com/core/cgv/',
+              url: 'https://www.bolibana.com/page/cgv',
               title: 'Conditions Générales de Vente',
             });
           }}
@@ -541,7 +541,7 @@ const ProfileScreen: React.FC = () => {
           style={styles.menuItem}
           onPress={() => {
             (navigation as any).navigate('WebView', {
-              url: 'https://www.bolibana.com/core/terms-conditions/',
+              url: 'https://www.bolibana.com/page/terms-conditions',
               title: 'Mentions Légales',
             });
           }}

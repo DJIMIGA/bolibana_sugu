@@ -42,6 +42,9 @@ export const API_ENDPOINTS = {
   FAVORITES: '/favorites/',
   FAVORITES_TOGGLE: '/favorites/toggle/',
   LOYALTY: '/loyalty/',
+  REVIEWS: (productSlug: string) => `/products/${productSlug}/reviews/`,
+  STATIC_PAGES: (slug: string) => `/core/static-pages/${slug}/`,
+  SITE_CONFIG: '/core/site-config/',
   CHANGE_PASSWORD: '/change-password/',
   DELETE_ACCOUNT: '/delete-account/',
   B2B: {

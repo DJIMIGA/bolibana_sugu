@@ -18,10 +18,19 @@ import { addToCart } from '../store/slices/cartSlice';
 import { toggleFavorite } from '../store/slices/favoritesSlice';
 import { useRoute, useNavigation } from '@react-navigation/native';
 import { formatPrice } from '../utils/helpers';
-import { COLORS } from '../utils/constants';
+import { COLORS, API_ENDPOINTS } from '../utils/constants';
 import { Product } from '../types';
 import DynamicProductCard from '../components/DynamicProductCard';
 import ProductImage from '../components/ProductImage';
+import apiClient from '../services/api';
+
+interface Review {
+  id: number;
+  user_name: string;
+  rating: number;
+  comment: string;
+  created_at: string;
+}
 
 const ProductDetailScreen: React.FC = () => {
   const dispatch = useAppDispatch();
@@ -34,6 +43,10 @@ const ProductDetailScreen: React.FC = () => {
   const { favoriteProductIds } = useAppSelector((state) => state.favorites);
   const [quantity, setQuantity] = useState(1);
   const [activeImageIndex, setActiveImageIndex] = useState(0);
+  const [reviews, setReviews] = useState<Review[]>([]);
+  const [reviewsCount, setReviewsCount] = useState(0);
+  const [reviewsAvg, setReviewsAvg] = useState<number | null>(null);
+  const [isLoadingReviews, setIsLoadingReviews] = useState(false);
   const slug = (route.params as any)?.slug;
 
   // Vérifier si le produit est déjà dans le panier
@@ -65,6 +78,24 @@ const ProductDetailScreen: React.FC = () => {
       dispatch(fetchSimilarProducts(selectedProduct.id));
     }
   }, [dispatch, selectedProduct?.id]);
+
+  // Charger les avis du produit
+  useEffect(() => {
+    if (slug) {
+      setIsLoadingReviews(true);
+      apiClient.get(API_ENDPOINTS.REVIEWS(slug))
+        .then((response) => {
+          const data = response.data;
+          setReviews(data.results || []);
+          setReviewsCount(data.count || 0);
+          setReviewsAvg(data.average_rating);
+        })
+        .catch(() => {
+          // Silently fail - reviews are not critical
+        })
+        .finally(() => setIsLoadingReviews(false));
+    }
+  }, [slug]);
 
   // Préparer la liste des images pour le carrousel (toujours appeler les hooks, même si selectedProduct est null)
   const images: string[] = useMemo(() => {
@@ -684,6 +715,84 @@ const ProductDetailScreen: React.FC = () => {
         </View>
       </View>
 
+      {/* Section Avis clients */}
+      <View style={styles.reviewsSection}>
+        <View style={styles.reviewsHeader}>
+          <MaterialIcons name="rate-review" size={24} color={COLORS.PRIMARY} />
+          <Text style={styles.reviewsSectionTitle}>Avis clients</Text>
+          {reviewsCount > 0 && (
+            <View style={styles.reviewsBadge}>
+              <Text style={styles.reviewsBadgeText}>{reviewsCount}</Text>
+            </View>
+          )}
+        </View>
+
+        {reviewsAvg !== null && reviewsCount > 0 && (
+          <View style={styles.reviewsSummary}>
+            <Text style={styles.reviewsAvgNumber}>{reviewsAvg.toFixed(1)}</Text>
+            <View style={styles.reviewsStarsRow}>
+              {[1, 2, 3, 4, 5].map((star) => (
+                <Ionicons
+                  key={star}
+                  name={star <= Math.round(reviewsAvg) ? 'star' : 'star-outline'}
+                  size={20}
+                  color={COLORS.SECONDARY}
+                />
+              ))}
+            </View>
+            <Text style={styles.reviewsCountText}>
+              {reviewsCount} avis
+            </Text>
+          </View>
+        )}
+
+        {isLoadingReviews ? (
+          <ActivityIndicator size="small" color={COLORS.PRIMARY} style={{ padding: 20 }} />
+        ) : reviews.length > 0 ? (
+          <View>
+            {reviews.slice(0, 5).map((review) => (
+              <View key={review.id} style={styles.reviewCard}>
+                <View style={styles.reviewCardHeader}>
+                  <View style={styles.reviewUserInfo}>
+                    <View style={styles.reviewAvatar}>
+                      <Text style={styles.reviewAvatarText}>
+                        {review.user_name.charAt(0).toUpperCase()}
+                      </Text>
+                    </View>
+                    <View>
+                      <Text style={styles.reviewUserName}>{review.user_name}</Text>
+                      <Text style={styles.reviewDate}>
+                        {new Date(review.created_at).toLocaleDateString('fr-FR', {
+                          day: 'numeric',
+                          month: 'long',
+                          year: 'numeric',
+                        })}
+                      </Text>
+                    </View>
+                  </View>
+                  <View style={styles.reviewStars}>
+                    {[1, 2, 3, 4, 5].map((star) => (
+                      <Ionicons
+                        key={star}
+                        name={star <= review.rating ? 'star' : 'star-outline'}
+                        size={14}
+                        color={COLORS.SECONDARY}
+                      />
+                    ))}
+                  </View>
+                </View>
+                <Text style={styles.reviewComment}>{review.comment}</Text>
+              </View>
+            ))}
+          </View>
+        ) : (
+          <View style={styles.noReviews}>
+            <Ionicons name="chatbubble-outline" size={32} color={COLORS.TEXT_SECONDARY} />
+            <Text style={styles.noReviewsText}>Aucun avis pour ce produit</Text>
+          </View>
+        )}
+      </View>
+
       {/* Produits similaires */}
       {similarProducts.length > 0 && (
         <View style={styles.similarProductsContainer}>
@@ -1155,6 +1264,120 @@ const styles = StyleSheet.create({
     color: COLORS.TEXT,
     marginLeft: 6,
     fontWeight: '600',
+  },
+  reviewsSection: {
+    marginTop: 8,
+    paddingHorizontal: 20,
+    paddingVertical: 24,
+    backgroundColor: '#FFFFFF',
+  },
+  reviewsHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  reviewsSectionTitle: {
+    fontSize: 22,
+    fontWeight: '800',
+    color: COLORS.TEXT,
+    marginLeft: 8,
+    flex: 1,
+  },
+  reviewsBadge: {
+    backgroundColor: COLORS.PRIMARY,
+    borderRadius: 12,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+  },
+  reviewsBadgeText: {
+    color: '#FFFFFF',
+    fontSize: 13,
+    fontWeight: '700',
+  },
+  reviewsSummary: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#F9FAFB',
+    padding: 16,
+    borderRadius: 12,
+    marginBottom: 16,
+    borderWidth: 1,
+    borderColor: '#F3F4F6',
+  },
+  reviewsAvgNumber: {
+    fontSize: 32,
+    fontWeight: '900',
+    color: COLORS.TEXT,
+    marginRight: 12,
+  },
+  reviewsStarsRow: {
+    flexDirection: 'row',
+    marginRight: 8,
+  },
+  reviewsCountText: {
+    fontSize: 14,
+    color: COLORS.TEXT_SECONDARY,
+    fontWeight: '600',
+  },
+  reviewCard: {
+    backgroundColor: '#F9FAFB',
+    borderRadius: 12,
+    padding: 16,
+    marginBottom: 12,
+    borderWidth: 1,
+    borderColor: '#F3F4F6',
+  },
+  reviewCardHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+    marginBottom: 10,
+  },
+  reviewUserInfo: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flex: 1,
+  },
+  reviewAvatar: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: COLORS.PRIMARY,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 10,
+  },
+  reviewAvatarText: {
+    color: '#FFFFFF',
+    fontSize: 16,
+    fontWeight: '700',
+  },
+  reviewUserName: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: COLORS.TEXT,
+  },
+  reviewDate: {
+    fontSize: 12,
+    color: COLORS.TEXT_SECONDARY,
+    marginTop: 2,
+  },
+  reviewStars: {
+    flexDirection: 'row',
+  },
+  reviewComment: {
+    fontSize: 14,
+    color: COLORS.TEXT,
+    lineHeight: 22,
+  },
+  noReviews: {
+    alignItems: 'center',
+    paddingVertical: 24,
+  },
+  noReviewsText: {
+    fontSize: 14,
+    color: COLORS.TEXT_SECONDARY,
+    marginTop: 8,
   },
   similarProductsContainer: {
     marginTop: 8,

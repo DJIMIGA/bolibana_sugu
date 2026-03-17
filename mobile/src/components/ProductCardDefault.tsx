@@ -110,11 +110,11 @@ const ProductCardDefault: React.FC<ProductCardDefaultProps> = ({ product }) => {
         <View style={styles.priceContainer}>
           {hasDiscount ? (
             <>
-              <Text style={styles.discountPrice}>{formatPrice(product.discount_price!)}</Text>
-              <Text style={styles.oldPrice}>{formatPrice(product.price)}</Text>
+              <Text style={styles.discountPrice} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.7}>{formatPrice(product.discount_price!)}</Text>
+              <Text style={styles.oldPrice} numberOfLines={1}>{formatPrice(product.price)}</Text>
             </>
           ) : (
-            <Text style={styles.price}>{formatPrice(product.price)}</Text>
+            <Text style={styles.price} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.7}>{formatPrice(product.price)}</Text>
           )}
         </View>
       </View>
@@ -242,6 +242,7 @@ const styles = StyleSheet.create({
   },
   infoContainer: {
     padding: 12,
+    flex: 1,
   },
   title: {
     fontSize: 14,
@@ -253,28 +254,31 @@ const styles = StyleSheet.create({
   },
   priceContainer: {
     flexDirection: 'row',
-    alignItems: 'center',
-    flexWrap: 'wrap',
-    marginTop: 4,
+    alignItems: 'baseline',
+    marginTop: 'auto',
+    paddingTop: 4,
   },
   price: {
-    fontSize: 18,
+    fontSize: 15,
     fontWeight: '900',
     color: COLORS.DANGER,
     letterSpacing: -0.3,
+    flexShrink: 1,
   },
   discountPrice: {
-    fontSize: 18,
+    fontSize: 15,
     fontWeight: '900',
     color: COLORS.DANGER,
     letterSpacing: -0.3,
-    marginRight: 8,
+    marginRight: 6,
+    flexShrink: 1,
   },
   oldPrice: {
-    fontSize: 12,
+    fontSize: 11,
     fontWeight: '600',
     color: COLORS.TEXT_SECONDARY,
     textDecorationLine: 'line-through',
+    flexShrink: 1,
   },
 });
 

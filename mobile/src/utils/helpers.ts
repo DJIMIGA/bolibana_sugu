@@ -1,6 +1,21 @@
 // Fonctions utilitaires
 import { MAX_RETRY_ATTEMPTS, RETRY_BACKOFF_BASE } from './constants';
+import { MEDIA_BASE_URL } from '../services/api';
 import { Product } from '../types';
+
+/**
+ * Assure qu'une URL d'image est absolue
+ */
+const ensureAbsoluteUrl = (url: string | undefined): string | undefined => {
+  if (!url) return undefined;
+  const trimmed = String(url).trim();
+  if (!trimmed) return undefined;
+  if (trimmed.startsWith('http://') || trimmed.startsWith('https://') || trimmed.startsWith('data:')) {
+    return trimmed;
+  }
+  const cleanUrl = trimmed.startsWith('/') ? trimmed.substring(1) : trimmed;
+  return `${MEDIA_BASE_URL}/${cleanUrl}`;
+};
 
 export const formatPrice = (price: number): string => {
   // Formater sans décimales (arrondir à l'entier)
@@ -158,14 +173,14 @@ export const cleanErrorForLog = (error: any): string => {
 export const getProductImageUrl = (product?: Product | null): string | undefined => {
   if (!product) return undefined;
   const main = product.image || product.image_urls?.main;
-  if (main && String(main).trim().length > 0) return main;
+  if (main && String(main).trim().length > 0) return ensureAbsoluteUrl(String(main));
   const galleryFirst = product.image_urls?.gallery?.[0];
-  if (galleryFirst && String(galleryFirst).trim().length > 0) return galleryFirst;
+  if (galleryFirst && String(galleryFirst).trim().length > 0) return ensureAbsoluteUrl(String(galleryFirst));
   const specs = product.specifications || {};
   const specsImage =
     (typeof specs.b2b_image_url === 'string' && specs.b2b_image_url) ||
     (Array.isArray(specs.b2b_image_urls) ? specs.b2b_image_urls[0] : undefined);
-  if (specsImage && String(specsImage).trim().length > 0) return specsImage;
+  if (specsImage && String(specsImage).trim().length > 0) return ensureAbsoluteUrl(String(specsImage));
   return undefined;
 };
 
