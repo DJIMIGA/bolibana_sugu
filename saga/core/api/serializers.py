@@ -29,7 +29,4 @@ class SiteConfigSerializer(serializers.ModelSerializer):
             'brand_primary_color', 'brand_secondary_color', 'brand_accent_color',
             'brand_tagline', 'brand_short_tagline',
             'meta_description', 'meta_keywords',
-            'about_story_title', 'about_values_title',
-            'service_loyalty_title', 'service_express_title',
-            'help_center_title', 'help_returns_title', 'help_warranty_title',
         ]

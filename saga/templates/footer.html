@@ -134,34 +134,24 @@
           <h3 class="text-xl font-semibold font-bitter text-gray-900 mb-4">À propos</h3>
           <ul class="space-y-3 text-base">
             <li><a href="{% url 'core:about' %}" class="text-gray-600 hover:text-green-600 transition-colors duration-300">À propos de nous</a></li>
-            {% if about_story_title %}
-            <li><a href="{% url 'core:about_story' %}" class="text-gray-600 hover:text-green-600 transition-colors duration-300">{{ about_story_title }}</a></li>
-            {% endif %}
-            {% if about_values_title %}
-            <li><a href="{% url 'core:about_values' %}" class="text-gray-600 hover:text-green-600 transition-colors duration-300">{{ about_values_title }}</a></li>
-            {% endif %}
+            <li><a href="{% url 'core:about_story' %}" class="text-gray-600 hover:text-green-600 transition-colors duration-300">Notre histoire</a></li>
+            <li><a href="{% url 'core:about_values' %}" class="text-gray-600 hover:text-green-600 transition-colors duration-300">Nos valeurs</a></li>
           </ul>
         </div>
         <div>
           <h3 class="text-xl font-semibold font-bitter text-gray-900 mb-4">Services</h3>
           <ul class="space-y-3 text-base">
-            <li><a href="{% url 'core:service_loyalty' %}" class="text-gray-600 hover:text-green-600 transition-colors duration-300">{{ service_loyalty_title|default:"Fidélité" }}</a></li>
-            <li><a href="{% url 'core:service_express' %}" class="text-gray-600 hover:text-green-600 transition-colors duration-300">{{ service_express_title|default:"Livraisons" }}</a></li>
+            <li><a href="{% url 'core:service_loyalty' %}" class="text-gray-600 hover:text-green-600 transition-colors duration-300">Fidélité</a></li>
+            <li><a href="{% url 'core:service_express' %}" class="text-gray-600 hover:text-green-600 transition-colors duration-300">Livraison express</a></li>
             <li><a href="{% url 'price_checker:check_price' %}" class="text-gray-600 hover:text-green-600 transition-colors duration-300">Comparateur de prix</a></li>
           </ul>
         </div>
         <div>
           <h3 class="text-xl font-semibold font-bitter text-gray-900 mb-4">Assistance</h3>
           <ul class="space-y-3 text-base">
-            {% if help_center_title %}
-            <li><a href="{% url 'core:help_center' %}" class="text-gray-600 hover:text-green-600 transition-colors duration-300">{{ help_center_title }}</a></li>
-            {% endif %}
-            {% if help_returns_title %}
-            <li><a href="{% url 'core:help_returns' %}" class="text-gray-600 hover:text-green-600 transition-colors duration-300">{{ help_returns_title }}</a></li>
-            {% endif %}
-            {% if help_warranty_title %}
-            <li><a href="{% url 'core:help_warranty' %}" class="text-gray-600 hover:text-green-600 transition-colors duration-300">{{ help_warranty_title }}</a></li>
-            {% endif %}
+            <li><a href="{% url 'core:help_center' %}" class="text-gray-600 hover:text-green-600 transition-colors duration-300">Centre d'aide</a></li>
+            <li><a href="{% url 'core:help_returns' %}" class="text-gray-600 hover:text-green-600 transition-colors duration-300">Retours faciles</a></li>
+            <li><a href="{% url 'core:help_warranty' %}" class="text-gray-600 hover:text-green-600 transition-colors duration-300">Garantie qualité</a></li>
           </ul>
         </div>
         <div>

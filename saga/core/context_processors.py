@@ -53,26 +53,6 @@ def site_config(request):
             'site_meta_description': config.meta_description,
             'site_meta_keywords': config.meta_keywords,
             
-            # Contenu personnalisable du footer - À propos
-            'about_story_title': config.about_story_title,
-            'about_story_content': config.about_story_content,
-            'about_values_title': config.about_values_title,
-            'about_values_content': config.about_values_content,
-            
-            # Contenu personnalisable du footer - Services
-            'service_loyalty_title': config.service_loyalty_title,
-            'service_loyalty_content': config.service_loyalty_content,
-            'service_express_title': config.service_express_title,
-            'service_express_content': config.service_express_content,
-            
-            # Contenu personnalisable du footer - Assistance
-            'help_center_title': config.help_center_title,
-            'help_center_content': config.help_center_content,
-            'help_returns_title': config.help_returns_title,
-            'help_returns_content': config.help_returns_content,
-            'help_warranty_title': config.help_warranty_title,
-            'help_warranty_content': config.help_warranty_content,
-            
             # Année courante
             'current_year': datetime.now().year,
         }
@@ -123,26 +103,6 @@ def site_config(request):
             # Métadonnées SEO
             'site_meta_description': '',
             'site_meta_keywords': '',
-            
-            # Contenu personnalisable du footer - À propos
-            'about_story_title': 'Notre histoire',
-            'about_story_content': '',
-            'about_values_title': 'Nos valeurs',
-            'about_values_content': '',
-            
-            # Contenu personnalisable du footer - Services
-            'service_loyalty_title': 'Fidélité Bolibana',
-            'service_loyalty_content': '',
-            'service_express_title': 'Livraison express',
-            'service_express_content': '',
-            
-            # Contenu personnalisable du footer - Assistance
-            'help_center_title': 'Centre d\'aide',
-            'help_center_content': '',
-            'help_returns_title': 'Retours faciles',
-            'help_returns_content': '',
-            'help_warranty_title': 'Garantie qualité',
-            'help_warranty_content': '',
             
             # Année courante
             'current_year': datetime.now().year,

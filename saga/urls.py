@@ -15,15 +15,15 @@ def health_check(request):
     return JsonResponse({"status": "ok"})
 
 
-# Chemin d'accès admin sécurisé
-ADMIN_URL = settings.ADMIN_URL
+# Chemin d'accès admin sécurisé (toujours avec trailing slash)
+ADMIN_URL = settings.ADMIN_URL.rstrip('/') + '/'
 
 urlpatterns = [
     # Healthcheck (doit être avant tout middleware d'authentification)
     path('health/', health_check, name='health_check'),
 
     # URL d'administration personnalisée avec 2FA
-    path(f'{settings.ADMIN_URL}', admin_site.urls),
+    path(ADMIN_URL, admin_site.urls),
     
     # Autres URLs
     path('accounts/', include('accounts.urls')),

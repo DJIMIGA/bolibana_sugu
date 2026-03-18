@@ -309,6 +309,14 @@ export const logoutAsync = createAsyncThunk(
   'auth/logout',
   async (_, { rejectWithValue }) => {
     try {
+      // Désinscrire le push token avant la déconnexion
+      try {
+        const { notificationService } = await import('../../services/notificationService');
+        await notificationService.unregisterToken();
+      } catch {
+        // Silencieux : ne bloque pas le logout
+      }
+
       // Appeler l'endpoint de déconnexion si disponible
       try {
         await apiClient.post(API_ENDPOINTS.AUTH.LOGOUT);

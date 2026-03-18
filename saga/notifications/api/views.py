@@ -2,8 +2,8 @@ from rest_framework import status
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from notifications.models import PushToken
-from .serializers import PushTokenSerializer, NotificationPreferencesSerializer
+from notifications.models import PushToken, Notification
+from .serializers import PushTokenSerializer, NotificationPreferencesSerializer, NotificationSerializer
 
 
 class RegisterPushTokenView(APIView):
@@ -56,3 +56,32 @@ class NotificationPreferencesView(APIView):
         return Response({
             'notifications_enabled': request.user.notifications_enabled,
         })
+
+
+class NotificationListView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        notifications = Notification.objects.filter(user=request.user)[:50]
+        serializer = NotificationSerializer(notifications, many=True)
+        unread_count = Notification.objects.filter(user=request.user, is_read=False).count()
+        return Response({
+            'notifications': serializer.data,
+            'unread_count': unread_count,
+        })
+
+
+class NotificationMarkReadView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def patch(self, request, pk):
+        Notification.objects.filter(pk=pk, user=request.user).update(is_read=True)
+        return Response({'status': 'ok'})
+
+
+class NotificationMarkAllReadView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        Notification.objects.filter(user=request.user, is_read=False).update(is_read=True)
+        return Response({'status': 'ok'})

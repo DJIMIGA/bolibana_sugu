@@ -33,15 +33,6 @@ class SiteConfigurationAdmin(admin.ModelAdmin):
                        'brand_tagline', 'brand_short_tagline'),
             'description': 'Couleurs et identite de marque BoliBana (vert #008000, or #FFD700, rouge #EF4444)'
         }),
-        ('Contenu - À propos', {
-            'fields': ('about_story_title', 'about_story_content', 'about_values_title', 'about_values_content')
-        }),
-        ('Contenu - Services', {
-            'fields': ('service_loyalty_title', 'service_loyalty_content', 'service_express_title', 'service_express_content')
-        }),
-        ('Contenu - Assistance', {
-            'fields': ('help_center_title', 'help_center_content', 'help_returns_title', 'help_returns_content', 'help_warranty_title', 'help_warranty_content')
-        }),
     )
     
     def has_add_permission(self, request):

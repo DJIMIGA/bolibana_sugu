@@ -667,7 +667,7 @@ MIDDLEWARE = [
     'axes.middleware.AxesMiddleware',  # Middleware Axes pour la protection brute-force
     'core.middleware.MaintenanceModeMiddleware',  # Après AuthenticationMiddleware pour accéder à request.user
     'django_otp.middleware.OTPMiddleware',  # Middleware OTP juste après AuthenticationMiddleware
-    'saga.middleware.AdminIPRestrictionMiddleware',  # Middleware de restriction IP
+    # 'saga.middleware.AdminIPRestrictionMiddleware',  # Désactivé — admin protégé par 2FA + URL secrète
     'inventory.middleware.AutoSyncB2BMiddleware',  # Synchronisation automatique des produits B2B
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',

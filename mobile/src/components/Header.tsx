@@ -23,6 +23,7 @@ import { Alert, ActivityIndicator, Keyboard } from 'react-native';
 import { offlineCacheService } from '../services/offlineCacheService';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { networkMonitor } from '../utils/networkMonitor';
+import NotificationBell from './NotificationBell';
 
 interface HeaderProps {
   searchQuery?: string;
@@ -203,13 +204,19 @@ export const Header: React.FC<HeaderProps> = ({
         <View style={styles.logoContainer}>
           <Logo variant="navbar" dimension={36} showText={false} />
         </View>
-        <TouchableOpacity
-          style={styles.favoritesButton}
-          onPress={() => (navigation as any).navigate('Profile', { screen: 'Favorites' })}
-          activeOpacity={0.7}
-        >
-          <Ionicons name="heart-outline" size={22} color={COLORS.ACCENT} />
-        </TouchableOpacity>
+        <View style={styles.headerActions}>
+          <NotificationBell
+            onPress={() => (navigation as any).navigate('Profile', { screen: 'Notifications' })}
+            color={COLORS.TEXT}
+          />
+          <TouchableOpacity
+            style={styles.favoritesButton}
+            onPress={() => (navigation as any).navigate('Profile', { screen: 'Favorites' })}
+            activeOpacity={0.7}
+          >
+            <Ionicons name="heart-outline" size={22} color={COLORS.ACCENT} />
+          </TouchableOpacity>
+        </View>
       </View>
       {showSearch && (
         <View style={styles.searchContainer}>
@@ -263,6 +270,10 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 6,
     flex: 1,
+  },
+  headerActions: {
+    flexDirection: 'row',
+    alignItems: 'center',
   },
   favoritesButton: {
     padding: 6,

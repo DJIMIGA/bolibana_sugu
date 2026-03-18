@@ -14,6 +14,9 @@ import * as WebBrowser from 'expo-web-browser';
 import { COLORS, API_ENDPOINTS } from '../utils/constants';
 import { formatWeightQuantity, formatPrice } from '../utils/helpers';
 import apiClient from '../services/api';
+import { useAppDispatch } from '../store/hooks';
+import { clearUnreadCount } from '../store/slices/notificationSlice';
+import { notificationService } from '../services/notificationService';
 import LoadingSpinner from '../components/LoadingSpinner';
 
 type OrderItemLite = {
@@ -67,6 +70,7 @@ const FILTER_OPTIONS: { value: FilterStatus; label: string }[] = [
 const OrdersScreen: React.FC = () => {
   const navigation = useNavigation();
   const route = useRoute<any>();
+  const notifDispatch = useAppDispatch();
   const [orders, setOrders] = useState<OrderLite[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
@@ -166,6 +170,10 @@ const OrdersScreen: React.FC = () => {
     React.useCallback(() => {
       isScreenFocusedRef.current = true;
       loadOrders();
+
+      // Effacer le badge de notifications
+      notifDispatch(clearUnreadCount());
+      notificationService.setBadgeCount(0);
 
       // Tenter de fermer le WebBrowser s'il est encore ouvert (retour paiement sur Android)
       const closeBrowserTimer = setTimeout(async () => {

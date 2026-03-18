@@ -57,6 +57,9 @@ export const API_ENDPOINTS = {
     REGISTER_TOKEN: '/notifications/register-token/',
     UNREGISTER_TOKEN: '/notifications/unregister-token/',
     PREFERENCES: '/notifications/preferences/',
+    LIST: '/notifications/',
+    MARK_READ: (id: number) => `/notifications/${id}/read/`,
+    MARK_ALL_READ: '/notifications/mark-all-read/',
   },
 } as const;
 

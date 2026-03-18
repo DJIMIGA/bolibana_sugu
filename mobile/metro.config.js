@@ -5,10 +5,9 @@ process.env.EXPO_NO_TELEMETRY = '1';
 // Désactiver la vérification des versions des modules natifs
 process.env.EXPO_NO_VERSION_CHECK = '1';
 
-const { getDefaultConfig } = require('expo/metro-config');
-const { withSentryConfig } = require('@sentry/react-native/metro');
+const { getSentryExpoConfig } = require('@sentry/react-native/metro');
 
-const config = getDefaultConfig(__dirname);
+const config = getSentryExpoConfig(__dirname);
 
 // Configuration pour améliorer la compatibilité Windows
 config.watchFolders = [__dirname];
@@ -31,7 +30,7 @@ config.server = {
   },
 };
 
-module.exports = withSentryConfig(config);
+module.exports = config;
 
 
 

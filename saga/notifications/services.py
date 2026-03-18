@@ -1,6 +1,6 @@
 import logging
 import requests
-from .models import PushToken
+from .models import PushToken, Notification
 
 logger = logging.getLogger('saga.notifications')
 
@@ -10,8 +10,14 @@ EXPO_PUSH_URL = 'https://exp.host/--/api/v2/push/send'
 def send_push_notification(user, title, body, data=None):
     """
     Envoie une notification push à tous les appareils actifs d'un utilisateur
-    via l'API Expo Push. Ne lève jamais d'exception.
+    via l'API Expo Push et stocke la notification en base. Ne lève jamais d'exception.
     """
+    # Toujours stocker la notification en base (même si push désactivé)
+    try:
+        Notification.objects.create(user=user, title=title, body=body, data=data or {})
+    except Exception:
+        logger.warning("Impossible de stocker la notification pour %s", user.email, exc_info=True)
+
     if not getattr(user, 'notifications_enabled', True):
         return
 

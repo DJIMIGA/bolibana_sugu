@@ -8,6 +8,7 @@ import {
   Modal,
   TextInput,
   Alert,
+  Switch,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { COLORS, API_ENDPOINTS, BRAND } from '../utils/constants';
@@ -15,6 +16,7 @@ import apiClient from '../services/api';
 import { useNavigation } from '@react-navigation/native';
 import { useDispatch, useSelector } from 'react-redux';
 import { logoutAsync } from '../store/slices/authSlice';
+import { setNotificationsEnabled } from '../store/slices/notificationSlice';
 import { RootState } from '../store/store';
 import LoadingSpinner from '../components/LoadingSpinner';
 
@@ -22,8 +24,24 @@ const SettingsScreen: React.FC = () => {
   const navigation = useNavigation();
   const dispatch = useDispatch();
   const { isReadOnly } = useSelector((state: RootState) => state.auth);
+  const notificationsEnabled = useSelector((state: RootState) => state.notification?.notificationsEnabled ?? true);
   const [isPasswordModalVisible, setIsPasswordModalVisible] = React.useState(false);
   const [isLoading, setIsLoading] = React.useState(false);
+  const [isTogglingNotif, setIsTogglingNotif] = React.useState(false);
+
+  const handleToggleNotifications = async (value: boolean) => {
+    setIsTogglingNotif(true);
+    try {
+      await apiClient.patch(API_ENDPOINTS.NOTIFICATIONS.PREFERENCES, {
+        notifications_enabled: value,
+      });
+      dispatch(setNotificationsEnabled(value));
+    } catch {
+      Alert.alert('Erreur', 'Impossible de mettre à jour les préférences de notifications.');
+    } finally {
+      setIsTogglingNotif(false);
+    }
+  };
   const [passwordForm, setPasswordForm] = React.useState({
     current_password: '',
     new_password: '',
@@ -175,6 +193,23 @@ const SettingsScreen: React.FC = () => {
             </View>
             <Ionicons name="chevron-forward" size={20} color={COLORS.TEXT_SECONDARY} />
           </TouchableOpacity>
+        </View>
+
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Notifications</Text>
+          <View style={styles.menuItem}>
+            <View style={styles.menuItemLeft}>
+              <Ionicons name="notifications-outline" size={24} color={COLORS.TEXT} />
+              <Text style={styles.menuItemText}>Notifications push</Text>
+            </View>
+            <Switch
+              value={notificationsEnabled}
+              onValueChange={handleToggleNotifications}
+              disabled={isTogglingNotif}
+              trackColor={{ false: '#D1D5DB', true: COLORS.PRIMARY }}
+              thumbColor="#FFFFFF"
+            />
+          </View>
         </View>
 
         <View style={styles.section}>

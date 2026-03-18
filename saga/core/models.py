@@ -53,26 +53,6 @@ class SiteConfiguration(models.Model):
     brand_tagline = models.CharField(max_length=200, default="Votre intermédiaire expert du marché", help_text="Slogan de la marque")
     brand_short_tagline = models.CharField(max_length=100, default="SuGu", help_text="Sous-titre court de la marque")
     
-    # Contenu personnalisable du footer - À propos
-    about_story_title = models.CharField(max_length=100, default="Notre histoire", help_text="Titre du lien 'Notre histoire'")
-    about_story_content = models.TextField(blank=True, help_text="Contenu de la page 'Notre histoire'")
-    about_values_title = models.CharField(max_length=100, default="Nos valeurs", help_text="Titre du lien 'Nos valeurs'")
-    about_values_content = models.TextField(blank=True, help_text="Contenu de la page 'Nos valeurs'")
-    
-    # Contenu personnalisable du footer - Services
-    service_loyalty_title = models.CharField(max_length=100, default="Fidélité Bolibana", help_text="Titre du lien 'Fidélité Bolibana'")
-    service_loyalty_content = models.TextField(blank=True, help_text="Contenu de la page 'Fidélité Bolibana'")
-    service_express_title = models.CharField(max_length=100, default="Livraison express", help_text="Titre du lien 'Livraison express'")
-    service_express_content = models.TextField(blank=True, help_text="Contenu de la page 'Livraison express'")
-    
-    # Contenu personnalisable du footer - Assistance
-    help_center_title = models.CharField(max_length=100, default="Centre d'aide", help_text="Titre du lien 'Centre d'aide'")
-    help_center_content = models.TextField(blank=True, help_text="Contenu de la page 'Centre d'aide'")
-    help_returns_title = models.CharField(max_length=100, default="Retours faciles", help_text="Titre du lien 'Retours faciles'")
-    help_returns_content = models.TextField(blank=True, help_text="Contenu de la page 'Retours faciles'")
-    help_warranty_title = models.CharField(max_length=100, default="Garantie qualité", help_text="Titre du lien 'Garantie qualité'")
-    help_warranty_content = models.TextField(blank=True, help_text="Contenu de la page 'Garantie qualité'")
-    
     class Meta:
         verbose_name = "Configuration du site"
         verbose_name_plural = "Configuration du site"

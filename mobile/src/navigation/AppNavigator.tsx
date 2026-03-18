@@ -3,6 +3,7 @@ import { View, Text, StyleSheet, Platform, Modal, TouchableOpacity, Linking } fr
 import { NavigationContainer, useNavigationContainerRef } from '@react-navigation/native';
 import * as WebBrowser from 'expo-web-browser';
 import * as SplashScreen from 'expo-splash-screen';
+import * as Notifications from 'expo-notifications';
 import { createStackNavigator } from '@react-navigation/stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { Ionicons } from '@expo/vector-icons';
@@ -10,7 +11,10 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useAppSelector, useAppDispatch } from '../store/hooks';
 import { loadUserAsync } from '../store/slices/authSlice';
 import { fetchFavorites } from '../store/slices/favoritesSlice';
+import { incrementUnreadCount, clearUnreadCount, setPermissionGranted } from '../store/slices/notificationSlice';
+import { notificationService } from '../services/notificationService';
 import { LoadingScreen } from '../components/LoadingScreen';
+import NotificationBell from '../components/NotificationBell';
 import { COLORS } from '../utils/constants';
 import Logo from '../components/Logo';
 
@@ -35,6 +39,7 @@ import OrderDetailScreen from '../screens/OrderDetailScreen';
 import SettingsScreen from '../screens/SettingsScreen';
 import LoyaltyScreen from '../screens/LoyaltyScreen';
 import FavoritesScreen from '../screens/FavoritesScreen';
+import NotificationsScreen from '../screens/NotificationsScreen';
 
 const Stack = createStackNavigator();
 const Tab = createBottomTabNavigator();
@@ -101,6 +106,7 @@ const ProfileStack = () => (
     <Stack.Screen name="Settings" component={SettingsScreen} />
     <Stack.Screen name="Loyalty" component={LoyaltyScreen} />
     <Stack.Screen name="Favorites" component={FavoritesScreen} />
+    <Stack.Screen name="Notifications" component={NotificationsScreen} />
   </Stack.Navigator>
 );
 
@@ -132,6 +138,7 @@ const MainTabs = () => {
   const insets = useSafeAreaInsets();
   const cart = useAppSelector((state) => state.cart);
   const itemsCount = cart?.itemsCount || 0;
+  const unreadCount = useAppSelector((state) => state.notification?.unreadCount || 0);
 
   return (
     <Tab.Navigator
@@ -223,12 +230,13 @@ const MainTabs = () => {
           ),
         }}
       />
-      <Tab.Screen 
-        name="Profile" 
+      <Tab.Screen
+        name="Profile"
         component={ProfileStack}
-        options={{ 
+        options={{
           tabBarLabel: 'Profil',
           unmountOnBlur: true,
+          tabBarBadge: unreadCount > 0 ? unreadCount : undefined,
           tabBarIcon: ({ color, focused }) => (
             <TabBarIcon name="person" color={color} focused={focused} />
           ),
@@ -281,6 +289,63 @@ const AppNavigator: React.FC = () => {
         dispatch(fetchFavorites());
       }
     }
+  }, [isAuthenticated, isLoading]);
+
+  // Push notifications : enregistrer le token et écouter les notifications
+  useEffect(() => {
+    if (!isAuthenticated || isLoading !== false) return;
+
+    let mounted = true;
+
+    const setupNotifications = async () => {
+      const token = await notificationService.registerForPushNotifications();
+      if (!mounted) return;
+      dispatch(setPermissionGranted(!!token));
+      if (token) {
+        await notificationService.sendTokenToBackend(token);
+      }
+    };
+
+    setupNotifications();
+
+    // Callback quand une notification est reçue en foreground
+    notificationService.setOnReceivedCallback(() => {
+      dispatch(incrementUnreadCount());
+    });
+
+    // Callback quand une notification est tappée
+    notificationService.setOnTapCallback((data) => {
+      if (data?.type === 'order_status' && data?.order_id && navigationRef.isReady()) {
+        dispatch(clearUnreadCount());
+        notificationService.setBadgeCount(0);
+        navigationRef.navigate('Profile' as never, {
+          screen: 'OrderDetail',
+          params: { orderId: data.order_id },
+        } as never);
+      }
+    });
+
+    notificationService.startListening();
+
+    // Gérer le cold start (notification tappée quand l'app était tuée)
+    const lastResponse = Notifications.getLastNotificationResponse();
+    if (lastResponse) {
+      const data = lastResponse.notification.request.content.data;
+      if (data?.type === 'order_status' && data?.order_id && navigationRef.isReady()) {
+        dispatch(clearUnreadCount());
+        notificationService.setBadgeCount(0);
+        Notifications.clearLastNotificationResponse();
+        navigationRef.navigate('Profile' as never, {
+          screen: 'OrderDetail',
+          params: { orderId: data.order_id },
+        } as never);
+      }
+    }
+
+    return () => {
+      mounted = false;
+      notificationService.stopListening();
+    };
   }, [isAuthenticated, isLoading]);
 
   useEffect(() => {
@@ -401,8 +466,12 @@ const AppNavigator: React.FC = () => {
     return <LoadingScreen />;
   }
 
+  // Écrans où le Header intègre déjà la cloche (pas besoin du floating bell)
+  const screensWithHeaderBell = ['Home', 'Notifications'];
+  const showFloatingBell = isAuthenticated && currentRouteName && !screensWithHeaderBell.includes(currentRouteName);
+
   return (
-    <>
+    <View style={styles.rootContainer}>
       <NavigationContainer
         ref={navigationRef}
         linking={linking}
@@ -423,6 +492,15 @@ const AppNavigator: React.FC = () => {
       >
         <RootStack />
       </NavigationContainer>
+      {showFloatingBell && (
+        <FloatingNotificationBell
+          onPress={() => {
+            if (navigationRef.isReady()) {
+              navigationRef.navigate('Profile' as never, { screen: 'Notifications' } as never);
+            }
+          }}
+        />
+      )}
       <Modal
         visible={isAuthModalVisible}
         animationType="fade"
@@ -475,11 +553,46 @@ const AppNavigator: React.FC = () => {
           </View>
         </View>
       </Modal>
-    </>
+    </View>
+  );
+};
+
+// Cloche flottante positionnée en haut à droite sur toutes les pages
+const FloatingNotificationBell: React.FC<{ onPress: () => void }> = ({ onPress }) => {
+  const insets = useSafeAreaInsets();
+  const unreadCount = useAppSelector((state) => state.notification?.unreadCount || 0);
+
+  return (
+    <View style={[styles.floatingBellContainer, { top: insets.top + 8 }]}>
+      <TouchableOpacity
+        onPress={onPress}
+        activeOpacity={0.7}
+        style={[
+          styles.floatingBell,
+          unreadCount > 0 && styles.floatingBellActive,
+        ]}
+      >
+        <Ionicons
+          name={unreadCount > 0 ? 'notifications' : 'notifications-outline'}
+          size={20}
+          color={unreadCount > 0 ? '#FFFFFF' : COLORS.TEXT}
+        />
+        {unreadCount > 0 && (
+          <View style={styles.floatingBellBadge}>
+            <Text style={styles.floatingBellBadgeText}>
+              {unreadCount > 99 ? '99+' : unreadCount}
+            </Text>
+          </View>
+        )}
+      </TouchableOpacity>
+    </View>
   );
 };
 
 const styles = StyleSheet.create({
+  rootContainer: {
+    flex: 1,
+  },
   container: {
     flex: 1,
   },
@@ -573,6 +686,49 @@ const styles = StyleSheet.create({
     color: COLORS.TEXT_SECONDARY,
     fontSize: 14,
     fontWeight: '500',
+  },
+  floatingBellContainer: {
+    position: 'absolute',
+    right: 12,
+    zIndex: 999,
+  },
+  floatingBell: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: '#FFFFFF',
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.15,
+    shadowRadius: 4,
+    elevation: 4,
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
+  },
+  floatingBellActive: {
+    backgroundColor: COLORS.PRIMARY,
+    borderColor: COLORS.PRIMARY,
+  },
+  floatingBellBadge: {
+    position: 'absolute',
+    top: -4,
+    right: -4,
+    backgroundColor: '#EF4444',
+    borderRadius: 9,
+    minWidth: 18,
+    height: 18,
+    paddingHorizontal: 4,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1.5,
+    borderColor: '#FFFFFF',
+  },
+  floatingBellBadgeText: {
+    color: '#FFFFFF',
+    fontSize: 10,
+    fontWeight: '700',
   },
 });
 
