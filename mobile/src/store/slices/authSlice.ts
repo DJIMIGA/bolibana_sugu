@@ -1,6 +1,7 @@
 import { createSlice, createAsyncThunk, PayloadAction } from '@reduxjs/toolkit';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as SecureStore from 'expo-secure-store';
+import * as Sentry from '@sentry/react-native';
 import apiClient, { setSessionExpiredCallback } from '../../services/api';
 import { STORAGE_KEYS, API_ENDPOINTS, SESSION_EXPIRY, CACHE_TTL } from '../../utils/constants';
 import { User, LoyaltyInfo, CacheItem } from '../../types';
@@ -364,6 +365,11 @@ const authSlice = createSlice({
         state.error = null;
         state.sessionExpired = false;
         state.isLoading = false;
+        // Identifier l'utilisateur dans Sentry pour le crash reporting
+        Sentry.setUser({
+          id: String(action.payload.user.id),
+          email: action.payload.user.email,
+        });
       })
       .addCase(loginAsync.rejected, (state, action) => {
         state.isLoggingIn = false;
@@ -465,6 +471,8 @@ const authSlice = createSlice({
         state.loyaltyInfo = null;
         state.isLoyaltyStale = false;
         state.loyaltyLastUpdated = null;
+        // Supprimer le contexte utilisateur de Sentry
+        Sentry.setUser(null);
       });
   },
 });

@@ -1,4 +1,5 @@
 import { AxiosError } from 'axios';
+import * as Sentry from '@sentry/react-native';
 import { ApiError } from '../types';
 
 export enum ErrorSeverity {
@@ -259,10 +260,22 @@ class ErrorService {
     }
 
     this.logs.push(errorLog);
-    
+
     // Garder seulement les 100 derniers logs
     if (this.logs.length > 100) {
       this.logs = this.logs.slice(-100);
+    }
+
+    // Envoyer les erreurs HIGH et CRITICAL à Sentry
+    if (errorLog.severity === ErrorSeverity.HIGH || errorLog.severity === ErrorSeverity.CRITICAL) {
+      Sentry.withScope((scope) => {
+        scope.setTag('error.type', errorLog.type);
+        scope.setTag('error.severity', errorLog.severity);
+        if (errorLog.details) {
+          scope.setExtras(errorLog.details);
+        }
+        Sentry.captureMessage(errorLog.message, errorLog.severity === ErrorSeverity.CRITICAL ? 'fatal' : 'error');
+      });
     }
 
     // Logging console en développement (sauf pour les erreurs de mode hors ligne)

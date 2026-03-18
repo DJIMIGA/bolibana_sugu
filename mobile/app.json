@@ -38,7 +38,10 @@
               "host": "payment-success"
             }
           ],
-          "category": ["BROWSABLE", "DEFAULT"]
+          "category": [
+            "BROWSABLE",
+            "DEFAULT"
+          ]
         },
         {
           "action": "VIEW",
@@ -55,7 +58,10 @@
               "pathPrefix": "/api/cart/payment-callback"
             }
           ],
-          "category": ["BROWSABLE", "DEFAULT"]
+          "category": [
+            "BROWSABLE",
+            "DEFAULT"
+          ]
         }
       ]
     },
@@ -68,6 +74,13 @@
         "expo-camera",
         {
           "cameraPermission": "Autoriser l'accès à la caméra pour scanner les codes-barres"
+        }
+      ],
+      [
+        "@sentry/react-native",
+        {
+          "organization": "VOTRE_ORG_SENTRY",
+          "project": "bolibana-sugu"
         }
       ]
     ],

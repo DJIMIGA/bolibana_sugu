@@ -6,6 +6,7 @@ process.env.EXPO_NO_TELEMETRY = '1';
 process.env.EXPO_NO_VERSION_CHECK = '1';
 
 const { getDefaultConfig } = require('expo/metro-config');
+const { withSentryConfig } = require('@sentry/react-native/metro');
 
 const config = getDefaultConfig(__dirname);
 
@@ -30,7 +31,7 @@ config.server = {
   },
 };
 
-module.exports = config;
+module.exports = withSentryConfig(config);
 
 
 

@@ -1,5 +1,6 @@
 import React, { Component, ErrorInfo, ReactNode } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import * as Sentry from '@sentry/react-native';
 import { errorService } from '../services/errorService';
 import { COLORS } from '../utils/constants';
 import Logo from './Logo';
@@ -30,7 +31,14 @@ export class ErrorBoundary extends Component<Props, State> {
   }
 
   componentDidCatch(error: Error, errorInfo: ErrorInfo) {
-    // Logger l'erreur
+    // Envoyer l'erreur à Sentry avec le component stack
+    Sentry.withScope((scope) => {
+      scope.setTag('source', 'ErrorBoundary');
+      scope.setExtra('componentStack', errorInfo.componentStack);
+      Sentry.captureException(error);
+    });
+
+    // Logger l'erreur localement
     errorService.log({
       message: error.message,
       type: 'unknown' as any,
