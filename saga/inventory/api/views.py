@@ -684,7 +684,45 @@ def b2b_order_status_webhook(request):
         order.metadata = metadata
         
         order.save()
-        
+
+        # Envoyer une notification push si le statut a changé
+        if old_status != status_value and order.user:
+            try:
+                from notifications.services import send_push_notification
+                notif_messages = {
+                    Order.CONFIRMED: (
+                        'Commande confirmée !',
+                        f'Votre commande #{order_number} a été confirmée.',
+                    ),
+                    Order.SHIPPED: (
+                        'Commande expédiée !',
+                        f'Votre commande #{order_number} est en cours de livraison.',
+                    ),
+                    Order.DELIVERED: (
+                        'Commande livrée !',
+                        f'Votre commande #{order_number} a été livrée. Merci !',
+                    ),
+                }
+                msg = notif_messages.get(status_value)
+                if msg:
+                    send_push_notification(
+                        user=order.user,
+                        title=msg[0],
+                        body=msg[1],
+                        data={
+                            'type': 'order_status',
+                            'order_id': order.id,
+                            'order_number': order_number,
+                            'status': status_value,
+                        },
+                    )
+            except Exception:
+                logger.warning(
+                    "[B2B Webhook] Push notification échouée pour commande %s",
+                    order_number,
+                    exc_info=True,
+                )
+
         # Log de succès détaillé
         logger.info(
             f"[B2B Webhook] ✅ Statut commande {order_number} mis à jour avec succès: "

@@ -33,6 +33,7 @@ urlpatterns = [
     path('api/', include('accounts.api.urls')),
     path('api/cart/', include('cart.api.urls')),
     path('api/inventory/', include('inventory.api.urls')),
+    path('api/notifications/', include('notifications.api.urls')),
     # JWT endpoints
     path('api/token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
     path('api/token/verify/', TokenVerifyView.as_view(), name='token_verify'),

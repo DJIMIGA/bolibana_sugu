@@ -200,3 +200,10 @@ export interface CacheItem<T> {
   version: string;
 }
 
+export interface PushNotificationData {
+  type: 'order_status';
+  order_id: number;
+  order_number: string;
+  status: string;
+}
+

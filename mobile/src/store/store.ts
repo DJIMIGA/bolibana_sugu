@@ -18,6 +18,7 @@ import authReducer from './slices/authSlice';
 import productReducer from './slices/productSlice';
 import cartReducer from './slices/cartSlice';
 import favoritesReducer from './slices/favoritesSlice';
+import notificationReducer from './slices/notificationSlice';
 
 // Créer le storage chiffré personnalisé
 const encryptedStorage = createEncryptedStorage();
@@ -59,12 +60,20 @@ const favoritesPersistConfig = {
   blacklist: ['isLoading', 'isToggling', 'error'],
 };
 
+// Configuration pour la slice notification
+const notificationPersistConfig = {
+  key: 'notification',
+  storage: encryptedStorage,
+  timeout: PERSIST_TIMEOUT,
+};
+
 // Combinaison des reducers avec persistance individuelle
 const rootReducer = combineReducers({
   auth: persistReducer(authPersistConfig, authReducer),
   product: persistReducer(productPersistConfig, productReducer),
   cart: persistReducer(cartPersistConfig, cartReducer),
   favorites: persistReducer(favoritesPersistConfig, favoritesReducer),
+  notification: persistReducer(notificationPersistConfig, notificationReducer),
 });
 
 // Configuration de la persistance racine (optionnelle si tout est géré au niveau slice)

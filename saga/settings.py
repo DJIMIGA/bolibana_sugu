@@ -645,6 +645,7 @@ INSTALLED_APPS = [
     'django_otp.plugins.otp_static',
     'axes',
     'simple_history',
+    'notifications',
 ]
 
 # Configuration Crispy Forms

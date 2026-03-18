@@ -66,6 +66,7 @@ class Shopper(AbstractUser):
         help_text="Photo de profil de l'utilisateur"
     )
     date_of_birth = models.DateField(null=True, blank=True, verbose_name="Date de naissance")
+    notifications_enabled = models.BooleanField(default=True, verbose_name="Notifications push activées")
     USERNAME_FIELD = "email"
     REQUIRED_FIELDS = []
     objects = CustomUserManager()

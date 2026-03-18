@@ -53,6 +53,11 @@ export const API_ENDPOINTS = {
     PRODUCTS: '/inventory/products/synced/',
     CATEGORIES: '/inventory/categories/synced/',
   },
+  NOTIFICATIONS: {
+    REGISTER_TOKEN: '/notifications/register-token/',
+    UNREGISTER_TOKEN: '/notifications/unregister-token/',
+    PREFERENCES: '/notifications/preferences/',
+  },
 } as const;
 
 export const COLORS = {

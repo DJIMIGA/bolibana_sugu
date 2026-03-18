@@ -82,6 +82,13 @@
           "organization": "djimiga-tech",
           "project": "react-native"
         }
+      ],
+      [
+        "expo-notifications",
+        {
+          "icon": "./assets/app-logo.png",
+          "color": "#008000"
+        }
       ]
     ],
     "extra": {
