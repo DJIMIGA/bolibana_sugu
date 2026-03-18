@@ -2,6 +2,8 @@ import { createSlice, createAsyncThunk, PayloadAction } from '@reduxjs/toolkit';
 import apiClient from '../../services/api';
 import { API_ENDPOINTS } from '../../utils/constants';
 import { Product } from '../../types';
+import { logoutAsync } from './authSlice';
+import { mapProductFromBackend } from '../../utils/mappers';
 
 interface Favorite {
   id: number;
@@ -30,7 +32,12 @@ export const fetchFavorites = createAsyncThunk(
   async (_, { rejectWithValue }) => {
     try {
       const response = await apiClient.get(API_ENDPOINTS.FAVORITES);
-      return response.data.results ?? response.data;
+      const raw = response.data.results ?? response.data;
+      // Mapper chaque produit imbriqué pour normaliser image/image_urls
+      return (raw as any[]).map((fav) => ({
+        ...fav,
+        product: mapProductFromBackend(fav.product),
+      }));
     } catch (error: any) {
       // Silencieux : ne pas afficher d'erreur si l'endpoint n'est pas encore disponible
       return rejectWithValue(null);
@@ -93,6 +100,14 @@ const favoritesSlice = createSlice({
       .addCase(toggleFavorite.rejected, (state, action) => {
         state.isToggling = false;
         state.error = action.payload as string;
+      })
+      // Logout : vider les favoris
+      .addCase(logoutAsync.fulfilled, (state) => {
+        state.favorites = [];
+        state.favoriteProductIds = [];
+        state.isLoading = false;
+        state.isToggling = false;
+        state.error = null;
       });
   },
 });

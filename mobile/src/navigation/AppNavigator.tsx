@@ -14,7 +14,6 @@ import { fetchFavorites } from '../store/slices/favoritesSlice';
 import { incrementUnreadCount, clearUnreadCount, setPermissionGranted } from '../store/slices/notificationSlice';
 import { notificationService } from '../services/notificationService';
 import { LoadingScreen } from '../components/LoadingScreen';
-import NotificationBell from '../components/NotificationBell';
 import { COLORS } from '../utils/constants';
 import Logo from '../components/Logo';
 
@@ -466,10 +465,6 @@ const AppNavigator: React.FC = () => {
     return <LoadingScreen />;
   }
 
-  // Écrans où le Header intègre déjà la cloche (pas besoin du floating bell)
-  const screensWithHeaderBell = ['Home', 'Notifications'];
-  const showFloatingBell = isAuthenticated && currentRouteName && !screensWithHeaderBell.includes(currentRouteName);
-
   return (
     <View style={styles.rootContainer}>
       <NavigationContainer
@@ -492,15 +487,6 @@ const AppNavigator: React.FC = () => {
       >
         <RootStack />
       </NavigationContainer>
-      {showFloatingBell && (
-        <FloatingNotificationBell
-          onPress={() => {
-            if (navigationRef.isReady()) {
-              navigationRef.navigate('Profile' as never, { screen: 'Notifications' } as never);
-            }
-          }}
-        />
-      )}
       <Modal
         visible={isAuthModalVisible}
         animationType="fade"
@@ -557,43 +543,8 @@ const AppNavigator: React.FC = () => {
   );
 };
 
-// Cloche flottante positionnée en haut à droite sur toutes les pages
-const FloatingNotificationBell: React.FC<{ onPress: () => void }> = ({ onPress }) => {
-  const insets = useSafeAreaInsets();
-  const unreadCount = useAppSelector((state) => state.notification?.unreadCount || 0);
-
-  return (
-    <View style={[styles.floatingBellContainer, { top: insets.top + 8 }]}>
-      <TouchableOpacity
-        onPress={onPress}
-        activeOpacity={0.7}
-        style={[
-          styles.floatingBell,
-          unreadCount > 0 && styles.floatingBellActive,
-        ]}
-      >
-        <Ionicons
-          name={unreadCount > 0 ? 'notifications' : 'notifications-outline'}
-          size={20}
-          color={unreadCount > 0 ? '#FFFFFF' : COLORS.TEXT}
-        />
-        {unreadCount > 0 && (
-          <View style={styles.floatingBellBadge}>
-            <Text style={styles.floatingBellBadgeText}>
-              {unreadCount > 99 ? '99+' : unreadCount}
-            </Text>
-          </View>
-        )}
-      </TouchableOpacity>
-    </View>
-  );
-};
-
 const styles = StyleSheet.create({
   rootContainer: {
-    flex: 1,
-  },
-  container: {
     flex: 1,
   },
   iconContainer: {
@@ -686,49 +637,6 @@ const styles = StyleSheet.create({
     color: COLORS.TEXT_SECONDARY,
     fontSize: 14,
     fontWeight: '500',
-  },
-  floatingBellContainer: {
-    position: 'absolute',
-    right: 12,
-    zIndex: 999,
-  },
-  floatingBell: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: '#FFFFFF',
-    alignItems: 'center',
-    justifyContent: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.15,
-    shadowRadius: 4,
-    elevation: 4,
-    borderWidth: 1,
-    borderColor: '#E5E7EB',
-  },
-  floatingBellActive: {
-    backgroundColor: COLORS.PRIMARY,
-    borderColor: COLORS.PRIMARY,
-  },
-  floatingBellBadge: {
-    position: 'absolute',
-    top: -4,
-    right: -4,
-    backgroundColor: '#EF4444',
-    borderRadius: 9,
-    minWidth: 18,
-    height: 18,
-    paddingHorizontal: 4,
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderWidth: 1.5,
-    borderColor: '#FFFFFF',
-  },
-  floatingBellBadgeText: {
-    color: '#FFFFFF',
-    fontSize: 10,
-    fontWeight: '700',
   },
 });
 

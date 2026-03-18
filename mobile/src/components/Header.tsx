@@ -204,19 +204,21 @@ export const Header: React.FC<HeaderProps> = ({
         <View style={styles.logoContainer}>
           <Logo variant="navbar" dimension={36} showText={false} />
         </View>
-        <View style={styles.headerActions}>
-          <NotificationBell
-            onPress={() => (navigation as any).navigate('Profile', { screen: 'Notifications' })}
-            color={COLORS.TEXT}
-          />
-          <TouchableOpacity
-            style={styles.favoritesButton}
-            onPress={() => (navigation as any).navigate('Profile', { screen: 'Favorites' })}
-            activeOpacity={0.7}
-          >
-            <Ionicons name="heart-outline" size={22} color={COLORS.ACCENT} />
-          </TouchableOpacity>
-        </View>
+        {isAuthenticated && (
+          <View style={styles.headerActions}>
+            <NotificationBell
+              onPress={() => (navigation as any).navigate('Profile', { screen: 'Notifications' })}
+              color={COLORS.TEXT}
+            />
+            <TouchableOpacity
+              style={styles.favoritesButton}
+              onPress={() => (navigation as any).navigate('Profile', { screen: 'Favorites' })}
+              activeOpacity={0.7}
+            >
+              <Ionicons name="heart-outline" size={22} color={COLORS.ACCENT} />
+            </TouchableOpacity>
+          </View>
+        )}
       </View>
       {showSearch && (
         <View style={styles.searchContainer}>
