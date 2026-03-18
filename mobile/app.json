@@ -79,8 +79,8 @@
       [
         "@sentry/react-native",
         {
-          "organization": "VOTRE_ORG_SENTRY",
-          "project": "bolibana-sugu"
+          "organization": "djimiga-tech",
+          "project": "react-native"
         }
       ]
     ],

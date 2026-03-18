@@ -27,8 +27,8 @@
       },
       "env": {
         "EXPO_PUBLIC_API_BASE_URL": "https://www.bolibana.com/api",
-        "SENTRY_ORG": "VOTRE_ORG_SENTRY",
-        "SENTRY_PROJECT": "bolibana-sugu"
+        "SENTRY_ORG": "djimiga-tech",
+        "SENTRY_PROJECT": "react-native"
       }
     },
     "production": {
@@ -41,8 +41,8 @@
       },
       "env": {
         "EXPO_PUBLIC_API_BASE_URL": "https://www.bolibana.com/api",
-        "SENTRY_ORG": "VOTRE_ORG_SENTRY",
-        "SENTRY_PROJECT": "bolibana-sugu"
+        "SENTRY_ORG": "djimiga-tech",
+        "SENTRY_PROJECT": "react-native"
       }
     }
   },

@@ -5,8 +5,7 @@ import * as SplashScreen from 'expo-splash-screen';
 
 // Initialiser Sentry le plus tôt possible
 Sentry.init({
-  // TODO: Remplacez par votre DSN Sentry (https://sentry.io → Projet → Settings → Client Keys)
-  dsn: process.env.EXPO_PUBLIC_SENTRY_DSN || '',
+  dsn: 'https://beac9b41c658da8a086143d450ca80cd@o4511064272732160.ingest.de.sentry.io/4511064274305104',
   enabled: !__DEV__, // Désactivé en développement
   tracesSampleRate: 0.2, // 20% des transactions pour le monitoring de performance
   attachScreenshot: true, // Capture d'écran lors des crashes
