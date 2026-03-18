@@ -44,8 +44,11 @@ fi
 echo "🔨 Rebuild de l'image web (code Django, templates, etc.)..."
 docker compose -f "$COMPOSE_FILE" build --no-cache web
 
-echo "🔄 Redémarrage du conteneur web..."
-docker compose -f "$COMPOSE_FILE" up -d --force-recreate web
+echo "🔨 Rebuild du frontend React..."
+docker compose -f "$COMPOSE_FILE" build --no-cache frontend
+
+echo "🔄 Redémarrage des conteneurs web + frontend..."
+docker compose -f "$COMPOSE_FILE" up -d --force-recreate web frontend
 
 echo ""
 echo "🧹 Nettoyage (sans toucher aux volumes ni aux conteneurs en cours)..."
