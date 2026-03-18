@@ -76,34 +76,34 @@
         {% endif %}
 
         <!-- Prix et boutons d'action -->
-        <div class="mt-2 sm:mt-2">
+        <div class="mt-auto pt-2">
             <!-- Prix -->
             <div class="mb-2 sm:mb-0">
                 {% if product.discount_price %}
                     <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between">
-                        <div class="flex flex-col gap-0.5">
-                            <p class="text-xs text-gray-400 line-through sm:text-sm" aria-label="Prix original: {{ product.format_price }}">
+                        <div class="flex flex-col gap-0.5 min-w-0">
+                            <p class="text-xs text-gray-400 line-through sm:text-sm truncate" aria-label="Prix original: {{ product.format_price }}">
                                 {{ product.format_price }}
                             </p>
-                            <p class="text-lg sm:text-lg text-red-500 font-bold" aria-label="Prix promotionnel: {{ product.format_discount_price }}">
+                            <p class="text-base sm:text-lg text-red-500 font-bold truncate" aria-label="Prix promotionnel: {{ product.format_discount_price }}">
                                 {{ product.format_discount_price }}
                             </p>
                         </div>
                         <!-- Boutons d'action sur desktop -->
-                        <div class="hidden sm:flex items-center gap-3">
+                        <div class="hidden sm:flex items-center gap-3 flex-shrink-0">
                             {% include 'suppliers/components/_favorite_card_button.html' with product=product %}
                             {% include 'suppliers/components/_add_to_cart_card_button.html' with product=product %}
                         </div>
                     </div>
                 {% else %}
                     <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between">
-                        <div class="flex flex-col gap-0.5">
-                            <p class="text-lg sm:text-lg text-red-500 font-bold" aria-label="Prix: {{ product.format_price }}">
+                        <div class="flex flex-col gap-0.5 min-w-0">
+                            <p class="text-base sm:text-lg text-red-500 font-bold truncate" aria-label="Prix: {{ product.format_price }}">
                                 {{ product.format_price }}
                             </p>
                         </div>
                         <!-- Boutons d'action sur desktop -->
-                        <div class="hidden sm:flex items-center gap-3">
+                        <div class="hidden sm:flex items-center gap-3 flex-shrink-0">
                             {% include 'suppliers/components/_favorite_card_button.html' with product=product %}
                             {% include 'suppliers/components/_add_to_cart_card_button.html' with product=product %}
                         </div>
